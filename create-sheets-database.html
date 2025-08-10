@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>靜謐森林 - Google Sheets 資料庫建立工具</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        button { background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 5px; }
+        button:hover { background: #218838; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; font-family: monospace; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }
+        .step { border: 1px solid #ddd; margin: 20px 0; padding: 20px; border-radius: 8px; }
+        .step h3 { color: #2c3e50; margin-top: 0; }
+        code { background: #f8f9fa; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌲 靜謐森林知音計畫 - Google Sheets 資料庫設定</h1>
+        
+        <div class="step">
+            <h3>步驟 1: 建立新的 Google Sheets</h3>
+            <p>請先建立一個新的 Google Sheets 檔案：</p>
+            <button onclick="window.open('https://sheets.google.com', '_blank')">開啟 Google Sheets</button>
+            <div class="info">
+                <strong>建立後請：</strong>
+                <ol>
+                    <li>將檔案命名為：<code>靜謐森林知音計畫-資料庫</code></li>
+                    <li>複製檔案的 ID（網址中 /d/ 後面的一長串字符）</li>
+                    <li>在下面的欄位貼上 Sheets ID</li>
+                </ol>
+            </div>
+            <input type="text" id="sheetsId" placeholder="貼上您的 Google Sheets ID">
+        </div>
+
+        <div class="step">
+            <h3>步驟 2: 添加服務帳號權限</h3>
+            <p>將以下服務帳號Email添加為您 Sheets 的編輯者：</p>
+            <div class="info">
+                <code>forest-ambassador@foresthouse-468510.iam.gserviceaccount.com</code>
+                <button onclick="copyToClipboard('forest-ambassador@foresthouse-468510.iam.gserviceaccount.com')">複製</button>
+            </div>
+            <p>在您的 Google Sheets 中：點擊右上角「共用」→ 貼上上述Email → 選擇「編輯者」→ 傳送</p>
+        </div>
+
+        <div class="step">
+            <h3>步驟 3: 建立資料表結構</h3>
+            <button onclick="createSheetsStructure()" id="createBtn">建立 4 個資料表</button>
+            <div id="createResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>步驟 4: 驗證設定</h3>
+            <button onclick="testConnection()" id="testBtn">測試連線</button>
+            <div id="testResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // 注意：服務帳號憑證已移除，請在 Apps Script 中設定
+        // 服務帳號 Email: forest-ambassador@foresthouse-468510.iam.gserviceaccount.com
+
+        // 資料表結構定義
+        const SHEET_STRUCTURES = {
+            'Partners': [
+                'partner_id', 'partner_code', 'name', 'email', 'phone', 'join_date',
+                'level', 'status', 'total_referrals', 'successful_referrals', 'current_year_referrals',
+                'landing_link', 'coupon_link', 'coupon_code', 'notes', 'created_at', 'updated_at'
+            ],
+            'Clicks': [
+                'click_id', 'partner_code', 'click_timestamp', 'ip_address', 'user_agent',
+                'referrer', 'destination', 'utm_source', 'utm_medium', 'utm_campaign',
+                'session_id', 'country', 'city', 'device_type', 'conversion_status', 'created_at'
+            ],
+            'Bookings': [
+                'booking_id', 'partner_code', 'customer_name', 'customer_email', 'customer_phone',
+                'check_in_date', 'check_out_date', 'room_type', 'total_amount', 'paid_amount',
+                'payment_status', 'booking_status', 'coupon_used', 'discount_amount', 'commission_rate',
+                'commission_amount', 'commission_status', 'booking_source', 'special_requests',
+                'created_at', 'updated_at'
+            ],
+            'Payouts': [
+                'payout_id', 'partner_code', 'payout_period', 'total_commission', 'booking_count',
+                'payout_method', 'bank_account', 'payout_status', 'payout_date', 'receipt_number',
+                'tax_amount', 'net_amount', 'booking_ids', 'notes', 'created_at', 'updated_at'
+            ]
+        };
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('已複製到剪貼簿！');
+            });
+        }
+
+        async function getAccessToken() {
+            try {
+                const response = await fetch('https://oauth2.googleapis.com/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                        'assertion': await createJWT()
+                    })
+                });
+                
+                const data = await response.json();
+                return data.access_token;
+            } catch (error) {
+                console.error('取得 Access Token 失敗:', error);
+                throw error;
+            }
+        }
+
+        async function createJWT() {
+            // 這裡需要使用 JWT 庫，由於是前端實作，建議改用 Apps Script
+            throw new Error('請使用 Apps Script 進行後端認證');
+        }
+
+        async function createSheetsStructure() {
+            const sheetsId = document.getElementById('sheetsId').value;
+            if (!sheetsId) {
+                document.getElementById('createResult').innerHTML = 
+                    '<div class="error">請先輸入 Google Sheets ID</div>';
+                return;
+            }
+
+            document.getElementById('createResult').innerHTML = 
+                '<div class="info">正在建立資料表結構...</div>';
+
+            try {
+                // 由於瀏覽器環境限制，提供手動建立指引
+                let instructions = '<div class="info"><h4>請手動建立以下 4 個工作表：</h4>';
+                
+                Object.entries(SHEET_STRUCTURES).forEach(([sheetName, headers]) => {
+                    instructions += `<h5>${sheetName} 表</h5>`;
+                    instructions += `<p>標題行：<code>${headers.join(', ')}</code></p>`;
+                });
+
+                instructions += `
+                    <h4>建立步驟：</h4>
+                    <ol>
+                        <li>在您的 Google Sheets 底部點擊「+」新增工作表</li>
+                        <li>重新命名工作表為上述名稱</li>
+                        <li>在第一行輸入對應的標題</li>
+                        <li>重複以上步驟建立 4 個工作表</li>
+                    </ol>
+                    <p><strong>完成後點擊「測試連線」驗證設定！</strong></p>
+                </div>`;
+
+                document.getElementById('createResult').innerHTML = instructions;
+            } catch (error) {
+                document.getElementById('createResult').innerHTML = 
+                    `<div class="error">建立失敗: ${error.message}</div>`;
+            }
+        }
+
+        async function testConnection() {
+            const sheetsId = document.getElementById('sheetsId').value;
+            if (!sheetsId) {
+                document.getElementById('testResult').innerHTML = 
+                    '<div class="error">請先輸入 Google Sheets ID</div>';
+                return;
+            }
+
+            document.getElementById('testResult').innerHTML = 
+                '<div class="info">正在測試連線...</div>';
+
+            try {
+                // 提供測試指引
+                const testUrl = `https://docs.google.com/spreadsheets/d/${sheetsId}/edit`;
+                
+                document.getElementById('testResult').innerHTML = `
+                    <div class="success">
+                        <h4>請手動驗證設定：</h4>
+                        <ol>
+                            <li><a href="${testUrl}" target="_blank">開啟您的 Google Sheets</a></li>
+                            <li>確認有 4 個工作表：Partners, Clicks, Bookings, Payouts</li>
+                            <li>確認服務帳號已有編輯權限</li>
+                            <li>確認每個工作表的第一行都有正確的標題</li>
+                        </ol>
+                        <p><strong>您的 Sheets ID：</strong> <code>${sheetsId}</code></p>
+                        <button onclick="copyToClipboard('${sheetsId}')">複製 Sheets ID</button>
+                        <p>請保存此 ID，稍後設定 Apps Script 時會用到！</p>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('testResult').innerHTML = 
+                    `<div class="error">測試失敗: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

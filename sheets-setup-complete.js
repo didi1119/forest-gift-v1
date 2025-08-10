@@ -208,7 +208,7 @@ function createConfigSheet() {
     ['設定項目', '設定值', '說明'],
     ['REWARD_SYSTEM', JSON.stringify(REWARD_SYSTEM), '獎勢制度設定'],
     ['GITHUB_PAGES_URL', 'https://didi1119.github.io/forest-gift-v1', 'GitHub Pages 網址'],
-    ['LINE_COUPON_URL', 'https://line.me/R/ti/p/@foresthouse', 'LINE 優惠券連結'],
+    ['LINE_COUPON_URL', 'https://line.me/R/ti/p/@forest.house', 'LINE 優惠券連結'],
     ['CURRENT_VERSION', '1.0.0', '系統版本'],
     ['LAST_UPDATED', new Date().toISOString(), '最後更新時間']
   ];

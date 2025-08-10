@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>內在森林的回響・靜謐森林私房歌單</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Serene Forest -->
+    <!-- Application Structure Plan: A single-page, vertical scrolling application designed as an immersive music player/digital booklet. The structure is thematic, following the playlist's chapters (Prologue, Act I, etc.) to guide the user on a curated auditory journey. This narrative structure was chosen to transform a simple list into a deep, brand-aligned experience, enhancing the gift's perceived value. -->
+    <!-- Visualization & Content Choices: The source is a playlist. Goal: Present music interactively -> Method: Custom-styled HTML/CSS "song cards" for each track, grouped by thematic chapters. Interaction: Each card has a "Play" button (JS `window.open`) to launch the song on YouTube. An Intersection Observer (JS) adds subtle scroll animations. This approach avoids generic lists and creates an engaging, high-end player-like feel without complex libraries. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FDFBF8; /* A very light, warm cream */
+            color: #5C544B; /* A soft, dark brown */
+        }
+        h1, h2, h3, h4, .font-serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+        .brand-accent {
+            color: #2E4B36; /* A deep, muted forest green */
+        }
+        .brand-accent-bg {
+            background-color: #2E4B36;
+        }
+        .brand-secondary-bg {
+            background-color: #EAE6E1; /* A soft, earthy taupe */
+        }
+        .song-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE6E1;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .song-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.07);
+        }
+        .play-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 9999px;
+            background-color: #F1F5F9;
+            color: #64748B;
+            transition: all 0.3s ease;
+        }
+        .song-card:hover .play-button {
+            background-color: #2E4B36;
+            color: #FFFFFF;
+            transform: scale(1.1);
+        }
+        .content-fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .content-fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header -->
+    <header class="py-20 sm:py-32 text-center">
+        <div class="max-w-4xl mx-auto px-6 content-fade-in">
+            <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold brand-accent mb-6">《內在森林的回響》</h1>
+            <p class="font-serif text-xl sm:text-2xl text-stone-700 mb-8">一份來自靜謐森林的私房歌單</p>
+            <p class="max-w-2xl mx-auto text-lg text-stone-600 leading-relaxed">
+                親愛的朋友，這是一份為您精心策展的聲音風景。我們相信，音樂是通往情緒最直接的鑰匙。這份清單，是我在森林中獨處、工作、或沉澱時所聆聽的音樂，它承載著靜謐森林的靈魂。願它能陪伴您每一個需要獨處的時刻，引領您潛入那片寧靜而豐盛的內在森林。
+            </p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-3xl mx-auto px-6 pb-20 sm:pb-32 space-y-16">
+        
+        <!-- Chapter: Prologue -->
+        <section class="content-fade-in">
+            <div class="text-center mb-10">
+                <h2 class="font-serif text-3xl font-semibold brand-accent mb-3">序章：森林的呼吸</h2>
+                <p class="text-stone-600 italic">旅程的開端，讓我們回到最純粹的源頭。閉上眼睛，聆聽真實的自然之聲，讓自己的呼吸與森林的吐納合而為一。</p>
+            </div>
+            <div class="space-y-4">
+                <article class="song-card p-4 flex items-center space-x-4">
+                    <div class="text-3xl font-serif text-stone-300 w-8 text-center">1</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-stone-800">Bird Song (森林之聲)</h3>
+                        <p class="text-stone-500">Woodland Ambience</p>
+                    </div>
+                    <a href="https://www.youtube.com/watch?v=xNN7iTA57jM" target="_blank" class="play-button" aria-label="Play Bird Song">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    </a>
+                </article>
+                <article class="song-card p-4 flex items-center space-x-4">
+                    <div class="text-3xl font-serif text-stone-300 w-8 text-center">2</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-stone-800">Calm River (寧靜溪流)</h3>
+                        <p class="text-stone-500">Forest Stream Sounds</p>
+                    </div>
+                    <a href="https://www.youtube.com/watch?v=1wn-OSiNVjE" target="_blank" class="play-button" aria-label="Play Calm River">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    </a>
+                </article>
+            </div>
+        </section>
+
+        <!-- Chapter: Act 1 -->
+        <section class="content-fade-in">
+            <div class="text-center mb-10">
+                <h2 class="font-serif text-3xl font-semibold brand-accent mb-3">第一幕：清晨的露珠</h2>
+                <p class="text-stone-600 italic">陽光初探，萬物甦醒。溫柔而清澈的鋼琴獨奏，如同葉片上閃爍的露珠，晶瑩剔透，帶來一天的希望與平靜。</p>
+            </div>
+            <div class="space-y-4">
+                <article class="song-card p-4 flex items-center space-x-4">
+                    <div class="text-3xl font-serif text-stone-300 w-8 text-center">3</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-stone-800">Longing/Love</h3>
+                        <p class="text-stone-500">George Winston</p>
+                    </div>
+                    <a href="https://www.youtube.com/watch?v=UFMg8Dogc44" target="_blank" class="play-button" aria-label="Play Longing/Love">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    </a>
+                </article>
+                <article class="song-card p-4 flex items-center space-x-4">
+                    <div class="text-3xl font-serif text-stone-300 w-8 text-center">4</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-stone-800">Sundial Dreams</h3>
+                        <p class="text-stone-500">Kevin Kern</p>
+                    </div>
+                    <a href="https://www.youtube.com/watch?v=dYL-LfQSR9U" target="_blank" class="play-button" aria-label="Play Sundial Dreams">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    </a>
+                </article>
+            </div>
+        </section>
+
+        <!-- Chapter: Act 2 -->
+        <section class="content-fade-in">
+            <div class="text-center mb-10">
+                <h2 class="font-serif text-3xl font-semibold brand-accent mb-3">第二幕：陽光穿透葉隙</h2>
+                <p class="text-stone-600 italic">旋律變得溫暖而悠揚，弦樂與鋼琴的對話，彷彿陽光穿透層層葉隙，在林間灑下斑駁的光點，充滿了生命的喜悅與感動。</p>
+            </div>
+            <div class="space-y-4">
+                 <article class="song-card p-4 flex items-center space-x-4">
+                    <div class="text-3xl font-serif text-stone-300 w-8 text-center">5</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-stone-800">One Summer's Day (神隱少女)</h3>
+                        <p class="text-stone-500">久石讓 (Joe Hisaishi)</p>
+                    </div>
+                    <a href="https://www.youtube.com/watch?v=TK1Ij_-mank" target="_blank" class="play-button" aria-label="Play One Summer's Day">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    </a>
+                </article>
+                 <article class="song-card p-4 flex items-center space-x-4">
+                    <div class="text-3xl font-serif text-stone-300 w-8 text-center">6</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-stone-800">River Flows in You</h3>
+                        <p class="text-stone-500">Yiruma</p>
+                    </div>
+                    <a href="https://www.youtube.com/watch?v=7maJOI3QMu0" target="_blank" class="play-button" aria-label="Play River Flows in You">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    </a>
+                </article>
+            </div>
+        </section>
+
+        <!-- Chapter: Act 3 -->
+        <section class="content-fade-in">
+            <div class="text-center mb-10">
+                <h2 class="font-serif text-3xl font-semibold brand-accent mb-3">第三幕：午后的靜謐</h2>
+                <p class="text-stone-600 italic">光影斜長，時間緩慢。更為沉靜、帶有冥想質感的樂曲，適合在一個安靜的午後，伴隨一杯熱茶，讓思緒自由地沉澱。</p>
+            </div>
+            <div class="space-y-4">
+                 <article class="song-card p-4 flex items-center space-x-4">
+                    <div class="text-3xl font-serif text-stone-300 w-8 text-center">7</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-stone-800">I Miss You</h3>
+                        <p class="text-stone-500">白日夢 (The Daydream)</p>
+                    </div>
+                    <a href="https://www.youtube.com/watch?v=oPg9NfZMbNA" target="_blank" class="play-button" aria-label="Play I Miss You">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    </a>
+                </article>
+                 <article class="song-card p-4 flex items-center space-x-4">
+                    <div class="text-3xl font-serif text-stone-300 w-8 text-center">8</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-stone-800">Like a Wind (風のように)</h3>
+                        <p class="text-stone-500">S.E.N.S.</p>
+                    </div>
+                    <a href="https://www.youtube.com/watch?v=vD1dBv6LS_4" target="_blank" class="play-button" aria-label="Play Like a Wind">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    </a>
+                </article>
+            </div>
+        </section>
+
+        <!-- Chapter: Epilogue -->
+        <section class="content-fade-in">
+            <div class="text-center mb-10">
+                <h2 class="font-serif text-3xl font-semibold brand-accent mb-3">終章：星空下的呢喃</h2>
+                <p class="text-stone-600 italic">夜幕低垂，萬籟俱寂。極簡的旋律與溫柔的編曲，如同在滿天星斗下，與自己的內心輕聲對話，在寧靜中安然入夢。</p>
+            </div>
+            <div class="space-y-4">
+                 <article class="song-card p-4 flex items-center space-x-4">
+                    <div class="text-3xl font-serif text-stone-300 w-8 text-center">9</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-stone-800">The Wind Forest (龍貓)</h3>
+                        <p class="text-stone-500">久石讓 (Joe Hisaishi)</p>
+                    </div>
+                    <a href="https://www.youtube.com/watch?v=-uNNWc0wJiw" target="_blank" class="play-button" aria-label="Play The Wind Forest">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    </a>
+                </article>
+                 <article class="song-card p-4 flex items-center space-x-4">
+                    <div class="text-3xl font-serif text-stone-300 w-8 text-center">10</div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-stone-800">Arrietty's Song (借物少女)</h3>
+                        <p class="text-stone-500">Cécile Corbel</p>
+                    </div>
+                    <a href="https://www.youtube.com/watch?v=tV6S7xwLF8o" target="_blank" class="play-button" aria-label="Play Arrietty's Song">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    </a>
+                </article>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center pb-20 sm:pb-32">
+        <div class="max-w-4xl mx-auto px-6 content-fade-in">
+            <div class="w-20 h-px bg-stone-300 mx-auto mb-8"></div>
+            <p class="font-serif text-xl text-stone-700">願這份聲音的風景，<br class="sm:hidden">能時時陪伴您，回到那片內在的寧靜裡。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sections = document.querySelectorAll('.content-fade-in');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>

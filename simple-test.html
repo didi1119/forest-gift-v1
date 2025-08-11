@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>簡單測試</title>
+</head>
+<body>
+    <h1>Apps Script 連接測試</h1>
+    <button onclick="testDirect()">測試直接連接</button>
+    <button onclick="testWithForm()">測試表單提交</button>
+    <div id="result"></div>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+        
+        function log(message) {
+            document.getElementById('result').innerHTML += '<p>' + message + '</p>';
+        }
+        
+        // 測試直接訪問
+        function testDirect() {
+            log('測試直接訪問...');
+            window.open(SCRIPT_URL + '?test=true', '_blank');
+        }
+        
+        // 測試表單提交（繞過 CORS）
+        function testWithForm() {
+            log('測試表單提交...');
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = SCRIPT_URL;
+            form.target = '_blank';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'action';
+            input.value = 'create_partner';
+            form.appendChild(input);
+            
+            const input2 = document.createElement('input');
+            input2.type = 'hidden';
+            input2.name = 'partner_code';
+            input2.value = 'FORM_TEST';
+            form.appendChild(input2);
+            
+            const input3 = document.createElement('input');
+            input3.type = 'hidden';
+            input3.name = 'name';
+            input3.value = '表單測試';
+            form.appendChild(input3);
+            
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+        }
+    </script>
+</body>
+</html>

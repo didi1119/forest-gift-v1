@@ -69,6 +69,12 @@
                     <input type="text" id="couponCode" placeholder="例：FOREST_WANG001" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
                     <p class="text-xs text-stone-500 mt-1">選填：如有專屬優惠券可填入</p>
                 </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-stone-700 mb-2">專屬優惠券連結 *</label>
+                    <input type="url" id="couponUrl" placeholder="例：https://lin.ee/abc123" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    <p class="text-xs text-stone-500 mt-1">請貼上從 LINE 官方帳號後台取得的專屬優惠券連結</p>
+                </div>
             </div>
             
             <div class="space-y-3">
@@ -97,9 +103,10 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-stone-700 mb-2">優惠券連結（透過中繼服務追蹤）</label>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">LINE 官方帳號連結（透過中繼服務追蹤）</label>
                     <div class="link-box" id="couponLink">生成中...</div>
                     <button onclick="copyText('couponLink')" class="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">複製連結</button>
+                    <p class="text-xs text-stone-500 mt-1">注意：優惠券需要在 LINE 官方帳號後台另行設定</p>
                 </div>
                 
                 <div class="bg-amber-50 p-4 rounded-lg">
@@ -128,10 +135,10 @@
     </div>
 
     <script>
-        // 設定值（部署完成後會自動更新）
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/DEPLOYMENT_PLACEHOLDER/exec'; 
+        // 設定值
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzaMMHbo1zesnAP4Go3Iz1R1z3702Ct4cuEJOdJpHArHpVpnCgvMIfeWx_PzRTWj8F/exec'; 
         const GITHUB_PAGES_URL = 'https://didi1119.github.io/forest-gift-v1'; 
-        const LINE_COUPON_URL = 'https://line.me/R/ti/p/@forest.house';
+        const DEFAULT_LINE_COUPON_URL = 'https://lin.ee/q38pqot';
         
         let generatedData = null;
         
@@ -140,15 +147,21 @@
             const partnerName = document.getElementById('partnerName').value.trim();
             const partnerEmail = document.getElementById('partnerEmail').value.trim();
             const couponCode = document.getElementById('couponCode').value.trim();
+            const couponUrl = document.getElementById('couponUrl').value.trim();
             
             if (!partnerCode || !partnerName) {
                 alert('請填寫夥伴代碼和姓名');
                 return;
             }
             
+            if (!couponUrl) {
+                alert('請提供專屬優惠券連結！\\n\\n請到 LINE 官方帳號後台建立專屬優惠券，然後將連結貼上。');
+                return;
+            }
+            
             // 生成透過 Apps Script 中繼的連結
             const landingUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=landing`;
-            const couponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=coupon`;
+            const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
             
             // 生成分享範本
             const shareText = `🌲 來自靜謐森林的特別邀請
@@ -170,13 +183,19 @@ ${landingUrl}
                 name: partnerName,
                 email: partnerEmail,
                 coupon_code: couponCode,
+                coupon_url: couponUrl,
                 landing_link: landingUrl,
-                coupon_link: couponUrl
+                coupon_link: trackedCouponUrl
             };
             
             // 顯示結果
             document.getElementById('landingLink').textContent = landingUrl;
-            document.getElementById('couponLink').textContent = couponUrl;
+            document.getElementById('couponLink').textContent = trackedCouponUrl;
+            
+            // Debug: 確認優惠券連結
+            console.log('生成的優惠券連結:', trackedCouponUrl);
+            console.log('目標優惠券URL:', couponUrl);
+            
             document.getElementById('shareTemplate').textContent = shareText;
             document.getElementById('resultSection').classList.remove('hidden');
             document.getElementById('saveStatus').classList.remove('hidden');
@@ -197,29 +216,41 @@ ${landingUrl}
             button.disabled = true;
             
             try {
-                // 這裡應該呼叫實際的 Apps Script 或後端 API
-                // 暫時使用模擬的保存操作
+                // 呼叫 Apps Script API 儲存夥伴資料
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'create_partner',
+                        ...generatedData
+                    })
+                });
                 
-                console.log('儲存資料到 Google Sheets:', generatedData);
+                const result = await response.json();
                 
-                // 模擬 API 呼叫
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // 更新儲存狀態
-                document.getElementById('saveStatus').innerHTML = `
-                    <p class="text-green-700">✅ 已成功儲存到系統</p>
-                    <p class="text-sm text-gray-600 mt-1">夥伴代碼：${generatedData.partner_code}</p>
-                `;
-                document.getElementById('saveStatus').className = 'bg-green-50 p-4 rounded-lg';
-                
-                alert('✅ 夥伴資料已儲存到 Google Sheets！');
+                if (result.success) {
+                    // 更新儲存狀態
+                    document.getElementById('saveStatus').innerHTML = `
+                        <p class="text-green-700">✅ 已成功儲存到系統</p>
+                        <p class="text-sm text-gray-600 mt-1">夥伴代碼：${generatedData.partner_code}</p>
+                        <p class="text-sm text-gray-600">優惠券 URL：${generatedData.coupon_url || '未設定'}</p>
+                    `;
+                    document.getElementById('saveStatus').className = 'bg-green-50 p-4 rounded-lg';
+                    
+                    alert('✅ 夥伴資料已儲存到 Google Sheets！');
+                } else {
+                    throw new Error(result.error || '未知錯誤');
+                }
                 
             } catch (error) {
                 console.error('儲存失敗:', error);
-                alert('❌ 儲存失敗，請稍後再試');
+                alert('❌ 儲存失敗：' + error.message);
                 
                 document.getElementById('saveStatus').innerHTML = `
-                    <p class="text-red-700">❌ 儲存失敗</p>
+                    <p class="text-red-700">❌ 儲存失敗：${error.message}</p>
                 `;
                 document.getElementById('saveStatus').className = 'bg-red-50 p-4 rounded-lg';
                 
@@ -266,11 +297,11 @@ ${landingUrl}
         document.getElementById('partnerName').addEventListener('input', function() {
             const name = this.value.trim();
             if (name && !document.getElementById('partnerCode').value) {
-                // 簡單的中文轉拼音邏輯（可以使用更完整的庫）
+                // 簡單的中文轉拼音邏輯
                 const suggestion = name.replace(/\s+/g, '').toUpperCase() + '001';
                 document.getElementById('partnerCode').placeholder = `建議：${suggestion}`;
             }
         });
     </script>
 </body>
-</html> 
+</html>

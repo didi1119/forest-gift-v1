@@ -335,11 +335,22 @@
         }
         
         function goToLineCoupon() {
+            const subid = getSubid();
+            
             trackEvent('line_click', {
-                page: 'index_old',
-                has_subid: !!getSubid()
+                page: 'index',
+                has_subid: !!subid
             });
-            alert('🎉 優惠券功能準備中！\n\n當前為演示版本，實際部署後會連接到 LINE 優惠券頁面。\n\n✅ 點擊事件已記錄，請查看開發者工具 Console。');
+            
+            if (subid && subid !== 'demo' && subid !== 'no-subid') {
+                // 有有效的 subid，跳轉到專屬優惠券
+                const couponUrl = `https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec?pid=${encodeURIComponent(subid)}&dest=coupon`;
+                console.log('🎁 跳轉到專屬優惠券:', couponUrl);
+                window.open(couponUrl, '_blank');
+            } else {
+                // 沒有有效的 subid，顯示說明
+                alert('🌲 專屬優惠券說明\n\n這個按鈕會連接到您的知音大使專屬優惠券連結。\n\n✨ 目前您正在訪問演示版本，沒有專屬的大使代碼。\n\n💡 實際使用時，每位大使都會有自己的專屬連結和優惠券。');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {

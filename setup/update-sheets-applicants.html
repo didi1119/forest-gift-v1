@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets 更新 - 大使申請管理表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF8; color: #5C544B; }
+        h1, h2, h3, .font-serif { font-family: 'Noto Serif TC', serif; }
+        .brand-accent { color: #2E4B36; }
+        .brand-card { background-color: #FFFFFF; border: 1px solid #EAE6E1; border-radius: 1.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+        .code-block { background-color: #1F2937; color: #F9FAFB; padding: 1rem; border-radius: 0.5rem; font-family: monospace; font-size: 0.9rem; white-space: pre-wrap; overflow-x: auto; }
+    </style>
+</head>
+<body class="antialiased min-h-screen py-8">
+    <div class="max-w-6xl mx-auto px-6">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold brand-accent mb-4">Google Sheets 更新指南</h1>
+            <p class="text-lg text-stone-600">新增大使申請管理表 (Applicants)</p>
+            <div class="bg-blue-50 p-4 rounded-lg mt-4">
+                <p class="text-blue-800 font-semibold">🆕 新增功能：完整的大使申請審核流程</p>
+            </div>
+        </header>
+
+        <!-- 步驟1: 新增 Applicants 工作表 -->
+        <div class="brand-card p-6 mb-8">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-4">步驟1: 新增 Applicants 工作表</h2>
+            <p class="text-stone-600 mb-4">在您現有的 Google Sheets 中新增一個名為 <strong>"Applicants"</strong> 的工作表，並設定以下標題行：</p>
+            
+            <div>
+                <h3 class="text-lg font-semibold text-blue-700 mb-2">📋 Applicants 工作表（大使申請管理）</h3>
+                <p class="text-sm text-stone-600 mb-2">在 A1 開始輸入以下標題（一行一個欄位）：</p>
+                <div class="code-block text-xs">id	name	email	line_name	phone	message	application_status	review_notes	reviewed_by	partner_code_assigned	partner_link_sent	created_at	reviewed_at	approved_at</div>
+                <button onclick="copyToClipboard('applicants-headers')" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-sm">複製標題行</button>
+                <div id="applicants-headers" class="hidden">id	name	email	line_name	phone	message	application_status	review_notes	reviewed_by	partner_code_assigned	partner_link_sent	created_at	reviewed_at	approved_at</div>
+            </div>
+        </div>
+
+        <!-- 步驟2: 欄位說明 -->
+        <div class="brand-card p-6 mb-8">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-4">步驟2: 欄位詳細說明</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-green-700 mb-3">基本資料欄位</h3>
+                    <ul class="text-sm space-y-2 text-stone-600">
+                        <li><strong>id:</strong> 自動編號</li>
+                        <li><strong>name:</strong> 申請者姓名</li>
+                        <li><strong>email:</strong> 申請者Email</li>
+                        <li><strong>line_name:</strong> LINE顯示名稱</li>
+                        <li><strong>phone:</strong> 聯絡電話</li>
+                        <li><strong>message:</strong> 申請留言</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-purple-700 mb-3">審核管理欄位</h3>
+                    <ul class="text-sm space-y-2 text-stone-600">
+                        <li><strong>application_status:</strong> PENDING / APPROVED / REJECTED</li>
+                        <li><strong>review_notes:</strong> 審核備註</li>
+                        <li><strong>reviewed_by:</strong> 審核者</li>
+                        <li><strong>partner_code_assigned:</strong> 分配的大使代碼</li>
+                        <li><strong>partner_link_sent:</strong> 是否已發送連結 (TRUE/FALSE)</li>
+                        <li><strong>created_at:</strong> 申請時間</li>
+                        <li><strong>reviewed_at:</strong> 審核時間</li>
+                        <li><strong>approved_at:</strong> 核准時間</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 步驟3: 申請狀態說明 -->
+        <div class="brand-card p-6 mb-8">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-4">步驟3: 申請狀態管理</h2>
+            
+            <div class="bg-gradient-to-r from-yellow-50 to-green-50 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold text-green-800 mb-4">📋 申請流程狀態</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-lg border-l-4 border-yellow-500">
+                        <h4 class="font-semibold text-yellow-700">PENDING</h4>
+                        <p class="text-sm text-stone-600 mt-1">待審核</p>
+                        <p class="text-xs text-yellow-600 mt-2">新申請，等待人工審核</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border-l-4 border-green-500">
+                        <h4 class="font-semibold text-green-700">APPROVED</h4>
+                        <p class="text-sm text-stone-600 mt-1">已核准</p>
+                        <p class="text-xs text-green-600 mt-2">通過審核，可發送連結</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border-l-4 border-red-500">
+                        <h4 class="font-semibold text-red-700">REJECTED</h4>
+                        <p class="text-sm text-stone-600 mt-1">已拒絕</p>
+                        <p class="text-xs text-red-600 mt-2">不符合要求，拒絕申請</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 步驟4: 範例資料 -->
+        <div class="brand-card p-6 mb-8">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-4">步驟4: 範例資料（可選）</h2>
+            <p class="text-stone-600 mb-4">您可以在 Applicants 工作表中添加以下範例資料來測試系統：</p>
+            
+            <div>
+                <h3 class="text-lg font-semibold text-green-700 mb-2">Applicants 範例資料</h3>
+                <div class="code-block text-xs">1	測試申請者	test@example.com	測試用戶	0912345678	我很有興趣成為知音大使	PENDING		admin		FALSE	2024-01-01 00:00:00		</div>
+                <button onclick="copyToClipboard('applicants-sample')" class="mt-2 px-3 py-1 bg-green-600 text-white rounded text-sm">複製範例資料</button>
+                <div id="applicants-sample" class="hidden">1	測試申請者	test@example.com	測試用戶	0912345678	我很有興趣成為知音大使	PENDING		admin		FALSE	2024-01-01 00:00:00		</div>
+            </div>
+        </div>
+
+        <!-- 步驟5: 工作流程說明 -->
+        <div class="brand-card p-6 mb-8">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-4">步驟5: 申請審核工作流程</h2>
+            
+            <div class="space-y-4">
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">1</div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">用戶提交申請</h4>
+                        <p class="text-sm text-gray-600">透過 invitation.html 提交申請表單</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0 w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 font-semibold text-sm">2</div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">系統記錄申請</h4>
+                        <p class="text-sm text-gray-600">自動新增到 Applicants 表，狀態設為 PENDING</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-semibold text-sm">3</div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">人工審核</h4>
+                        <p class="text-sm text-gray-600">透過後台管理系統查看並審核申請</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-semibold text-sm">4</div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">核准並生成連結</h4>
+                        <p class="text-sm text-gray-600">核准後透過連結生成器建立大使專屬連結</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0 w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 font-semibold text-sm">5</div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">轉為正式夥伴</h4>
+                        <p class="text-sm text-gray-600">資料同步到 Partners 表，開始追蹤績效</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 完成提示 -->
+        <div class="brand-card p-6 bg-green-50 border-green-200">
+            <h2 class="font-serif text-2xl font-semibold text-green-800 mb-4">✅ 設定完成</h2>
+            <div class="space-y-2 text-green-700">
+                <p>✓ 新增 Applicants 工作表並設定標題行</p>
+                <p>✓ 了解申請審核流程</p>
+                <p>✓ 準備好接收申請資料</p>
+            </div>
+            <div class="mt-4 p-4 bg-green-100 rounded-lg">
+                <p class="text-green-800 font-semibold">📝 下一步：</p>
+                <p class="text-sm text-green-700 mt-1">完成 Applicants 工作表設定後，請更新您的 Apps Script 程式碼以處理申請表單提交。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                // 顯示複製成功的提示
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = '已複製 ✓';
+                button.className = button.className.replace('bg-', 'bg-gray-');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.className = button.className.replace('bg-gray-', 'bg-');
+                }, 2000);
+            }).catch(err => {
+                console.error('複製失敗:', err);
+                alert('複製失敗，請手動選擇文字複製');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,36 +1,33 @@
-# 🌲 靜謐森林知音計畫
+# 🌲 靜謐森林知音計畫 - 完整聯盟行銷管理系統
 
-> 一個充滿寧靜力量的品牌大使系統，讓每一次分享都成為內心的橋樑。
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/Version-2.0-blue.svg)](https://github.com/yourusername/forest-affiliate-system)
 
-## 📖 專案簡介
+一個完整的聯盟行銷管理平台，專為靜謐森林民宿設計，包含申請審核、佣金管理、績效追蹤等功能。
 
-靜謐森林知音計畫是一個完整的品牌大使系統，包含：
+## 🎯 系統概覽
 
-- 🎁 **數位禮物包**：音樂、電子書、神諭卡、故事四大體驗
-- 🔮 **60張神諭卡系統**：互動式塔羅占卜體驗
-- 📊 **推薦追蹤系統**：完整的 subid/pid 追蹤機制
-- 🎯 **三級獎勵制度**：知音大使 → 森林嚮導 → 秘境守護者
-- 📱 **響應式設計**：適配所有設備的優雅體驗
+### 核心功能
+- 🎴 **神諭卡片系統** - 互動式占卜體驗，60張精美SVG卡片
+- 👥 **大使申請管理** - 完整的申請到審核流程，從邀請到轉換
+- 💰 **智能佣金計算** - 三級等級制度自動管理，手動確認入住
+- 📊 **即時數據分析** - 全面的績效追蹤面板，卡片使用統計
+- 🔗 **追蹤連結生成** - 自動化推廣工具，參數化追蹤
 
-## 🌟 主要功能
+### 技術亮點
+- **無服務器架構** - 基於 Google Apps Script 和 Google Sheets
+- **零 CORS 問題** - 創新的表單提交機制
+- **響應式設計** - 完美支援桌面和行動裝置
+- **即時數據同步** - 所有操作立即反映在管理後台
 
-### 🎁 數位體驗
-- **禮物一**：《內在森林的回響》音樂播放清單
-- **禮物二**：《內心地圖繪製手冊》互動式指南
-- **禮物三**：世界樹神諭卡占卜系統 (60張精美SVG)
-- **禮物四**：靜謐森林品牌故事
+## 🆕 最新功能
 
-### 📊 大使系統
-- 專屬推薦連結生成
-- 即時點擊與轉換追蹤
-- 三級成長獎勵制度
-- 自動佣金計算與結算
-
-### 🔧 管理功能
-- 管理後台儀表板
-- Google Sheets 數據庫
-- Apps Script 自動化處理
-- 功能開關與A/B測試
+### v2.0 重大更新
+- ✅ **完整申請審核系統** - 從邀請表單到大使轉換的全流程
+- ✅ **手動佣金確認機制** - 基於實際入住完成的佣金計算
+- ✅ **卡片使用行為追蹤** - 深度分析用戶偏好和行為模式
+- ✅ **三級大使晉升制度** - 自動化等級管理和獎勵發放
+- ✅ **多維度數據分析** - 轉換漏斗、趨勢分析、排行榜
 
 ## 🚀 技術架構
 
@@ -51,17 +48,44 @@
 - **動畫效果**：淡入、翻牌、懸浮互動
 - **響應式設計**：Mobile-first 設計理念
 
-## 📱 頁面結構
+## 📁 專案結構
 
 ```
-🏠 index.html           - 主頁與數位禮物包
-🎵 music.html          - 音樂播放清單
-📖 inner_map.html      - 內在地圖手冊  
-📚 story.html          - 森林故事
-🔗 link-generator.html - 連結生成器
-📊 admin-dashboard.html - 管理後台
-📋 policy.html         - 隱私政策
-📝 affiliate-terms.html - 聯盟條款
+知音計畫/
+├── frontend/                    # 前端檔案
+│   ├── index.html              # 主頁面（神諭卡片系統）
+│   ├── invitation.html         # 大使申請表單
+│   ├── story.html             # 品牌故事頁面
+│   ├── music.html             # 音樂頁面
+│   ├── policy.html            # 隱私政策
+│   ├── inner_map.html         # 內部地圖
+│   └── admin/                 # 管理後台
+│       ├── admin-dashboard-real.html       # 主管理面板
+│       ├── analytics-dashboard.html       # 數據分析面板
+│       ├── application-review-dashboard.html  # 申請審核面板
+│       ├── manual-booking.html            # 手動訂房登記
+│       ├── manual-checkin-confirm.html    # 入住確認系統
+│       └── link-generator-form.html       # 連結生成器
+├── backend/                    # 後端檔案（Apps Script）
+│   ├── apps-script-integration-complete.js  # 完整整合代碼
+│   ├── apps-script-commission-v2.js         # 佣金管理系統
+│   ├── apps-script-applications-update.js   # 申請管理功能
+│   └── apps-script-card-tracking-update.js  # 卡片追蹤功能
+├── setup/                      # 設定檔案
+│   ├── setup-sheets-v2.html    # Google Sheets 設定指南
+│   ├── update-sheets-applicants.html  # 申請表格設定
+│   ├── affiliate-terms.html    # 合作條款頁面
+│   └── card-tracking-update.js # 卡片追蹤更新
+├── docs/                       # 文件資料
+│   ├── APPLICATION_SYSTEM_SETUP.md  # 申請系統設定指南
+│   ├── COMPLETE_SYSTEM_GUIDE.md     # 完整系統指南
+│   └── database-structure-v2.md     # 資料庫結構說明
+├── cards/                      # 神諭卡片 SVG 檔案
+│   ├── 1. 長日(The Longest Day).svg
+│   ├── 2 永夜 (The Longest Night).svg
+│   └── ... (共60張卡片)
+├── netlify/                    # Netlify 部署檔案
+└── 知音.txt                     # 專案說明檔案
 ```
 
 ## 🎯 獎勵制度
@@ -111,67 +135,115 @@ Bookings  - 訂房記錄 (客戶、金額、佣金)
 Payouts   - 結算記錄 (週期、總額、狀態)
 ```
 
-## 🛠️ 部署指南
+## 🚀 快速開始
 
-### 環境需求
-- GitHub 帳號
-- Google Cloud Platform 專案
-- Google Sheets 與 Apps Script
-- LINE Official Account (選用)
+### 1. 環境準備
+1. 建立 Google Account 並開啟 Google Sheets
+2. 設定 Google Apps Script 專案
+3. 準備網站託管環境（GitHub Pages/Vercel/Netlify）
 
-### 快速部署
-1. **Clone Repository**
+### 2. 資料庫設定
+使用 `setup/setup-sheets-v2.html` 設定您的 Google Sheets：
+
 ```bash
-git clone https://github.com/didi1119/forest-gift-v1.git
+# 必要的工作表
+- Partners     # 大使管理表
+- Bookings     # 訂房記錄表  
+- Payouts      # 佣金發放表
+- Clicks       # 點擊追蹤表
+- Applicants   # 申請管理表
 ```
 
-2. **設定 Google Sheets**
+### 3. 後端部署
+1. 開啟 Google Apps Script
+2. 複製 `backend/apps-script-integration-complete.js` 內容
+3. 設定必要的環境變數
+4. 發佈為網路應用程式
+
+### 4. 前端部署
+1. 更新各檔案中的 `APPS_SCRIPT_URL`
+2. 上傳到您的網站託管服務
+3. 設定網域和 SSL
+
+## 🔧 設定指南
+
+### Apps Script 環境變數
 ```javascript
-// 執行 sheets-setup-complete.js
-initializeAllSheets();
+const SHEETS_ID = 'YOUR_GOOGLE_SHEETS_ID';
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL';
 ```
 
-3. **部署 Apps Script**
-```javascript  
-// 上傳 apps-script-main.js 到 Google Apps Script
-// 發布為 Web App，獲取 URL
+### 前端設定
+每個 HTML 檔案都需要更新 Apps Script URL：
+```javascript
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
 ```
 
-4. **啟用 GitHub Pages**
-- Settings → Pages → Deploy from branch: main
-- 網址：https://didi1119.github.io/forest-gift-v1
+## 🧪 系統測試
 
-### 設定更新
-- 更新 `link-generator.html` 中的 Apps Script URL
-- 更新所有檔案中的 LINE 連結
-- 測試所有功能是否正常運作
+### 功能測試清單
+- [ ] 神諭卡片系統 - 抽卡、圖片顯示、追蹤記錄
+- [ ] 大使申請流程 - 表單提交、狀態更新、審核功能
+- [ ] 佣金管理系統 - 手動登記、入住確認、自動計算
+- [ ] 管理後台 - 數據顯示、篩選功能、匯出功能
+- [ ] 追蹤連結 - 生成、點擊記錄、轉換統計
 
-## 🧪 測試指南
+### 完整工作流程測試
+```
+申請提交 → 審核核准 → 生成連結 → 點擊追蹤 → 
+手動登記 → 確認入住 → 佣金計算 → 等級晉升
+```
 
-### 功能測試
-- [ ] 主頁載入與推薦功能 (?subid=test123)
-- [ ] 神諭卡抽卡與圖片顯示
-- [ ] 所有禮物頁面跳轉
-- [ ] 連結生成器功能
-- [ ] 管理後台數據顯示
-- [ ] 追蹤事件記錄 (Console)
+## 📊 管理後台功能
 
-### 響應式測試
-- [ ] 手機瀏覽器 (iOS/Android)
-- [ ] 平板瀏覽器 (iPad/Android)
-- [ ] 桌面瀏覽器 (Chrome/Safari/Firefox)
+### 🎛️ 主管理面板 (`admin/admin-dashboard-real.html`)
+- 即時績效總覽和 KPI 監控
+- 大使狀態監控和等級分佈
+- 佣金計算和發放管理
+- 點擊和轉換統計圖表
+
+### 📈 數據分析面板 (`admin/analytics-dashboard.html`)
+- 趨勢圖表分析（7天/30天/90天）
+- 神諭卡片使用統計和熱度排行
+- 轉換漏斗分析和用戶路徑
+- 大使績效排名和質量評估
+
+### 👤 申請審核面板 (`admin/application-review-dashboard.html`)
+- 申請狀態管理（待審核/已核准/已拒絕）
+- 審核工作流程和備註系統
+- 大使連結生成和代碼分配
+- 批量操作和 CSV 匯出功能
+
+## 📚 文件資源
+
+- [申請系統設定指南](docs/APPLICATION_SYSTEM_SETUP.md) - 完整的申請流程設定
+- [完整系統操作手冊](docs/COMPLETE_SYSTEM_GUIDE.md) - 佣金管理和操作指南
+- [資料庫結構說明](docs/database-structure-v2.md) - Google Sheets 結構文件
+
+## 🤝 貢獻指南
+
+歡迎提交 Issue 和 Pull Request！
+
+### 開發環境設定
+1. Fork 此專案
+2. 建立功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交變更 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 開啟 Pull Request
+
+## 🛡️ 安全性功能
+
+- **資料加密** - 敏感資訊加密存儲
+- **訪問控制** - 基於角色的權限管理
+- **審核日誌** - 完整的操作記錄
+- **防濫用** - 頻率限制和垃圾訊息過濾
 
 ## 📞 技術支援
 
-### 聯絡資訊
-- **GitHub Issues**：https://github.com/didi1119/forest-gift-v1/issues
-- **開發團隊**：Claude Code + 靜謐森林團隊
-
-### 服務帳號
-```
-Email: forest-ambassador@foresthouse-468510.iam.gserviceaccount.com
-Project: foresthouse-468510
-```
+如有任何問題或建議，歡迎聯繫：
+- 📧 Email: [您的聯絡信箱]
+- 🌐 網站: [您的網站連結]
+- 📱 LINE: @478hisen
 
 ---
 
@@ -179,8 +251,14 @@ Project: foresthouse-468510
 
 > 在這個喧囂的時代，我們相信最好的連結來自於無所求的分享。每一份禮物都承載著我們想與您共同守護的寧靜，願它們能為您的日常帶來片刻的安頓與喜悅。
 
-**靜謐森林知音計畫**不只是一個品牌大使系統，更是一個連結內心與他人的溫柔橋樑。
+**靜謐森林知音計畫 v2.0** 不只是一個聯盟行銷系統，更是一個連結內心與他人的溫柔橋樑。
+
+## 🎉 特別感謝
+
+感謝所有參與開發和測試的朋友們，讓靜謐森林知音計畫得以完美呈現！
 
 ---
 
-*🌲 Generated with [Claude Code](https://claude.ai/code) - 用心感受，用愛分享*
+**🌲 靜謐森林，等待您的知音相聚 ✨**
+
+*最後更新：2025年1月 - v2.0 完整版*

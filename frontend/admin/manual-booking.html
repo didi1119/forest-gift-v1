@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手動訂房登記系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF8; color: #5C544B; }
+        h1, h2, h3, .font-serif { font-family: 'Noto Serif TC', serif; }
+        .brand-accent { color: #2E4B36; }
+        .brand-card { background-color: #FFFFFF; border: 1px solid #EAE6E1; border-radius: 1.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body class="antialiased min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-6">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold brand-accent mb-4">手動訂房登記系統</h1>
+            <p class="text-lg text-stone-600">快速登記電話訂房、私人推薦等訂房資訊</p>
+        </header>
+
+        <!-- 快速登記表單 -->
+        <div class="brand-card p-8 mb-8">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">📝 新增訂房記錄</h2>
+            
+            <form id="bookingForm" class="space-y-6">
+                <!-- 房客基本資訊 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">房客姓名 *</label>
+                        <input type="text" id="guestName" required class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none" placeholder="例：張小明">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">房客電話 *</label>
+                        <input type="tel" id="guestPhone" required class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none" placeholder="例：0912345678">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">房客Email</label>
+                        <input type="email" id="guestEmail" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none" placeholder="guest@example.com">
+                    </div>
+                </div>
+
+                <!-- 推薦大使資訊 -->
+                <div class="bg-green-50 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-green-800 mb-4">👤 推薦大使資訊</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">推薦大使代碼</label>
+                            <input type="text" id="partnerCode" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none" placeholder="例：WANG001">
+                            <p class="text-xs text-stone-500 mt-1">留空表示非大使推薦</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">訂房來源 *</label>
+                            <select id="bookingSource" required class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                                <option value="">請選擇訂房來源</option>
+                                <option value="PHONE_BOOKING">電話訂房</option>
+                                <option value="REFERRAL_LINK">推薦連結</option>
+                                <option value="MANUAL_ENTRY">現場登記</option>
+                                <option value="SOCIAL_MEDIA">社群媒體</option>
+                                <option value="WORD_OF_MOUTH">口耳相傳</option>
+                                <option value="OTHER">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 住宿資訊 -->
+                <div class="bg-blue-50 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-blue-800 mb-4">🏠 住宿資訊</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">入住日期 *</label>
+                            <input type="date" id="checkinDate" required class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">退房日期 *</label>
+                            <input type="date" id="checkoutDate" required class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">實際房價 *</label>
+                            <input type="number" id="roomPrice" required min="0" step="1" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none" placeholder="5000">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 狀態設定 -->
+                <div class="bg-amber-50 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-amber-800 mb-4">📊 初始狀態</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">入住狀態</label>
+                            <select id="stayStatus" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                                <option value="PENDING">待入住</option>
+                                <option value="CHECKED_IN">已入住</option>
+                                <option value="COMPLETED">已完成</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">付款狀態</label>
+                            <select id="paymentStatus" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                                <option value="PENDING">待付款</option>
+                                <option value="PARTIAL">部分付款</option>
+                                <option value="PAID">已付清</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 備註 -->
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">備註</label>
+                    <textarea id="notes" rows="3" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none" placeholder="例：客人特別要求、推薦來源詳情等..."></textarea>
+                </div>
+
+                <!-- 提交按鈕 -->
+                <div class="flex space-x-4">
+                    <button type="submit" class="flex-1 bg-green-800 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-900 transition duration-300">
+                        💾 登記訂房
+                    </button>
+                    <button type="button" onclick="resetForm()" class="px-6 py-3 border-2 border-stone-200 text-stone-600 rounded-lg font-semibold hover:bg-stone-50 transition duration-300">
+                        🔄 清空表單
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 最近登記記錄 -->
+        <div class="brand-card p-8">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">📋 最近登記記錄</h2>
+            <div id="recentBookings" class="space-y-4">
+                <p class="text-stone-500 text-center py-8">尚無登記記錄</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隱藏的 iframe 用於接收表單回應 -->
+    <iframe id="hiddenFrame" name="hiddenFrame" style="display:none;"></iframe>
+
+    <script>
+        // 設定值
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+        
+        // 表單提交處理
+        document.getElementById('bookingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await submitBooking();
+        });
+
+        async function submitBooking() {
+            // 收集表單資料
+            const formData = {
+                action: 'create_booking',
+                partner_code: document.getElementById('partnerCode').value.trim() || null,
+                guest_name: document.getElementById('guestName').value.trim(),
+                guest_phone: document.getElementById('guestPhone').value.trim(),
+                guest_email: document.getElementById('guestEmail').value.trim(),
+                checkin_date: document.getElementById('checkinDate').value,
+                checkout_date: document.getElementById('checkoutDate').value,
+                room_price: parseInt(document.getElementById('roomPrice').value) || 0,
+                booking_source: document.getElementById('bookingSource').value,
+                stay_status: document.getElementById('stayStatus').value,
+                payment_status: document.getElementById('paymentStatus').value,
+                notes: document.getElementById('notes').value.trim()
+            };
+
+            // 驗證必填欄位
+            if (!formData.guest_name || !formData.guest_phone || !formData.checkin_date || !formData.checkout_date || !formData.room_price || !formData.booking_source) {
+                alert('請填寫所有必填欄位！');
+                return;
+            }
+
+            // 驗證日期邏輯
+            if (new Date(formData.checkin_date) >= new Date(formData.checkout_date)) {
+                alert('退房日期必須晚於入住日期！');
+                return;
+            }
+
+            const submitButton = document.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            submitButton.textContent = '登記中...';
+            submitButton.disabled = true;
+
+            try {
+                // 使用表單提交方式（避免CORS問題）
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+
+                // 添加所有數據作為隱藏輸入
+                for (const [key, value] of Object.entries(formData)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value || '';
+                    form.appendChild(input);
+                }
+
+                // 監聽 iframe 載入完成事件
+                const iframe = document.getElementById('hiddenFrame');
+                iframe.onload = function() {
+                    setTimeout(() => {
+                        showToast('✅ 訂房記錄已成功登記！');
+                        
+                        // 添加到最近記錄
+                        addToRecentBookings(formData);
+                        
+                        // 重置表單
+                        resetForm();
+                        
+                        submitButton.textContent = originalText;
+                        submitButton.disabled = false;
+                    }, 1000);
+                };
+
+                // 提交表單
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+
+            } catch (error) {
+                console.error('登記失敗:', error);
+                alert('❌ 登記失敗：' + error.message);
+                
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('bookingForm').reset();
+            // 設定預設日期為今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('checkinDate').value = today;
+            
+            // 設定預設退房日期為明天
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('checkoutDate').value = tomorrow.toISOString().split('T')[0];
+        }
+
+        function addToRecentBookings(booking) {
+            const container = document.getElementById('recentBookings');
+            
+            // 如果是第一筆記錄，清空提示文字
+            if (container.children.length === 1 && container.children[0].textContent.includes('尚無登記記錄')) {
+                container.innerHTML = '';
+            }
+
+            const bookingElement = document.createElement('div');
+            bookingElement.className = 'bg-gray-50 p-4 rounded-lg border-l-4 border-green-500';
+            bookingElement.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-semibold text-stone-800">${booking.guest_name}</h3>
+                        <div class="text-sm text-stone-600 mt-1">
+                            <p>📞 ${booking.guest_phone}</p>
+                            <p>📅 ${booking.checkin_date} ~ ${booking.checkout_date}</p>
+                            <p>💰 $${booking.room_price}</p>
+                            ${booking.partner_code ? `<p>👤 推薦大使：${booking.partner_code}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="text-right text-sm">
+                        <span class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                            ${getStatusText(booking.stay_status)}
+                        </span>
+                        <p class="text-stone-500 mt-1">${new Date().toLocaleString('zh-TW')}</p>
+                    </div>
+                </div>
+            `;
+            
+            // 插入到最前面
+            container.insertBefore(bookingElement, container.firstChild);
+            
+            // 限制最多顯示10筆記錄
+            while (container.children.length > 10) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'PENDING': '待入住',
+                'CHECKED_IN': '已入住', 
+                'COMPLETED': '已完成'
+            };
+            return statusMap[status] || status;
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // 初始化日期欄位
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('checkinDate').value = today;
+            
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('checkoutDate').value = tomorrow.toISOString().split('T')[0];
+        });
+
+        // 自動計算住宿天數提示
+        document.getElementById('checkinDate').addEventListener('change', updateStayDuration);
+        document.getElementById('checkoutDate').addEventListener('change', updateStayDuration);
+
+        function updateStayDuration() {
+            const checkin = new Date(document.getElementById('checkinDate').value);
+            const checkout = new Date(document.getElementById('checkoutDate').value);
+            
+            if (checkin && checkout && checkout > checkin) {
+                const days = Math.ceil((checkout - checkin) / (1000 * 60 * 60 * 24));
+                console.log(`住宿天數：${days} 晚`);
+            }
+        }
+    </script>
+</body>
+</html>

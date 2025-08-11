@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>靜謐森林｜知音夥伴計畫邀請函</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        /* 自定義字體 */
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            /* scroll-behavior: smooth; 這行由JS控制，以避免衝突 */
+            background-color: #f8fafc; /* 使用 slate-50 作為基礎背景色 */
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Noto Serif TC', serif;
+            color: #1f2937; /* 使用 gray-800 作為標題顏色 */
+        }
+        /* Accordion 的箭頭旋轉效果 */
+        .accordion-button[aria-expanded="true"] .accordion-arrow {
+            transform: rotate(180deg);
+        }
+        .accordion-content {
+            transition: max-height 0.4s ease-out, padding 0.3s ease-out;
+            max-height: 0;
+            overflow: hidden;
+        }
+        
+        /* 確保 accordion 內容有足夠空間 */
+        .accordion-content ul {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="text-gray-700">
+
+    <!-- Section 1: Hero -->
+    <header id="hero" class="bg-f8fafc">
+        <div class="container mx-auto text-center px-6 pt-20 pb-16 md:pt-28 md:pb-24">
+            <p class="font-serif text-xl text-emerald-700 mb-6">來自・靜謐森林</p>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 tracking-wider">一封，只給特別的您的邀請</h1>
+            <p class="text-lg md:text-xl mb-8 text-gray-600 max-w-2xl mx-auto">邀請您成為我們的「知音夥伴」，分享您曾感受的寧靜，讓故事延續。</p>
+            <a href="#signup" class="bg-emerald-600 text-white font-bold py-3 px-10 rounded-full hover:bg-emerald-700 transition duration-300 shadow-sm">
+                立即加入知音計畫
+            </a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 pb-20 md:pb-28 space-y-20 md:space-y-28">
+        
+        <!-- Section 2: How It Works -->
+        <section id="how-it-works" class="text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-16">分享美好，只需三步</h2>
+            <div class="grid md:grid-cols-3 gap-x-8 gap-y-12 max-w-5xl mx-auto">
+                <div class="flex flex-col items-center">
+                    <div class="bg-emerald-100 p-5 rounded-full mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">1. 取得專屬連結</h3>
+                    <p class="text-gray-600">我們會為您準備好專屬的分享工具，讓您輕鬆推薦給朋友。</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="bg-emerald-100 p-5 rounded-full mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9"></path><path d="M9 22V12h6v10"></path><path d="M2 10.6L12 2l10 8.6"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">2. 朋友完成旅程</h3>
+                    <p class="text-gray-600">當您的朋友透過連結預訂，並完成美好的森林住宿體驗。</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="bg-emerald-100 p-5 rounded-full mb-6">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">3. 您將收穫回饋</h3>
+                    <p class="text-gray-600">我們將為您獻上感謝禮，作為這份美好連結的見證。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: The Offer -->
+        <section id="offer" class="bg-white p-8 md:p-16 rounded-2xl border border-gray-200/80 shadow-sm">
+            <div class="text-center">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">您的真誠分享，值得溫暖回饋</h2>
+                <p class="text-gray-600 mb-12 max-w-2xl mx-auto">每成功推薦一組朋友，您可以自由選擇：</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
+                <div class="bg-slate-50 p-8 rounded-xl border border-gray-200/80 text-left">
+                    <h4 class="text-2xl font-bold text-emerald-800 mb-2">$1,000 住宿金</h4>
+                    <p class="text-gray-600">為您下一次的森林之旅儲值，再次感受山林的擁抱。</p>
+                </div>
+                <div class="bg-slate-50 p-8 rounded-xl border border-gray-200/80 text-left">
+                    <h4 class="text-2xl font-bold text-emerald-800 mb-2">$500 現金</h4>
+                    <p class="text-gray-600">一份最實質的感謝心意，直接傳遞到您手中。</p>
+                </div>
+            </div>
+             <div class="relative bg-emerald-50 border-l-4 border-emerald-500 text-emerald-900 p-6 rounded-r-lg max-w-2xl mx-auto text-left">
+                <h4 class="font-bold text-lg">✨ 啟動您的溫暖營火</h4>
+                <p>為慶祝您的加入，<strong class="font-semibold">首次成功分享，我們將額外加碼贈送 $1,500 住宿金！</strong></p>
+            </div>
+        </section>
+
+        <!-- Section 4: The Journey -->
+        <section id="journey" class="text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">這不只是一次回饋</h2>
+            <p class="text-gray-600 mb-12 max-w-2xl mx-auto">而是一段共同成長的旅程。您的每一次分享，都在累積榮譽，為您解鎖更深度的連結與專屬禮遇。</p>
+            <div class="max-w-3xl mx-auto space-y-3 text-left">
+                <!-- Accordion Item 1 -->
+                <div class="bg-white border border-gray-200/80 rounded-lg shadow-sm">
+                    <button class="accordion-button w-full flex justify-between items-center p-5 font-semibold text-lg" aria-expanded="true">
+                        <span>LV. 1：【知音大使】(The Insider)</span>
+                        <svg class="accordion-arrow w-5 h-5 transition-transform duration-300 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                    </button>
+                    <div class="accordion-content px-5 pb-5">
+                        <p class="text-gray-600 mb-4 border-t border-gray-200 pt-4">所有夥伴的起點，感受分享的單純喜悅。</p>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li><strong>核心獎勵：</strong> $1,000 住宿金 或 $500 現金 (二選一)</li>
+                            <li><strong>晉升目標：</strong> 年度成功推薦 4 組</li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- Accordion Item 2 -->
+                <div class="bg-white border border-gray-200/80 rounded-lg shadow-sm">
+                    <button class="accordion-button w-full flex justify-between items-center p-5 font-semibold text-lg" aria-expanded="false">
+                        <span>LV. 2：【森林嚮導】(The Guide)</span>
+                        <svg class="accordion-arrow w-5 h-5 transition-transform duration-300 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                    </button>
+                    <div class="accordion-content px-5">
+                        <p class="text-gray-600 mb-4 border-t border-gray-200 pt-4">品牌的深度共鳴者，您將獲得：</p>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li><strong>回饋升級：</strong> 獎勵提升至 $1,200 住宿金 或 $600 現金。</li>
+                            <li><strong>晉升賀禮：</strong> 靜謐森林特色紀念信物。</li>
+                            <li><strong>品牌共創：</strong> 成為官方「森友故事」專欄主角的機會。</li>
+                            <li><strong>晉升目標：</strong> 年度成功推薦 10 組</li>
+                            <li><strong>資格延續：</strong> 次一年度成功推薦 3 組即可保留資格。</li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- Accordion Item 3 -->
+                <div class="bg-white border border-gray-200/80 rounded-lg shadow-sm">
+                    <button class="accordion-button w-full flex justify-between items-center p-5 font-semibold text-lg" aria-expanded="false">
+                        <span>LV. 3：【秘境守護者】(The Guardian)</span>
+                        <svg class="accordion-arrow w-5 h-5 transition-transform duration-300 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                    </button>
+                    <div class="accordion-content px-5">
+                        <p class="text-gray-600 mb-4 border-t border-gray-200 pt-4">最高榮譽的您，是品牌精神的共同守護者，將享有：</p>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li><strong>回饋再升級：</strong> 獎勵提升至 $1,500 住宿金 或 $800 現金。</li>
+                            <li><strong>晉升賀禮：</strong> 「守護者之息」客製香水。</li>
+                            <li><strong>年度假期：</strong> 每年獲贈一晚平日住宿券。</li>
+                            <li><strong>專屬禮遇：</strong> 延遲退房、新品優先體驗權等。</li>
+                            <li><strong>資格延續：</strong> 次一年度成功推薦 6 組即可保留資格。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Signup Form -->
+        <section id="signup" class="bg-white p-8 md:p-16 rounded-2xl border border-gray-200/80 shadow-sm">
+            <div class="text-center">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">準備好，與我們同行了嗎？</h2>
+                <p class="text-gray-600 mb-12 max-w-2xl mx-auto">請留下您的署名，我們將把專屬的「贈禮工具包」寄送給您，正式開啟您的知音之旅。</p>
+            </div>
+            <form id="partner-form" class="max-w-xl mx-auto space-y-6">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-800 mb-2">您的署名*</label>
+                    <input type="text" id="name" name="name" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition">
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-800 mb-2">E-Mail*</label>
+                    <input type="email" id="email" name="email" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition">
+                </div>
+                <div>
+                    <label for="line-name" class="block text-sm font-medium text-gray-800 mb-2">LINE 顯示名稱</label>
+                    <input type="text" id="line-name" name="line-name" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition">
+                </div>
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-800 mb-2">聯絡電話</label>
+                    <input type="tel" id="phone" name="phone" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition">
+                </div>
+                <div>
+                    <label for="message" class="block text-sm font-medium text-gray-800 mb-2">留下任何想告訴我們的話</label>
+                    <textarea id="message" name="message" rows="3" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition"></textarea>
+                </div>
+                <div class="flex items-start pt-2">
+                    <input id="terms" name="terms" type="checkbox" required class="h-4 w-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 mt-1">
+                    <div class="ml-3 text-sm">
+                        <label for="terms" class="text-gray-700">我已詳細閱讀、理解並全然同意 <button type="button" id="open-terms-modal" class="font-semibold text-emerald-600 hover:text-emerald-800 underline">《靜謐森林知音夥伴合作說明與條款》</button> 的所有內容。</label>
+                    </div>
+                </div>
+                 <div class="bg-slate-100 p-3 rounded-lg text-xs text-gray-500">
+                    <p><strong>為什麼需要條款？</strong> 這是為了建立一個公平、透明的夥伴關係，保障我方與每一位知音夥伴的權益。我們堅持以「真實口碑」作為合作的唯一形式。</p>
+                </div>
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3.5 px-6 rounded-lg hover:bg-emerald-700 transition duration-300 shadow-sm">
+                        立即加入知音計畫
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-white">
+        <div class="container mx-auto px-6 py-10 text-center text-slate-400">
+            <p class="font-serif text-lg text-white mb-4">靜謐森林</p>
+            <div class="flex justify-center space-x-6 mb-4">
+                <a href="https://rink.cc/kv8te" target="_blank" class="hover:text-white transition">官方網站</a>
+                <a href="https://line.me/R/ti/p/@478hisen" target="_blank" class="hover:text-white transition">官方LINE@</a>
+                <a href="https://www.instagram.com/best_forest_house/" target="_blank" class="hover:text-white transition">Instagram</a>
+            </div>
+            <p class="text-sm">&copy; 2025 LX-ForestHouse. All Rights Reserved.</p>
+            <p class="text-sm mt-2"><button type="button" id="open-terms-modal-footer" class="underline hover:text-white transition">《知音夥伴合作說明與條款》</button></p>
+        </div>
+    </footer>
+
+    <!-- Terms Modal -->
+    <div id="terms-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-5 border-b border-gray-200">
+                <h3 class="text-xl font-bold">靜謐森林・知音大使合作條款</h3>
+                <button id="close-terms-modal" class="text-gray-400 hover:text-gray-700 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4 text-sm text-gray-600">
+                <p class="font-semibold text-gray-800">感謝您申請成為「靜謐森林民宿」（以下簡稱「我方」）的知音大使（以下簡稱「您」或「合作夥伴」）。本條款旨在建立一個公平、透明且互利的合作關係。在您開始分享前，請詳細閱讀並同意以下所有條款。</p>
+                
+                <h4 class="font-bold text-base text-gray-800 pt-2">第一條：合作申請與資格</h4>
+                <p>1.1 我方保留對所有合作夥伴申請的最終審核權與拒絕權。</p>
+                <p>1.2 申請者必須提供真實、準確的個人資料，以利後續聯繫與回饋發放。</p>
+                <p>1.3 合作夥伴不得將其帳戶轉讓或授權給第三方使用。</p>
+
+                <h4 class="font-bold text-base text-gray-800 pt-2">第二條：推廣行為規範 (核心條款)</h4>
+                <p>為維護我方品牌價值與所有合作夥伴的公平性，我們堅持以「真實的內容分享」與「真誠的口碑推薦」作為唯一的合作推廣形式。</p>
+                <p>2.1 允許的推廣方式 (我們鼓勵的)：內容創作、個人社群媒體、私領域分享。</p>
+                <p>2.2 禁止的推廣行為 (一經發現將立即終止合作)：嚴禁使用任何形式的付費廣告、嚴禁購買品牌關鍵字、嚴禁扭曲性行銷、禁止代表官方、禁止提交至折扣碼網站、禁止垃圾訊息。</p>
+
+                <h4 class="font-bold text-base text-gray-800 pt-2">第三條：推薦成功之定義與追蹤</h4>
+                <p>3.1 一筆「成功推薦」的定義為：新客人透過您的專屬「優惠券領取連結」成功領取並使用了優惠券，且實際完成全額付款與住宿。</p>
+                <p>3.2 若客人後續取消訂單、未入住(No-Show)或產生退款，該筆推薦將被視為無效，不列入回饋計算。</p>
+                <p>3.3 合作夥伴不得進行自我推薦（使用自己的連結或優惠券為自己訂房）以賺取回饋。</p>
+
+                <h4 class="font-bold text-base text-gray-800 pt-2">第四條：感謝回饋與支付條款</h4>
+                <p>4.1 回饋方式選擇與規則：合作夥伴可於加入時選擇「住宿金」或「現金回饋」。「住宿金」僅限本人使用，不得轉讓或兌現。「現金回饋」將依約定支付。</p>
+                <p>4.2 回饋計算與資格限制：回饋資格以透過我方官方管道直接預訂之「標準房價」為準，未使用任何其他形式之折扣或優惠券。若被推薦之客人使用了其他優惠方案，則該筆推薦之感謝回饋，將僅能以「住宿金」形式發放。</p>
+                <p>4.3 結算與支付：感謝回饋採「季度結算」制。我方將於每年4月、7月、10月、次年1月的15號前，結算前一季已確認為「成功推薦」的回饋。</p>
+                <p>4.4 支付門檻：若當季應付之「現金回饋」總額未達新台幣 1,000 元，將自動累積至下一季發放。「住宿金」則無此限制。</p>
+
+                <h4 class="font-bold text-base text-gray-800 pt-2">第五條：智慧財產權</h4>
+                <p>5.1 我方素材：我方提供之素材僅可用於推廣本民宿，不得任意修改或用於其他商業用途。</p>
+                <p>5.2 您的創作：您所創作的推廣內容著作權歸您所有。但您同意授予我方「非專屬、可轉讓、免版稅」的權利，得在註明出處的前提下，轉載、分享或引用您的內容於我方官方平台。</p>
+
+                <h4 class="font-bold text-base text-gray-800 pt-2">第六條：合作期限與終止</h4>
+                <p>6.1 本合作協議自您同意本條款後生效，無特定截止期限。</p>
+                <p>6.2 任何一方均有權在提前 30 天書面通知對方後，無條件終止本合作關係。</p>
+                <p>6.3 若合作夥伴違反第二條「推廣行為規範」，我方有權立即終止合作關係，並取消所有未發放之回饋。</p>
+                <p>6.4 年度資格延續方案：【森林嚮導】僅需在次一年度成功推薦 3 組新客人，即可延續資格。【秘境守護者】僅需在次一年度成功推薦 6 組新客人，即可延續資格。若未達成，資格將順延調整為下一級。</p>
+
+                <h4 class="font-bold text-base text-gray-800 pt-2">第七條：其他</h4>
+                <p>7.1 關係聲明：雙方茲此確認，合作夥伴為獨立合約人，並非我方之員工、代理人或合資夥伴。</p>
+                <p>7.2 條款修改：我方保留隨時修改本合作條款之權利。所有修改將以Email或官方公告形式通知您。</p>
+                <p>7.3 準據法與管轄法院：本合約以中華民國法律為準據法。若有任何爭議，雙方同意以台灣南投地方法院為第一審管轄法院。</p>
+                <p>7.4 條款補充與最終解釋權：若本合作條款有未盡事宜，我方保留本條款最終解釋與調整之權利。</p>
+            </div>
+            <div class="p-4 border-t bg-slate-50 text-right">
+                <button id="close-terms-modal-footer" class="bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-emerald-700 transition duration-300">我明白了</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- Accordion Logic ---
+            const accordionButtons = document.querySelectorAll('.accordion-button');
+            
+            const closeAllAccordions = (exceptThisOne) => {
+                accordionButtons.forEach(button => {
+                    if (button !== exceptThisOne) {
+                        button.setAttribute('aria-expanded', 'false');
+                        const content = button.nextElementSibling;
+                        content.style.maxHeight = null;
+                        content.style.paddingTop = '0';
+                        content.style.paddingBottom = '0';
+                    }
+                });
+            };
+
+            const firstAccordionButton = accordionButtons[0];
+            const firstAccordionContent = firstAccordionButton.nextElementSibling;
+            // 給予更充裕的高度計算，使用延遲確保正確計算
+            setTimeout(() => {
+                firstAccordionContent.style.maxHeight = (firstAccordionContent.scrollHeight + 80) + "px";
+            }, 10);
+            firstAccordionContent.style.paddingBottom = '1.25rem';
+
+            accordionButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const isExpanded = button.getAttribute('aria-expanded') === 'true';
+                    
+                    closeAllAccordions(button);
+
+                    button.setAttribute('aria-expanded', !isExpanded);
+                    const content = button.nextElementSibling;
+                    if (!isExpanded) {
+                        // 給予更充裕的高度，避免內容被裁切
+                        // 使用 setTimeout 確保正確計算高度
+                        setTimeout(() => {
+                            content.style.maxHeight = (content.scrollHeight + 80) + "px";
+                        }, 10);
+                        content.style.paddingTop = '1rem';
+                        content.style.paddingBottom = '1.25rem';
+                        
+                        // NEW: More reliable scroll into view logic
+                        setTimeout(() => {
+                            const elementRect = button.getBoundingClientRect();
+                            const absoluteElementTop = elementRect.top + window.pageYOffset;
+                            const topOffset = 80; // 80px space from the top of the viewport
+                            const scrollToPosition = absoluteElementTop - topOffset;
+
+                            window.scrollTo({
+                                top: scrollToPosition,
+                                behavior: 'smooth'
+                            });
+                        }, 200); // 增加延遲以確保動畫完成
+                    } else {
+                        content.style.maxHeight = null;
+                        content.style.paddingTop = '0';
+                        content.style.paddingBottom = '0';
+                    }
+                });
+            });
+
+            // --- Modal Logic ---
+            const modal = document.getElementById('terms-modal');
+            const openModalButtons = [
+                document.getElementById('open-terms-modal'),
+                document.getElementById('open-terms-modal-footer')
+            ];
+            const closeModalButtons = [
+                document.getElementById('close-terms-modal'),
+                document.getElementById('close-terms-modal-footer')
+            ];
+
+            const openModal = () => modal.classList.remove('hidden');
+            const closeModal = () => modal.classList.add('hidden');
+
+            openModalButtons.forEach(btn => btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal();
+            }));
+            closeModalButtons.forEach(btn => btn.addEventListener('click', closeModal));
+
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            document.addEventListener('keydown', (event) => {
+                if (event.key === "Escape" && !modal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+
+            // --- Form Submission Logic ---
+            const form = document.getElementById('partner-form');
+            
+            // 設定您的 Apps Script URL
+            const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+            
+            form.addEventListener('submit', function(event) {
+                event.preventDefault(); 
+                
+                const name = document.getElementById('name').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const lineName = document.getElementById('line-name').value.trim();
+                const phone = document.getElementById('phone').value.trim();
+                const message = document.getElementById('message').value.trim();
+                const terms = document.getElementById('terms').checked;
+
+                if (!name || !email || !terms) {
+                    alert('請填寫所有必填欄位並同意條款。');
+                    return;
+                }
+
+                // 顯示載入狀態
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = '提交中...';
+                submitBtn.disabled = true;
+
+                // 使用隱藏表單提交到 Apps Script（避免 CORS 問題）
+                const hiddenForm = document.createElement('form');
+                hiddenForm.method = 'POST';
+                hiddenForm.action = APPS_SCRIPT_URL;
+                hiddenForm.target = 'submission-frame';
+                hiddenForm.style.display = 'none';
+
+                // 添加表單數據
+                const formData = {
+                    action: 'submit_application',
+                    name: name,
+                    email: email,
+                    line_name: lineName,
+                    phone: phone,
+                    message: message
+                };
+
+                Object.keys(formData).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = formData[key];
+                    hiddenForm.appendChild(input);
+                });
+
+                // 創建隱藏的 iframe 來接收回應
+                let iframe = document.getElementById('submission-frame');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'submission-frame';
+                    iframe.name = 'submission-frame';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+
+                // 監聽 iframe 載入完成
+                iframe.onload = function() {
+                    setTimeout(() => {
+                        // 顯示成功訊息
+                        const formContainer = form.parentElement;
+                        formContainer.innerHTML = `
+                            <div class="text-center p-10 bg-emerald-50 rounded-lg">
+                                <h3 class="text-2xl font-bold text-emerald-800 mb-4">感謝您的加入！</h3>
+                                <p class="text-gray-700">我們已經收到您的申請，盟約正式締結。</p>
+                                <p class="text-gray-700 mt-2">專屬的「贈禮工具包」將在 1-2 個工作天內寄至您的信箱，敬請期待！</p>
+                                <div class="mt-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
+                                    <p><strong>📋 申請狀態：</strong>已提交，等待審核</p>
+                                    <p><strong>📧 聯絡方式：</strong>我們將透過您提供的 Email 通知審核結果</p>
+                                </div>
+                            </div>
+                        `;
+                    }, 1000);
+                };
+
+                // 錯誤處理
+                iframe.onerror = function() {
+                    alert('提交申請時發生錯誤，請稍後再試。');
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                };
+
+                // 提交表單
+                document.body.appendChild(hiddenForm);
+                hiddenForm.submit();
+                document.body.removeChild(hiddenForm);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>入住完成確認系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF8; color: #5C544B; }
+        h1, h2, h3, .font-serif { font-family: 'Noto Serif TC', serif; }
+        .brand-accent { color: #2E4B36; }
+        .brand-card { background-color: #FFFFFF; border: 1px solid #EAE6E1; border-radius: 1.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body class="antialiased min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-6">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold brand-accent mb-4">入住完成確認系統</h1>
+            <p class="text-lg text-stone-600">手動確認房客入住完成，自動計算佣金與更新大使等級</p>
+        </header>
+
+        <!-- 統計概覽 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="brand-card p-6 text-center">
+                <div class="text-3xl font-bold text-blue-600" id="totalPendingBookings">-</div>
+                <div class="text-sm text-stone-600 mt-1">待確認入住</div>
+            </div>
+            <div class="brand-card p-6 text-center">
+                <div class="text-3xl font-bold text-green-600" id="totalCompletedToday">-</div>
+                <div class="text-sm text-stone-600 mt-1">今日已確認</div>
+            </div>
+            <div class="brand-card p-6 text-center">
+                <div class="text-3xl font-bold text-purple-600" id="totalCommissionToday">-</div>
+                <div class="text-sm text-stone-600 mt-1">今日產生佣金</div>
+            </div>
+            <div class="brand-card p-6 text-center">
+                <div class="text-3xl font-bold text-amber-600" id="totalLevelUps">-</div>
+                <div class="text-sm text-stone-600 mt-1">等級晉升數</div>
+            </div>
+        </div>
+
+        <!-- 篩選器 -->
+        <div class="brand-card p-6 mb-8">
+            <div class="flex flex-wrap gap-4 items-center">
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">狀態篩選</label>
+                    <select id="statusFilter" class="p-2 border-2 border-stone-200 rounded-lg focus:border-green-800">
+                        <option value="">全部狀態</option>
+                        <option value="PENDING">待入住</option>
+                        <option value="CHECKED_IN">已入住</option>
+                        <option value="COMPLETED" selected>可確認完成</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">大使篩選</label>
+                    <input type="text" id="partnerFilter" placeholder="輸入大使代碼" class="p-2 border-2 border-stone-200 rounded-lg focus:border-green-800">
+                </div>
+                <div class="self-end">
+                    <button onclick="loadBookings()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        🔄 重新載入
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 待確認入住列表 -->
+        <div class="brand-card p-8">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">📋 待確認入住記錄</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-3 px-4">房客資訊</th>
+                            <th class="text-left py-3 px-4">推薦大使</th>
+                            <th class="text-left py-3 px-4">入住期間</th>
+                            <th class="text-center py-3 px-4">房價</th>
+                            <th class="text-center py-3 px-4">現況狀態</th>
+                            <th class="text-center py-3 px-4">預計佣金</th>
+                            <th class="text-center py-3 px-4">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingsTable">
+                        <tr>
+                            <td colspan="7" class="text-center py-8 text-stone-500">
+                                載入中...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 佣金計算規則說明 -->
+        <div class="brand-card p-6 mt-8">
+            <h3 class="font-serif text-xl font-semibold brand-accent mb-4">💰 佣金計算規則</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-green-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-green-700 mb-2">LV1 知音大使</h4>
+                    <p class="text-sm text-stone-600">1000住宿金 或 500現金</p>
+                    <p class="text-xs text-green-600 mt-1">起始等級</p>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-blue-700 mb-2">LV2 森林嚮導</h4>
+                    <p class="text-sm text-stone-600">1200住宿金 或 600現金</p>
+                    <p class="text-xs text-blue-600 mt-1">需年度4組成功推薦</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-purple-700 mb-2">LV3 秘境守護者</h4>
+                    <p class="text-sm text-stone-600">1500住宿金 或 800現金</p>
+                    <p class="text-xs text-purple-600 mt-1">需年度10組成功推薦</p>
+                </div>
+            </div>
+            <div class="mt-4 p-4 bg-yellow-50 rounded-lg">
+                <p class="text-yellow-800 font-semibold">🎁 首次推薦獎勵</p>
+                <p class="text-sm text-yellow-700">每位大使的第一次成功推薦額外獲得 1500 住宿金</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 確認彈窗 -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl p-8 max-w-lg w-full">
+                <h3 class="text-2xl font-bold text-green-800 mb-4">✅ 確認入住完成</h3>
+                <div id="confirmDetails" class="space-y-3 text-sm text-stone-600 mb-6">
+                    <!-- 確認詳情將在這裡顯示 -->
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="executeConfirmation()" class="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700">
+                        確認完成入住
+                    </button>
+                    <button onclick="closeConfirmModal()" class="px-6 py-3 border-2 border-stone-200 text-stone-600 rounded-lg font-semibold hover:bg-stone-50">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隱藏的 iframe 用於接收表單回應 -->
+    <iframe id="hiddenFrame" name="hiddenFrame" style="display:none;"></iframe>
+
+    <script>
+        // 設定值
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+        
+        let allBookings = [];
+        let currentBookingToConfirm = null;
+        
+        // 佣金等級對照表
+        const COMMISSION_RATES = {
+            'LV1_INSIDER': { accommodation: 1000, cash: 500 },
+            'LV2_GUIDE': { accommodation: 1200, cash: 600 },
+            'LV3_GUARDIAN': { accommodation: 1500, cash: 800 }
+        };
+        
+        const FIRST_REFERRAL_BONUS = 1500; // 首次推薦獎勵
+
+        // 載入訂房記錄
+        async function loadBookings() {
+            try {
+                // 目前使用模擬數據，實際使用時會從 Google Sheets 載入
+                loadMockBookings();
+                displayBookings();
+                updateStats();
+                
+            } catch (error) {
+                console.error('載入訂房記錄失敗:', error);
+                showError('載入失敗');
+            }
+        }
+
+        // 載入模擬數據
+        function loadMockBookings() {
+            allBookings = [
+                {
+                    id: 1,
+                    partner_code: 'WANG001',
+                    partner_name: '王小明',
+                    partner_level: 'LV1_INSIDER',
+                    partner_progress: 0,
+                    partner_first_bonus: false,
+                    partner_preference: 'CASH',
+                    guest_name: '張三',
+                    guest_phone: '0912345678',
+                    checkin_date: '2024-02-10',
+                    checkout_date: '2024-02-12',
+                    room_price: 5000,
+                    stay_status: 'CHECKED_IN',
+                    payment_status: 'PAID',
+                    commission_status: 'NOT_ELIGIBLE',
+                    booking_source: 'REFERRAL_LINK'
+                },
+                {
+                    id: 2,
+                    partner_code: 'CHEN002',
+                    partner_name: '陳小美',
+                    partner_level: 'LV1_INSIDER',
+                    partner_progress: 1,
+                    partner_first_bonus: true,
+                    partner_preference: 'ACCOMMODATION',
+                    guest_name: '李四',
+                    guest_phone: '0987654321',
+                    checkin_date: '2024-02-15',
+                    checkout_date: '2024-02-17',
+                    room_price: 4000,
+                    stay_status: 'CHECKED_IN',
+                    payment_status: 'PAID',
+                    commission_status: 'NOT_ELIGIBLE',
+                    booking_source: 'PHONE_BOOKING'
+                },
+                {
+                    id: 3,
+                    partner_code: null,
+                    partner_name: null,
+                    partner_level: null,
+                    guest_name: '王五',
+                    guest_phone: '0900123456',
+                    checkin_date: '2024-02-20',
+                    checkout_date: '2024-02-22',
+                    room_price: 3500,
+                    stay_status: 'PENDING',
+                    payment_status: 'PAID',
+                    commission_status: 'NOT_ELIGIBLE',
+                    booking_source: 'MANUAL_ENTRY'
+                }
+            ];
+        }
+
+        // 顯示訂房記錄
+        function displayBookings() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const partnerFilter = document.getElementById('partnerFilter').value.toLowerCase();
+            
+            let filteredBookings = allBookings.filter(booking => {
+                const statusMatch = !statusFilter || booking.stay_status === statusFilter;
+                const partnerMatch = !partnerFilter || 
+                    (booking.partner_code && booking.partner_code.toLowerCase().includes(partnerFilter)) ||
+                    (booking.partner_name && booking.partner_name.toLowerCase().includes(partnerFilter));
+                
+                return statusMatch && partnerMatch;
+            });
+
+            const table = document.getElementById('bookingsTable');
+            
+            if (filteredBookings.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-8 text-stone-500">
+                            沒有符合條件的記錄
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            table.innerHTML = filteredBookings.map(booking => {
+                const canConfirm = booking.stay_status === 'CHECKED_IN' && booking.payment_status === 'PAID';
+                const isCompleted = booking.stay_status === 'COMPLETED';
+                const estimatedCommission = calculateEstimatedCommission(booking);
+                
+                return `
+                    <tr class="border-b hover:bg-stone-50">
+                        <td class="py-4 px-4">
+                            <div>
+                                <div class="font-semibold">${booking.guest_name}</div>
+                                <div class="text-sm text-stone-600">${booking.guest_phone}</div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4">
+                            ${booking.partner_code ? `
+                                <div>
+                                    <div class="font-medium text-green-700">${booking.partner_name}</div>
+                                    <div class="text-xs text-stone-500">${booking.partner_code}</div>
+                                    <div class="text-xs">
+                                        <span class="px-1 py-0.5 rounded text-xs ${getLevelClass(booking.partner_level)}">
+                                            ${getLevelText(booking.partner_level)}
+                                        </span>
+                                    </div>
+                                </div>
+                            ` : `
+                                <span class="text-stone-400">非推薦訂房</span>
+                            `}
+                        </td>
+                        <td class="py-4 px-4">
+                            <div class="text-sm">
+                                <div>${booking.checkin_date}</div>
+                                <div class="text-stone-500">~ ${booking.checkout_date}</div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4 text-center font-semibold">
+                            $${booking.room_price.toLocaleString()}
+                        </td>
+                        <td class="py-4 px-4 text-center">
+                            <span class="px-2 py-1 rounded text-xs ${getStatusClass(booking.stay_status)}">
+                                ${getStatusText(booking.stay_status)}
+                            </span>
+                            <div class="text-xs text-stone-500 mt-1">
+                                ${booking.payment_status === 'PAID' ? '已付款' : '未付款'}
+                            </div>
+                        </td>
+                        <td class="py-4 px-4 text-center">
+                            ${booking.partner_code ? `
+                                <div class="font-semibold text-green-600">
+                                    $${estimatedCommission.total}
+                                </div>
+                                <div class="text-xs text-stone-500">
+                                    ${estimatedCommission.breakdown}
+                                </div>
+                            ` : `
+                                <span class="text-stone-400">-</span>
+                            `}
+                        </td>
+                        <td class="py-4 px-4 text-center">
+                            ${canConfirm ? `
+                                <button onclick="showConfirmModal(${booking.id})" 
+                                    class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                                    ✅ 確認完成
+                                </button>
+                            ` : isCompleted ? `
+                                <span class="text-green-600 text-sm">已完成</span>
+                            ` : `
+                                <span class="text-stone-400 text-sm">不可確認</span>
+                            `}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 計算預估佣金
+        function calculateEstimatedCommission(booking) {
+            if (!booking.partner_code) {
+                return { total: 0, breakdown: '無推薦大使' };
+            }
+
+            const level = booking.partner_level || 'LV1_INSIDER';
+            const preference = booking.partner_preference || 'CASH';
+            const rates = COMMISSION_RATES[level];
+            
+            let baseCommission = rates[preference.toLowerCase()] || rates.cash;
+            let firstBonus = !booking.partner_first_bonus ? FIRST_REFERRAL_BONUS : 0;
+            let total = baseCommission + firstBonus;
+            
+            let breakdown = `基本: $${baseCommission}`;
+            if (firstBonus > 0) {
+                breakdown += ` + 首推: $${firstBonus}`;
+            }
+            
+            return { total, breakdown };
+        }
+
+        // 顯示確認彈窗
+        function showConfirmModal(bookingId) {
+            const booking = allBookings.find(b => b.id === bookingId);
+            if (!booking) return;
+            
+            currentBookingToConfirm = booking;
+            const commission = calculateEstimatedCommission(booking);
+            
+            const modal = document.getElementById('confirmModal');
+            const details = document.getElementById('confirmDetails');
+            
+            details.innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div><strong>房客姓名：</strong>${booking.guest_name}</div>
+                    <div><strong>房客電話：</strong>${booking.guest_phone}</div>
+                    <div><strong>入住期間：</strong>${booking.checkin_date} ~ ${booking.checkout_date}</div>
+                    <div><strong>房價：</strong>$${booking.room_price.toLocaleString()}</div>
+                    ${booking.partner_code ? `
+                        <div><strong>推薦大使：</strong>${booking.partner_name} (${booking.partner_code})</div>
+                        <div><strong>大使等級：</strong>${getLevelText(booking.partner_level)}</div>
+                        <div><strong>佣金偏好：</strong>${booking.partner_preference === 'CASH' ? '現金' : '住宿金'}</div>
+                        <div><strong>預計佣金：</strong>$${commission.total} (${commission.breakdown})</div>
+                    ` : ''}
+                </div>
+                <div class="mt-4 p-4 bg-amber-50 rounded-lg">
+                    <p class="text-amber-800 font-semibold">確認後將執行：</p>
+                    <ul class="text-sm text-amber-700 mt-2 list-disc list-inside">
+                        <li>將訂房狀態更新為「已完成」</li>
+                        ${booking.partner_code ? `
+                            <li>計算並記錄佣金 $${commission.total}</li>
+                            <li>更新大使推薦進度</li>
+                            <li>檢查是否符合等級晉升條件</li>
+                        ` : ''}
+                    </ul>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        // 關閉確認彈窗
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            currentBookingToConfirm = null;
+        }
+
+        // 執行確認
+        async function executeConfirmation() {
+            if (!currentBookingToConfirm) return;
+            
+            const booking = currentBookingToConfirm;
+            const button = document.querySelector('#confirmModal button[onclick="executeConfirmation()"]');
+            const originalText = button.textContent;
+            
+            button.textContent = '處理中...';
+            button.disabled = true;
+            
+            try {
+                const commission = calculateEstimatedCommission(booking);
+                
+                // 準備提交到 Apps Script 的數據
+                const confirmData = {
+                    action: 'confirm_checkin_completion',
+                    booking_id: booking.id,
+                    partner_code: booking.partner_code,
+                    commission_amount: commission.total,
+                    commission_type: booking.partner_preference,
+                    is_first_referral_bonus: !booking.partner_first_bonus,
+                    first_referral_bonus_amount: !booking.partner_first_bonus ? FIRST_REFERRAL_BONUS : 0
+                };
+
+                // 使用表單提交方式（避免CORS問題）
+                await submitFormData(confirmData);
+                
+                // 更新本地數據
+                booking.stay_status = 'COMPLETED';
+                booking.commission_status = 'CALCULATED';
+                
+                // 更新大使進度（如果有推薦大使）
+                if (booking.partner_code) {
+                    booking.partner_progress += 1;
+                    booking.partner_first_bonus = true;
+                    
+                    // 檢查等級晉升
+                    checkLevelUpgrade(booking);
+                }
+                
+                showToast('✅ 入住確認完成，佣金已計算並記錄！');
+                closeConfirmModal();
+                displayBookings();
+                updateStats();
+                
+            } catch (error) {
+                console.error('確認失敗:', error);
+                showToast('❌ 確認失敗：' + error.message, 'error');
+                
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+
+        // 檢查等級晉升
+        function checkLevelUpgrade(booking) {
+            const currentLevel = booking.partner_level;
+            const progress = booking.partner_progress;
+            
+            let newLevel = currentLevel;
+            
+            if (currentLevel === 'LV1_INSIDER' && progress >= 4) {
+                newLevel = 'LV2_GUIDE';
+            } else if (currentLevel === 'LV2_GUIDE' && progress >= 10) {
+                newLevel = 'LV3_GUARDIAN';
+            }
+            
+            if (newLevel !== currentLevel) {
+                booking.partner_level = newLevel;
+                showToast(`🎉 ${booking.partner_name} 晉升為 ${getLevelText(newLevel)}！`, 'success');
+            }
+        }
+
+        // 提交表單數據
+        function submitFormData(data) {
+            return new Promise((resolve, reject) => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+
+                // 添加所有數據作為隱藏輸入
+                for (const [key, value] of Object.entries(data)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value || '';
+                    form.appendChild(input);
+                }
+
+                // 監聽 iframe 載入完成事件
+                const iframe = document.getElementById('hiddenFrame');
+                iframe.onload = function() {
+                    setTimeout(() => {
+                        resolve();
+                    }, 1000);
+                };
+
+                // 提交表單
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+            });
+        }
+
+        // 更新統計數據
+        function updateStats() {
+            const pendingBookings = allBookings.filter(b => b.stay_status === 'CHECKED_IN' && b.payment_status === 'PAID').length;
+            const completedToday = allBookings.filter(b => b.stay_status === 'COMPLETED').length;
+            const totalCommission = allBookings
+                .filter(b => b.stay_status === 'COMPLETED' && b.partner_code)
+                .reduce((sum, b) => sum + calculateEstimatedCommission(b).total, 0);
+            const levelUps = 0; // 實際應該從系統記錄中計算
+            
+            document.getElementById('totalPendingBookings').textContent = pendingBookings;
+            document.getElementById('totalCompletedToday').textContent = completedToday;
+            document.getElementById('totalCommissionToday').textContent = `$${totalCommission.toLocaleString()}`;
+            document.getElementById('totalLevelUps').textContent = levelUps;
+        }
+
+        // 輔助函數
+        function getStatusClass(status) {
+            const classes = {
+                'PENDING': 'bg-yellow-100 text-yellow-800',
+                'CHECKED_IN': 'bg-blue-100 text-blue-800',
+                'COMPLETED': 'bg-green-100 text-green-800',
+                'CANCELLED': 'bg-red-100 text-red-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getStatusText(status) {
+            const texts = {
+                'PENDING': '待入住',
+                'CHECKED_IN': '已入住',
+                'COMPLETED': '已完成',
+                'CANCELLED': '已取消'
+            };
+            return texts[status] || status;
+        }
+
+        function getLevelClass(level) {
+            const classes = {
+                'LV1_INSIDER': 'bg-green-100 text-green-800',
+                'LV2_GUIDE': 'bg-blue-100 text-blue-800',
+                'LV3_GUARDIAN': 'bg-purple-100 text-purple-800'
+            };
+            return classes[level] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getLevelText(level) {
+            const texts = {
+                'LV1_INSIDER': 'LV1 知音大使',
+                'LV2_GUIDE': 'LV2 森林嚮導',
+                'LV3_GUARDIAN': 'LV3 秘境守護者'
+            };
+            return texts[level] || level;
+        }
+
+        function showError(message) {
+            document.getElementById('bookingsTable').innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-8 text-red-500">
+                        ${message}
+                    </td>
+                </tr>
+            `;
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-red-600' : 'bg-green-600';
+            toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 4000);
+        }
+
+        // 事件監聽器
+        document.getElementById('statusFilter').addEventListener('change', displayBookings);
+        document.getElementById('partnerFilter').addEventListener('input', displayBookings);
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBookings();
+        });
+    </script>
+</body>
+</html>

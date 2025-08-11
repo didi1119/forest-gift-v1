@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>申請審核管理後台 - 靜謐森林知音計畫</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF8; color: #5C544B; }
+        h1, h2, h3, .font-serif { font-family: 'Noto Serif TC', serif; }
+        .brand-accent { color: #2E4B36; }
+        .brand-card { background-color: #FFFFFF; border: 1px solid #EAE6E1; border-radius: 1.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+        .status-pending { background-color: #FEF3C7; color: #D97706; }
+        .status-approved { background-color: #D1FAE5; color: #059669; }
+        .status-rejected { background-color: #FEE2E2; color: #DC2626; }
+        .btn-primary { background-color: #2E4B36; color: white; }
+        .btn-primary:hover { background-color: #1F2937; }
+        .btn-success { background-color: #059669; color: white; }
+        .btn-success:hover { background-color: #047857; }
+        .btn-danger { background-color: #DC2626; color: white; }
+        .btn-danger:hover { background-color: #B91C1C; }
+    </style>
+</head>
+<body class="antialiased min-h-screen">
+    <!-- 載入畫面 -->
+    <div id="loading" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+            <p class="text-gray-600">載入申請資料中...</p>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <!-- 頁面標題 -->
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold brand-accent mb-2">申請審核管理後台</h1>
+            <p class="text-gray-600">靜謐森林知音計畫 - 大使申請審核與管理系統</p>
+            <div class="mt-4 flex flex-wrap gap-4">
+                <button id="refresh-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    🔄 重新載入
+                </button>
+                <button id="export-btn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                    📊 匯出資料
+                </button>
+            </div>
+        </header>
+
+        <!-- 統計卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="brand-card p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 mr-4">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">待審核</p>
+                        <p id="pending-count" class="text-2xl font-bold text-yellow-700">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="brand-card p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 mr-4">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">已核准</p>
+                        <p id="approved-count" class="text-2xl font-bold text-green-700">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="brand-card p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100 mr-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">已拒絕</p>
+                        <p id="rejected-count" class="text-2xl font-bold text-red-700">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="brand-card p-6">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 mr-4">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-600">總申請數</p>
+                        <p id="total-count" class="text-2xl font-bold text-blue-700">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 篩選器 -->
+        <div class="brand-card p-6 mb-8">
+            <div class="flex flex-wrap items-center gap-4">
+                <label class="text-sm font-medium text-gray-700">狀態篩選：</label>
+                <select id="status-filter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                    <option value="ALL">全部</option>
+                    <option value="PENDING" selected>待審核</option>
+                    <option value="APPROVED">已核准</option>
+                    <option value="REJECTED">已拒絕</option>
+                </select>
+                <button id="filter-btn" class="px-4 py-2 btn-primary rounded-lg transition">
+                    🔍 套用篩選
+                </button>
+                <div class="ml-auto text-sm text-gray-500" id="last-updated">
+                    最後更新：載入中...
+                </div>
+            </div>
+        </div>
+
+        <!-- 申請列表 -->
+        <div class="brand-card p-6">
+            <h2 class="text-xl font-bold brand-accent mb-6">申請列表</h2>
+            <div id="applications-container">
+                <!-- 申請資料將在這裡動態載入 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 審核模態框 -->
+    <div id="review-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <h3 class="text-xl font-bold">審核申請</h3>
+                <button id="close-review-modal" class="text-gray-400 hover:text-gray-700 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <div id="review-applicant-info" class="mb-6">
+                    <!-- 申請者資訊將在這裡載入 -->
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label for="review-notes" class="block text-sm font-medium text-gray-700 mb-2">審核備註</label>
+                        <textarea id="review-notes" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" placeholder="輸入審核意見..."></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button id="reject-btn" class="px-4 py-2 btn-danger rounded-lg transition">
+                            ❌ 拒絕申請
+                        </button>
+                        <button id="approve-btn" class="px-4 py-2 btn-success rounded-lg transition">
+                            ✅ 核准申請
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 連結生成模態框 -->
+    <div id="link-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full">
+            <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                <h3 class="text-xl font-bold">生成大使連結</h3>
+                <button id="close-link-modal" class="text-gray-400 hover:text-gray-700 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6">
+                <div id="link-applicant-info" class="mb-6">
+                    <!-- 申請者資訊將在這裡載入 -->
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label for="partner-code" class="block text-sm font-medium text-gray-700 mb-2">大使代碼 *</label>
+                        <input type="text" id="partner-code" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" placeholder="例如: FOREST001" required>
+                        <p class="text-xs text-gray-500 mt-1">建議格式：FOREST + 數字，例如 FOREST001</p>
+                    </div>
+                    <div>
+                        <label for="coupon-url" class="block text-sm font-medium text-gray-700 mb-2">優惠券目標網址</label>
+                        <input type="url" id="coupon-url" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" placeholder="https://example.com/booking">
+                        <p class="text-xs text-gray-500 mt-1">可選：優惠券連結的最終目標網址</p>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button id="cancel-link-btn" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+                            取消
+                        </button>
+                        <button id="generate-link-btn" class="px-4 py-2 btn-primary rounded-lg transition">
+                            🔗 生成並轉為夥伴
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Apps Script URL 設定 -->
+    <script>
+        // 請更新為您的 Apps Script URL
+        const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+        
+        // 全域變數
+        let currentApplications = [];
+        let currentFilter = 'PENDING';
+        let selectedApplication = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadApplications();
+            setupEventListeners();
+        });
+
+        // 設置事件監聽器
+        function setupEventListeners() {
+            document.getElementById('refresh-btn').addEventListener('click', loadApplications);
+            document.getElementById('export-btn').addEventListener('click', exportData);
+            document.getElementById('filter-btn').addEventListener('click', applyFilter);
+            document.getElementById('status-filter').addEventListener('change', applyFilter);
+            
+            // 審核模態框
+            document.getElementById('close-review-modal').addEventListener('click', closeReviewModal);
+            document.getElementById('approve-btn').addEventListener('click', () => reviewApplication('APPROVED'));
+            document.getElementById('reject-btn').addEventListener('click', () => reviewApplication('REJECTED'));
+            
+            // 連結生成模態框
+            document.getElementById('close-link-modal').addEventListener('click', closeLinkModal);
+            document.getElementById('cancel-link-btn').addEventListener('click', closeLinkModal);
+            document.getElementById('generate-link-btn').addEventListener('click', generatePartnerLink);
+        }
+
+        // 載入申請資料
+        async function loadApplications() {
+            try {
+                showLoading(true);
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'get_applications',
+                        status_filter: currentFilter
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentApplications = result.data || [];
+                    updateStatistics(result);
+                    renderApplications();
+                    document.getElementById('last-updated').textContent = 
+                        `最後更新：${new Date().toLocaleString('zh-TW')}`;
+                } else {
+                    throw new Error(result.error || '載入失敗');
+                }
+                
+            } catch (error) {
+                console.error('載入申請資料錯誤:', error);
+                showError('載入申請資料失敗：' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 更新統計資料
+        function updateStatistics(result) {
+            const pendingCount = result.data?.filter(app => app.application_status === 'PENDING').length || 0;
+            const approvedCount = result.data?.filter(app => app.application_status === 'APPROVED').length || 0;
+            const rejectedCount = result.data?.filter(app => app.application_status === 'REJECTED').length || 0;
+            const totalCount = result.total_count || result.data?.length || 0;
+
+            document.getElementById('pending-count').textContent = pendingCount;
+            document.getElementById('approved-count').textContent = approvedCount;
+            document.getElementById('rejected-count').textContent = rejectedCount;
+            document.getElementById('total-count').textContent = totalCount;
+        }
+
+        // 渲染申請列表
+        function renderApplications() {
+            const container = document.getElementById('applications-container');
+            
+            if (currentApplications.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="text-lg font-medium">沒有找到申請資料</p>
+                        <p class="text-sm">請檢查篩選條件或重新載入頁面</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const applicationsHTML = currentApplications.map(app => `
+                <div class="border border-gray-200 rounded-lg p-6 mb-4 hover:shadow-md transition">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-gray-800">${escapeHtml(app.name || '未提供姓名')}</h3>
+                            <p class="text-gray-600">${escapeHtml(app.email || '未提供Email')}</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="status-${app.application_status?.toLowerCase() || 'pending'} px-3 py-1 rounded-full text-xs font-medium">
+                                ${getStatusText(app.application_status)}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                        <div>
+                            <span class="font-medium">LINE名稱：</span>
+                            ${escapeHtml(app.line_name || '未提供')}
+                        </div>
+                        <div>
+                            <span class="font-medium">聯絡電話：</span>
+                            ${escapeHtml(app.phone || '未提供')}
+                        </div>
+                        <div class="md:col-span-2">
+                            <span class="font-medium">申請時間：</span>
+                            ${app.created_at ? new Date(app.created_at).toLocaleString('zh-TW') : '未知'}
+                        </div>
+                    </div>
+                    
+                    ${app.message ? `
+                        <div class="mb-4">
+                            <span class="font-medium text-gray-700">申請留言：</span>
+                            <p class="text-gray-600 bg-gray-50 p-3 rounded-lg mt-1">${escapeHtml(app.message)}</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${app.review_notes ? `
+                        <div class="mb-4">
+                            <span class="font-medium text-gray-700">審核備註：</span>
+                            <p class="text-gray-600 bg-blue-50 p-3 rounded-lg mt-1">${escapeHtml(app.review_notes)}</p>
+                            <div class="text-xs text-gray-500 mt-1">
+                                審核者：${escapeHtml(app.reviewed_by || '未知')} | 
+                                審核時間：${app.reviewed_at ? new Date(app.reviewed_at).toLocaleString('zh-TW') : '未知'}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="flex justify-end space-x-3">
+                        ${app.application_status === 'PENDING' ? `
+                            <button onclick="openReviewModal(${app.id})" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                                📋 審核申請
+                            </button>
+                        ` : ''}
+                        
+                        ${app.application_status === 'APPROVED' && !app.partner_link_sent ? `
+                            <button onclick="openLinkModal(${app.id})" class="px-4 py-2 btn-success rounded-lg transition text-sm">
+                                🔗 生成大使連結
+                            </button>
+                        ` : ''}
+                        
+                        ${app.partner_code_assigned ? `
+                            <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                                已分配代碼：${escapeHtml(app.partner_code_assigned)}
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = applicationsHTML;
+        }
+
+        // 套用篩選
+        function applyFilter() {
+            currentFilter = document.getElementById('status-filter').value;
+            loadApplications();
+        }
+
+        // 開啟審核模態框
+        function openReviewModal(applicationId) {
+            selectedApplication = currentApplications.find(app => app.id === applicationId);
+            if (!selectedApplication) return;
+
+            document.getElementById('review-applicant-info').innerHTML = `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">申請者資訊</h4>
+                    <div class="space-y-2 text-sm">
+                        <div><strong>姓名：</strong>${escapeHtml(selectedApplication.name || '未提供')}</div>
+                        <div><strong>Email：</strong>${escapeHtml(selectedApplication.email || '未提供')}</div>
+                        <div><strong>LINE：</strong>${escapeHtml(selectedApplication.line_name || '未提供')}</div>
+                        <div><strong>電話：</strong>${escapeHtml(selectedApplication.phone || '未提供')}</div>
+                        ${selectedApplication.message ? `<div><strong>留言：</strong>${escapeHtml(selectedApplication.message)}</div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('review-notes').value = '';
+            document.getElementById('review-modal').classList.remove('hidden');
+        }
+
+        // 審核申請
+        async function reviewApplication(status) {
+            if (!selectedApplication) return;
+
+            const reviewNotes = document.getElementById('review-notes').value;
+            
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'review_application',
+                        application_id: selectedApplication.id,
+                        status: status,
+                        review_notes: reviewNotes,
+                        reviewed_by: 'admin'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess(`申請已${status === 'APPROVED' ? '核准' : '拒絕'}`);
+                    closeReviewModal();
+                    loadApplications(); // 重新載入數據
+                } else {
+                    throw new Error(result.error || '操作失敗');
+                }
+                
+            } catch (error) {
+                console.error('審核申請錯誤:', error);
+                showError('審核操作失敗：' + error.message);
+            }
+        }
+
+        // 開啟連結生成模態框
+        function openLinkModal(applicationId) {
+            selectedApplication = currentApplications.find(app => app.id === applicationId);
+            if (!selectedApplication) return;
+
+            document.getElementById('link-applicant-info').innerHTML = `
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-800 mb-2">即將轉為正式大使</h4>
+                    <div class="space-y-2 text-sm">
+                        <div><strong>姓名：</strong>${escapeHtml(selectedApplication.name || '未提供')}</div>
+                        <div><strong>Email：</strong>${escapeHtml(selectedApplication.email || '未提供')}</div>
+                    </div>
+                </div>
+            `;
+
+            // 自動建議大使代碼
+            const suggestedCode = generateSuggestedPartnerCode(selectedApplication.name);
+            document.getElementById('partner-code').value = suggestedCode;
+            document.getElementById('coupon-url').value = '';
+            
+            document.getElementById('link-modal').classList.remove('hidden');
+        }
+
+        // 生成大使連結
+        async function generatePartnerLink() {
+            if (!selectedApplication) return;
+
+            const partnerCode = document.getElementById('partner-code').value.trim();
+            const couponUrl = document.getElementById('coupon-url').value.trim();
+
+            if (!partnerCode) {
+                showError('請輸入大使代碼');
+                return;
+            }
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'promote_to_partner',
+                        application_id: selectedApplication.id,
+                        partner_code: partnerCode,
+                        coupon_url: couponUrl
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccess('申請者已成功轉為正式大使！');
+                    closeLinkModal();
+                    loadApplications(); // 重新載入數據
+                    
+                    // 顯示生成的連結資訊
+                    alert(`大使連結已生成：\n\n著陸頁連結：${result.landing_link}\n${result.coupon_link ? `優惠券連結：${result.coupon_link}` : ''}`);
+                } else {
+                    throw new Error(result.error || '操作失敗');
+                }
+                
+            } catch (error) {
+                console.error('生成大使連結錯誤:', error);
+                showError('生成連結失敗：' + error.message);
+            }
+        }
+
+        // 生成建議的大使代碼
+        function generateSuggestedPartnerCode(name) {
+            const timestamp = Date.now().toString().slice(-4);
+            if (name) {
+                // 簡化姓名處理
+                const simpleName = name.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, '').slice(0, 4);
+                return `FOREST${timestamp}`;
+            }
+            return `FOREST${timestamp}`;
+        }
+
+        // 匯出資料
+        function exportData() {
+            if (currentApplications.length === 0) {
+                showError('沒有資料可匯出');
+                return;
+            }
+
+            const headers = ['ID', '姓名', 'Email', 'LINE名稱', '電話', '申請留言', '狀態', '審核備註', '申請時間', '審核時間'];
+            const csvData = currentApplications.map(app => [
+                app.id || '',
+                app.name || '',
+                app.email || '',
+                app.line_name || '',
+                app.phone || '',
+                app.message || '',
+                getStatusText(app.application_status),
+                app.review_notes || '',
+                app.created_at ? new Date(app.created_at).toLocaleString('zh-TW') : '',
+                app.reviewed_at ? new Date(app.reviewed_at).toLocaleString('zh-TW') : ''
+            ]);
+
+            const csv = [headers, ...csvData].map(row => 
+                row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+            ).join('\n');
+
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `申請資料_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        // 輔助函數
+        function closeReviewModal() {
+            document.getElementById('review-modal').classList.add('hidden');
+            selectedApplication = null;
+        }
+
+        function closeLinkModal() {
+            document.getElementById('link-modal').classList.add('hidden');
+            selectedApplication = null;
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('hidden', !show);
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'PENDING': '待審核',
+                'APPROVED': '已核准',
+                'REJECTED': '已拒絕'
+            };
+            return statusMap[status] || '未知狀態';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showSuccess(message) {
+            alert('✅ ' + message);
+        }
+
+        function showError(message) {
+            alert('❌ ' + message);
+        }
+    </script>
+</body>
+</html>

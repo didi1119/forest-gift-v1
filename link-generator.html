@@ -70,8 +70,8 @@
                     <p class="text-xs text-stone-500 mt-1">選填：如有專屬優惠券可填入</p>
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-stone-700 mb-2">專屬優惠券連結</label>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-stone-700 mb-2">專屬優惠券連結 *</label>
                     <input type="url" id="couponUrl" placeholder="例：https://lin.ee/abc123" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
                     <p class="text-xs text-stone-500 mt-1">請貼上從 LINE 官方帳號後台取得的專屬優惠券連結</p>
                 </div>
@@ -135,10 +135,10 @@
     </div>
 
     <script>
-        // 設定值（部署完成後會自動更新）
+        // 設定值
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzaMMHbo1zesnAP4Go3Iz1R1z3702Ct4cuEJOdJpHArHpVpnCgvMIfeWx_PzRTWj8F/exec'; 
         const GITHUB_PAGES_URL = 'https://didi1119.github.io/forest-gift-v1'; 
-        const DEFAULT_LINE_COUPON_URL = 'https://lin.ee/q38pqot'; // 預設優惠券（可作為備用）
+        const DEFAULT_LINE_COUPON_URL = 'https://lin.ee/q38pqot';
         
         let generatedData = null;
         
@@ -155,7 +155,7 @@
             }
             
             if (!couponUrl) {
-                alert('請提供專屬優惠券連結！\n\n請到 LINE 官方帳號後台建立專屬優惠券，然後將連結貼上。');
+                alert('請提供專屬優惠券連結！\\n\\n請到 LINE 官方帳號後台建立專屬優惠券，然後將連結貼上。');
                 return;
             }
             
@@ -195,6 +195,7 @@ ${landingUrl}
             // Debug: 確認優惠券連結
             console.log('生成的優惠券連結:', trackedCouponUrl);
             console.log('目標優惠券URL:', couponUrl);
+            
             document.getElementById('shareTemplate').textContent = shareText;
             document.getElementById('resultSection').classList.remove('hidden');
             document.getElementById('saveStatus').classList.remove('hidden');
@@ -296,11 +297,11 @@ ${landingUrl}
         document.getElementById('partnerName').addEventListener('input', function() {
             const name = this.value.trim();
             if (name && !document.getElementById('partnerCode').value) {
-                // 簡單的中文轉拼音邏輯（可以使用更完整的庫）
+                // 簡單的中文轉拼音邏輯
                 const suggestion = name.replace(/\s+/g, '').toUpperCase() + '001';
                 document.getElementById('partnerCode').placeholder = `建議：${suggestion}`;
             }
         });
     </script>
 </body>
-</html> 
+</html>

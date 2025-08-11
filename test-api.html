@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 測試頁面 - 靜謐森林</title>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .result {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #4caf50;
+        }
+        .error {
+            border-left: 4px solid #f44336;
+        }
+        input {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .status.online {
+            background: #4caf50;
+        }
+        .status.offline {
+            background: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌲 API 功能測試 <span id="status" class="status offline">離線</span></h1>
+        
+        <div class="test-section">
+            <h2>1. 測試 API 連接</h2>
+            <button onclick="testConnection()">測試連接</button>
+            <div id="connection-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 獲取大使列表</h2>
+            <button onclick="getAmbassadors()">獲取列表</button>
+            <div id="ambassadors-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 創建測試大使</h2>
+            <input type="text" id="test-name" placeholder="大使名稱" value="測試大使">
+            <input type="text" id="test-id" placeholder="大使 ID" value="TEST001">
+            <input type="text" id="test-line" placeholder="LINE 連結" value="https://line.me/test">
+            <button onclick="createTestAmbassador()">創建大使</button>
+            <div id="create-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. 追蹤效能測試</h2>
+            <input type="text" id="track-id" placeholder="大使 ID" value="TEST001">
+            <button onclick="trackClick()">模擬點擊</button>
+            <button onclick="trackConversion()">模擬轉換</button>
+            <div id="track-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>5. 完整流程測試</h2>
+            <button onclick="runFullTest()">執行完整測試</button>
+            <div id="full-test-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // 獲取 API 基礎 URL
+        const API_BASE = window.location.origin + '/api';
+        
+        // 檢查 API 狀態
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/get-ambassadors`);
+                if (response.ok) {
+                    document.getElementById('status').textContent = '在線';
+                    document.getElementById('status').className = 'status online';
+                }
+            } catch (error) {
+                document.getElementById('status').textContent = '離線';
+                document.getElementById('status').className = 'status offline';
+            }
+        }
+
+        // 測試連接
+        async function testConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.textContent = '測試中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/get-ambassadors`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ API 連接成功！\n' + JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ API 返回錯誤：\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 連接失敗：' + error.message;
+            }
+        }
+
+        // 獲取大使列表
+        async function getAmbassadors() {
+            const resultDiv = document.getElementById('ambassadors-result');
+            resultDiv.textContent = '載入中...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/get-ambassadors`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ 成功獲取 ${data.total} 位大使：\n` + 
+                        JSON.stringify(data.ambassadors, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ 獲取失敗：\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 請求失敗：' + error.message;
+            }
+        }
+
+        // 創建測試大使
+        async function createTestAmbassador() {
+            const resultDiv = document.getElementById('create-result');
+            resultDiv.textContent = '創建中...';
+            
+            const ambassadorName = document.getElementById('test-name').value;
+            const ambassadorId = document.getElementById('test-id').value;
+            const lineLink = document.getElementById('test-line').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/create-ambassador`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ambassadorName,
+                        ambassadorId,
+                        lineLink,
+                        contactInfo: '測試聯絡資訊'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ 創建成功！\n' + JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ 創建失敗：\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 請求失敗：' + error.message;
+            }
+        }
+
+        // 追蹤點擊
+        async function trackClick() {
+            await trackPerformance('click');
+        }
+
+        // 追蹤轉換
+        async function trackConversion() {
+            await trackPerformance('conversion');
+        }
+
+        // 追蹤效能
+        async function trackPerformance(eventType) {
+            const resultDiv = document.getElementById('track-result');
+            resultDiv.textContent = '追蹤中...';
+            
+            const ambassadorId = document.getElementById('track-id').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/track-performance`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ambassadorId,
+                        eventType,
+                        eventData: {
+                            test: true,
+                            timestamp: new Date().toISOString()
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ ${eventType} 追蹤成功！\n` + JSON.stringify(data, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ 追蹤失敗：\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 請求失敗：' + error.message;
+            }
+        }
+
+        // 完整流程測試
+        async function runFullTest() {
+            const resultDiv = document.getElementById('full-test-result');
+            let results = [];
+            
+            resultDiv.textContent = '執行完整測試流程...\n';
+            
+            // 1. 測試連接
+            results.push('1. 測試 API 連接...');
+            try {
+                const response = await fetch(`${API_BASE}/get-ambassadors`);
+                if (response.ok) {
+                    results.push('   ✅ API 連接正常');
+                } else {
+                    results.push('   ❌ API 連接失敗');
+                }
+            } catch (error) {
+                results.push('   ❌ API 連接錯誤: ' + error.message);
+            }
+            
+            // 2. 創建測試大使
+            results.push('\n2. 創建測試大使...');
+            const testId = 'FULLTEST_' + Date.now();
+            try {
+                const response = await fetch(`${API_BASE}/create-ambassador`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ambassadorName: '完整測試大使',
+                        ambassadorId: testId,
+                        lineLink: 'https://line.me/fulltest',
+                        contactInfo: '完整測試'
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    results.push('   ✅ 大使創建成功');
+                    results.push('   專屬連結: ' + data.siteUrl);
+                } else {
+                    results.push('   ❌ 大使創建失敗: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                results.push('   ❌ 創建錯誤: ' + error.message);
+            }
+            
+            // 3. 追蹤點擊
+            results.push('\n3. 測試追蹤功能...');
+            try {
+                const response = await fetch(`${API_BASE}/track-performance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ambassadorId: testId,
+                        eventType: 'click',
+                        eventData: { test: true }
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    results.push('   ✅ 點擊追蹤成功');
+                } else {
+                    results.push('   ❌ 點擊追蹤失敗');
+                }
+            } catch (error) {
+                results.push('   ❌ 追蹤錯誤: ' + error.message);
+            }
+            
+            // 4. 獲取更新後的列表
+            results.push('\n4. 驗證數據更新...');
+            try {
+                const response = await fetch(`${API_BASE}/get-ambassadors`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const testAmbassador = data.ambassadors.find(a => a.ambassadorId === testId);
+                    if (testAmbassador) {
+                        results.push('   ✅ 找到測試大使');
+                        results.push('   點擊次數: ' + testAmbassador.totalClicks);
+                    } else {
+                        results.push('   ❌ 未找到測試大使');
+                    }
+                }
+            } catch (error) {
+                results.push('   ❌ 驗證錯誤: ' + error.message);
+            }
+            
+            results.push('\n========== 測試完成 ==========');
+            
+            resultDiv.className = 'result';
+            resultDiv.textContent = results.join('\n');
+        }
+
+        // 頁面載入時檢查狀態
+        window.onload = function() {
+            checkStatus();
+            setInterval(checkStatus, 30000); // 每30秒檢查一次
+        };
+    </script>
+</body>
+</html>

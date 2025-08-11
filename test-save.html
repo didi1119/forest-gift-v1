@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>測試儲存功能</title>
+</head>
+<body>
+    <h1>測試 Apps Script POST 功能</h1>
+    
+    <button onclick="testSave()">測試儲存</button>
+    <div id="result"></div>
+
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzaMMHbo1zesnAP4Go3Iz1R1z3702Ct4cuEJOdJpHArHpVpnCgvMIfeWx_PzRTWj8F/exec';
+
+        async function testSave() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '測試中...';
+            
+            try {
+                console.log('開始測試，URL:', APPS_SCRIPT_URL);
+                
+                const testData = {
+                    action: 'create_partner',
+                    partner_code: 'TEST001',
+                    name: '測試夥伴',
+                    email: 'test@example.com',
+                    coupon_url: 'https://line.me/ti/p/test123'
+                };
+                
+                console.log('測試資料:', testData);
+                
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                const result = await response.text(); // 先用 text() 而不是 json()
+                console.log('Response text:', result);
+                
+                try {
+                    const jsonResult = JSON.parse(result);
+                    console.log('Parsed JSON:', jsonResult);
+                    
+                    if (jsonResult.success) {
+                        resultDiv.innerHTML = `<p style="color: green;">✅ 成功！夥伴代碼：${jsonResult.partner_code}</p>`;
+                    } else {
+                        resultDiv.innerHTML = `<p style="color: red;">❌ 失敗：${jsonResult.error}</p>`;
+                    }
+                } catch (parseError) {
+                    resultDiv.innerHTML = `<p style="color: orange;">⚠️ 回應不是 JSON 格式：<br>${result}</p>`;
+                }
+                
+            } catch (error) {
+                console.error('Fetch 錯誤:', error);
+                resultDiv.innerHTML = `<p style="color: red;">❌ Fetch 錯誤：${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

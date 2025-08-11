@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知音大使管理後台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FDFBF8;
+            color: #5C544B;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+        .brand-accent {
+            color: #2E4B36;
+        }
+        .brand-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE6E1;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        }
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            color: #6B7280;
+            background-color: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            transition: all 0.2s;
+        }
+        .tab-button:hover {
+            background-color: #F3F4F6;
+        }
+        .tab-button.active {
+            background-color: #2E4B36;
+            color: #FFFFFF;
+            border-color: #2E4B36;
+        }
+        .tab-content {
+            display: block;
+        }
+        .tab-content.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen py-12">
+    <div class="max-w-7xl mx-auto px-6">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold brand-accent mb-4">知音大使管理後台</h1>
+            <p class="text-lg text-stone-600">即時監控所有知音大使的推廣成效</p>
+        </header>
+
+        <!-- 統計概覽 -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            <div class="brand-card p-6 text-center">
+                <div class="text-3xl font-bold brand-accent" id="totalPartners">-</div>
+                <div class="text-sm text-stone-600 mt-1">總夥伴數</div>
+            </div>
+            <div class="brand-card p-6 text-center">
+                <div class="text-3xl font-bold text-blue-600" id="totalClicks">-</div>
+                <div class="text-sm text-stone-600 mt-1">總點擊數</div>
+            </div>
+            <div class="brand-card p-6 text-center">
+                <div class="text-3xl font-bold text-green-600" id="totalStayCompleted">-</div>
+                <div class="text-sm text-stone-600 mt-1">完成入住數</div>
+            </div>
+            <div class="brand-card p-6 text-center">
+                <div class="text-3xl font-bold text-purple-600" id="stayCompletionRate">-</div>
+                <div class="text-sm text-stone-600 mt-1">入住完成率</div>
+            </div>
+            <div class="brand-card p-6 text-center">
+                <div class="text-3xl font-bold text-amber-600" id="totalPayouts">-</div>
+                <div class="text-sm text-stone-600 mt-1">累計結算金額</div>
+            </div>
+        </div>
+
+        <!-- 導航標籤 -->
+        <div class="flex space-x-6 mb-8">
+            <button onclick="showTab('overview')" id="tab-overview" class="tab-button active">
+                📊 概覽儀表
+            </button>
+            <button onclick="showTab('bookings')" id="tab-bookings" class="tab-button">
+                📋 訂單管理
+            </button>
+            <button onclick="showTab('payouts')" id="tab-payouts" class="tab-button">
+                💰 結算管理
+            </button>
+        </div>
+
+        <!-- 概覽儀表標籤內容 -->
+        <div id="content-overview" class="tab-content">
+            <!-- 聯盟夥伴列表 -->
+            <div class="brand-card p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-serif text-2xl font-semibold brand-accent">聯盟夥伴列表</h2>
+                    <button onclick="refreshData()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        🔄 重新載入
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left py-3 px-4">夥伴姓名</th>
+                                <th class="text-left py-3 px-4">代碼</th>
+                                <th class="text-center py-3 px-4">點擊數</th>
+                                <th class="text-center py-3 px-4">待確認</th>
+                                <th class="text-center py-3 px-4">已付款</th>
+                                <th class="text-center py-3 px-4">已完成入住</th>
+                                <th class="text-center py-3 px-4">已取消</th>
+                                <th class="text-center py-3 px-4">符合獎勵</th>
+                                <th class="text-center py-3 px-4">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partnersTable">
+                            <tr>
+                                <td colspan="9" class="text-center py-8 text-stone-500">
+                                    載入中...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 最近活動 -->
+            <div class="brand-card p-8 mt-8">
+                <h3 class="font-serif text-xl font-semibold brand-accent mb-4">最近活動記錄</h3>
+                <div id="recentActivity" class="space-y-2">
+                    <div class="text-center py-4 text-stone-500">載入中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 訂單管理標籤內容 -->
+        <div id="content-bookings" class="tab-content hidden">
+            <div class="brand-card p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-serif text-2xl font-semibold brand-accent">訂單管理</h2>
+                    <button onclick="showAddBookingModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                        ➕ 新增訂單
+                    </button>
+                </div>
+
+                <!-- 篩選器 -->
+                <div class="flex gap-4 mb-6">
+                    <select id="statusFilter" class="p-2 border rounded" onchange="filterBookings()">
+                        <option value="">全部狀態</option>
+                        <option value="pending">待確認</option>
+                        <option value="paid">已付款</option>
+                        <option value="stayed_completed">已完成入住</option>
+                        <option value="canceled">已取消</option>
+                        <option value="refunded">已退款</option>
+                    </select>
+                    <input type="text" id="searchBooking" placeholder="搜尋訂單號或夥伴代碼" class="p-2 border rounded flex-1" onkeyup="filterBookings()">
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left py-3 px-4">訂單號</th>
+                                <th class="text-left py-3 px-4">夥伴代碼</th>
+                                <th class="text-left py-3 px-4">入住日期</th>
+                                <th class="text-center py-3 px-4">金額</th>
+                                <th class="text-center py-3 px-4">狀態</th>
+                                <th class="text-center py-3 px-4">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingsTable">
+                            <tr>
+                                <td colspan="6" class="text-center py-8 text-stone-500">
+                                    載入中...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結算管理標籤內容 -->
+        <div id="content-payouts" class="tab-content hidden">
+            <div class="brand-card p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-serif text-2xl font-semibold brand-accent">結算管理</h2>
+                    <button onclick="showAddPayoutModal()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                        ➕ 建立結算單
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b">
+                                <th class="text-left py-3 px-4">結算編號</th>
+                                <th class="text-left py-3 px-4">夥伴代碼</th>
+                                <th class="text-left py-3 px-4">結算期間</th>
+                                <th class="text-center py-3 px-4">完成入住數</th>
+                                <th class="text-center py-3 px-4">結算金額</th>
+                                <th class="text-center py-3 px-4">狀態</th>
+                                <th class="text-center py-3 px-4">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payoutsTable">
+                            <tr>
+                                <td colspan="7" class="text-center py-8 text-stone-500">
+                                    載入中...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Google Sheets API 配置（實際部署時設定）
+        const SPREADSHEET_ID = '1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4';
+        
+        // 全域變數
+        let allData = {
+            partners: [],
+            bookings: [],
+            payouts: [],
+            clicksLog: []
+        };
+
+        // 標籤切換功能
+        function showTab(tabName) {
+            // 隱藏所有標籤內容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // 移除所有標籤的 active 狀態
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // 顯示選中的標籤內容
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            
+            // 根據標籤載入相應數據
+            switch(tabName) {
+                case 'overview':
+                    loadOverviewData();
+                    break;
+                case 'bookings':
+                    loadBookingsData();
+                    break;
+                case 'payouts':
+                    loadPayoutsData();
+                    break;
+            }
+        }
+
+        // 載入概覽數據
+        async function loadOverviewData() {
+            try {
+                // 模擬從 Google Sheets 載入數據
+                await loadMockData();
+                
+                displayPartners(allData.partners);
+                updateStats();
+                displayRecentActivity();
+                
+            } catch (error) {
+                console.error('載入概覽數據失敗:', error);
+                showError('partnersTable', '載入失敗');
+            }
+        }
+
+        // 載入模擬數據
+        async function loadMockData() {
+            // 模擬 Affiliate Master 數據
+            allData.partners = [
+                {
+                    partner_code: 'WANG001',
+                    name: '王小明',
+                    email: 'wang@example.com',
+                    clicks_total: 125,
+                    bookings_pending: 2,
+                    bookings_paid: 3,
+                    stays_completed: 2,
+                    bookings_canceled: 1,
+                    bookings_refunded: 0,
+                    eligible_conversions: 2,
+                    payout_lifetime_accum: 1200
+                },
+                {
+                    partner_code: 'CHEN002',
+                    name: '陳小美',
+                    email: 'chen@example.com',
+                    clicks_total: 89,
+                    bookings_pending: 1,
+                    bookings_paid: 2,
+                    stays_completed: 1,
+                    bookings_canceled: 0,
+                    bookings_refunded: 1,
+                    eligible_conversions: 1,
+                    payout_lifetime_accum: 600
+                }
+            ];
+
+            // 模擬 Bookings 數據
+            allData.bookings = [
+                {
+                    booking_id: 'FH20250101001',
+                    partner_code: 'WANG001',
+                    guest_name: '張三',
+                    checkin_date: '2025-01-15',
+                    checkout_date: '2025-01-17',
+                    booking_amount: 3600,
+                    status: 'stayed_completed'
+                },
+                {
+                    booking_id: 'FH20250105002',
+                    partner_code: 'CHEN002',
+                    guest_name: '李四',
+                    checkin_date: '2025-01-20',
+                    checkout_date: '2025-01-22',
+                    booking_amount: 2800,
+                    status: 'paid'
+                }
+            ];
+
+            // 模擬 Payouts 數據
+            allData.payouts = [
+                {
+                    payout_id: 'PO202501001',
+                    partner_code: 'WANG001',
+                    period_start: '2025-01-01',
+                    period_end: '2025-01-31',
+                    amount_manual: 600,
+                    status: 'paid'
+                }
+            ];
+        }
+
+        // 顯示夥伴列表
+        function displayPartners(partners) {
+            const table = document.getElementById('partnersTable');
+            
+            if (partners.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center py-8 text-stone-500">
+                            尚未有任何聯盟夥伴
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            table.innerHTML = partners.map(partner => `
+                <tr class="border-b hover:bg-stone-50">
+                    <td class="py-3 px-4 font-medium">${partner.name}</td>
+                    <td class="py-3 px-4 text-stone-600">${partner.partner_code}</td>
+                    <td class="py-3 px-4 text-center">${partner.clicks_total || 0}</td>
+                    <td class="py-3 px-4 text-center">${partner.bookings_pending || 0}</td>
+                    <td class="py-3 px-4 text-center">${partner.bookings_paid || 0}</td>
+                    <td class="py-3 px-4 text-center text-green-600 font-semibold">${partner.stays_completed || 0}</td>
+                    <td class="py-3 px-4 text-center text-red-600">${partner.bookings_canceled || 0}</td>
+                    <td class="py-3 px-4 text-center text-amber-600 font-semibold">${partner.eligible_conversions || 0}</td>
+                    <td class="py-3 px-4 text-center">
+                        <button onclick="viewPartnerDetails('${partner.partner_code}')" class="text-blue-600 hover:underline text-sm">
+                            詳情
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 更新統計數據
+        function updateStats() {
+            const totalPartners = allData.partners.length;
+            const totalClicks = allData.partners.reduce((sum, p) => sum + (p.clicks_total || 0), 0);
+            const totalStayCompleted = allData.partners.reduce((sum, p) => sum + (p.stays_completed || 0), 0);
+            const totalPayouts = allData.partners.reduce((sum, p) => sum + (p.payout_lifetime_accum || 0), 0);
+            
+            const stayCompletionRate = totalClicks > 0 ? ((totalStayCompleted / totalClicks) * 100).toFixed(1) : '0.0';
+
+            document.getElementById('totalPartners').textContent = totalPartners;
+            document.getElementById('totalClicks').textContent = totalClicks;
+            document.getElementById('totalStayCompleted').textContent = totalStayCompleted;
+            document.getElementById('stayCompletionRate').textContent = stayCompletionRate + '%';
+            document.getElementById('totalPayouts').textContent = `$${totalPayouts.toLocaleString()}`;
+        }
+
+        // 顯示最近活動
+        function displayRecentActivity() {
+            const container = document.getElementById('recentActivity');
+            
+            const activities = [
+                { partner_code: 'WANG001', action: '完成入住', time: '2025-01-08 14:30' },
+                { partner_code: 'CHEN002', action: '點擊連結', time: '2025-01-08 13:15' },
+                { partner_code: 'WANG001', action: '新訂單', time: '2025-01-08 11:20' }
+            ];
+
+            container.innerHTML = activities.map(activity => `
+                <div class="flex justify-between items-center py-2 px-4 bg-stone-50 rounded">
+                    <span class="text-sm">
+                        <strong>${activity.partner_code}</strong> - ${activity.action}
+                    </span>
+                    <span class="text-xs text-stone-500">${activity.time}</span>
+                </div>
+            `).join('');
+        }
+
+        // 載入訂單數據
+        function loadBookingsData() {
+            displayBookings(allData.bookings);
+        }
+
+        // 顯示訂單列表
+        function displayBookings(bookings) {
+            const table = document.getElementById('bookingsTable');
+            
+            if (bookings.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-stone-500">
+                            尚未有任何訂單
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            table.innerHTML = bookings.map(booking => {
+                const statusClass = getStatusClass(booking.status);
+                const statusText = getStatusText(booking.status);
+                
+                return `
+                    <tr class="border-b hover:bg-stone-50">
+                        <td class="py-3 px-4 font-medium">${booking.booking_id}</td>
+                        <td class="py-3 px-4">${booking.partner_code}</td>
+                        <td class="py-3 px-4">${booking.checkin_date} ~ ${booking.checkout_date}</td>
+                        <td class="py-3 px-4 text-center">$${booking.booking_amount.toLocaleString()}</td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2 py-1 text-xs rounded ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="editBooking('${booking.booking_id}')" class="text-blue-600 hover:underline text-sm mr-2">
+                                編輯
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 載入結算數據
+        function loadPayoutsData() {
+            displayPayouts(allData.payouts);
+        }
+
+        // 顯示結算列表
+        function displayPayouts(payouts) {
+            const table = document.getElementById('payoutsTable');
+            
+            if (payouts.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-8 text-stone-500">
+                            尚未有任何結算記錄
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            table.innerHTML = payouts.map(payout => {
+                const partner = allData.partners.find(p => p.partner_code === payout.partner_code);
+                const completedStays = partner ? partner.stays_completed : 0;
+                
+                return `
+                    <tr class="border-b hover:bg-stone-50">
+                        <td class="py-3 px-4 font-medium">${payout.payout_id}</td>
+                        <td class="py-3 px-4">${payout.partner_code}</td>
+                        <td class="py-3 px-4">${payout.period_start} ~ ${payout.period_end}</td>
+                        <td class="py-3 px-4 text-center">${completedStays}</td>
+                        <td class="py-3 px-4 text-center">$${payout.amount_manual.toLocaleString()}</td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2 py-1 text-xs rounded ${payout.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                ${payout.status === 'paid' ? '已付款' : '待付款'}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="viewPayoutDetails('${payout.payout_id}')" class="text-blue-600 hover:underline text-sm">
+                                詳情
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 輔助函數
+        function getStatusClass(status) {
+            const classes = {
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'paid': 'bg-blue-100 text-blue-800',
+                'stayed_completed': 'bg-green-100 text-green-800',
+                'canceled': 'bg-red-100 text-red-800',
+                'refunded': 'bg-gray-100 text-gray-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function getStatusText(status) {
+            const texts = {
+                'pending': '待確認',
+                'paid': '已付款',
+                'stayed_completed': '已完成入住',
+                'canceled': '已取消',
+                'refunded': '已退款'
+            };
+            return texts[status] || status;
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center py-8 text-red-500">
+                        ${message}
+                    </td>
+                </tr>
+            `;
+        }
+
+        // 重新載入數據
+        function refreshData() {
+            loadOverviewData();
+        }
+
+        // 查看夥伴詳情（待實作）
+        function viewPartnerDetails(partnerCode) {
+            alert(`查看夥伴詳情：${partnerCode}`);
+        }
+
+        // 編輯訂單（待實作）
+        function editBooking(bookingId) {
+            alert(`編輯訂單：${bookingId}`);
+        }
+
+        // 新增訂單（待實作）
+        function showAddBookingModal() {
+            alert('新增訂單功能待實作');
+        }
+
+        // 新增結算單（待實作）
+        function showAddPayoutModal() {
+            alert('新增結算單功能待實作');
+        }
+
+        // 查看結算詳情（待實作）
+        function viewPayoutDetails(payoutId) {
+            alert(`查看結算詳情：${payoutId}`);
+        }
+
+        // 篩選訂單（待實作）
+        function filterBookings() {
+            // 實作篩選邏輯
+            console.log('篩選訂單');
+        }
+
+        // 頁面載入時執行
+        document.addEventListener('DOMContentLoaded', () => {
+            showTab('overview');
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,147 @@
+================================================================
+靜謐森林知音計畫 - CORS 問題完整解決方案
+================================================================
+
+問題分析：
+- 錯誤顯示 "from origin 'null'" 表示您在本地檔案系統打開 HTML
+- 瀏覽器不允許從 file:// 協議發送 fetch 請求到 https://
+- 這是 CORS 政策的嚴格執行，無法通過修改 Apps Script 解決
+
+================================================================
+
+方案一：部署到 GitHub Pages（推薦）
+================================================================
+
+1. 將 link-generator.html 推送到您的 forest-gift-v1 repository
+2. 通過以下網址訪問：
+   https://didi1119.github.io/forest-gift-v1/link-generator.html
+3. 這樣 origin 就是 https://didi1119.github.io，不再是 null
+
+Git 指令：
+git add link-generator.html
+git commit -m "新增連結生成器管理介面"
+git push origin main
+
+================================================================
+
+方案二：使用本地 HTTP 服務器
+================================================================
+
+如果您有 Python：
+# Python 3
+python -m http.server 8000
+
+# Python 2  
+python -m SimpleHTTPServer 8000
+
+如果您有 Node.js：
+npx http-server
+
+然後訪問：http://localhost:8000/link-generator.html
+
+================================================================
+
+方案三：修改為表單提交方式（不需要改變使用方式）
+================================================================
+
+將以下程式碼替換您的 link-generator.html 中的 saveToSheets 函數：
+
+        async function saveToSheets() {
+            if (!generatedData) {
+                alert('請先生成連結');
+                return;
+            }
+            
+            const button = document.querySelector('button[onclick="saveToSheets()"]');
+            const originalText = button.textContent;
+            button.textContent = '儲存中...';
+            button.disabled = true;
+            
+            try {
+                // 使用隱藏表單提交，繞過 CORS 限制
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hidden_iframe';
+                form.style.display = 'none';
+                
+                // 添加數據
+                const dataInput = document.createElement('input');
+                dataInput.type = 'hidden';
+                dataInput.name = 'data';
+                dataInput.value = JSON.stringify({
+                    action: 'create_partner',
+                    ...generatedData
+                });
+                form.appendChild(dataInput);
+                
+                // 創建隱藏的 iframe 來接收回應
+                let iframe = document.getElementById('hidden_iframe');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'hidden_iframe';
+                    iframe.name = 'hidden_iframe';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                }
+                
+                // 監聽 iframe 載入完成
+                iframe.onload = function() {
+                    try {
+                        // 這裡無法直接讀取跨域 iframe 內容，但可以假設成功
+                        document.getElementById('saveStatus').innerHTML = `
+                            <p class="text-green-700">✅ 已提交儲存請求</p>
+                            <p class="text-sm text-gray-600 mt-1">夥伴代碼：${generatedData.partner_code}</p>
+                            <p class="text-sm text-gray-600">請檢查 Google Sheets 確認是否儲存成功</p>
+                        `;
+                        document.getElementById('saveStatus').className = 'bg-green-50 p-4 rounded-lg';
+                        
+                        alert('✅ 儲存請求已提交！請檢查 Google Sheets 確認結果。');
+                        
+                    } catch (error) {
+                        console.log('無法讀取 iframe 內容，這是正常的');
+                    }
+                    
+                    button.textContent = originalText;
+                    button.disabled = false;
+                };
+                
+                document.body.appendChild(form);
+                form.submit();
+                
+            } catch (error) {
+                console.error('儲存失敗:', error);
+                alert('❌ 儲存失敗：' + error.message);
+                
+                document.getElementById('saveStatus').innerHTML = `
+                    <p class="text-red-700">❌ 儲存失敗：${error.message}</p>
+                `;
+                document.getElementById('saveStatus').className = 'bg-red-50 p-4 rounded-lg';
+                
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+
+同時需要修改 Apps Script 來處理表單數據：
+
+在您的 doPost 函數開頭加入：
+
+    // 處理表單提交的數據
+    let data;
+    if (e.parameter && e.parameter.data) {
+      // 來自表單提交
+      data = JSON.parse(e.parameter.data);
+    } else {
+      // 來自 JSON 請求
+      data = JSON.parse(e.postData.contents);
+    }
+
+================================================================
+
+推薦順序：
+1. 方案一（GitHub Pages）- 最簡單，最穩定
+2. 方案三（表單提交）- 不需要改變使用環境
+3. 方案二（本地服務器）- 適合開發測試
+
+================================================================

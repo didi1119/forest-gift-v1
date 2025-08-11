@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>內心地圖繪製手冊・互動版</title>
+    
+    <!-- Google Analytics 4 - 暫時停用，等待設定完成 -->
+    <!--
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        // GA4 初始化將在 JavaScript 中完成，以便加入 subid
+    </script>
+    -->
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Serene Forest -->
+    <!-- Application Structure Plan: A vertical, scroll-based single-page application that presents the 7-day guide as an interactive journey. A sticky navigation bar acts as a timeline, allowing users to jump between days and track their progress. Each day is a section with a clear presentation of the ritual and an interactive textarea for journaling. This structure was chosen to mirror the linear, reflective nature of the source material, transforming a passive reading experience into an active, personal practice. -->
+    <!-- Visualization & Content Choices: The core "data" is the textual content of the 7-day program. Goal: Guide & Journal -> Method: Structured HTML/CSS cards for each day's ritual, paired with a JS-powered textarea for user input. Interaction: User's journal entries are saved to their browser's localStorage, making the application a persistent, personal tool. The navigation bar uses JS to highlight the current day based on scroll position, enhancing usability. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FDFBF8; /* A very light, warm cream */
+            color: #5C544B; /* A soft, dark brown */
+        }
+        h1, h2, h3, h4, .font-serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+        .brand-accent {
+            color: #2E4B36; /* A deep, muted forest green */
+        }
+        .brand-accent-bg {
+            background-color: #2E4B36;
+        }
+        .brand-secondary-bg {
+            background-color: #EAE6E1; /* A soft, earthy taupe */
+        }
+        .brand-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE6E1;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #2E4B36;
+            border-bottom-color: #2E4B36;
+        }
+        .content-fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .content-fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .ritual-item {
+            position: relative;
+            padding-left: 1.75rem;
+            line-height: 1.75rem;
+        }
+        .ritual-item::before {
+            content: '›';
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 1.5rem;
+            line-height: 1.75rem;
+            color: #2E4B36;
+            font-weight: 600;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #2E4B36;
+            box-shadow: 0 0 0 2px rgba(46, 75, 54, 0.2);
+        }
+        .prose strong {
+            color: #3f3730;
+        }
+        .brand-button {
+            display: inline-block;
+            padding: 0.6rem 1.2rem;
+            border-radius: 9999px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+            border: 1px solid #2E4B36;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header -->
+    <header class="py-20 sm:py-32 text-center bg-stone-50">
+        <div class="max-w-4xl mx-auto px-6">
+            <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold brand-accent mb-4">內心地圖繪製手冊</h1>
+            <p class="font-serif text-xl sm:text-2xl text-stone-700 mb-8">來自靜謐森林的七日歸零練習</p>
+            <p class="max-w-2xl mx-auto text-lg text-stone-600 leading-relaxed">
+                這是一份邀請，邀請你，暫時放下對外界「標準答案」的追尋，轉而擁抱自己內心那個「真實的問題」。這不是一趟輕鬆的旅程，但它將是一趟「回家」的旅程。
+            </p>
+        </div>
+    </header>
+
+    <!-- Sticky Navigation -->
+    <nav id="journey-nav" class="sticky top-0 z-50 bg-white/80 backdrop-blur-lg shadow-sm">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="flex justify-center sm:justify-between items-center h-16">
+                <div class="hidden sm:block font-serif font-semibold text-lg brand-accent">七日旅程</div>
+                <div class="flex space-x-4 sm:space-x-6 text-sm sm:text-base font-medium text-stone-500">
+                    <a href="#day-1" class="nav-link py-5">第一日</a>
+                    <a href="#day-2" class="nav-link py-5">第二日</a>
+                    <a href="#day-3" class="nav-link py-5">第三日</a>
+                    <a href="#day-4" class="nav-link py-5">第四日</a>
+                    <a href="#day-5" class="nav-link py-5">第五日</a>
+                    <a href="#day-6" class="nav-link py-5">第六日</a>
+                    <a href="#day-7" class="nav-link py-5">第七日</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Auto-save Notice -->
+    <section class="max-w-4xl mx-auto px-6 pt-12">
+        <div class="brand-secondary-bg rounded-2xl p-6 text-center">
+            <h3 class="font-serif font-semibold text-lg text-stone-800 mb-3">自動保存提示</h3>
+            <p class="text-stone-600 text-sm max-w-xl mx-auto">您的所有紀錄都會自動保存在您的裝置上。每次書寫都會即時儲存，重新開啟頁面時會自動還原您的內容。</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-6 py-16 sm:py-24 space-y-20 sm:space-y-24">
+        
+        <!-- Day 1 -->
+        <section id="day-1" class="journey-day">
+            <div class="brand-card p-8 sm:p-12 content-fade-in">
+                <h2 class="font-serif text-3xl font-semibold brand-accent mb-2">第一日：喚醒身體的花園</h2>
+                <h3 class="text-xl text-stone-600 mb-8">主題：五分鐘的感官錨定</h3>
+                <div class="prose prose-lg max-w-none text-stone-700 leading-relaxed space-y-6">
+                    <p>我們旅程的起點，永遠是我們的身體。它是一片豐饒的土地，生長著最敏銳的直覺與最真實的感受，但我們卻時常將它遺忘。今天，讓我們重新問候它。</p>
+                    <div class="brand-secondary-bg p-6 rounded-2xl">
+                        <h4 class="font-serif font-semibold text-lg text-stone-800 mb-4">【今日儀式】</h4>
+                        <div class="space-y-4">
+                            <p class="ritual-item">為自己準備一杯溫熱的飲品（茶、溫水、或咖啡皆可）。</p>
+                            <p class="ritual-item">找一個安靜的角落坐下，關掉手機通知。</p>
+                            <p class="ritual-item"><strong>在喝下第一口之前，請先用五分鐘，與這杯飲品相處：</strong></p>
+                            <ul class="list-none pl-6 space-y-2">
+                                <li><strong class="brand-accent">視覺：</strong> 凝視杯中的光影、水氣的繚繞、茶葉的舒展。</li>
+                                <li><strong class="brand-accent">觸覺：</strong> 用手心感受杯壁傳來的溫度，是溫潤還是燙手？</li>
+                                <li><strong class="brand-accent">嗅覺：</strong> 閉上眼睛，深深地吸一口氣。你聞到了什麼？</li>
+                                <li><strong class="brand-accent">聽覺：</strong> 在極致的安靜中，你是否能聽見自己呼吸或心跳的聲音？</li>
+                            </ul>
+                            <p class="ritual-item">五分鐘後，緩慢地、專注地，喝下第一口。感受那份溫暖流入身體的軌跡。</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-serif font-semibold text-lg text-stone-800 mb-3">【地圖上的印記】</h4>
+                        <p class="mb-4">完成儀式後，請在此不帶評判地寫下：在剛剛的五分鐘裡，哪一種感官的體驗，讓你印象最深刻？</p>
+                        <textarea data-day="1" class="w-full h-40 p-4 border-2 border-stone-200 rounded-xl transition duration-300 focus:border-green-800" placeholder="在此寫下您的感受..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Day 2 -->
+        <section id="day-2" class="journey-day">
+            <div class="brand-card p-8 sm:p-12 content-fade-in">
+                <h2 class="font-serif text-3xl font-semibold brand-accent mb-2">第二日：探訪萬物的花園</h2>
+                <h3 class="text-xl text-stone-600 mb-8">主題：一棵樹的凝視</h3>
+                <div class="prose prose-lg max-w-none text-stone-700 leading-relaxed space-y-6">
+                    <p>我們本是自然的一部分，與風雨、星辰、鳥獸、蟲魚，共同構成了一個彼此依存的巨大生命網絡。今天，讓我們重新拜訪一位不會說話的、充滿智慧的老師。</p>
+                     <div class="brand-secondary-bg p-6 rounded-2xl">
+                        <h4 class="font-serif font-semibold text-lg text-stone-800 mb-4">【今日儀式】</h4>
+                        <div class="space-y-4">
+                            <p class="ritual-item">在你家附近、或通勤的路上，尋找一棵你感覺有連結的樹（或任何一株植物）。</p>
+                            <p class="ritual-item">在它面前停下腳步，保持一個舒適的距離，凝視它十分鐘。</p>
+                            <p class="ritual-item"><strong>在這十分鐘裡，放下所有分析與命名，只是單純地「看」：</strong></p>
+                             <ul class="list-none pl-6 space-y-2">
+                                <li>觀察它的姿態：是挺拔還是彎曲？枝葉是繁盛還是疏落？</li>
+                                <li>觀察它的細節：樹皮的紋理、葉片的顏色與形狀、是否有光影灑在上面？</li>
+                                <li>觀察它的「在場」：它只是靜靜地、全然地，存在於那裡。感受那份不言不語的、安在的力量。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-serif font-semibold text-lg text-stone-800 mb-3">【地圖上的印記】</h4>
+                        <p class="mb-4">完成儀式後，請寫下：這棵樹，讓你聯想到了關於「生命」的哪一種品質？（例如：堅韌、柔軟、耐心、順應…）</p>
+                        <textarea data-day="2" class="w-full h-40 p-4 border-2 border-stone-200 rounded-xl transition duration-300" placeholder="在此寫下您的聯想..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Day 3 -->
+        <section id="day-3" class="journey-day"><div class="brand-card p-8 sm:p-12 content-fade-in"><h2 class="font-serif text-3xl font-semibold brand-accent mb-2">第三日：走進部落的花園</h2><h3 class="text-xl text-stone-600 mb-8">主題：「見證」的練習</h3><div class="prose prose-lg max-w-none text-stone-700 leading-relaxed space-y-6"><p>在我們每個人的靈魂深處，都有一份對「部落」的永恆鄉愁——一個能讓我們被全然接納的溫暖營火。而深度連結的起點，是學會「見證」，而非給予建議。</p><div class="brand-secondary-bg p-6 rounded-2xl"><h4 class="font-serif font-semibold text-lg text-stone-800 mb-4">【今日儀式】</h4><div class="space-y-4"><p class="ritual-item">在今天與任何一位朋友、家人或同事的對話中，為自己設定一個溫柔的意圖：「今天，我要練習成為一名傾聽者。」</p><p class="ritual-item">當對方分享他的煩惱或故事時，請刻意地<strong>克制住自己想要「給建議」、「解決問題」或「分享自己類似經驗」的衝動</strong>。</p><p class="ritual-item">你唯一要做的，是專注地聽，並在適當的時候，給予「見證式」的回應。例如：「聽起來，你那時候感覺很無助。」或「謝謝你願意跟我分享這些。」</p></div></div><div><h4 class="font-serif font-semibold text-lg text-stone-800 mb-3">【地圖上的印記】</h4><p class="mb-4">在今天結束時，請回想：當你放下給予建議的習慣，只是純粹地傾聽時，你與對方的關係，產生了什麼樣的微妙變化？</p><textarea data-day="3" class="w-full h-40 p-4 border-2 border-stone-200 rounded-xl transition duration-300" placeholder="在此寫下您的觀察..."></textarea></div></div></div></section>
+        
+        <!-- Day 4 -->
+        <section id="day-4" class="journey-day"><div class="brand-card p-8 sm:p-12 content-fade-in"><h2 class="font-serif text-3xl font-semibold brand-accent mb-2">第四日：觸碰真實的土壤</h2><h3 class="text-xl text-stone-600 mb-8">主題：與你的陰影共處</h3><div class="prose prose-lg max-w-none text-stone-700 leading-relaxed space-y-6"><p>成為一個「更完整」的人，意味著我們需要勇氣，去擁抱內在的全部光譜，不僅僅是光明，也包含那些我們長久以來試圖忽略或否認的陰影。</p><div class="brand-secondary-bg p-6 rounded-2xl"><h4 class="font-serif font-semibold text-lg text-stone-800 mb-4">【今日儀式】</h4><div class="space-y-4"><p class="ritual-item">找一個私密的空間，準備好紙筆。</p><p class="ritual-item">讓自己靜下來，然後溫柔地問自己：「最近，是哪一種『負面』情緒，最常來拜訪我？」可能是焦慮、嫉妒、憤怒、或悲傷。</p><p class="ritual-item">選擇其中一個，將它當作一位遠道而來的信差，<strong>寫一封短信給它</strong>。信中可以問它：「你這次來，是想提醒我什麼事？」並以「謝謝你的訊息，我收到了」作結。</p></div></div><div><h4 class="font-serif font-semibold text-lg text-stone-800 mb-3">【地圖上的印記】</h4><p class="mb-4">完成書寫後，請記錄下：當你不再對抗這個情緒，而是嘗試去理解它時，你的內在發生了什麼樣的轉變？</p><textarea data-day="4" class="w-full h-40 p-4 border-2 border-stone-200 rounded-xl transition duration-300" placeholder="在此寫下您的轉變..."></textarea></div></div></div></section>
+        
+        <!-- Day 5 -->
+        <section id="day-5" class="journey-day"><div class="brand-card p-8 sm:p-12 content-fade-in"><h2 class="font-serif text-3xl font-semibold brand-accent mb-2">第五日：澆灌愛的種子</h2><h3 class="text-xl text-stone-600 mb-8">主題：微小的善意儀式</h3><div class="prose prose-lg max-w-none text-stone-700 leading-relaxed space-y-6"><p>我們所談論的愛，不是一種感覺，而是一種可以被實踐的、滋養與連結的渴望。今天，讓我們將這份渴望，化為一個微小的行動。</p><div class="brand-secondary-bg p-6 rounded-2xl"><h4 class="font-serif font-semibold text-lg text-stone-800 mb-4">【今日儀式】</h4><div class="space-y-4"><p class="ritual-item">選擇一位你關心的人（家人、朋友、或寵物）。</p><p class="ritual-item">為他/牠，做一件<strong>不求回報、甚至可能不會被立刻察覺的小事</strong>。例如：為晚歸的家人留一盞燈、在朋友的桌上放一顆他喜歡的巧克力、或只是多花五分鐘，專心地撫摸你的寵物。</p><p class="ritual-item">在做這件事的時候，請全然地專注於這個付出的過程，感受那份發自內心的、溫柔的善意。</p></div></div><div><h4 class="font-serif font-semibold text-lg text-stone-800 mb-3">【地圖上的印記】</h4><p class="mb-4">請寫下：在這個微小的付出中，你體驗到了什麼樣的感受？這份感受，如何滋養了你自己？</p><textarea data-day="5" class="w-full h-40 p-4 border-2 border-stone-200 rounded-xl transition duration-300" placeholder="在此寫下您的體驗..."></textarea></div></div></div></section>
+        
+        <!-- Day 6 -->
+        <section id="day-6" class="journey-day"><div class="brand-card p-8 sm:p-12 content-fade-in"><h2 class="font-serif text-3xl font-semibold brand-accent mb-2">第六日：發掘力量的礦脈</h2><h3 class="text-xl text-stone-600 mb-8">主題：尋找你的內在錨點</h3><div class="prose prose-lg max-w-none text-stone-700 leading-relaxed space-y-6"><p>我們堅信，所有改變與成長的力量，都早已存在於每個人的內心深處。我們只是暫時忘記了。今天，我們要做的，就是一次小小的考古。</p><div class="brand-secondary-bg p-6 rounded-2xl"><h4 class="font-serif font-semibold text-lg text-stone-800 mb-4">【今日儀式】</h4><div class="space-y-4"><p class="ritual-item">請回想你過往的生命，尋找一個你曾感覺到自己<strong>「充滿力量」的瞬間</strong>。</p><p class="ritual-item">這不一定是驚天動地的成就。可能是在一次挑戰中你沒有放棄；或是在一次對話中你勇敢地說出了真心話。</p><p class="ritual-item">找到那個瞬間後，為它找到一個可以象徵它的<strong>「錨點」</strong>。它可以是一個詞語（如：堅定）、一個畫面（如：山頂的日出）、或一個物品（如：一顆石頭）。</p></div></div><div><h4 class="font-serif font-semibold text-lg text-stone-800 mb-3">【地圖上的印記】</h4><p class="mb-4">請將你找到的這個「力量錨點」記錄下來。它將是你未來在感到迷惘或脆弱時，可以隨時返回汲取力量的心靈聖物。</p><textarea data-day="6" class="w-full h-40 p-4 border-2 border-stone-200 rounded-xl transition duration-300" placeholder="在此寫下您的力量錨點..."></textarea></div></div></div></section>
+        
+        <!-- Day 7 -->
+        <section id="day-7" class="journey-day"><div class="brand-card p-8 sm:p-12 content-fade-in"><h2 class="font-serif text-3xl font-semibold brand-accent mb-2">第七日：整合與前行</h2><h3 class="text-xl text-stone-600 mb-8">主題：地圖的祝福</h3><div class="prose prose-lg max-w-none text-stone-700 leading-relaxed space-y-6"><p>經過了六天的探索，你的內心地圖上，已經留下了新的足跡。今天，我們不做新的練習，而是進行一次整合與祝福。</p><div class="brand-secondary-bg p-6 rounded-2xl"><h4 class="font-serif font-semibold text-lg text-stone-800 mb-4">【今日儀式】</h4><div class="space-y-4"><p class="ritual-item">請你重新閱讀過去六天，你在「地圖上的印記」中所寫下的文字。</p><p class="ritual-item">閱讀完畢後，請閉上眼睛，感受這趟旅程為你帶來的微妙變化。</p><p class="ritual-item">最後，請為自己，<strong>寫下一句祝福的話</strong>。這句話，將是你帶著上路的、來自你自己內心最深處的期許。</p></div></div><div><h4 class="font-serif font-semibold text-lg text-stone-800 mb-3">【地圖上的印記】</h4><p class="mb-4">請將這句祝福的話，寫在你的手帳扉頁、或是一張便條紙上，並在此記錄下來。</p><textarea data-day="7" class="w-full h-40 p-4 border-2 border-stone-200 rounded-xl transition duration-300" placeholder="在此寫下您的祝福..."></textarea></div></div></div></section>
+
+        <!-- Conclusion -->
+        <section class="text-center pt-16 content-fade-in">
+             <h2 class="font-serif text-4xl font-bold brand-accent mb-8">終章：森林從不終結</h2>
+             <div class="prose prose-lg max-w-2xl mx-auto text-stone-600 leading-relaxed">
+                <p>
+                    這七天的旅程，即將告一段落。但你的內心地圖，卻正要真正開始變得精彩。「靜謐森林」無法給你一片新的森林，因為那片最繁盛、最真實的森林，早已存在於你的內心。我們能給予的，只是一份微小而珍貴的禮物：一張地圖的草稿、一些工具、以及一份同行的祝福。
+                </p>
+                <p class="font-serif text-xl text-stone-700 mt-8">
+                    森林從不終結，只是歸藏。而我們，將永遠在這裡，等待你的每一次甦醒。
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.journey-day');
+            const textareas = document.querySelectorAll('textarea[data-day]');
+
+            // subid 追蹤功能
+            function getUrlParameter(name) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(name);
+            }
+            
+            function getSubid() {
+                let subid = getUrlParameter('subid') || getUrlParameter('pid');
+                if (!subid) {
+                    subid = localStorage.getItem('forest_subid');
+                }
+                if (subid) {
+                    localStorage.setItem('forest_subid', subid);
+                }
+                return subid;
+            }
+            
+            // 初始化 GA4 - 暫時停用
+            function initializeTracking() {
+                const subid = getSubid();
+                if (typeof gtag === 'function') {
+                    gtag('config', 'G-XXXXXXXXXX', {
+                        subid: subid || ''
+                    });
+                }
+            }
+            
+            // 事件追蹤
+            function trackEvent(eventType, data = {}) {
+                const subid = getSubid();
+                if (typeof gtag === 'function') {
+                    gtag('event', eventType, {
+                        subid: subid,
+                        timestamp: new Date().toISOString(),
+                        ...data
+                    });
+                }
+                console.log(`事件追蹤: ${eventType}`, { subid, ...data });
+            }
+            
+            // 初始化追蹤
+            initializeTracking();
+
+            // 自動儲存功能：每當用戶輸入文字時立即保存到 localStorage
+            function autoSaveEntry(day, content) {
+                localStorage.setItem(`innermap_day_${day}`, content);
+                
+                // 如果內容超過一定長度，追蹤週記提交事件
+                if (content.length > 50) {
+                    trackJournalSubmit(day, content);
+                }
+            }
+            
+            // 週記提交追蹤
+            function trackJournalSubmit(day, content) {
+                const subid = getSubid();
+                
+                // 追蹤 GA4 事件
+                trackEvent('journal_submit', {
+                    day: day,
+                    word_count: content.length
+                });
+                
+                // 可選：將週記提交到後端 Apps Script
+                if (subid) {
+                    submitJournalToBackend(subid, content);
+                }
+            }
+            
+            // 提交週記到後端
+            async function submitJournalToBackend(subid, content) {
+                try {
+                    // 這裡會呼叫 Apps Script Web App
+                    console.log('提交週記到後端:', { subid, content: content.substring(0, 100) + '...' });
+                    
+                    // 實際實作時取消註解
+                    /*
+                    const response = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ subid, content })
+                    });
+                    
+                    if (response.ok) {
+                        console.log('週記提交成功');
+                    }
+                    */
+                } catch (error) {
+                    console.error('提交週記失敗:', error);
+                }
+            }
+            
+            function loadSavedEntries() {
+                textareas.forEach(textarea => {
+                    const day = textarea.dataset.day;
+                    const saved = localStorage.getItem(`innermap_day_${day}`);
+                    if (saved) {
+                        textarea.value = saved;
+                    }
+                });
+            }
+
+            // 為每個文字框添加自動儲存
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', () => {
+                    const day = textarea.dataset.day;
+                    autoSaveEntry(day, textarea.value);
+                });
+            });
+
+            // 頁面載入時還原已保存的內容
+            loadSavedEntries();
+
+
+
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.4
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const navLink = document.querySelector(`.nav-link[href="#${id}"]`);
+                    
+                    const content = entry.target.querySelector('.content-fade-in');
+                    if (entry.isIntersecting) {
+                        if(content) content.classList.add('visible');
+                    }
+
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.4) {
+                        navLinks.forEach(link => link.classList.remove('active'));
+                        if(navLink) navLink.classList.add('active');
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+            
+            const otherFadeInSections = document.querySelectorAll('header, main > section:not(.journey-day)');
+            const fadeInObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            otherFadeInSections.forEach(section => {
+                fadeInObserver.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>

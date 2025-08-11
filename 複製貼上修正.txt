@@ -1,0 +1,107 @@
+================================================================
+Apps Script CORS 修正 - 直接複製貼上版本
+================================================================
+
+步驟1: 添加 doOptions 函數
+在您的 Apps Script 程式碼最前面加入以下函數：
+
+function doOptions(e) {
+  return ContentService
+    .createTextOutput('')
+    .setHeader('Access-Control-Allow-Origin', '*')
+    .setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+    .setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    .setHeader('Access-Control-Max-Age', '3600');
+}
+
+================================================================
+
+步驟2: 替換 doPost 函數
+找到您現有的 doPost 函數，完全替換為以下內容：
+
+function doPost(e) {
+  const output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  output.setHeader('Access-Control-Allow-Origin', '*');
+  output.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  try {
+    Logger.log('POST request received');
+    Logger.log('postData: ' + (e.postData ? e.postData.contents : 'undefined'));
+    
+    const data = JSON.parse(e.postData.contents);
+    Logger.log('Parsed data: ' + JSON.stringify(data));
+    
+    switch (data.action) {
+      case 'create_partner':
+        const sheet = SpreadsheetApp.openById(SHEETS_ID).getSheetByName('Partners');
+        if (!sheet) {
+          throw new Error('Partners sheet not found');
+        }
+        
+        const timestamp = new Date();
+        const partnerData = [
+          '',
+          data.partner_code,
+          data.name,
+          data.email || '',
+          data.phone || '',
+          timestamp,
+          'LV1_INSIDER',
+          'active',
+          0,
+          0,
+          0,
+          data.landing_link || '',
+          data.coupon_link || '',
+          data.coupon_code || '',
+          data.coupon_url || '',
+          data.notes || '',
+          timestamp,
+          timestamp
+        ];
+        
+        sheet.appendRow(partnerData);
+        Logger.log('Partner created successfully: ' + data.partner_code);
+        
+        const result = {
+          success: true,
+          message: '夥伴資料建立成功',
+          partner_code: data.partner_code
+        };
+        
+        output.setContent(JSON.stringify(result));
+        return output;
+        
+      case 'get_stats':
+        return getPartnerStats(data);
+      default:
+        throw new Error('Unknown action: ' + data.action);
+    }
+    
+  } catch (error) {
+    Logger.log('doPost Error: ' + error.toString());
+    
+    const errorResult = {
+      success: false,
+      error: error.toString()
+    };
+    
+    output.setContent(JSON.stringify(errorResult));
+    return output;
+  }
+}
+
+================================================================
+
+步驟3: 儲存並部署
+1. 按 Ctrl+S 儲存
+2. 點擊「部署」→「管理部署作業」
+3. 點擊現有部署的「編輯」按鈕
+4. 版本選擇「新版本」
+5. 點擊「部署」
+
+================================================================
+
+完成後請測試 link-generator.html 的儲存功能

@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "."
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/music",
+      "dest": "/music.html"
+    },
+    {
+      "src": "/story", 
+      "dest": "/story.html"
+    },
+    {
+      "src": "/inner-map",
+      "dest": "/inner_map.html" 
+    },
+    {
+      "src": "/generator",
+      "dest": "/link-generator.html"
+    },
+    {
+      "src": "/admin",
+      "dest": "/admin-dashboard.html"
+    }
+  ],
+  "functions": {
+    "api/create-ambassador.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/get-ambassadors.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/track-performance.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "env": {
+    "GOOGLE_SHEET_ID": "1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4",
+    "GOOGLE_CLIENT_EMAIL": "forest-ambassador@foresthouse-468510.iam.gserviceaccount.com"
+  }
+}

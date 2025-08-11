@@ -1,0 +1,245 @@
+收到！這裡是「給 Claude Code 建 issue 用」的**任務清單＋驗收條件（不含程式碼）**。
+
+
+# 專案標籤建議
+
+* `priority:P0/P1`、`scope:frontend`、`scope:backend`、`scope:data`
+* `env:pages`（GitHub Pages）、`env:apps-script`、`env:sheets`、`env:ga4`
+* `type:feature`、`type:chore`、`type:doc`、`type:qa`
+
+# 里程碑
+
+* **M1｜資料面就緒**（Sheets 結構完成）
+* **M2｜後端就緒**（Apps Script 與夜間彙整，符合新規則）
+* **M3｜管理端就緒**（admin dashboard 調整＋新頁）
+* **M4｜前端體驗＆追蹤**（事件與導流一致）
+* **M5｜合規與旗標**（隱私、條款、Feature Flag）
+* **M6｜UAT & 移交**（驗收、文件）
+
+---
+
+## M1｜資料面就緒
+
+### Issue 1 — 建立 Google Sheets 結構（四表）
+
+**Priority**: P0 · **Labels**: scope\:data, env\:sheets, type\:feature
+**描述**
+建立四個分頁：`Affiliate Master`、`Clicks Log`、`Bookings`、`Payouts`。設定必填欄與驗證。
+
+**欄位**
+
+* **Affiliate Master**：`partner_code*`、`name`、`email`、`coupon_code`、`landing_link`、`coupon_link`、`clicks_total`、`bookings_pending`、`bookings_paid`、`stays_completed`、`bookings_canceled`、`bookings_refunded`、`eligible_conversions`（=stays\_completed）、`payout_this_period_manual`、`payout_lifetime_accum`、`notes`
+* **Clicks Log**：`ts`、`partner_code`、`type(click/coupon)`、`referrer`、`user_agent`、`ip`
+* **Bookings**：`booking_id*`、`partner_code*`、`coupon_code`、`subid`、`guest_name`、`checkin_date`、`checkout_date`、`booking_amount`、`status(pending/paid/stayed_completed/canceled/refunded)`、`verified_by`、`verified_at`、`commission_rate`、`commission_amount_manual`、`payout_id`
+* **Payouts**：`payout_id*`、`partner_code*`、`period_start`、`period_end`、`amount_manual`、`status(unpaid/paid)`、`paid_at`、`method`、`notes`
+
+**驗收條件（AC）**
+
+* 四表存在，欄位齊全；`*` 欄位不可空。
+* `Bookings.status` 只能選五種狀態；日期欄位格式正確。
+* `eligible_conversions` 等於 `stays_completed`（同一行）。
+
+**依賴**：無
+**輸入物**：—
+**輸出物**：Sheets 連結
+
+---
+
+## M2｜後端就緒（Apps Script）
+
+### Issue 2 — 中繼轉址與日誌（僅規格落地，不含計獎）
+
+**Priority**: P0 · **Labels**: scope\:backend, env\:apps-script, type\:feature
+**描述**
+GET：記錄 `click/coupon` 到 `Clicks Log`，再跳轉目標；`dest` 僅允許 http/https。
+POST：保存週記到 `Journals`（若已存在則沿用），回傳成功。
+
+**驗收條件（AC）**
+
+* 以 `pid=subid` 點擊 landing/coupon 連結，`Clicks Log` 會新增對應類型紀錄。
+* 跳轉 URL 自動帶上 `subid + UTM`。
+* POST 週記可在 `Journals` 查到紀錄。
+
+**依賴**：Issue 1
+**輸入物**：GitHub Pages URL、（臨時）LINE 深連結
+**輸出物**：Web App URL
+
+### Issue 3 — 夜間彙整與新商業規則映射
+
+**Priority**: P0 · **Labels**: scope\:backend, env\:apps-script, env\:ga4, type\:feature
+**描述**
+建立每日排程：
+
+* 從 GA4 拉近 7 日事件（僅做互動分析；**不做計獎**）。
+* 匯總 `Clicks Log`。
+* 依 `Bookings.status` 計算：`bookings_*`、`stays_completed`、`eligible_conversions`。
+* 不計算金額；`payout_*` 由人工輸入。
+
+**驗收條件（AC）**
+
+* 調度後，`Affiliate Master` 的 `eligible_conversions` ＝ `stays_completed`。
+* 點擊數與領券數與 `Clicks Log` 匯總一致。
+* 沒有任何自動計價欄位；獎金欄位保留人工可寫。
+
+**依賴**：Issue 1、（GA4 屬性可晚點補）
+**輸入物**：GA4 Property ID（可先留空）
+**輸出物**：—
+
+### Issue 4 — 夥伴專屬連結產生器（寫回 Master）
+
+**Priority**: P1 · **Labels**: scope\:backend, env\:apps-script, type\:feature
+**描述**
+根據 `partner_code`（與可選的 `coupon_code`）自動生成：`landing_link`、`coupon_link`，寫回 `Affiliate Master`。
+
+**驗收條件（AC）**
+
+* 為任一新夥伴按下「生成」後，兩條連結在 Master 出現且可點擊測試通。
+* 以該連結進站能在 `Clicks Log` 看到記錄。
+
+**依賴**：Issue 1、Issue 2
+
+---
+
+## M3｜管理端就緒（admin-dashboard.html）
+
+### Issue 5 — 儀表總覽卡片改為「完成入住」邏輯
+
+**Priority**: P0 · **Labels**: scope\:frontend, env\:pages, type\:feature
+**描述**
+更新四張卡：
+
+* 轉換數 → **完成入住數**（讀 `stays_completed` 總和）
+* 轉換率 → **完成入住數 / 總點擊數**（參考指標）
+* 其他卡維持，但數據來源映射到 Master 新欄位。
+
+**驗收條件（AC）**
+
+* 儀表上的「完成入住數」與 Bookings 中 `stayed_completed` 總數一致。
+* 點擊刷新或重新載入後仍正確顯示。
+
+**依賴**：Issue 1、Issue 3
+**檔案**：`/admin-dashboard.html`
+
+### Issue 6 — 新增「訂單管理」頁（Bookings）
+
+**Priority**: P0 · **Labels**: scope\:frontend, env\:pages, type\:feature
+**描述**
+提供：列表、篩選（依 `status`）、搜尋（`booking_id/partner_code`）、新增／編輯彈窗（可修改 `status` 與 `commission_amount_manual`）。
+
+**驗收條件（AC）**
+
+* 可新增訂單，必填 `partner_code`、`booking_id`。
+* 可將 `pending/paid` 更新為 `stayed_completed`；更新後儀表「完成入住數」同步增加。
+* 取消或退款後不計入完成入住。
+* 任何變更保存到 Sheets，重新整理後資料不遺失。
+
+**依賴**：Issue 1
+**檔案**：`/admin-dashboard.html`（或子頁）
+
+### Issue 7 — 新增「結算管理」頁（Payouts）
+
+**Priority**: P1 · **Labels**: scope\:frontend, env\:pages, type\:feature
+**描述**
+建立結算單流程：選擇夥伴與期間 → 顯示該期間 `stayed_completed` 訂單清單供勾選（僅顯示供參考） → 管理員**人工輸入**本期 `amount_manual` → 標記 `paid`。
+
+**驗收條件（AC）**
+
+* 新建結算單可成功保存到 `Payouts` 分頁。
+* 標記 `paid` 後，該夥伴 `payout_lifetime_accum` 增加（加總本期 `amount_manual`）。
+* 不做自動計算金額；僅讀寫人工欄位。
+
+**依賴**：Issue 1、Issue 3
+**檔案**：`/admin-dashboard.html`（或子頁）
+
+---
+
+## M4｜前端體驗＆追蹤（index.html / music.html / inner\_map.html / story.html）
+
+### Issue 8 — 保持內容體驗與導流一致、補事件
+
+**Priority**: P0 · **Labels**: scope\:frontend, env\:pages, env\:ga4, type\:chore
+**描述**
+
+* 維持既有 UI/文案與導流卡片；
+* 讀取 `subid` 並保存（localStorage），所有 CTA 自動附帶 `subid`；
+* 事件清單：`card_draw`、`playlist_play`、`journal_submit`、`line_click`（含 `subid`）。可新增 `booking_intent`（點「立即預約／前往訂房」）。
+
+**驗收條件（AC）**
+
+* 以夥伴連結進站，頁面顯示「由 @subid 推薦」；重新整理後仍存在。
+* 觸發各事件可在 GA4 即時報表看到，且帶 `subid`。
+* 所有 CTA 連出前都會附帶 `subid`（或經中繼鏈結）。
+
+**依賴**：Issue 2
+**檔案**：
+`/index.html`（入口）、`/music.html`（歌單）、`/inner_map.html`（互動手冊）、`/story.html`（品牌故事）
+
+---
+
+## M5｜合規與旗標
+
+### Issue 9 — 隱私告知與聯盟條款（文件＋頁面提示）
+
+**Priority**: P1 · **Labels**: type\:doc, scope\:frontend
+**描述**
+新增簡易隱私告知（記錄 `subid`、互動事件、週記存檔用途與刪除管道）、聯盟計獎規則（僅已付費且實際入住才計獎；點擊不計獎；反作弊條款）。
+
+**驗收條件（AC）**
+
+* 入口頁底部能看到連結；
+* 內容清楚，與實際流程一致。
+
+**依賴**：—
+**檔案**：可新增 `/policy.html`、`/affiliate-terms.html`
+
+### Issue 10 — Feature Flag（未來小功能插槽）
+
+**Priority**: P2 · **Labels**: scope\:frontend, type\:feature
+**描述**
+在前端與管理端各預留 1 個可開關的小功能旗標（例如：`EXTRA_FEATURE_1`），僅控制顯示／追蹤，不影響既有流程。
+
+**驗收條件（AC）**
+
+* 關閉旗標時，前端不顯示該區塊、無事件上報。
+* 開啟旗標時，能看到區塊，且 GA4 有對應事件（例如 `extra_feature_use`）。
+
+**依賴**：—
+**檔案**：前端頁面與管理端設定位
+
+---
+
+## M6｜UAT & 移交
+
+### Issue 11 — UAT 測試腳本與驗收
+
+**Priority**: P0 · **Labels**: type\:qa
+**描述**
+根據以下腳本進行驗收，記錄結果與截圖。
+
+**UAT 腳本**
+
+1. 用夥伴 A 的 `landing_link` 進站 → `Clicks Log` 新增 `click`；頁面顯示「由 @A 推薦」。
+2. 抽卡、播放、寫週記 → GA4 即時看到事件，含 `subid=A`。
+3. 點領券 → `Clicks Log` 新增 `coupon`，成功跳 LINE。
+4. 管理端新增訂單（`partner_code=A`）→ `pending`→`paid`→`stayed_completed`；儀表「完成入住數」+1。
+5. 建立結算單（A，任意期間）→ 人工輸入金額 → 標記 `paid`；A 的 `payout_lifetime_accum` 增加。
+6. 將訂單改為 `canceled/refunded` 再改回 `stayed_completed`，儀表數據正確變動。
+
+**驗收條件（AC）**
+
+* 完成入住數與 Bookings 一致；點擊增長不改變「完成入住數」。
+* 獎金欄位完全由人工輸入並可覆寫。
+* 重新整理後資料不遺失；儀表與列表一致。
+
+**依賴**：Issue 1–10
+
+---
+
+# 專案所需參數（交付前請提供給工程）
+
+* GitHub Pages 網址（最終 domain）
+* Apps Script Web App URL（中繼）
+* GA4 Property（G-xxxx 與 property id）
+* LINE 優惠券 Deep Link（格式與範例）
+* 夥伴初始名單（`partner_code/name/email/coupon_code`）
+

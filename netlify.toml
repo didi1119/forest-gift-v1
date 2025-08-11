@@ -1,0 +1,60 @@
+[build]
+  publish = "."
+  command = "echo 'No build needed for static site'"
+
+[context.production.environment]
+  GOOGLE_SHEET_ID = "1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4"
+  GOOGLE_CLIENT_EMAIL = "forest-ambassador@foresthouse-468510.iam.gserviceaccount.com"
+  NETLIFY_ACCESS_TOKEN = "nfp_cxYU84jTiBMztvaWoG7czxtTRCApay2Q1dee"
+  GITHUB_REPO_URL = "https://github.com/didi1119/forest-gift.git"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# 重定向設定 - 確保所有路徑都能正確訪問
+[[redirects]]
+  from = "/music"
+  to = "/music.html"
+  status = 200
+
+[[redirects]]
+  from = "/story"
+  to = "/story.html"
+  status = 200
+
+[[redirects]]
+  from = "/inner-map"
+  to = "/inner_map.html"
+  status = 200
+
+[[redirects]]
+  from = "/generator"
+  to = "/link-generator.html"
+  status = 200 

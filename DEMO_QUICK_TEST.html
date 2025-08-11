@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>靜謐森林知音計畫 - 快速功能演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="feature-flags.js"></script>
+    <style>
+        body {
+            font-family: 'system-ui', sans-serif;
+            background-color: #FDFBF8;
+            color: #5C544B;
+        }
+        .demo-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE6E1;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .status-ok { color: #10B981; }
+        .status-pending { color: #F59E0B; }
+        .test-btn {
+            background: #2E4B36;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+        .test-btn:hover {
+            background: #1F3528;
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-green-800 mb-6 text-center">靜謐森林知音計畫 - 系統功能演示</h1>
+        
+        <!-- 1. subid 追蹤測試 -->
+        <div class="demo-card">
+            <h2 class="text-xl font-semibold mb-4">📊 subid 追蹤系統</h2>
+            <p class="mb-3">當前 URL: <code id="current-url" class="bg-gray-100 px-2 py-1 rounded">loading...</code></p>
+            <p class="mb-3">檢測到的 subid: <span id="detected-subid" class="font-bold status-pending">檢測中...</span></p>
+            <p class="mb-3">localStorage 中的 subid: <span id="stored-subid" class="font-bold">loading...</span></p>
+            
+            <div class="mt-4">
+                <button class="test-btn" onclick="testSubidTracking('test123')">測試 subid: test123</button>
+                <button class="test-btn" onclick="testSubidTracking('ambassador456')">測試 subid: ambassador456</button>
+                <button class="test-btn" onclick="clearSubid()">清除 subid</button>
+            </div>
+        </div>
+
+        <!-- 2. Feature Flags 測試 -->
+        <div class="demo-card">
+            <h2 class="text-xl font-semibold mb-4">🚩 Feature Flags 系統</h2>
+            <div id="feature-flags-status" class="mb-4">
+                <p>載入中...</p>
+            </div>
+            
+            <div class="mt-4">
+                <button class="test-btn" onclick="testFeatureFlag('EXTRA_FEATURE_1')">切換節日模式</button>
+                <button class="test-btn" onclick="testFeatureFlag('ENHANCED_TRACKING')">切換增強追蹤</button>
+                <button class="test-btn" onclick="showAllFlags()">顯示所有旗標</button>
+                <button class="test-btn" onclick="resetAllFlags()">重設所有旗標</button>
+            </div>
+        </div>
+
+        <!-- 3. localStorage 資料測試 -->
+        <div class="demo-card">
+            <h2 class="text-xl font-semibold mb-4">💾 本地儲存測試</h2>
+            <div id="storage-info"></div>
+            
+            <div class="mt-4">
+                <button class="test-btn" onclick="testLocalStorage()">測試資料儲存</button>
+                <button class="test-btn" onclick="viewStoredData()">查看儲存資料</button>
+                <button class="test-btn" onclick="clearStoredData()">清除所有資料</button>
+            </div>
+        </div>
+
+        <!-- 4. 事件追蹤模擬 -->
+        <div class="demo-card">
+            <h2 class="text-xl font-semibold mb-4">📈 事件追蹤模擬</h2>
+            <p class="mb-3">追蹤日誌：</p>
+            <div id="tracking-log" class="bg-gray-50 p-3 rounded min-h-[100px] font-mono text-sm max-h-40 overflow-y-auto"></div>
+            
+            <div class="mt-4">
+                <button class="test-btn" onclick="simulateEvent('card_draw', {card: '過去'})">模擬抽卡事件</button>
+                <button class="test-btn" onclick="simulateEvent('playlist_play', {playlist: 'healing'})">模擬音樂播放</button>
+                <button class="test-btn" onclick="simulateEvent('journal_submit', {day: 1, word_count: 150})">模擬週記提交</button>
+                <button class="test-btn" onclick="clearTrackingLog()">清除日誌</button>
+            </div>
+        </div>
+
+        <!-- 5. 系統檢查結果 -->
+        <div class="demo-card">
+            <h2 class="text-xl font-semibold mb-4">✅ 系統完整性檢查</h2>
+            <div id="system-status">
+                <p class="status-pending">執行檢查中...</p>
+            </div>
+            <button class="test-btn" onclick="runSystemCheck()">重新檢查</button>
+        </div>
+    </div>
+
+    <script>
+        // 初始化檢查
+        document.addEventListener('DOMContentLoaded', function() {
+            updateUrlDisplay();
+            updateSubidDisplay();
+            updateFeatureFlagsDisplay();
+            runSystemCheck();
+            
+            // 監聽 feature flag 變更事件
+            document.addEventListener('featureFlagChanged', function(event) {
+                logTracking(`Feature Flag 變更: ${event.detail.flagName} = ${event.detail.enabled}`);
+                updateFeatureFlagsDisplay();
+            });
+        });
+
+        // subid 追蹤功能
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        function getSubid() {
+            let subid = getUrlParameter('subid') || getUrlParameter('pid');
+            if (!subid) {
+                subid = localStorage.getItem('forest_subid');
+            }
+            if (subid) {
+                localStorage.setItem('forest_subid', subid);
+            }
+            return subid;
+        }
+
+        function updateUrlDisplay() {
+            document.getElementById('current-url').textContent = window.location.href;
+        }
+
+        function updateSubidDisplay() {
+            const subid = getSubid();
+            const detectedEl = document.getElementById('detected-subid');
+            const storedEl = document.getElementById('stored-subid');
+            
+            if (subid) {
+                detectedEl.textContent = subid;
+                detectedEl.className = 'font-bold status-ok';
+                storedEl.textContent = localStorage.getItem('forest_subid') || '無';
+            } else {
+                detectedEl.textContent = '未檢測到';
+                detectedEl.className = 'font-bold status-pending';
+                storedEl.textContent = localStorage.getItem('forest_subid') || '無';
+            }
+        }
+
+        function testSubidTracking(testSubid) {
+            // 模擬 URL 參數
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('subid', testSubid);
+            window.history.replaceState({}, '', newUrl);
+            
+            updateUrlDisplay();
+            updateSubidDisplay();
+            logTracking(`測試 subid: ${testSubid}`);
+        }
+
+        function clearSubid() {
+            localStorage.removeItem('forest_subid');
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('subid');
+            newUrl.searchParams.delete('pid');
+            window.history.replaceState({}, '', newUrl);
+            
+            updateUrlDisplay();
+            updateSubidDisplay();
+            logTracking('已清除 subid');
+        }
+
+        // Feature Flags 測試
+        function updateFeatureFlagsDisplay() {
+            if (typeof window.featureFlags === 'undefined') {
+                document.getElementById('feature-flags-status').innerHTML = 
+                    '<p class="status-pending">Feature Flags 系統未載入</p>';
+                return;
+            }
+
+            const flags = window.featureFlags.getAllFlags();
+            let html = '<table class="w-full text-sm"><tr><th class="text-left">旗標</th><th class="text-left">狀態</th></tr>';
+            
+            for (const [name, enabled] of Object.entries(flags)) {
+                const status = enabled ? '✅ 啟用' : '❌ 停用';
+                const statusClass = enabled ? 'status-ok' : 'status-pending';
+                html += `<tr><td class="py-1">${name}</td><td class="py-1 ${statusClass}">${status}</td></tr>`;
+            }
+            html += '</table>';
+            
+            document.getElementById('feature-flags-status').innerHTML = html;
+        }
+
+        function testFeatureFlag(flagName) {
+            if (typeof window.featureFlags !== 'undefined') {
+                const result = window.featureFlags.toggle(flagName);
+                logTracking(`${flagName} 已${result ? '啟用' : '停用'}`);
+            }
+        }
+
+        function showAllFlags() {
+            if (typeof window.debugFeatureFlags !== 'undefined') {
+                console.log('所有 Feature Flags:', window.debugFeatureFlags.list());
+                logTracking('已在 console 顯示所有旗標');
+            }
+        }
+
+        function resetAllFlags() {
+            if (typeof window.featureFlags !== 'undefined') {
+                window.featureFlags.reset();
+                logTracking('所有旗標已重設為預設值');
+            }
+        }
+
+        // localStorage 測試
+        function testLocalStorage() {
+            const testData = {
+                test_key: 'test_value',
+                timestamp: new Date().toISOString(),
+                random: Math.random()
+            };
+            
+            localStorage.setItem('forest_test_data', JSON.stringify(testData));
+            logTracking('測試資料已儲存到 localStorage');
+            viewStoredData();
+        }
+
+        function viewStoredData() {
+            const allData = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('forest_')) {
+                    allData[key] = localStorage.getItem(key);
+                }
+            }
+            
+            const info = document.getElementById('storage-info');
+            if (Object.keys(allData).length === 0) {
+                info.innerHTML = '<p>沒有找到相關的儲存資料</p>';
+            } else {
+                let html = '<h4 class="font-medium mb-2">儲存的資料：</h4><ul class="text-sm">';
+                for (const [key, value] of Object.entries(allData)) {
+                    const shortValue = value.length > 50 ? value.substring(0, 50) + '...' : value;
+                    html += `<li><strong>${key}:</strong> ${shortValue}</li>`;
+                }
+                html += '</ul>';
+                info.innerHTML = html;
+            }
+        }
+
+        function clearStoredData() {
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('forest_')) {
+                    keysToRemove.push(key);
+                }
+            }
+            
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            logTracking(`已清除 ${keysToRemove.length} 項儲存資料`);
+            viewStoredData();
+            updateSubidDisplay();
+            updateFeatureFlagsDisplay();
+        }
+
+        // 事件追蹤模擬
+        function simulateEvent(eventType, data = {}) {
+            const subid = getSubid();
+            const eventData = {
+                subid: subid || 'no-subid',
+                timestamp: new Date().toISOString(),
+                ...data
+            };
+            
+            // 模擬 GA4 追蹤（實際會呼叫 gtag）
+            console.log(`GA4 Event: ${eventType}`, eventData);
+            logTracking(`事件: ${eventType} | 資料: ${JSON.stringify(eventData)}`);
+        }
+
+        function logTracking(message) {
+            const log = document.getElementById('tracking-log');
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function clearTrackingLog() {
+            document.getElementById('tracking-log').innerHTML = '';
+        }
+
+        // 系統完整性檢查
+        function runSystemCheck() {
+            const checks = [
+                {
+                    name: 'Feature Flags 系統',
+                    test: () => typeof window.featureFlags !== 'undefined' && typeof window.debugFeatureFlags !== 'undefined',
+                    description: '檢查 Feature Flags 類別和開發工具是否載入'
+                },
+                {
+                    name: 'localStorage 支援',
+                    test: () => typeof Storage !== 'undefined',
+                    description: '檢查瀏覽器是否支援 localStorage'
+                },
+                {
+                    name: 'subid 追蹤功能',
+                    test: () => typeof getSubid === 'function' && typeof getUrlParameter === 'function',
+                    description: '檢查 subid 追蹤相關函式是否正常'
+                },
+                {
+                    name: 'URL API 支援',
+                    test: () => typeof URL !== 'undefined' && typeof URLSearchParams !== 'undefined',
+                    description: '檢查 URL 處理 API 是否可用'
+                },
+                {
+                    name: 'JSON 處理',
+                    test: () => {
+                        try {
+                            JSON.parse('{"test": true}');
+                            JSON.stringify({test: true});
+                            return true;
+                        } catch {
+                            return false;
+                        }
+                    },
+                    description: '檢查 JSON 序列化/反序列化功能'
+                }
+            ];
+
+            let html = '<h4 class="font-medium mb-3">檢查結果：</h4><div class="space-y-2">';
+            let allPassed = true;
+
+            checks.forEach(check => {
+                const passed = check.test();
+                allPassed = allPassed && passed;
+                const status = passed ? '✅' : '❌';
+                const statusClass = passed ? 'status-ok' : 'text-red-600';
+                html += `<div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <span>${check.name}</span>
+                    <span class="${statusClass}">${status}</span>
+                </div>`;
+            });
+
+            html += '</div>';
+            html += `<div class="mt-4 p-3 rounded ${allPassed ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}">
+                <strong>${allPassed ? '✅ 所有檢查通過' : '❌ 部分檢查失敗'}</strong>
+            </div>`;
+
+            document.getElementById('system-status').innerHTML = html;
+        }
+    </script>
+</body>
+</html>

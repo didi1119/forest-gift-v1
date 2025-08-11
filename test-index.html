@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>靜謐森林・知音大使贈禮工具包 - 測試版</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #F8F5F2;
+            color: #4B423B;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+        .brand-accent {
+            color: #3A5A40;
+        }
+        .brand-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE0D5;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .button-primary {
+            background-color: #3A5A40;
+            color: #FFFFFF;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+            display: inline-block;
+        }
+        .button-primary:hover {
+            background-color: #2F4833;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(58,90,64,0.2);
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- Header -->
+    <header class="py-20 sm:py-32 text-center bg-gradient-to-br from-stone-50 to-stone-100">
+        <div class="max-w-4xl mx-auto px-6">
+            <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl font-bold brand-accent mb-6">
+                靜謐森林・知音大使贈禮工具包
+            </h1>
+            <p class="font-serif text-xl sm:text-2xl text-stone-700 mb-8">
+                來自靜謐森林的四份心意
+            </p>
+            <p class="text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed">
+                在這個急速變化的世界裡，我們為你準備了四份特別的禮物：一場深度的自我對話、一首療癒心靈的音樂、一套內心探索的工具，以及一個關於歸零與重生的故事。
+            </p>
+            
+            <!-- 顯示推薦來源 -->
+            <div id="referral-note" class="hidden mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                <p class="text-green-800 font-medium">✨ 感謝 <span id="referrer-name" class="font-bold"></span> 的推薦分享</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-6 py-16 sm:py-24">
+        <!-- 禮物卡片網格 -->
+        <div class="grid lg:grid-cols-2 gap-8 sm:gap-12">
+            
+            <!-- 禮物 1: 音樂療癒 -->
+            <section class="brand-card p-8 sm:p-12">
+                <div class="text-center">
+                    <div class="text-6xl mb-6">🎵</div>
+                    <h2 class="font-serif text-2xl sm:text-3xl font-semibold brand-accent mb-4">
+                        療癒音樂清單
+                    </h2>
+                    <p class="text-stone-600 mb-6 leading-relaxed">
+                        精心挑選的音樂，每一首都能帶你遠離喧囂，走向內心的平靜。在忙碌的日常中，為自己創造一個神聖的聆聽空間。
+                    </p>
+                    <a href="music.html" class="button-primary" onclick="trackEvent('playlist_play', {source: 'main_page'})">
+                        開始聆聽 ♪
+                    </a>
+                </div>
+            </section>
+
+            <!-- 禮物 2: 內心地圖手冊 -->
+            <section class="brand-card p-8 sm:p-12">
+                <div class="text-center">
+                    <div class="text-6xl mb-6">📖</div>
+                    <h2 class="font-serif text-2xl sm:text-3xl font-semibold brand-accent mb-4">
+                        內心地圖繪製手冊
+                    </h2>
+                    <p class="text-stone-600 mb-6 leading-relaxed">
+                        七日歸零練習，引導你重新認識自己。這不只是一本手冊，更是一趟回到內心故鄉的旅程。
+                    </p>
+                    <a href="inner_map.html" class="button-primary">
+                        開始探索 ✨
+                    </a>
+                </div>
+            </section>
+
+            <!-- 禮物 3: 神諭卡片 -->
+            <section class="brand-card p-8 sm:p-12">
+                <div class="text-center">
+                    <div class="text-6xl mb-6">🃏</div>
+                    <h2 class="font-serif text-2xl sm:text-3xl font-semibold brand-accent mb-4">
+                        世界樹神諭
+                    </h2>
+                    <p class="text-stone-600 mb-6 leading-relaxed">
+                        透過三張牌的指引，探索你的過去、現在與未來。每一次抽卡，都是與內在智慧的對話。
+                    </p>
+                    <button id="draw-cards-btn" class="button-primary" onclick="startCardReading()">
+                        抽取神諭 🔮
+                    </button>
+                </div>
+                
+                <!-- 抽卡結果區域 -->
+                <div id="cards-result" class="hidden mt-8">
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="text-center">
+                            <div class="bg-stone-100 h-32 rounded-lg flex items-center justify-center mb-2">
+                                <span id="card-past" class="text-3xl"></span>
+                            </div>
+                            <p class="text-sm font-medium text-stone-600">過去</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-stone-100 h-32 rounded-lg flex items-center justify-center mb-2">
+                                <span id="card-present" class="text-3xl"></span>
+                            </div>
+                            <p class="text-sm font-medium text-stone-600">現在</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-stone-100 h-32 rounded-lg flex items-center justify-center mb-2">
+                                <span id="card-future" class="text-3xl"></span>
+                            </div>
+                            <p class="text-sm font-medium text-stone-600">未來</p>
+                        </div>
+                    </div>
+                    <div id="cards-interpretation" class="text-sm text-stone-600 leading-relaxed"></div>
+                </div>
+            </section>
+
+            <!-- 禮物 4: 品牌故事 -->
+            <section class="brand-card p-8 sm:p-12">
+                <div class="text-center">
+                    <div class="text-6xl mb-6">🌲</div>
+                    <h2 class="font-serif text-2xl sm:text-3xl font-semibold brand-accent mb-4">
+                        靜謐森林的故事
+                    </h2>
+                    <p class="text-stone-600 mb-6 leading-relaxed">
+                        了解我們的理念，以及為什麼相信每個人內心都住著一座豐盛的森林，等待被重新發現。
+                    </p>
+                    <a href="story.html" class="button-primary">
+                        聆聽故事 🌿
+                    </a>
+                </div>
+            </section>
+        </div>
+
+        <!-- LINE 優惠券區域 -->
+        <section class="mt-16 text-center">
+            <div class="brand-card p-8 max-w-2xl mx-auto">
+                <h3 class="font-serif text-2xl font-semibold brand-accent mb-4">
+                    專屬優惠等你領取
+                </h3>
+                <p class="text-stone-600 mb-6">
+                    完成體驗後，點擊下方按鈕領取你的專屬優惠券，開啟一段真實的靜謐森林之旅。
+                </p>
+                <button id="line-coupon-btn" class="button-primary" onclick="goToLineCoupon()">
+                    領取專屬優惠 🎁
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-12 text-center text-sm text-stone-500">
+        <div class="max-w-4xl mx-auto px-6">
+            <p class="mb-4">© 2025 靜謐森林知音計畫</p>
+            <div class="flex justify-center space-x-6">
+                <a href="policy.html" class="hover:text-stone-700">隱私政策</a>
+                <a href="affiliate-terms.html" class="hover:text-stone-700">聯盟條款</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 簡化版的追蹤和功能
+        
+        // subid 追蹤
+        function getUrlParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+        
+        function getSubid() {
+            let subid = getUrlParameter('subid') || getUrlParameter('pid');
+            if (!subid) {
+                subid = localStorage.getItem('forest_subid');
+            }
+            if (subid) {
+                localStorage.setItem('forest_subid', subid);
+            }
+            return subid;
+        }
+        
+        // 事件追蹤（console 輸出）
+        function trackEvent(eventType, data = {}) {
+            const subid = getSubid();
+            console.log(`🎯 事件追蹤: ${eventType}`, {
+                subid: subid || 'no-subid',
+                timestamp: new Date().toISOString(),
+                ...data
+            });
+        }
+        
+        // 個人化內容
+        function personalizeContent() {
+            const subid = getSubid();
+            if (subid && subid !== 'demo') {
+                const referralNote = document.getElementById('referral-note');
+                const referrerName = document.getElementById('referrer-name');
+                referrerName.textContent = `@${subid}`;
+                referralNote.classList.remove('hidden');
+            }
+        }
+        
+        // 抽卡功能
+        function startCardReading() {
+            const cards = ['🌱', '🌿', '🌳', '🍃', '🌺', '🌸', '🦋', '🐝', '☀️', '🌙', '⭐', '🌈'];
+            const interpretations = [
+                '新的開始正在萌芽，保持耐心和信心。',
+                '成長需要時間，每一個階段都有其美麗。', 
+                '穩固的根基將支撐你走向更高的地方。',
+                '變化如風，學會順應而非抗拒。',
+                '美好的事物即將綻放在你的生命中。',
+                '溫柔和愛將是你最大的力量。',
+                '轉化的時刻到了，擁抱新的自己。',
+                '勤勞和努力將帶來甜美的果實。',
+                '光明將照亮前方的道路。',
+                '在寧靜中找到內在的智慧。',
+                '希望之光指引著你的方向。',
+                '經過風雨，彩虹總會出現。'
+            ];
+            
+            // 隨機選擇三張牌
+            const selectedCards = [];
+            const selectedInterpretations = [];
+            
+            while (selectedCards.length < 3) {
+                const randomIndex = Math.floor(Math.random() * cards.length);
+                if (!selectedCards.includes(cards[randomIndex])) {
+                    selectedCards.push(cards[randomIndex]);
+                    selectedInterpretations.push(interpretations[randomIndex]);
+                }
+            }
+            
+            // 顯示結果
+            document.getElementById('card-past').textContent = selectedCards[0];
+            document.getElementById('card-present').textContent = selectedCards[1]; 
+            document.getElementById('card-future').textContent = selectedCards[2];
+            
+            document.getElementById('cards-interpretation').innerHTML = `
+                <p class="mb-2"><strong>過去：</strong>${selectedInterpretations[0]}</p>
+                <p class="mb-2"><strong>現在：</strong>${selectedInterpretations[1]}</p>
+                <p><strong>未來：</strong>${selectedInterpretations[2]}</p>
+            `;
+            
+            document.getElementById('cards-result').classList.remove('hidden');
+            document.getElementById('draw-cards-btn').textContent = '重新抽卡 🔮';
+            
+            // 追蹤抽卡事件
+            trackEvent('card_draw', {
+                cards: selectedCards,
+                source: 'test_page'
+            });
+        }
+        
+        // LINE 優惠券
+        function goToLineCoupon() {
+            const subid = getSubid();
+            trackEvent('line_click', { 
+                source: 'test_page',
+                has_subid: !!subid 
+            });
+            
+            // 暫時顯示提示
+            alert('🎉 優惠券功能準備中！\n\n目前顯示：點擊事件已記錄\n(請查看 console 看追蹤資料)');
+        }
+        
+        // 頁面載入時執行
+        document.addEventListener('DOMContentLoaded', function() {
+            personalizeContent();
+            trackEvent('page_view', { page: 'test_index' });
+            
+            console.log('🌲 歡迎來到靜謐森林測試頁面！');
+            console.log('📊 目前 subid:', getSubid() || '無');
+            console.log('💡 可以用 ?subid=test123 測試夥伴追蹤功能');
+        });
+    </script>
+</body>
+</html>

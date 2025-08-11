@@ -1,0 +1,247 @@
+================================================================
+Apps Script 最終 CORS 修正版本
+================================================================
+
+請將您的整個 Apps Script 程式碼替換為以下內容：
+(或者如果您想保留現有功能，只需添加/替換相關函數)
+
+================================================================
+
+// 設定常數
+const SHEETS_ID = '1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4';
+const GITHUB_PAGES_URL = 'https://didi1119.github.io/forest-gift-v1';
+const DEFAULT_LINE_COUPON_URL = 'https://lin.ee/q38pqot';
+
+// 處理 OPTIONS 請求 - 必須添加
+function doOptions(e) {
+  const output = ContentService.createTextOutput('');
+  output.setMimeType(ContentService.MimeType.TEXT);
+  output.setHeader('Access-Control-Allow-Origin', '*');
+  output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  output.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  output.setHeader('Access-Control-Max-Age', '86400');
+  return output;
+}
+
+// 處理 GET 請求 (跳轉功能)
+function doGet(e) {
+  try {
+    const params = e ? e.parameter : {};
+    
+    if (params.pid || params.subid) {
+      try {
+        recordClick(params);
+      } catch (recordError) {
+        // 忽略記錄錯誤
+      }
+    }
+
+    const destination = params.dest || 'landing';
+    const subid = params.pid || params.subid || '';
+    let redirectUrl;
+
+    if (destination === 'coupon') {
+      let targetUrl = DEFAULT_LINE_COUPON_URL;
+      if (params.target) {
+        try {
+          targetUrl = decodeURIComponent(params.target);
+        } catch (e) {
+          targetUrl = params.target;
+        }
+      }
+      redirectUrl = targetUrl;
+    } else {
+      redirectUrl = GITHUB_PAGES_URL + (subid ? `?subid=${encodeURIComponent(subid)}` : '');
+    }
+
+    const html = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0;url=${htmlEscape(redirectUrl)}">
+    <title></title>
+  </head>
+  <body>
+    <script>location.replace(${JSON.stringify(redirectUrl)});</script>
+  </body>
+</html>`;
+
+    return HtmlService.createHtmlOutput(html);
+
+  } catch (err) {
+    const errorHtml = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0;url=${GITHUB_PAGES_URL}">
+    <title></title>
+  </head>
+  <body>
+    <script>location.replace(${JSON.stringify(GITHUB_PAGES_URL)});</script>
+  </body>
+</html>`;
+    return HtmlService.createHtmlOutput(errorHtml);
+  }
+}
+
+// 處理 POST 請求 - 修正版
+function doPost(e) {
+  const output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  output.setHeader('Access-Control-Allow-Origin', '*');
+  output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  output.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  try {
+    Logger.log('POST request received');
+    
+    if (!e.postData || !e.postData.contents) {
+      throw new Error('No post data received');
+    }
+    
+    Logger.log('Raw post data: ' + e.postData.contents);
+    
+    const data = JSON.parse(e.postData.contents);
+    Logger.log('Parsed data: ' + JSON.stringify(data));
+    
+    if (data.action === 'create_partner') {
+      const sheet = SpreadsheetApp.openById(SHEETS_ID).getSheetByName('Partners');
+      if (!sheet) {
+        throw new Error('Partners sheet not found');
+      }
+      
+      const timestamp = new Date();
+      const partnerData = [
+        '',
+        data.partner_code || 'UNKNOWN',
+        data.name || '',
+        data.email || '',
+        data.phone || '',
+        timestamp,
+        'LV1_INSIDER',
+        'active',
+        0, 0, 0,
+        data.landing_link || '',
+        data.coupon_link || '',
+        data.coupon_code || '',
+        data.coupon_url || '',
+        data.notes || '',
+        timestamp,
+        timestamp
+      ];
+      
+      sheet.appendRow(partnerData);
+      Logger.log('Partner created: ' + (data.partner_code || 'UNKNOWN'));
+      
+      const result = {
+        success: true,
+        message: '夥伴資料建立成功',
+        partner_code: data.partner_code
+      };
+      
+      output.setContent(JSON.stringify(result));
+      return output;
+      
+    } else {
+      throw new Error('Unknown action: ' + (data.action || 'undefined'));
+    }
+    
+  } catch (error) {
+    Logger.log('doPost Error: ' + error.toString());
+    
+    const errorResult = {
+      success: false,
+      error: error.toString()
+    };
+    
+    output.setContent(JSON.stringify(errorResult));
+    return output;
+  }
+}
+
+// 輔助函數
+function htmlEscape(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function recordClick(params) {
+  try {
+    const sheet = SpreadsheetApp.openById(SHEETS_ID).getSheetByName('Clicks');
+    if (!sheet) return;
+    
+    const timestamp = new Date();
+    const partnerCode = params.pid || params.subid || 'UNKNOWN';
+    const destination = params.dest || 'landing';
+    const targetUrl = params.target || '';
+    
+    const clickData = [
+      '', partnerCode, timestamp, '', '', 
+      params.referrer || '', destination,
+      params.utm_source || '', params.utm_medium || '', params.utm_campaign || '',
+      Utilities.getUuid(), '', '', '', 'pending', timestamp, targetUrl
+    ];
+    
+    sheet.appendRow(clickData);
+  } catch (error) {
+    // 靜默處理錯誤
+  }
+}
+
+// 測試函數
+function testAll() {
+  Logger.log('=== 開始測試 ===');
+  
+  // 測試 POST
+  const mockPostEvent = {
+    postData: {
+      contents: JSON.stringify({
+        action: 'create_partner',
+        partner_code: 'TEST999',
+        name: '測試夥伴',
+        email: 'test@example.com',
+        coupon_url: 'https://lin.ee/test'
+      })
+    }
+  };
+  
+  try {
+    const postResult = doPost(mockPostEvent);
+    Logger.log('POST 測試結果: ' + postResult.getContent());
+  } catch (e) {
+    Logger.log('POST 測試失敗: ' + e.toString());
+  }
+  
+  // 測試 GET
+  const mockGetEvent = {
+    parameter: {
+      pid: 'TEST999',
+      dest: 'coupon',
+      target: 'https://lin.ee/test'
+    }
+  };
+  
+  try {
+    const getResult = doGet(mockGetEvent);
+    Logger.log('GET 測試完成');
+  } catch (e) {
+    Logger.log('GET 測試失敗: ' + e.toString());
+  }
+  
+  Logger.log('=== 測試完成 ===');
+  return '測試完成，請查看執行記錄';
+}
+
+================================================================
+
+部署步驟：
+1. 複製上面的完整程式碼
+2. 貼到您的 Apps Script 中（替換全部內容）
+3. 儲存並重新部署
+4. 執行 testAll() 函數測試
+5. 測試 link-generator.html
+
+================================================================

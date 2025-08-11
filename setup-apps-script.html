@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>靜謐森林 - Apps Script 設定工具</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .warning { background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        button { background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 5px; }
+        button:hover { background: #218838; }
+        button.secondary { background: #6c757d; }
+        button.secondary:hover { background: #5a6268; }
+        textarea { width: 100%; height: 400px; margin: 10px 0; font-family: 'Courier New', monospace; font-size: 12px; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }
+        .step { border: 1px solid #ddd; margin: 20px 0; padding: 20px; border-radius: 8px; }
+        .step h3 { color: #2c3e50; margin-top: 0; }
+        code { background: #f8f9fa; padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+        .code-block { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; font-family: 'Courier New', monospace; font-size: 12px; white-space: pre-wrap; }
+        .highlight { background: #ffeb3b; padding: 2px 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌲 靜謐森林知音計畫 - Apps Script 設定</h1>
+        
+        <div class="step">
+            <h3>步驟 1: 準備設定資訊</h3>
+            <p>請輸入您的 Google Sheets ID（從上個步驟取得）：</p>
+            <input type="text" id="sheetsId" placeholder="您的 Google Sheets ID">
+            <div class="warning">
+                <strong>重要：</strong>請確保您已完成 Google Sheets 資料庫建立，並且服務帳號有編輯權限！
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>步驟 2: 建立 Apps Script 專案</h3>
+            <button onclick="window.open('https://script.google.com', '_blank')">開啟 Google Apps Script</button>
+            <div class="info">
+                <ol>
+                    <li>點擊「新專案」</li>
+                    <li>將專案名稱改為：<code>靜謐森林知音計畫-API</code></li>
+                    <li>刪除預設的 myFunction</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>步驟 3: 貼上 Apps Script 程式碼</h3>
+            <button onclick="generateAppsScript()" id="generateBtn">生成 Apps Script 程式碼</button>
+            <textarea id="appsScriptCode" placeholder="點擊上方按鈕生成程式碼..."></textarea>
+            <button onclick="copyToClipboard(document.getElementById('appsScriptCode').value)" class="secondary">複製程式碼</button>
+            
+            <div class="info">
+                <strong>操作步驟：</strong>
+                <ol>
+                    <li>複製上面的程式碼</li>
+                    <li>在 Apps Script 編輯器中全選並貼上</li>
+                    <li>按 Ctrl+S 儲存</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>步驟 4: 授權和部署</h3>
+            <div class="warning">
+                <strong>重要授權步驟：</strong>
+                <ol>
+                    <li>在 Apps Script 中點擊「執行」按鈕（第一次會要求授權）</li>
+                    <li>選擇「檢視權限」→「前往專案名稱」</li>
+                    <li>選擇您的 Google 帳號</li>
+                    <li>點擊「允許」給予必要權限</li>
+                </ol>
+            </div>
+            
+            <h4>部署為 Web App：</h4>
+            <div class="info">
+                <ol>
+                    <li>點擊「部署」→「新增部署作業」</li>
+                    <li>類型選擇「網路應用程式」</li>
+                    <li>說明填入：<code>靜謐森林知音計畫 API v1.0</code></li>
+                    <li>執行身分：<strong>我</strong></li>
+                    <li>具有存取權的使用者：<strong>任何人</strong></li>
+                    <li>點擊「部署」</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>步驟 5: 取得 Web App URL</h3>
+            <p>部署完成後，複製「網路應用程式 URL」：</p>
+            <input type="text" id="webAppUrl" placeholder="貼上您的 Web App URL">
+            <button onclick="updateFrontendConfig()" id="updateBtn">更新前端設定</button>
+            <div id="updateResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>步驟 6: 測試 API 功能</h3>
+            <button onclick="testAPI()" id="testBtn">測試 API 連線</button>
+            <div id="testResult"></div>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('已複製到剪貼簿！');
+            });
+        }
+
+        function generateAppsScript() {
+            const sheetsId = document.getElementById('sheetsId').value;
+            if (!sheetsId) {
+                alert('請先輸入 Google Sheets ID');
+                return;
+            }
+
+            const appsScriptCode = `/**
+ * 靜謐森林知音計畫 - Apps Script Web App
+ * 處理推薦連結追蹤和資料記錄
+ */
+
+// 設定您的 Google Sheets ID
+const SHEETS_ID = '${sheetsId}';
+const GITHUB_PAGES_URL = 'https://didi1119.github.io/forest-gift-v1';
+const LINE_COUPON_URL = 'https://line.me/R/ti/p/@forest.house';
+
+/**
+ * Web App 主要處理函數
+ */
+function doGet(e) {
+  try {
+    const params = e.parameter;
+    
+    // 記錄點擊事件
+    if (params.pid || params.subid) {
+      recordClick(params);
+    }
+    
+    // 根據 dest 參數決定跳轉目標
+    const destination = params.dest || 'landing';
+    let redirectUrl;
+    
+    switch (destination) {
+      case 'coupon':
+        redirectUrl = LINE_COUPON_URL;
+        break;
+      case 'landing':
+      default:
+        // 建構帶有推薦參數的主頁連結
+        const subid = params.pid || params.subid || '';
+        redirectUrl = subid ? 
+          \`\${GITHUB_PAGES_URL}?subid=\${encodeURIComponent(subid)}\` : 
+          GITHUB_PAGES_URL;
+        break;
+    }
+    
+    // 執行重新導向
+    return HtmlService.createHtmlOutput(\`
+      <script>
+        window.top.location.href = "\${redirectUrl}";
+      </script>
+    \`);
+    
+  } catch (error) {
+    Logger.log('doGet Error: ' + error.toString());
+    
+    // 錯誤時重新導向到主頁
+    return HtmlService.createHtmlOutput(\`
+      <script>
+        window.top.location.href = "\${GITHUB_PAGES_URL}";
+      </script>
+    \`);
+  }
+}
+
+/**
+ * 處理 POST 請求（用於儲存夥伴資料等）
+ */
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    
+    switch (data.action) {
+      case 'create_partner':
+        return createPartner(data);
+      case 'get_stats':
+        return getPartnerStats(data);
+      default:
+        throw new Error('Unknown action: ' + data.action);
+    }
+    
+  } catch (error) {
+    Logger.log('doPost Error: ' + error.toString());
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        error: error.toString()
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * 記錄點擊事件
+ */
+function recordClick(params) {
+  try {
+    const sheet = SpreadsheetApp.openById(SHEETS_ID).getSheetByName('Clicks');
+    
+    const timestamp = new Date();
+    const partnerCode = params.pid || params.subid || 'UNKNOWN';
+    const destination = params.dest || 'landing';
+    
+    // 取得用戶資訊（Apps Script 環境限制，部分資訊無法取得）
+    const clickData = [
+      '', // click_id - 由 Sheets 自動編號
+      partnerCode,
+      timestamp,
+      '', // ip_address - Apps Script 無法取得
+      '', // user_agent - Apps Script 無法取得  
+      params.referrer || '',
+      destination,
+      params.utm_source || '',
+      params.utm_medium || '',
+      params.utm_campaign || '',
+      Utilities.getUuid(), // session_id
+      '', // country
+      '', // city
+      '', // device_type
+      'pending', // conversion_status
+      timestamp
+    ];
+    
+    sheet.appendRow(clickData);
+    Logger.log('Click recorded: ' + JSON.stringify(params));
+    
+  } catch (error) {
+    Logger.log('recordClick Error: ' + error.toString());
+  }
+}
+
+/**
+ * 建立新的夥伴資料
+ */
+function createPartner(data) {
+  try {
+    const sheet = SpreadsheetApp.openById(SHEETS_ID).getSheetByName('Partners');
+    
+    const timestamp = new Date();
+    const partnerData = [
+      '', // partner_id - 由 Sheets 自動編號
+      data.partner_code,
+      data.name,
+      data.email || '',
+      data.phone || '',
+      timestamp, // join_date
+      'LV1_INSIDER', // level
+      'active', // status
+      0, // total_referrals
+      0, // successful_referrals
+      0, // current_year_referrals
+      data.landing_link || '',
+      data.coupon_link || '',
+      data.coupon_code || '',
+      data.notes || '',
+      timestamp, // created_at
+      timestamp  // updated_at
+    ];
+    
+    sheet.appendRow(partnerData);
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        message: '夥伴資料建立成功',
+        partner_code: data.partner_code
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    Logger.log('createPartner Error: ' + error.toString());
+    throw error;
+  }
+}
+
+/**
+ * 取得夥伴統計資料
+ */
+function getPartnerStats(data) {
+  try {
+    const clicksSheet = SpreadsheetApp.openById(SHEETS_ID).getSheetByName('Clicks');
+    const partnersSheet = SpreadsheetApp.openById(SHEETS_ID).getSheetByName('Partners');
+    
+    // 簡單的統計查詢（實際應用中可能需要更複雜的查詢）
+    const allClicks = clicksSheet.getDataRange().getValues();
+    const partnerClicks = allClicks.filter(row => row[1] === data.partner_code);
+    
+    const stats = {
+      total_clicks: partnerClicks.length,
+      today_clicks: partnerClicks.filter(row => {
+        const clickDate = new Date(row[2]);
+        const today = new Date();
+        return clickDate.toDateString() === today.toDateString();
+      }).length,
+      conversions: partnerClicks.filter(row => row[14] === 'converted').length
+    };
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        stats: stats
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    Logger.log('getPartnerStats Error: ' + error.toString());
+    throw error;
+  }
+}
+
+/**
+ * 測試函數 - 用於初始化和測試
+ */
+function testFunction() {
+  Logger.log('Apps Script 測試成功！');
+  Logger.log('SHEETS_ID: ' + SHEETS_ID);
+  
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    Logger.log('Sheets 連線成功：' + spreadsheet.getName());
+    
+    const sheets = ['Partners', 'Clicks', 'Bookings', 'Payouts'];
+    sheets.forEach(sheetName => {
+      const sheet = spreadsheet.getSheetByName(sheetName);
+      if (sheet) {
+        Logger.log(sheetName + ' 工作表存在，行數：' + sheet.getLastRow());
+      } else {
+        Logger.log('警告：' + sheetName + ' 工作表不存在');
+      }
+    });
+    
+  } catch (error) {
+    Logger.log('Sheets 連線失敗：' + error.toString());
+  }
+  
+  return '測試完成，請查看執行記錄';
+}`;
+
+            document.getElementById('appsScriptCode').value = appsScriptCode;
+            
+            document.getElementById('generateBtn').textContent = '✅ 程式碼已生成';
+            document.getElementById('generateBtn').style.background = '#28a745';
+        }
+
+        function updateFrontendConfig() {
+            const webAppUrl = document.getElementById('webAppUrl').value;
+            if (!webAppUrl) {
+                document.getElementById('updateResult').innerHTML = 
+                    '<div class="error">請先輸入 Web App URL</div>';
+                return;
+            }
+
+            // 生成更新指令
+            const updateInstructions = \`
+                <div class="success">
+                    <h4>前端設定更新指引：</h4>
+                    <p>請在您的 <code>link-generator.html</code> 檔案中找到第132行：</p>
+                    <div class="code-block">const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/DEPLOYMENT_PLACEHOLDER/exec';</div>
+                    <p>替換為：</p>
+                    <div class="code-block highlight">const APPS_SCRIPT_URL = '\${webAppUrl}';</div>
+                    <p>更新後請重新推送到 GitHub！</p>
+                    
+                    <h4>Git 指令：</h4>
+                    <div class="code-block">git add link-generator.html
+git commit -m "更新 Apps Script URL"
+git push origin main</div>
+                </div>
+            \`;
+
+            document.getElementById('updateResult').innerHTML = updateInstructions;
+        }
+
+        function testAPI() {
+            const webAppUrl = document.getElementById('webAppUrl').value;
+            if (!webAppUrl) {
+                document.getElementById('testResult').innerHTML = 
+                    '<div class="error">請先輸入 Web App URL</div>';
+                return;
+            }
+
+            document.getElementById('testResult').innerHTML = 
+                '<div class="info">正在測試 API...</div>';
+
+            // 測試基本的 GET 請求
+            const testUrl = webAppUrl + '?pid=TEST123&dest=landing';
+            
+            setTimeout(() => {
+                document.getElementById('testResult').innerHTML = \`
+                    <div class="success">
+                        <h4>API 測試：</h4>
+                        <p><strong>測試 URL：</strong> <a href="\${testUrl}" target="_blank">\${testUrl}</a></p>
+                        <p>點擊上方連結測試重新導向功能</p>
+                        <p>如果能正常跳轉到主頁，表示 API 設定成功！</p>
+                        
+                        <h4>進階測試：</h4>
+                        <p>請檢查您的 Google Sheets 中的 Clicks 工作表，應該會新增一筆測試記錄。</p>
+                    </div>
+                \`;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

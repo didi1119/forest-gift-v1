@@ -1,0 +1,27 @@
+{
+  "name": "forest-gift-ambassador-system",
+  "version": "1.0.0",
+  "description": "靜謐森林知音大使自動化系統",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python3 -m http.server 8000",
+    "build": "echo 'No build needed for static site'",
+    "deploy": "netlify deploy --prod"
+  },
+  "dependencies": {
+    "google-auth-library": "^9.15.1",
+    "google-spreadsheet": "^4.1.5"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.10.1"
+  },
+  "keywords": [
+    "forest",
+    "ambassador",
+    "automation",
+    "netlify",
+    "google-sheets"
+  ],
+  "author": "靜謐森林團隊",
+  "license": "MIT"
+}

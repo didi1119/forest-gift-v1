@@ -334,6 +334,12 @@
             }
         }
         
+        // Apps Script URL - 與連結生成器保持一致
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+        
+        // LINE 官方帳號連結 - 這應該是您實際的 LINE 官方帳號優惠券連結
+        const LINE_OFFICIAL_URL = 'https://line.me/R/ti/p/@478hisen';
+        
         function goToLineCoupon() {
             const subid = getSubid();
             
@@ -343,13 +349,14 @@
             });
             
             if (subid && subid !== 'demo' && subid !== 'no-subid') {
-                // 有有效的 subid，跳轉到專屬優惠券
-                const couponUrl = `https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec?pid=${encodeURIComponent(subid)}&dest=coupon`;
-                console.log('🎁 跳轉到專屬優惠券:', couponUrl);
-                window.open(couponUrl, '_blank');
+                // 有有效的 subid，透過 Apps Script 中繼追蹤跳轉到 LINE 官方帳號
+                const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon&target=${encodeURIComponent(LINE_OFFICIAL_URL)}`;
+                console.log('🎁 跳轉到專屬優惠券 (透過追蹤):', trackedCouponUrl);
+                window.open(trackedCouponUrl, '_blank');
             } else {
-                // 沒有有效的 subid，顯示說明
-                alert('🌲 專屬優惠券說明\n\n這個按鈕會連接到您的知音大使專屬優惠券連結。\n\n✨ 目前您正在訪問演示版本，沒有專屬的大使代碼。\n\n💡 實際使用時，每位大使都會有自己的專屬連結和優惠券。');
+                // 沒有有效的 subid，直接跳轉到 LINE 官方帳號（無追蹤）
+                console.log('🎁 直接跳轉到 LINE 官方帳號（無追蹤）');
+                window.open(LINE_OFFICIAL_URL, '_blank');
             }
         }
 

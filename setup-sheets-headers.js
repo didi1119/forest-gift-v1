@@ -2,7 +2,7 @@
 // 請複製到 Apps Script 中執行一次
 
 function setupSheetsHeaders() {
-  const SHEETS_ID = '1K7jx5HtHCd9-rTgxPf5YNhRAaGp6cNxVfLz9P0rBgmQ'; // 替換為實際的 Sheet ID
+  const SHEETS_ID = '1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4'; // 與 Apps Script 一致
   
   try {
     const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);

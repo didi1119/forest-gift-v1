@@ -349,12 +349,13 @@
             });
             
             if (subid && subid !== 'demo' && subid !== 'no-subid') {
-                // 有有效的 subid，透過 Apps Script 中繼追蹤跳轉到 LINE 官方帳號
-                const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon&target=${encodeURIComponent(LINE_OFFICIAL_URL)}`;
+                // 有有效的 subid，透過 Apps Script 中繼追蹤跳轉到該夥伴的專屬優惠券連結
+                // Apps Script 會根據 pid 查找該夥伴的 coupon_url，並進行追蹤後跳轉
+                const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon`;
                 console.log('🎁 跳轉到專屬優惠券 (透過追蹤):', trackedCouponUrl);
                 window.open(trackedCouponUrl, '_blank');
             } else {
-                // 沒有有效的 subid，直接跳轉到 LINE 官方帳號（無追蹤）
+                // 沒有有效的 subid，直接跳轉到預設 LINE 官方帳號（無追蹤）
                 console.log('🎁 直接跳轉到 LINE 官方帳號（無追蹤）');
                 window.open(LINE_OFFICIAL_URL, '_blank');
             }
@@ -519,7 +520,7 @@
             function displayCard(card, container) {
                 const cardFront = container.querySelector('.card-front');
                 let categoryColor = 'text-white/80';
-                const imagePath = getCardImagePath(card.name);
+                const imagePath = card.imageUrl;
                 
                 cardFront.innerHTML = `
                     <img src="${imagePath}" alt="${card.name} 美術圖" class="card-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'; this.nextElementSibling.style.alignItems='center'; this.nextElementSibling.style.justifyContent='center'; this.nextElementSibling.style.height='100%'; this.nextElementSibling.style.background='#3A5A40'; this.nextElementSibling.style.color='white';">

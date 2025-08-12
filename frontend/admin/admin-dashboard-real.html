@@ -351,6 +351,7 @@
         async function loadRealData() {
             try {
                 showLoadingSpinner('載入數據中...');
+                console.log('🔄 開始載入真實數據...');
                 
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
@@ -360,16 +361,35 @@
                     body: 'action=get_dashboard_data'
                 });
                 
+                console.log('📡 收到回應:', response.status, response.statusText);
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
                 }
                 
                 const result = await response.text();
-                const data = JSON.parse(result);
+                console.log('📄 原始回應內容:', result);
+                
+                let data;
+                try {
+                    data = JSON.parse(result);
+                } catch (parseError) {
+                    console.error('❌ JSON 解析失敗:', parseError);
+                    console.error('原始內容:', result);
+                    throw new Error('回應格式不正確: ' + parseError.message);
+                }
+                
+                console.log('📊 解析後的數據:', data);
                 
                 if (data.success) {
                     allData = data.data;
-                    console.log('載入真實數據成功:', allData);
+                    console.log('✅ 載入真實數據成功:');
+                    console.log('- Partners:', allData.partners?.length || 0);
+                    console.log('- Bookings:', allData.bookings?.length || 0);
+                    console.log('- Payouts:', allData.payouts?.length || 0);
+                    console.log('- Clicks:', allData.clicks?.length || 0);
+                    
+                    showSuccessMessage(`成功載入 ${allData.partners?.length || 0} 位夥伴的資料！`);
                 } else {
                     throw new Error(data.error || '載入數據失敗');
                 }
@@ -377,12 +397,14 @@
                 hideLoadingSpinner();
                 
             } catch (error) {
-                console.error('載入真實數據失敗:', error);
+                console.error('❌ 載入真實數據失敗:', error);
                 hideLoadingSpinner();
                 
-                // 載入失敗時使用模擬數據
-                console.log('使用模擬數據作為備用方案');
+                showErrorMessage('載入真實數據失敗，使用模擬數據: ' + error.message);
+                
+                // 使用模擬數據作為備用方案
                 loadMockData();
+                console.log('🔄 已切換到模擬數據模式');
             }
         }
 
@@ -732,10 +754,45 @@
 
         function showLoadingSpinner(message) {
             console.log('Loading:', message);
+            // 可以在這裡添加實際的 loading UI
         }
 
         function hideLoadingSpinner() {
             console.log('Loading complete');
+        }
+        
+        function showSuccessMessage(message) {
+            console.log('✅ Success:', message);
+            // 創建成功提示
+            const toast = createToast(message, 'success');
+            document.body.appendChild(toast);
+        }
+        
+        function showErrorMessage(message) {
+            console.error('❌ Error:', message);
+            // 創建錯誤提示
+            const toast = createToast(message, 'error');
+            document.body.appendChild(toast);
+        }
+        
+        function createToast(message, type) {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+            
+            toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
+            toast.textContent = message;
+            
+            // 3秒後自動消失
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+            
+            return toast;
         }
 
         // 功能按鈕

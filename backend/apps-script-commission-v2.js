@@ -171,32 +171,32 @@ function handleCreatePartner(data, e) {
     }
     
     const timestamp = new Date();
+    // 按照標題行順序建立資料陣列
+    // id, partner_code, name, email, phone, level, level_progress, total_successful_referrals, 
+    // commission_preference, total_commission_earned, total_commission_paid, pending_commission, 
+    // coupon_code, coupon_url, landing_link, coupon_link, short_landing_link, short_coupon_link, 
+    // created_at, updated_at
     const partnerData = [
-      '', // ID (自動編號)
-      data.partner_code || 'UNKNOWN',
-      data.name || '',
-      data.email || '',
-      data.phone || '',
-      'LV1_INSIDER', // level - 預設為 LV1
-      0, // level_progress - 本年度成功推薦數
-      0, // total_successful_referrals - 累積成功推薦數
-      'CASH', // commission_preference - 預設現金
-      0, // total_commission_earned - 累積佣金總額
-      0, // total_commission_paid - 已支付佣金總額
-      0, // pending_commission - 未支付佣金總額
-      '', // bank_name - 銀行名稱
-      '', // bank_branch - 分行
-      '', // account_holder - 戶名
-      '', // account_number - 帳號
-      false, // first_referral_bonus_claimed - 是否已領取首次推薦獎勵
-      'active', // status
-      data.landing_link || '',
-      data.coupon_link || '',
-      data.coupon_code || '',
-      data.coupon_url || '',
-      data.notes || '',
-      timestamp, // created_at
-      timestamp  // updated_at
+      '', // A: id (自動編號)
+      data.partner_code || 'UNKNOWN', // B: partner_code
+      data.name || '', // C: name
+      data.email || '', // D: email
+      data.phone || '', // E: phone
+      'LV1_INSIDER', // F: level - 預設為 LV1
+      0, // G: level_progress - 本年度成功推薦數
+      0, // H: total_successful_referrals - 累積成功推薦數
+      'CASH', // I: commission_preference - 預設現金
+      0, // J: total_commission_earned - 累積佣金總額
+      0, // K: total_commission_paid - 已支付佣金總額
+      0, // L: pending_commission - 未支付佣金總額
+      data.coupon_code || '', // M: coupon_code
+      data.coupon_url || '', // N: coupon_url
+      data.landing_link || '', // O: landing_link
+      data.coupon_link || '', // P: coupon_link
+      data.short_landing_link || '', // Q: short_landing_link
+      data.short_coupon_link || '', // R: short_coupon_link
+      timestamp, // S: created_at
+      timestamp  // T: updated_at
     ];
     
     Logger.log('準備插入資料到 Partners 工作表');

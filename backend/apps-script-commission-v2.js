@@ -546,23 +546,49 @@ function htmlEscape(str) {
 
 function getPartnerCouponUrl(partnerCode) {
   try {
-    if (!partnerCode) return null;
+    if (!partnerCode) {
+      Logger.log('getPartnerCouponUrl: 沒有提供夥伴代碼');
+      return null;
+    }
+    
+    Logger.log('查詢夥伴優惠券URL: ' + partnerCode);
     
     const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
     const sheet = spreadsheet.getSheetByName('Partners');
     
-    if (!sheet) return null;
+    if (!sheet) {
+      Logger.log('Partners 工作表不存在');
+      return null;
+    }
     
     const range = sheet.getDataRange();
+    if (range.getNumRows() <= 1) {
+      Logger.log('Partners 表格沒有資料');
+      return null;
+    }
+    
     const values = range.getValues();
+    const headers = values[0];
+    
+    // 找到 coupon_url 欄位的索引
+    const couponUrlIndex = headers.indexOf('coupon_url');
+    if (couponUrlIndex === -1) {
+      Logger.log('找不到 coupon_url 欄位，可用欄位: ' + headers.join(', '));
+      return null;
+    }
+    
+    Logger.log('coupon_url 欄位索引: ' + couponUrlIndex);
     
     // 查找對應的夥伴代碼
     for (let i = 1; i < values.length; i++) {
-      if (values[i][1] === partnerCode) { // 假設partner_code在第二列
-        return values[i][21] || null; // 假設coupon_url在第22列
+      if (values[i][1] === partnerCode) { // partner_code 在第B列 (索引1)
+        const couponUrl = values[i][couponUrlIndex];
+        Logger.log(`找到夥伴 ${partnerCode} 的優惠券連結: ${couponUrl}`);
+        return couponUrl || null;
       }
     }
     
+    Logger.log(`找不到夥伴代碼: ${partnerCode}，已有的夥伴: ` + values.slice(1).map(row => row[1]).join(', '));
     return null;
   } catch (error) {
     Logger.log('查詢夥伴優惠券URL錯誤: ' + error.toString());

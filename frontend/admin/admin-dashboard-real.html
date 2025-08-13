@@ -597,6 +597,12 @@
                                         ✅ 確認入住
                                     </button>
                                 ` : ''}
+                                ${booking.stay_status !== 'COMPLETED' && booking.stay_status !== 'CANCELLED' ? `
+                                    <button onclick="cancelBooking('${booking.id}')" 
+                                        class="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700">
+                                        ❌ 取消訂單
+                                    </button>
+                                ` : ''}
                                 <button onclick="viewBookingDetails('${booking.id}')" 
                                     class="text-blue-600 hover:underline text-xs">
                                     詳情
@@ -1523,6 +1529,50 @@
             `;
 
             document.body.appendChild(modal);
+        }
+
+        // 取消訂單
+        async function cancelBooking(bookingId) {
+            const booking = allData.bookings.find(b => b.id == bookingId);
+            if (!booking) {
+                alert('找不到訂房記錄');
+                return;
+            }
+
+            const confirmMessage = `確定要取消以下訂房嗎？\n\n房客：${booking.guest_name}\n入住期間：${booking.checkin_date} ~ ${booking.checkout_date}\n${booking.partner_code ? `推薦大使：${booking.partner_code}` : '無推薦大使'}\n\n取消後將無法復原！`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+
+            try {
+                // 這裡需要新的後端 API 來處理取消訂單
+                // 暫時先更新前端顯示，實際需要與後端同步
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'cancel_booking',
+                        booking_id: bookingId,
+                        cancelled_reason: '管理員取消'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccessMessage('✅ 訂單已成功取消！');
+                    await loadRealData(); // 重新載入數據
+                    displayBookings(allData.bookings);
+                } else {
+                    alert('❌ 取消失敗：' + result.error);
+                }
+            } catch (error) {
+                console.error('取消訂單失敗:', error);
+                alert('❌ 取消失敗：' + error.message);
+            }
         }
 
         // 取得等級文字

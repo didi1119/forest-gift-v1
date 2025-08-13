@@ -49,15 +49,13 @@
                     <div class="grid grid-cols-1 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-2">推薦大使代碼</label>
-                            <div class="relative">
-                                <input type="text" id="partnerCode" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none pr-12" placeholder="例：WANG001">
-                                <div id="partnerValidation" class="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                    <!-- 驗證狀態會顯示在這裡 -->
-                                </div>
-                            </div>
-                            <p class="text-xs text-stone-500 mt-1">留空表示非大使推薦，填寫後將自動驗證代碼有效性</p>
+                            <select id="partnerCode" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                                <option value="">請選擇推薦大使（無推薦請留空）</option>
+                                <!-- 大使選項會通過 JavaScript 動態載入 -->
+                            </select>
+                            <p class="text-xs text-stone-500 mt-1">選擇推薦大使或留空表示非大使推薦</p>
                             <div id="partnerInfo" class="mt-2 p-3 bg-gray-50 rounded-lg hidden">
-                                <!-- 大使資訊會顯示在這裡 -->
+                                <!-- 選中大使的詳細資訊會顯示在這裡 -->
                             </div>
                         </div>
                     </div>
@@ -168,13 +166,10 @@
                 return;
             }
 
-            // 驗證推薦大使代碼（如果有填寫）
-            if (formData.partner_code) {
-                const isValid = await validatePartnerCode(formData.partner_code);
-                if (!isValid) {
-                    alert('推薦大使代碼無效，請檢查後重新輸入或留空！');
-                    return;
-                }
+            // 驗證推薦大使代碼（如果有選擇）
+            if (formData.partner_code && !allPartners.find(p => p.partner_code === formData.partner_code)) {
+                alert('選擇的推薦大使代碼無效，請重新選擇！');
+                return;
             }
 
             // 驗證日期邏輯
@@ -312,7 +307,7 @@
             }, 3000);
         }
 
-        // 初始化日期欄位
+        // 初始化日期欄位和載入大使列表
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('checkinDate').value = today;
@@ -320,85 +315,83 @@
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             document.getElementById('checkoutDate').value = tomorrow.toISOString().split('T')[0];
+
+            // 載入大使列表
+            loadPartners();
         });
 
-        // 推薦大使代碼驗證
-        let partnerValidationTimeout;
-        document.getElementById('partnerCode').addEventListener('input', function() {
-            const partnerCode = this.value.trim();
-            
-            // 清除之前的定時器
-            clearTimeout(partnerValidationTimeout);
-            
-            if (partnerCode === '') {
-                resetPartnerValidation();
-                return;
-            }
-            
-            // 設定新的定時器，延遲驗證
-            partnerValidationTimeout = setTimeout(() => {
-                validatePartnerCodeUI(partnerCode);
-            }, 500);
-        });
+        // 儲存所有大使資料
+        let allPartners = [];
 
-        async function validatePartnerCodeUI(partnerCode) {
-            const validationEl = document.getElementById('partnerValidation');
-            const partnerInfoEl = document.getElementById('partnerInfo');
-            
-            // 顯示載入狀態
-            validationEl.innerHTML = '<div class="text-gray-400">🔍</div>';
-            
-            try {
-                const isValid = await validatePartnerCode(partnerCode);
-                
-                if (isValid) {
-                    validationEl.innerHTML = '<div class="text-green-600">✓</div>';
-                    
-                    // 顯示大使資訊
-                    const partnerInfo = window.currentPartnerInfo;
-                    partnerInfoEl.innerHTML = `
-                        <div class="text-sm">
-                            <p class="font-semibold text-green-800">✓ 大使資訊確認</p>
-                            <p class="text-stone-600 mt-1">姓名：${partnerInfo.name}</p>
-                            <p class="text-stone-600">等級：${getLevelText(partnerInfo.level)}</p>
-                            <p class="text-stone-600">預計佣金：${getCommissionText(partnerInfo.level)}</p>
-                        </div>
-                    `;
-                    partnerInfoEl.classList.remove('hidden');
-                } else {
-                    validationEl.innerHTML = '<div class="text-red-600">✗</div>';
-                    partnerInfoEl.classList.add('hidden');
-                }
-            } catch (error) {
-                validationEl.innerHTML = '<div class="text-red-600">!</div>';
-                partnerInfoEl.classList.add('hidden');
-            }
-        }
-
-        async function validatePartnerCode(partnerCode) {
+        // 載入大使列表
+        async function loadPartners() {
             try {
                 const response = await fetch(APPS_SCRIPT_URL + '?action=get_dashboard_data');
                 const result = await response.json();
                 
                 if (result.success && result.data.partners) {
-                    const partner = result.data.partners.find(p => p.partner_code === partnerCode);
-                    if (partner) {
-                        window.currentPartnerInfo = partner;
-                        return true;
-                    }
+                    allPartners = result.data.partners;
+                    populatePartnerSelect();
                 }
-                return false;
             } catch (error) {
-                console.error('驗證推薦大使代碼失敗:', error);
-                return false;
+                console.error('載入大使列表失敗:', error);
             }
         }
 
-        function resetPartnerValidation() {
-            document.getElementById('partnerValidation').innerHTML = '';
-            document.getElementById('partnerInfo').classList.add('hidden');
-            window.currentPartnerInfo = null;
+        // 填充大使下拉選單
+        function populatePartnerSelect() {
+            const select = document.getElementById('partnerCode');
+            
+            // 清空現有選項（保留第一個空選項）
+            select.innerHTML = '<option value="">請選擇推薦大使（無推薦請留空）</option>';
+            
+            // 添加大使選項
+            allPartners.forEach(partner => {
+                const option = document.createElement('option');
+                option.value = partner.partner_code;
+                option.textContent = `${partner.partner_code} - ${partner.name || '未設定姓名'} (${getLevelText(partner.level)})`;
+                select.appendChild(option);
+            });
         }
+
+        // 處理大使選擇變更
+        document.getElementById('partnerCode').addEventListener('change', function() {
+            const selectedCode = this.value;
+            const partnerInfoEl = document.getElementById('partnerInfo');
+            
+            if (selectedCode === '') {
+                partnerInfoEl.classList.add('hidden');
+                window.currentPartnerInfo = null;
+                return;
+            }
+            
+            const partner = allPartners.find(p => p.partner_code === selectedCode);
+            if (partner) {
+                window.currentPartnerInfo = partner;
+                
+                // 顯示大使詳細資訊
+                partnerInfoEl.innerHTML = `
+                    <div class="text-sm">
+                        <p class="font-semibold text-green-800">✓ 已選擇推薦大使</p>
+                        <div class="grid grid-cols-2 gap-4 mt-2">
+                            <div>
+                                <p class="text-stone-600">代碼：${partner.partner_code}</p>
+                                <p class="text-stone-600">姓名：${partner.name || '未設定'}</p>
+                            </div>
+                            <div>
+                                <p class="text-stone-600">等級：${getLevelText(partner.level)}</p>
+                                <p class="text-stone-600">電話：${partner.phone || '未設定'}</p>
+                            </div>
+                        </div>
+                        <div class="mt-3 p-2 bg-blue-50 rounded">
+                            <p class="font-medium text-blue-800">預計佣金：</p>
+                            <p class="text-sm text-blue-600">${getCommissionText(partner.level)}</p>
+                        </div>
+                    </div>
+                `;
+                partnerInfoEl.classList.remove('hidden');
+            }
+        });
 
         function getLevelText(level) {
             const levelMap = {

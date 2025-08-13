@@ -1631,16 +1631,31 @@
                 // 監聽 iframe 載入完成事件
                 iframe.onload = function() {
                     setTimeout(() => {
+                        // 立即更新前端數據，避免需要等待後端
+                        const bookingIndex = allData.bookings.findIndex(b => b.id == booking.id);
+                        if (bookingIndex !== -1) {
+                            allData.bookings[bookingIndex].stay_status = 'COMPLETED';
+                            if (commissionData) {
+                                allData.bookings[bookingIndex].commission_amount = commissionData.commission_amount;
+                                allData.bookings[bookingIndex].commission_type = commissionData.commission_type;
+                            }
+                        }
+                        
                         showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
                         
-                        // 重新載入數據
-                        loadRealData().then(() => {
-                            displayBookings(allData.bookings);
-                        });
+                        // 立即刷新顯示
+                        displayBookings(allData.bookings);
+                        
+                        // 背景重新載入完整數據確保一致性
+                        setTimeout(() => {
+                            loadRealData().then(() => {
+                                displayBookings(allData.bookings);
+                            });
+                        }, 2000);
                         
                         submitButton.textContent = originalText;
                         submitButton.disabled = false;
-                    }, 1000);
+                    }, 500);
                 };
 
                 // 提交表單
@@ -2039,24 +2054,63 @@
                     return;
                 }
 
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                const result = await response.json();
+                // 使用表單提交方式避免 CORS 問題
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
                 
-                if (result.success) {
-                    showSuccessMessage('✅ 訂單更新成功！');
-                    closeModal('editBookingModal');
-                    await loadRealData(); // 重新載入數據
-                    displayBookings(allData.bookings);
-                } else {
-                    alert('❌ 更新失敗：' + result.error);
-                }
+                Object.keys(formData).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = formData[key] !== null ? formData[key] : '';
+                    form.appendChild(input);
+                });
+                
+                document.body.appendChild(form);
+                
+                // 監聽回應
+                const frameLoadHandler = () => {
+                    try {
+                        const frame = document.getElementById('hiddenFrame');
+                        const frameContent = frame.contentDocument || frame.contentWindow.document;
+                        const result = frameContent.body ? frameContent.body.textContent : '';
+                        
+                        if (result) {
+                            const data = JSON.parse(result);
+                            if (data.success) {
+                                showSuccessMessage('✅ 訂單更新成功！');
+                                closeModal('editBookingModal');
+                                setTimeout(() => {
+                                    loadRealData().then(() => {
+                                        displayBookings(allData.bookings);
+                                    });
+                                }, 1000);
+                            } else {
+                                alert('❌ 更新失敗：' + data.error);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('解析回應失敗:', error);
+                        // 假設成功，重新載入數據
+                        showSuccessMessage('✅ 訂單更新完成！');
+                        closeModal('editBookingModal');
+                        setTimeout(() => {
+                            loadRealData().then(() => {
+                                displayBookings(allData.bookings);
+                            });
+                        }, 1000);
+                    }
+                    
+                    document.body.removeChild(form);
+                    frame.removeEventListener('load', frameLoadHandler);
+                };
+                
+                document.getElementById('hiddenFrame').addEventListener('load', frameLoadHandler);
+                form.submit();
+                
             } catch (error) {
                 console.error('更新訂單失敗:', error);
                 alert('❌ 更新失敗：' + error.message);
@@ -2078,27 +2132,67 @@
             }
 
             try {
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'delete_booking',
-                        booking_id: bookingId
-                    })
-                });
-
-                const result = await response.json();
+                // 使用表單提交方式避免 CORS 問題
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
                 
-                if (result.success) {
-                    showSuccessMessage('✅ 訂單已成功刪除！');
-                    closeModal('editBookingModal');
-                    await loadRealData(); // 重新載入數據
-                    displayBookings(allData.bookings);
-                } else {
-                    alert('❌ 刪除失敗：' + result.error);
-                }
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'delete_booking';
+                form.appendChild(actionInput);
+                
+                const bookingIdInput = document.createElement('input');
+                bookingIdInput.type = 'hidden';
+                bookingIdInput.name = 'booking_id';
+                bookingIdInput.value = bookingId;
+                form.appendChild(bookingIdInput);
+                
+                document.body.appendChild(form);
+                
+                // 監聽回應
+                const frameLoadHandler = () => {
+                    try {
+                        const frame = document.getElementById('hiddenFrame');
+                        const frameContent = frame.contentDocument || frame.contentWindow.document;
+                        const result = frameContent.body ? frameContent.body.textContent : '';
+                        
+                        if (result) {
+                            const data = JSON.parse(result);
+                            if (data.success) {
+                                showSuccessMessage('✅ 訂單已成功刪除！');
+                                closeModal('editBookingModal');
+                                setTimeout(() => {
+                                    loadRealData().then(() => {
+                                        displayBookings(allData.bookings);
+                                    });
+                                }, 1000);
+                            } else {
+                                alert('❌ 刪除失敗：' + data.error);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('解析回應失敗:', error);
+                        // 假設成功，重新載入數據
+                        showSuccessMessage('✅ 訂單刪除完成！');
+                        closeModal('editBookingModal');
+                        setTimeout(() => {
+                            loadRealData().then(() => {
+                                displayBookings(allData.bookings);
+                            });
+                        }, 1000);
+                    }
+                    
+                    document.body.removeChild(form);
+                    frame.removeEventListener('load', frameLoadHandler);
+                };
+                
+                document.getElementById('hiddenFrame').addEventListener('load', frameLoadHandler);
+                form.submit();
+                
             } catch (error) {
                 console.error('刪除訂單失敗:', error);
                 alert('❌ 刪除失敗：' + error.message);

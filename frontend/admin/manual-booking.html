@@ -54,7 +54,7 @@
                                     <option value="">載入中...</option>
                                     <!-- 大使選項會通過 JavaScript 動態載入 -->
                                 </select>
-                                <button type="button" onclick="loadPartners()" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                                <button type="button" onclick="retryLoadPartners()" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                                     🔄 重新載入
                                 </button>
                             </div>
@@ -327,12 +327,31 @@
             // 設定大使選擇監聽器
             setupPartnerCodeListener();
             
-            // 載入大使列表
-            loadPartners();
+            // 載入大使列表（延遲一點時間確保頁面完全載入）
+            setTimeout(() => {
+                console.log('延遲載入大使列表...');
+                loadPartners();
+            }, 1000);
         });
 
         // 儲存所有大使資料
         let allPartners = [];
+
+        // 重試載入大使列表
+        async function retryLoadPartners() {
+            // 清除任何現有的錯誤訊息
+            const existingError = document.querySelector('.bg-red-100');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            // 重設選項
+            const select = document.getElementById('partnerCode');
+            select.innerHTML = '<option value="">載入中...</option>';
+            
+            // 重新載入
+            await loadPartners();
+        }
 
         // 載入大使列表
         async function loadPartners() {
@@ -372,9 +391,22 @@
                 }
             } catch (error) {
                 console.error('載入大使列表失敗:', error);
-                // 顯示錯誤提示給用戶
+                console.error('錯誤詳情:', error.message);
+                console.error('錯誤堆疊:', error.stack);
+                
+                // 顯示詳細錯誤給用戶
                 const select = document.getElementById('partnerCode');
-                select.innerHTML = '<option value="">載入大使清單失敗，請重新整理頁面</option>';
+                select.innerHTML = `<option value="">載入失敗: ${error.message}</option>`;
+                
+                // 在頁面上顯示錯誤訊息
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
+                errorDiv.innerHTML = `
+                    <h4 class="font-bold">大使清單載入失敗</h4>
+                    <p class="text-sm">錯誤: ${error.message}</p>
+                    <p class="text-sm">請檢查網路連接或重新整理頁面</p>
+                `;
+                document.querySelector('.brand-card').insertBefore(errorDiv, document.getElementById('bookingForm'));
             }
         }
 

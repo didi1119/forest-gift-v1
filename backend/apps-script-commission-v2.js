@@ -702,6 +702,9 @@ function handleUpdateBooking(data, e) {
 // ===== 處理刪除訂房 =====
 function handleDeleteBooking(data, e) {
   try {
+    Logger.log('🗑️ 開始處理刪除訂房請求');
+    Logger.log('請求數據: ' + JSON.stringify(data));
+    
     const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
     const bookingsSheet = spreadsheet.getSheetByName('Bookings');
     
@@ -712,21 +715,52 @@ function handleDeleteBooking(data, e) {
       });
     }
     
-    const bookingId = parseInt(data.booking_id);
-    
-    // 1. 找到要刪除的訂房記錄
+    // 獲取所有訂房數據
     const bookingRange = bookingsSheet.getDataRange();
     const bookingValues = bookingRange.getValues();
     let bookingRowIndex = -1;
+    let bookingData = null;
     
-    for (let i = 1; i < bookingValues.length; i++) {
-      if (bookingValues[i][0] === bookingId) { // 假設ID在第一列
-        bookingRowIndex = i + 1; // Google Sheets 行數從1開始
-        break;
+    // 首先嘗試用 ID 查找（如果有的話）
+    if (data.booking_id && data.booking_id !== '') {
+      Logger.log('🔍 嘗試用ID查找: ' + data.booking_id);
+      const bookingId = parseInt(data.booking_id);
+      
+      for (let i = 1; i < bookingValues.length; i++) {
+        if (bookingValues[i][0] === bookingId) {
+          Logger.log('✅ ID查找成功！行號: ' + (i + 1));
+          bookingRowIndex = i + 1;
+          bookingData = bookingValues[i];
+          break;
+        }
+      }
+    }
+    
+    // 如果ID查找失敗，使用複合條件查找
+    if (bookingRowIndex === -1) {
+      Logger.log('🔍 ID查找失敗，開始用複合條件查找...');
+      Logger.log('查找條件 - 姓名: ' + data.guest_name + ', 電話: ' + data.guest_phone + ', 入住日期: ' + data.checkin_date);
+      
+      for (let i = 1; i < bookingValues.length; i++) {
+        const rowGuestName = bookingValues[i][2]; // guest_name 在第3列 (索引2)
+        const rowGuestPhone = String(bookingValues[i][3]); // guest_phone 在第4列 (索引3)
+        const rowCheckinDate = bookingValues[i][5]; // checkin_date 在第6列 (索引5)
+        
+        Logger.log(`🔍 第${i+1}行資料 - 姓名: ${rowGuestName}, 電話: ${rowGuestPhone}, 入住: ${formatDate(rowCheckinDate)}`);
+        
+        if (rowGuestName === data.guest_name && 
+            rowGuestPhone === String(data.guest_phone) && 
+            formatDate(rowCheckinDate) === formatDate(data.checkin_date)) {
+          Logger.log('✅ 複合條件查找成功！行號: ' + (i + 1));
+          bookingRowIndex = i + 1;
+          bookingData = bookingValues[i];
+          break;
+        }
       }
     }
     
     if (bookingRowIndex === -1) {
+      Logger.log('❌ 找不到要刪除的訂房記錄');
       return createJsonResponse({
         success: false,
         error: '找不到指定的訂房記錄'
@@ -734,14 +768,18 @@ function handleDeleteBooking(data, e) {
     }
     
     // 2. 刪除訂房記錄（刪除整行）
+    Logger.log('🗑️ 準備刪除第 ' + bookingRowIndex + ' 行的記錄');
+    Logger.log('被刪除的記錄: ' + JSON.stringify(bookingData));
+    
     bookingsSheet.deleteRow(bookingRowIndex);
     
-    Logger.log('訂房刪除處理完成: 訂房ID ' + bookingId);
+    Logger.log('✅ 訂房刪除處理完成: 房客 ' + data.guest_name + ', 電話 ' + data.guest_phone);
     
     const result = {
       success: true,
       message: '訂房記錄已成功刪除',
-      booking_id: bookingId,
+      guest_name: data.guest_name,
+      guest_phone: data.guest_phone,
       deleted_at: new Date().toISOString()
     };
     

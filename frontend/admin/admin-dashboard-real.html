@@ -428,7 +428,7 @@
                     total_successful_referrals: 2,
                     total_commission_earned: 1500,
                     pending_commission: 1000,
-                    commission_preference: 'CASH'
+                    commission_preference: 'ACCOMMODATION'
                 }
             ];
 
@@ -595,9 +595,9 @@
                                 <div class="font-semibold text-green-600">$${booking.commission_amount}</div>
                                 <div class="text-xs text-stone-500">實際佣金</div>
                             ` : expectedCommission ? `
-                                <div class="font-medium text-blue-600">$${expectedCommission.cash}</div>
-                                <div class="text-xs text-stone-500">預計現金</div>
-                                <div class="text-xs text-stone-500">或 $${expectedCommission.accommodation}住宿金</div>
+                                <div class="font-medium text-green-600">$${expectedCommission.accommodation}</div>
+                                <div class="text-xs text-stone-500">預計住宿金</div>
+                                <div class="text-xs text-stone-400">($${expectedCommission.cash}現金)</div>
                             ` : `
                                 <span class="text-stone-400">-</span>
                             `}
@@ -1550,13 +1550,14 @@
             }
 
             const expectedCommission = calculateExpectedCommission(partner.level, booking.room_price);
-            const commissionType = prompt(`確認 ${booking.guest_name} 完成入住。\n\n推薦大使：${booking.partner_code} (${partner.name})\n預計佣金：\n- 現金：$${expectedCommission.cash}\n- 住宿金：$${expectedCommission.accommodation}\n\n請選擇佣金類型 (輸入 'cash' 或 'accommodation'):`);
+            
+            // 簡化流程：統一先給住宿金，後續可以自行轉換為現金
+            const confirmed = confirm(`確認 ${booking.guest_name} 完成入住？\n\n推薦大使：${booking.partner_code} (${partner.name})\n佣金：$${expectedCommission.accommodation} 住宿金\n\n（大使後續可自行決定是否轉換為現金）`);
 
-            if (commissionType === 'cash' || commissionType === 'accommodation') {
-                const commissionAmount = expectedCommission[commissionType];
+            if (confirmed) {
                 await updateBookingStatus(booking, 'COMPLETED', {
-                    commission_amount: commissionAmount,
-                    commission_type: commissionType.toUpperCase(),
+                    commission_amount: expectedCommission.accommodation,
+                    commission_type: 'ACCOMMODATION',
                     partner_code: booking.partner_code
                 });
             }
@@ -1705,8 +1706,8 @@
                                 ` : `
                                     <div>
                                         <p class="font-medium text-blue-600">預計佣金：</p>
-                                        <p class="text-sm">現金：$${expectedCommission.cash}</p>
                                         <p class="text-sm">住宿金：$${expectedCommission.accommodation}</p>
+                                        <p class="text-sm text-gray-600">（可轉換現金：$${expectedCommission.cash}）</p>
                                     </div>
                                 `}
                             </div>
@@ -1905,7 +1906,7 @@
                     <p class="font-medium text-green-700">${partner.name || '未設定姓名'}</p>
                     <p class="text-xs text-gray-600">${getLevelText(partner.level)}</p>
                     <p class="text-xs text-gray-600">電話：${partner.phone || '未設定'}</p>
-                    <p class="text-xs text-blue-600">佣金：現金 $${expectedCommission.cash} / 住宿金 $${expectedCommission.accommodation}</p>
+                    <p class="text-xs text-blue-600">佣金：住宿金 $${expectedCommission.accommodation}（可轉換現金 $${expectedCommission.cash}）</p>
                 </div>
             `;
         }
@@ -1921,8 +1922,8 @@
             return `
                 <div class="text-sm">
                     <p class="font-medium text-blue-700">預計佣金</p>
-                    <p class="text-xs text-blue-600">現金：$${expectedCommission.cash}</p>
                     <p class="text-xs text-blue-600">住宿金：$${expectedCommission.accommodation}</p>
+                    <p class="text-xs text-gray-500">（可轉換現金：$${expectedCommission.cash}）</p>
                 </div>
             `;
         }
@@ -1963,8 +1964,8 @@
             previewDiv.innerHTML = `
                 <div class="text-sm">
                     <p class="font-medium text-blue-700">預計佣金</p>
-                    <p class="text-xs text-blue-600">現金：$${expectedCommission.cash}</p>
                     <p class="text-xs text-blue-600">住宿金：$${expectedCommission.accommodation}</p>
+                    <p class="text-xs text-gray-500">（可轉換現金：$${expectedCommission.cash}）</p>
                 </div>
             `;
         }

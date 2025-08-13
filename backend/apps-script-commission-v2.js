@@ -206,7 +206,7 @@ function handleCreatePartner(data, e) {
       'LV1_INSIDER', // F: level - 預設為 LV1
       0, // G: level_progress - 本年度成功推薦數
       0, // H: total_successful_referrals - 累積成功推薦數
-      'CASH', // I: commission_preference - 預設現金
+      'ACCOMMODATION', // I: commission_preference - 預設住宿金
       0, // J: total_commission_earned - 累積佣金總額
       0, // K: total_commission_paid - 已支付佣金總額
       0, // L: pending_commission - 未支付佣金總額
@@ -295,7 +295,7 @@ function handleCreateBooking(data, e) {
       data.payment_status || 'PENDING', // payment_status
       'NOT_ELIGIBLE', // commission_status - 預設不符合
       0, // commission_amount - 預設0
-      'CASH', // commission_type - 預設現金
+      'ACCOMMODATION', // commission_type - 預設住宿金
       false, // is_first_referral_bonus
       0, // first_referral_bonus_amount
       '', // manually_confirmed_by

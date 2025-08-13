@@ -46,23 +46,19 @@
                 <!-- 推薦大使資訊 -->
                 <div class="bg-green-50 p-6 rounded-lg">
                     <h3 class="text-lg font-semibold text-green-800 mb-4">👤 推薦大使資訊</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-stone-700 mb-2">推薦大使代碼</label>
-                            <input type="text" id="partnerCode" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none" placeholder="例：WANG001">
-                            <p class="text-xs text-stone-500 mt-1">留空表示非大使推薦</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-stone-700 mb-2">訂房來源 *</label>
-                            <select id="bookingSource" required class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
-                                <option value="">請選擇訂房來源</option>
-                                <option value="PHONE_BOOKING">電話訂房</option>
-                                <option value="REFERRAL_LINK">推薦連結</option>
-                                <option value="MANUAL_ENTRY">現場登記</option>
-                                <option value="SOCIAL_MEDIA">社群媒體</option>
-                                <option value="WORD_OF_MOUTH">口耳相傳</option>
-                                <option value="OTHER">其他</option>
-                            </select>
+                            <div class="relative">
+                                <input type="text" id="partnerCode" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none pr-12" placeholder="例：WANG001">
+                                <div id="partnerValidation" class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                    <!-- 驗證狀態會顯示在這裡 -->
+                                </div>
+                            </div>
+                            <p class="text-xs text-stone-500 mt-1">留空表示非大使推薦，填寫後將自動驗證代碼有效性</p>
+                            <div id="partnerInfo" class="mt-2 p-3 bg-gray-50 rounded-lg hidden">
+                                <!-- 大使資訊會顯示在這裡 -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -160,16 +156,25 @@
                 checkin_date: document.getElementById('checkinDate').value,
                 checkout_date: document.getElementById('checkoutDate').value,
                 room_price: parseInt(document.getElementById('roomPrice').value) || 0,
-                booking_source: document.getElementById('bookingSource').value,
+                booking_source: 'MANUAL_ENTRY', // 固定為手動登記
                 stay_status: document.getElementById('stayStatus').value,
                 payment_status: document.getElementById('paymentStatus').value,
                 notes: document.getElementById('notes').value.trim()
             };
 
             // 驗證必填欄位
-            if (!formData.guest_name || !formData.guest_phone || !formData.checkin_date || !formData.checkout_date || !formData.room_price || !formData.booking_source) {
+            if (!formData.guest_name || !formData.guest_phone || !formData.checkin_date || !formData.checkout_date || !formData.room_price) {
                 alert('請填寫所有必填欄位！');
                 return;
+            }
+
+            // 驗證推薦大使代碼（如果有填寫）
+            if (formData.partner_code) {
+                const isValid = await validatePartnerCode(formData.partner_code);
+                if (!isValid) {
+                    alert('推薦大使代碼無效，請檢查後重新輸入或留空！');
+                    return;
+                }
             }
 
             // 驗證日期邏輯
@@ -316,6 +321,102 @@
             tomorrow.setDate(tomorrow.getDate() + 1);
             document.getElementById('checkoutDate').value = tomorrow.toISOString().split('T')[0];
         });
+
+        // 推薦大使代碼驗證
+        let partnerValidationTimeout;
+        document.getElementById('partnerCode').addEventListener('input', function() {
+            const partnerCode = this.value.trim();
+            
+            // 清除之前的定時器
+            clearTimeout(partnerValidationTimeout);
+            
+            if (partnerCode === '') {
+                resetPartnerValidation();
+                return;
+            }
+            
+            // 設定新的定時器，延遲驗證
+            partnerValidationTimeout = setTimeout(() => {
+                validatePartnerCodeUI(partnerCode);
+            }, 500);
+        });
+
+        async function validatePartnerCodeUI(partnerCode) {
+            const validationEl = document.getElementById('partnerValidation');
+            const partnerInfoEl = document.getElementById('partnerInfo');
+            
+            // 顯示載入狀態
+            validationEl.innerHTML = '<div class="text-gray-400">🔍</div>';
+            
+            try {
+                const isValid = await validatePartnerCode(partnerCode);
+                
+                if (isValid) {
+                    validationEl.innerHTML = '<div class="text-green-600">✓</div>';
+                    
+                    // 顯示大使資訊
+                    const partnerInfo = window.currentPartnerInfo;
+                    partnerInfoEl.innerHTML = `
+                        <div class="text-sm">
+                            <p class="font-semibold text-green-800">✓ 大使資訊確認</p>
+                            <p class="text-stone-600 mt-1">姓名：${partnerInfo.name}</p>
+                            <p class="text-stone-600">等級：${getLevelText(partnerInfo.level)}</p>
+                            <p class="text-stone-600">預計佣金：${getCommissionText(partnerInfo.level)}</p>
+                        </div>
+                    `;
+                    partnerInfoEl.classList.remove('hidden');
+                } else {
+                    validationEl.innerHTML = '<div class="text-red-600">✗</div>';
+                    partnerInfoEl.classList.add('hidden');
+                }
+            } catch (error) {
+                validationEl.innerHTML = '<div class="text-red-600">!</div>';
+                partnerInfoEl.classList.add('hidden');
+            }
+        }
+
+        async function validatePartnerCode(partnerCode) {
+            try {
+                const response = await fetch(APPS_SCRIPT_URL + '?action=get_dashboard_data');
+                const result = await response.json();
+                
+                if (result.success && result.data.partners) {
+                    const partner = result.data.partners.find(p => p.partner_code === partnerCode);
+                    if (partner) {
+                        window.currentPartnerInfo = partner;
+                        return true;
+                    }
+                }
+                return false;
+            } catch (error) {
+                console.error('驗證推薦大使代碼失敗:', error);
+                return false;
+            }
+        }
+
+        function resetPartnerValidation() {
+            document.getElementById('partnerValidation').innerHTML = '';
+            document.getElementById('partnerInfo').classList.add('hidden');
+            window.currentPartnerInfo = null;
+        }
+
+        function getLevelText(level) {
+            const levelMap = {
+                'LV1_INSIDER': 'LV1 森林知音',
+                'LV2_GUIDE': 'LV2 森林嚮導',
+                'LV3_GUARDIAN': 'LV3 秘境守護者'
+            };
+            return levelMap[level] || level;
+        }
+
+        function getCommissionText(level) {
+            const commissionMap = {
+                'LV1_INSIDER': 'NT$1,000住宿金 或 NT$500現金',
+                'LV2_GUIDE': 'NT$1,200住宿金 或 NT$600現金',
+                'LV3_GUARDIAN': 'NT$1,500住宿金 或 NT$800現金'
+            };
+            return commissionMap[level] || '依等級計算';
+        }
 
         // 自動計算住宿天數提示
         document.getElementById('checkinDate').addEventListener('change', updateStayDuration);

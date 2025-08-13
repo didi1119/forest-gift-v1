@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(node:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(make status:*)"
     ],
     "deny": []
   }

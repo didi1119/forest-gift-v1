@@ -537,6 +537,10 @@
             table.innerHTML = bookings.map(booking => {
                 const statusClass = getStatusClass(booking.stay_status);
                 const statusText = getStatusText(booking.stay_status);
+                const partner = booking.partner_code ? allData.partners.find(p => p.partner_code === booking.partner_code) : null;
+                const expectedCommission = partner ? calculateExpectedCommission(partner.level, booking.room_price) : null;
+                const isCheckoutPassed = booking.checkout_date && new Date(booking.checkout_date) < new Date();
+                const canConfirmStay = booking.stay_status !== 'COMPLETED' && isCheckoutPassed;
                 
                 return `
                     <tr class="border-b hover:bg-stone-50">
@@ -544,11 +548,16 @@
                             <div>
                                 <div class="font-semibold">${booking.guest_name}</div>
                                 <div class="text-sm text-stone-600">${booking.guest_phone || ''}</div>
+                                ${booking.guest_email ? `<div class="text-xs text-stone-500">${booking.guest_email}</div>` : ''}
                             </div>
                         </td>
                         <td class="py-4 px-4">
                             ${booking.partner_code ? `
                                 <div class="font-medium text-green-700">${booking.partner_code}</div>
+                                ${partner ? `
+                                    <div class="text-xs text-stone-600">${partner.name}</div>
+                                    <div class="text-xs text-stone-500">${getLevelText(partner.level)}</div>
+                                ` : ''}
                             ` : `
                                 <span class="text-stone-400">非推薦訂房</span>
                             `}
@@ -556,6 +565,9 @@
                         <td class="py-4 px-4 text-sm">
                             <div>${booking.checkin_date}</div>
                             <div class="text-stone-500">~ ${booking.checkout_date}</div>
+                            ${canConfirmStay ? `
+                                <div class="text-xs text-orange-600 mt-1">⏰ 可確認入住</div>
+                            ` : ''}
                         </td>
                         <td class="py-4 px-4 text-center font-semibold">
                             $${(booking.room_price || 0).toLocaleString()}
@@ -568,15 +580,28 @@
                         <td class="py-4 px-4 text-center">
                             ${booking.commission_amount ? `
                                 <div class="font-semibold text-green-600">$${booking.commission_amount}</div>
+                                <div class="text-xs text-stone-500">實際佣金</div>
+                            ` : expectedCommission ? `
+                                <div class="font-medium text-blue-600">$${expectedCommission.cash}</div>
+                                <div class="text-xs text-stone-500">預計現金</div>
+                                <div class="text-xs text-stone-500">或 $${expectedCommission.accommodation}住宿金</div>
                             ` : `
                                 <span class="text-stone-400">-</span>
                             `}
                         </td>
                         <td class="py-4 px-4 text-center">
-                            <button onclick="editBooking('${booking.id}')" 
-                                class="text-blue-600 hover:underline text-sm">
-                                編輯
-                            </button>
+                            <div class="flex flex-col space-y-1">
+                                ${canConfirmStay ? `
+                                    <button onclick="confirmStayCompletion('${booking.id}')" 
+                                        class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700">
+                                        ✅ 確認入住
+                                    </button>
+                                ` : ''}
+                                <button onclick="viewBookingDetails('${booking.id}')" 
+                                    class="text-blue-600 hover:underline text-xs">
+                                    詳情
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -974,6 +999,96 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="border-t pt-4">
+                            <h4 class="font-semibold mb-3">📋 推薦訂單記錄</h4>
+                            ${bookings.length > 0 ? `
+                                <div class="max-h-60 overflow-y-auto">
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-gray-50 sticky top-0">
+                                            <tr>
+                                                <th class="text-left p-2">房客</th>
+                                                <th class="text-left p-2">入住期間</th>
+                                                <th class="text-center p-2">房價</th>
+                                                <th class="text-center p-2">佣金</th>
+                                                <th class="text-center p-2">狀態</th>
+                                                <th class="text-center p-2">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${bookings.map(booking => {
+                                                const statusClass = getStatusClass(booking.stay_status);
+                                                const statusText = getStatusText(booking.stay_status);
+                                                const expectedCommission = calculateExpectedCommission(partner.level, booking.room_price);
+                                                return `
+                                                    <tr class="border-b hover:bg-gray-50">
+                                                        <td class="p-2">
+                                                            <div class="font-medium">${booking.guest_name}</div>
+                                                            <div class="text-xs text-gray-500">${booking.guest_phone}</div>
+                                                        </td>
+                                                        <td class="p-2 text-xs">
+                                                            <div>${booking.checkin_date}</div>
+                                                            <div class="text-gray-500">~${booking.checkout_date}</div>
+                                                        </td>
+                                                        <td class="p-2 text-center font-medium">
+                                                            $${(booking.room_price || 0).toLocaleString()}
+                                                        </td>
+                                                        <td class="p-2 text-center">
+                                                            ${booking.commission_amount ? `
+                                                                <div class="text-green-600 font-medium">$${booking.commission_amount}</div>
+                                                                <div class="text-xs text-gray-500">${booking.commission_type === 'CASH' ? '現金' : '住宿金'}</div>
+                                                            ` : `
+                                                                <div class="text-blue-600 text-xs">
+                                                                    <div>現金:$${expectedCommission.cash}</div>
+                                                                    <div>住宿:$${expectedCommission.accommodation}</div>
+                                                                </div>
+                                                            `}
+                                                        </td>
+                                                        <td class="p-2 text-center">
+                                                            <span class="px-1 py-0.5 rounded text-xs ${statusClass}">
+                                                                ${statusText}
+                                                            </span>
+                                                        </td>
+                                                        <td class="p-2 text-center">
+                                                            <button onclick="viewBookingDetails('${booking.id}')" 
+                                                                class="text-blue-600 hover:underline text-xs">
+                                                                詳情
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                `;
+                                            }).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="mt-3 p-3 bg-blue-50 rounded-lg">
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                        <div>
+                                            <p class="text-gray-600">總訂單數</p>
+                                            <p class="font-semibold text-blue-600">${bookings.length}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-600">已完成</p>
+                                            <p class="font-semibold text-green-600">${bookings.filter(b => b.stay_status === 'COMPLETED').length}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-600">總營收貢獻</p>
+                                            <p class="font-semibold">$${totalRevenue.toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-600">實際佣金</p>
+                                            <p class="font-semibold text-green-600">$${bookings.reduce((sum, b) => sum + (b.commission_amount || 0), 0).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+                                    <p>尚無推薦訂單記錄</p>
+                                    <p class="text-sm mt-1">推薦成功的訂房將會在此顯示</p>
+                                </div>
+                            `}
+                        </div>
                         
                         <div class="flex justify-end space-x-2 pt-4">
                             <button onclick="editPartner('${partner.partner_code}')" 
@@ -1217,6 +1332,207 @@
             if (modal) {
                 modal.remove();
             }
+        }
+
+        // 計算預期佣金
+        function calculateExpectedCommission(level, roomPrice) {
+            const commissionRates = {
+                'LV1_INSIDER': { accommodation: 1000, cash: 500 },
+                'LV2_GUIDE': { accommodation: 1200, cash: 600 },
+                'LV3_GUARDIAN': { accommodation: 1500, cash: 800 }
+            };
+            
+            return commissionRates[level] || { accommodation: 0, cash: 0 };
+        }
+
+        // 確認入住完成
+        async function confirmStayCompletion(bookingId) {
+            const booking = allData.bookings.find(b => b.id == bookingId);
+            if (!booking) {
+                alert('找不到訂房記錄');
+                return;
+            }
+
+            const partner = booking.partner_code ? allData.partners.find(p => p.partner_code === booking.partner_code) : null;
+            if (!partner) {
+                if (confirm('此訂房沒有推薦大使，是否確認完成入住？')) {
+                    await updateBookingStatus(bookingId, 'COMPLETED', null);
+                }
+                return;
+            }
+
+            const expectedCommission = calculateExpectedCommission(partner.level, booking.room_price);
+            const commissionType = prompt(`確認 ${booking.guest_name} 完成入住。\n\n推薦大使：${booking.partner_code} (${partner.name})\n預計佣金：\n- 現金：$${expectedCommission.cash}\n- 住宿金：$${expectedCommission.accommodation}\n\n請選擇佣金類型 (輸入 'cash' 或 'accommodation'):`);
+
+            if (commissionType === 'cash' || commissionType === 'accommodation') {
+                const commissionAmount = expectedCommission[commissionType];
+                await updateBookingStatus(bookingId, 'COMPLETED', {
+                    commission_amount: commissionAmount,
+                    commission_type: commissionType.toUpperCase(),
+                    partner_code: booking.partner_code
+                });
+            }
+        }
+
+        // 更新訂房狀態
+        async function updateBookingStatus(bookingId, status, commissionData) {
+            try {
+                const updateData = {
+                    action: 'confirm_checkin_completion',
+                    booking_id: bookingId,
+                    ...commissionData
+                };
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
+                    await loadRealData(); // 重新載入數據
+                    displayBookings(allData.bookings);
+                } else {
+                    alert('❌ 更新失敗：' + result.error);
+                }
+            } catch (error) {
+                console.error('更新訂房狀態失敗:', error);
+                alert('❌ 更新失敗：' + error.message);
+            }
+        }
+
+        // 查看訂房詳情
+        function viewBookingDetails(bookingId) {
+            const booking = allData.bookings.find(b => b.id == bookingId);
+            if (!booking) {
+                alert('找不到訂房記錄');
+                return;
+            }
+
+            const partner = booking.partner_code ? allData.partners.find(p => p.partner_code === booking.partner_code) : null;
+            const expectedCommission = partner ? calculateExpectedCommission(partner.level, booking.room_price) : null;
+
+            const modal = document.createElement('div');
+            modal.id = 'bookingDetailsModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold">訂房詳情 #${booking.id}</h3>
+                        <button onclick="closeModal('bookingDetailsModal')" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">房客姓名</label>
+                                <p class="text-lg">${booking.guest_name}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">聯絡電話</label>
+                                <p>${booking.guest_phone || '-'}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">電子郵件</label>
+                                <p>${booking.guest_email || '-'}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">房價</label>
+                                <p class="text-lg font-semibold">$${(booking.room_price || 0).toLocaleString()}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">入住日期</label>
+                                <p>${booking.checkin_date}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">退房日期</label>
+                                <p>${booking.checkout_date}</p>
+                            </div>
+                        </div>
+
+                        ${partner ? `
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-2">推薦大使資訊</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">大使代碼</label>
+                                        <p class="font-medium text-green-700">${partner.partner_code}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">大使姓名</label>
+                                        <p>${partner.name}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">大使等級</label>
+                                        <p>${getLevelText(partner.level)}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">聯絡方式</label>
+                                        <p class="text-sm">${partner.phone || '-'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-gray-600">此訂房無推薦大使</p>
+                            </div>
+                        `}
+
+                        ${expectedCommission ? `
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-2">佣金資訊</h4>
+                                ${booking.commission_amount ? `
+                                    <div class="text-green-600">
+                                        <p class="font-semibold">✅ 實際佣金：$${booking.commission_amount}</p>
+                                        <p class="text-sm">類型：${booking.commission_type === 'CASH' ? '現金' : '住宿金'}</p>
+                                    </div>
+                                ` : `
+                                    <div>
+                                        <p class="font-medium text-blue-600">預計佣金：</p>
+                                        <p class="text-sm">現金：$${expectedCommission.cash}</p>
+                                        <p class="text-sm">住宿金：$${expectedCommission.accommodation}</p>
+                                    </div>
+                                `}
+                            </div>
+                        ` : ''}
+
+                        ${booking.notes ? `
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">備註</label>
+                                <p class="bg-gray-50 p-3 rounded">${booking.notes}</p>
+                            </div>
+                        ` : ''}
+
+                        <div class="flex justify-end space-x-2 pt-4">
+                            <button onclick="closeModal('bookingDetailsModal')" 
+                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                                關閉
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+        }
+
+        // 取得等級文字
+        function getLevelText(level) {
+            const levelMap = {
+                'LV1_INSIDER': 'LV1 森林知音',
+                'LV2_GUIDE': 'LV2 森林嚮導', 
+                'LV3_GUARDIAN': 'LV3 秘境守護者'
+            };
+            return levelMap[level] || level;
         }
 
         function filterBookings() {

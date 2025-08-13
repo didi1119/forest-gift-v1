@@ -1,0 +1,23 @@
+# GitHub Actions 工作流程：自動同步 Apps Script
+# 注意：此功能需要額外設定，目前僅作為範例
+
+name: 同步 Apps Script 代碼
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'backend/apps-script-commission-v2.js' ]
+
+jobs:
+  sync-apps-script:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: 通知代碼更新
+      run: |
+        echo "🚀 Apps Script 代碼已更新"
+        echo "📂 請使用部署助手工具更新：https://didi1119.github.io/forest-gift-v1/deploy-assistant.html"
+        
+    # 未來可以添加自動部署邏輯
+    # 需要 Google Apps Script API 和適當的認證設定

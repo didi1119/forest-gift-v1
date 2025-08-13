@@ -503,10 +503,24 @@
                             <div class="font-semibold text-amber-600">$${(partner.pending_commission || 0).toLocaleString()}</div>
                         </td>
                         <td class="py-4 px-4 text-center">
-                            <button onclick="viewPartnerDetails('${partner.partner_code}')" 
-                                class="text-blue-600 hover:underline text-sm">
-                                詳情
-                            </button>
+                            <div class="flex flex-col space-y-1">
+                                <button onclick="viewPartnerDetails('${partner.partner_code}')" 
+                                    class="text-blue-600 hover:underline text-xs px-2 py-1 bg-blue-50 rounded">
+                                    📋 詳情
+                                </button>
+                                <button onclick="quickEditCommission('${partner.partner_code}')" 
+                                    class="text-green-600 hover:underline text-xs px-2 py-1 bg-green-50 rounded">
+                                    💰 佣金
+                                </button>
+                                <button onclick="createPartnerPayout('${partner.partner_code}')" 
+                                    class="text-purple-600 hover:underline text-xs px-2 py-1 bg-purple-50 rounded">
+                                    💳 結算
+                                </button>
+                                <button onclick="manageAccommodationPoints('${partner.partner_code}')" 
+                                    class="text-orange-600 hover:underline text-xs px-2 py-1 bg-orange-50 rounded">
+                                    🏨 點數
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -2281,5 +2295,7 @@
             showTab('overview');
         });
     </script>
+    <script src="payout-functions.js"></script>
+    <script src="commission-management.js"></script>
 </body>
 </html>

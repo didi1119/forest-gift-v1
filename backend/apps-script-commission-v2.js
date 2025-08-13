@@ -169,6 +169,15 @@ function doPost(e) {
       
       case 'update_payout':
         return handleUpdatePayout(data, e);
+      
+      case 'update_partner_commission':
+        return handleUpdatePartnerCommission(data, e);
+      
+      case 'create_payout':
+        return handleCreatePayout(data, e);
+      
+      case 'deduct_accommodation_points':
+        return handleDeductAccommodationPoints(data, e);
         
       default:
         Logger.log('未知動作: ' + (data.action || 'undefined'));
@@ -1295,6 +1304,329 @@ function handleUpdatePayout(data, e) {
     return createJsonResponse({
       success: false,
       error: '更新結算失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 處理更新夥伴佣金 =====
+function handleUpdatePartnerCommission(data, e) {
+  try {
+    Logger.log('💰 開始處理更新夥伴佣金請求');
+    Logger.log('請求數據: ' + JSON.stringify(data));
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const partnersSheet = spreadsheet.getSheetByName('Partners');
+    
+    if (!partnersSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到 Partners 工作表'
+      });
+    }
+    
+    const partnerCode = data.partner_code;
+    if (!partnerCode) {
+      return createJsonResponse({
+        success: false,
+        error: '缺少夥伴代碼'
+      });
+    }
+    
+    // 1. 查找夥伴記錄
+    const partnerRange = partnersSheet.getDataRange();
+    const partnerValues = partnerRange.getValues();
+    let partnerRowIndex = -1;
+    
+    for (let i = 1; i < partnerValues.length; i++) {
+      if (partnerValues[i][1] === partnerCode) { // partner_code 在第2列
+        partnerRowIndex = i + 1;
+        break;
+      }
+    }
+    
+    if (partnerRowIndex === -1) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到指定的夥伴記錄'
+      });
+    }
+    
+    const timestamp = new Date();
+    
+    // 2. 更新夥伴佣金資料
+    const newTotalEarned = parseFloat(data.total_commission_earned) || 0;
+    const newPendingCommission = parseFloat(data.pending_commission) || 0;
+    
+    partnersSheet.getRange(partnerRowIndex, 10).setValue(newTotalEarned); // total_commission_earned
+    partnersSheet.getRange(partnerRowIndex, 12).setValue(newPendingCommission); // pending_commission
+    partnersSheet.getRange(partnerRowIndex, 25).setValue(timestamp); // updated_at
+    
+    Logger.log('✅ 夥伴佣金已更新: ' + partnerCode + ', 累積: $' + newTotalEarned + ', 待付: $' + newPendingCommission);
+    
+    // 3. 如果有調整原因，記錄到日誌表（如果存在）
+    if (data.adjustment_reason) {
+      try {
+        const logsSheet = spreadsheet.getSheetByName('Commission_Adjustment_Logs');
+        if (logsSheet) {
+          const logData = [
+            '', // ID
+            partnerCode,
+            newTotalEarned,
+            newPendingCommission,
+            data.adjustment_reason,
+            'admin',
+            timestamp,
+            timestamp
+          ];
+          logsSheet.appendRow(logData);
+        }
+      } catch (logError) {
+        Logger.log('記錄調整日誌失敗: ' + logError.toString());
+      }
+    }
+    
+    const result = {
+      success: true,
+      message: '夥伴佣金資料更新成功',
+      partner_code: partnerCode,
+      total_commission_earned: newTotalEarned,
+      pending_commission: newPendingCommission,
+      updated_at: timestamp.toISOString()
+    };
+    
+    // 如果是表單提交，返回 HTML 頁面
+    if (e.parameter && Object.keys(e.parameter).length > 0) {
+      return HtmlService.createHtmlOutput(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>佣金更新成功</title>
+        </head>
+        <body>
+          <h1>✅ 佣金資料更新成功！</h1>
+          <p>夥伴代碼：${partnerCode}</p>
+          <p>累積佣金：$${newTotalEarned.toLocaleString()}</p>
+          <p>待支付佣金：$${newPendingCommission.toLocaleString()}</p>
+        </body>
+        </html>
+      `);
+    } else {
+      return createJsonResponse(result);
+    }
+    
+  } catch (error) {
+    Logger.log('更新夥伴佣金錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '更新夥伴佣金失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 處理創建結算 =====
+function handleCreatePayout(data, e) {
+  try {
+    Logger.log('💳 開始處理創建結算請求');
+    Logger.log('請求數據: ' + JSON.stringify(data));
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+    const partnersSheet = spreadsheet.getSheetByName('Partners');
+    
+    if (!payoutsSheet || !partnersSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到必要的工作表'
+      });
+    }
+    
+    const partnerCode = data.partner_code;
+    const payoutType = data.payout_type || 'ACCOMMODATION';
+    const amount = parseFloat(data.amount) || 0;
+    const notes = data.notes || '';
+    
+    if (!partnerCode || amount <= 0) {
+      return createJsonResponse({
+        success: false,
+        error: '缺少必要參數或金額無效'
+      });
+    }
+    
+    const timestamp = new Date();
+    
+    // 1. 創建結算記錄
+    const payoutData = [
+      '', // ID (自動編號)
+      partnerCode,
+      payoutType, // payout_type
+      amount, // amount
+      '', // related_booking_ids
+      payoutType === 'CASH' ? 'BANK_TRANSFER' : 'ACCOMMODATION_VOUCHER', // payout_method
+      'PENDING', // payout_status
+      '', // bank_transfer_date
+      '', // bank_transfer_reference
+      '', // accommodation_voucher_code
+      notes, // notes
+      'admin', // created_by
+      timestamp, // created_at
+      timestamp  // updated_at
+    ];
+    
+    payoutsSheet.appendRow(payoutData);
+    Logger.log('✅ 結算記錄已創建');
+    
+    // 2. 更新夥伴的待支付佣金（減少金額）
+    const partnerRange = partnersSheet.getDataRange();
+    const partnerValues = partnerRange.getValues();
+    
+    for (let i = 1; i < partnerValues.length; i++) {
+      if (partnerValues[i][1] === partnerCode) { // partner_code 在第2列
+        const currentPendingCommission = parseFloat(partnerValues[i][11]) || 0; // pending_commission
+        const newPendingCommission = Math.max(0, currentPendingCommission - amount);
+        
+        partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
+        partnersSheet.getRange(i + 1, 25).setValue(timestamp); // updated_at
+        
+        Logger.log('✅ 夥伴 ' + partnerCode + ' 待支付佣金已調整: $' + currentPendingCommission + ' -> $' + newPendingCommission);
+        break;
+      }
+    }
+    
+    const result = {
+      success: true,
+      message: '結算創建成功',
+      partner_code: partnerCode,
+      payout_type: payoutType,
+      amount: amount,
+      created_at: timestamp.toISOString()
+    };
+    
+    // 如果是表單提交，返回 HTML 頁面
+    if (e.parameter && Object.keys(e.parameter).length > 0) {
+      return HtmlService.createHtmlOutput(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>結算創建成功</title>
+        </head>
+        <body>
+          <h1>✅ 結算創建成功！</h1>
+          <p>夥伴代碼：${partnerCode}</p>
+          <p>類型：${payoutType === 'CASH' ? '現金' : '住宿金'}</p>
+          <p>金額：$${amount.toLocaleString()}</p>
+        </body>
+        </html>
+      `);
+    } else {
+      return createJsonResponse(result);
+    }
+    
+  } catch (error) {
+    Logger.log('創建結算錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '創建結算失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 處理住宿金點數抵扣 =====
+function handleDeductAccommodationPoints(data, e) {
+  try {
+    Logger.log('🏨 開始處理住宿金點數抵扣請求');
+    Logger.log('請求數據: ' + JSON.stringify(data));
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const partnersSheet = spreadsheet.getSheetByName('Partners');
+    
+    // 創建或獲取住宿金使用記錄表
+    let accommodationUsageSheet = spreadsheet.getSheetByName('Accommodation_Usage');
+    if (!accommodationUsageSheet) {
+      accommodationUsageSheet = spreadsheet.insertSheet('Accommodation_Usage');
+      // 設定標題行
+      const headers = [
+        'id', 'partner_code', 'deduct_amount', 'related_booking_id', 
+        'usage_type', 'notes', 'created_by', 'created_at', 'updated_at'
+      ];
+      accommodationUsageSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    }
+    
+    if (!partnersSheet || !accommodationUsageSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到必要的工作表'
+      });
+    }
+    
+    const partnerCode = data.partner_code;
+    const deductAmount = parseFloat(data.deduct_amount) || 0;
+    const relatedBookingId = data.related_booking_id || '';
+    const notes = data.notes || '';
+    
+    if (!partnerCode || deductAmount <= 0) {
+      return createJsonResponse({
+        success: false,
+        error: '缺少必要參數或金額無效'
+      });
+    }
+    
+    const timestamp = new Date();
+    
+    // 1. 記錄住宿金使用
+    const usageData = [
+      '', // ID (自動編號)
+      partnerCode,
+      deductAmount,
+      relatedBookingId,
+      'DEDUCTION', // usage_type
+      notes,
+      'admin', // created_by
+      timestamp, // created_at
+      timestamp  // updated_at
+    ];
+    
+    accommodationUsageSheet.appendRow(usageData);
+    Logger.log('✅ 住宿金使用記錄已創建');
+    
+    // 2. 可選：更新夥伴的已使用住宿金統計（如果有這個欄位）
+    // 這裡可以根據需要添加邏輯來追蹤已使用的住宿金總額
+    
+    const result = {
+      success: true,
+      message: '住宿金點數抵扣記錄成功',
+      partner_code: partnerCode,
+      deduct_amount: deductAmount,
+      created_at: timestamp.toISOString()
+    };
+    
+    // 如果是表單提交，返回 HTML 頁面
+    if (e.parameter && Object.keys(e.parameter).length > 0) {
+      return HtmlService.createHtmlOutput(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>點數抵扣成功</title>
+        </head>
+        <body>
+          <h1>✅ 住宿金點數抵扣成功！</h1>
+          <p>夥伴代碼：${partnerCode}</p>
+          <p>抵扣金額：$${deductAmount.toLocaleString()}</p>
+          <p>說明：${notes}</p>
+        </body>
+        </html>
+      `);
+    } else {
+      return createJsonResponse(result);
+    }
+    
+  } catch (error) {
+    Logger.log('住宿金點數抵扣錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '住宿金點數抵扣失敗: ' + error.message
     });
   }
 }

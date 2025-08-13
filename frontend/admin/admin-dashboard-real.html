@@ -597,12 +597,10 @@
                                         ✅ 確認入住
                                     </button>
                                 ` : ''}
-                                ${booking.stay_status !== 'COMPLETED' && booking.stay_status !== 'CANCELLED' ? `
-                                    <button onclick="cancelBooking('${booking.id}')" 
-                                        class="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700">
-                                        ❌ 取消訂單
-                                    </button>
-                                ` : ''}
+                                <button onclick="editBooking('${booking.id}')" 
+                                    class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">
+                                    ✏️ 編輯訂單
+                                </button>
                                 <button onclick="viewBookingDetails('${booking.id}')" 
                                     class="text-blue-600 hover:underline text-xs">
                                     詳情
@@ -1531,47 +1529,336 @@
             document.body.appendChild(modal);
         }
 
-        // 取消訂單
-        async function cancelBooking(bookingId) {
+        // 編輯訂單
+        function editBooking(bookingId) {
             const booking = allData.bookings.find(b => b.id == bookingId);
             if (!booking) {
                 alert('找不到訂房記錄');
                 return;
             }
 
-            const confirmMessage = `確定要取消以下訂房嗎？\n\n房客：${booking.guest_name}\n入住期間：${booking.checkin_date} ~ ${booking.checkout_date}\n${booking.partner_code ? `推薦大使：${booking.partner_code}` : '無推薦大使'}\n\n取消後將無法復原！`;
+            const modal = createBookingEditModal(booking);
+            document.body.appendChild(modal);
+        }
+
+        // 創建訂單編輯模態框
+        function createBookingEditModal(booking) {
+            const modal = document.createElement('div');
+            modal.id = 'editBookingModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            
+            const partnersOptions = allData.partners.map(partner => 
+                `<option value="${partner.partner_code}" ${booking.partner_code === partner.partner_code ? 'selected' : ''}>
+                    ${partner.partner_code} - ${partner.name || '未設定'} (${getLevelText(partner.level)})
+                </option>`
+            ).join('');
+
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-start mb-6">
+                        <h3 class="text-2xl font-bold">編輯訂單 #${booking.id}</h3>
+                        <button onclick="closeModal('editBookingModal')" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form id="editBookingForm" class="space-y-6">
+                        <!-- 房客基本資訊 -->
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-3 text-blue-800">👤 房客資訊</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">房客姓名 *</label>
+                                    <input type="text" id="edit_guest_name" value="${booking.guest_name || ''}" 
+                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">聯絡電話 *</label>
+                                    <input type="tel" id="edit_guest_phone" value="${booking.guest_phone || ''}" 
+                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">電子郵件</label>
+                                    <input type="email" id="edit_guest_email" value="${booking.guest_email || ''}" 
+                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 推薦大使資訊 -->
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-3 text-green-800">🤝 推薦大使</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">推薦大使</label>
+                                    <select id="edit_partner_code" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500"
+                                        onchange="updatePartnerInfo()">
+                                        <option value="">無推薦大使</option>
+                                        ${partnersOptions}
+                                    </select>
+                                </div>
+                                <div id="editPartnerInfo" class="text-sm">
+                                    ${booking.partner_code ? getPartnerInfoHtml(booking.partner_code) : '<p class="text-gray-500">無推薦大使</p>'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 住宿資訊 -->
+                        <div class="bg-amber-50 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-3 text-amber-800">🏠 住宿資訊</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">入住日期 *</label>
+                                    <input type="date" id="edit_checkin_date" value="${booking.checkin_date || ''}" 
+                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-amber-500" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">退房日期 *</label>
+                                    <input type="date" id="edit_checkout_date" value="${booking.checkout_date || ''}" 
+                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-amber-500" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">房價 *</label>
+                                    <input type="number" id="edit_room_price" value="${booking.room_price || ''}" 
+                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-amber-500" 
+                                        min="0" step="1" required onchange="updateCommissionPreview()">
+                                </div>
+                                <div id="commissionPreview" class="flex items-center">
+                                    ${getCommissionPreviewHtml(booking)}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 狀態設定 -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-3 text-gray-800">📊 訂單狀態</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">入住狀態</label>
+                                    <select id="edit_stay_status" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-gray-500">
+                                        <option value="PENDING" ${booking.stay_status === 'PENDING' ? 'selected' : ''}>待入住</option>
+                                        <option value="CHECKED_IN" ${booking.stay_status === 'CHECKED_IN' ? 'selected' : ''}>已入住</option>
+                                        <option value="COMPLETED" ${booking.stay_status === 'COMPLETED' ? 'selected' : ''}>已完成</option>
+                                        <option value="CANCELLED" ${booking.stay_status === 'CANCELLED' ? 'selected' : ''}>已取消</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">付款狀態</label>
+                                    <select id="edit_payment_status" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-gray-500">
+                                        <option value="PENDING" ${booking.payment_status === 'PENDING' ? 'selected' : ''}>待付款</option>
+                                        <option value="PARTIAL" ${booking.payment_status === 'PARTIAL' ? 'selected' : ''}>部分付款</option>
+                                        <option value="PAID" ${booking.payment_status === 'PAID' ? 'selected' : ''}>已付清</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 備註 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">備註</label>
+                            <textarea id="edit_notes" rows="3" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                                placeholder="訂單相關備註...">${booking.notes || ''}</textarea>
+                        </div>
+
+                        <!-- 操作按鈕 -->
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" onclick="closeModal('editBookingModal')" 
+                                class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                                取消
+                            </button>
+                            <button type="button" onclick="deleteBooking('${booking.id}')" 
+                                class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                刪除訂單
+                            </button>
+                            <button type="submit" 
+                                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                儲存變更
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            // 添加表單提交事件監聽器
+            const form = modal.querySelector('#editBookingForm');
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveBookingChanges(booking.id);
+            });
+
+            return modal;
+        }
+
+        // 獲取大使資訊HTML
+        function getPartnerInfoHtml(partnerCode) {
+            const partner = allData.partners.find(p => p.partner_code === partnerCode);
+            if (!partner) return '<p class="text-gray-500">無推薦大使</p>';
+            
+            const expectedCommission = calculateExpectedCommission(partner.level, 0);
+            return `
+                <div>
+                    <p class="font-medium text-green-700">${partner.name || '未設定姓名'}</p>
+                    <p class="text-xs text-gray-600">${getLevelText(partner.level)}</p>
+                    <p class="text-xs text-gray-600">電話：${partner.phone || '未設定'}</p>
+                    <p class="text-xs text-blue-600">佣金：現金 $${expectedCommission.cash} / 住宿金 $${expectedCommission.accommodation}</p>
+                </div>
+            `;
+        }
+
+        // 獲取佣金預覽HTML
+        function getCommissionPreviewHtml(booking) {
+            if (!booking.partner_code) return '<p class="text-sm text-gray-500">無佣金</p>';
+            
+            const partner = allData.partners.find(p => p.partner_code === booking.partner_code);
+            if (!partner) return '<p class="text-sm text-gray-500">大使不存在</p>';
+            
+            const expectedCommission = calculateExpectedCommission(partner.level, booking.room_price || 0);
+            return `
+                <div class="text-sm">
+                    <p class="font-medium text-blue-700">預計佣金</p>
+                    <p class="text-xs text-blue-600">現金：$${expectedCommission.cash}</p>
+                    <p class="text-xs text-blue-600">住宿金：$${expectedCommission.accommodation}</p>
+                </div>
+            `;
+        }
+
+        // 更新大使資訊顯示
+        function updatePartnerInfo() {
+            const partnerCode = document.getElementById('edit_partner_code').value;
+            const infoDiv = document.getElementById('editPartnerInfo');
+            
+            if (partnerCode) {
+                infoDiv.innerHTML = getPartnerInfoHtml(partnerCode);
+            } else {
+                infoDiv.innerHTML = '<p class="text-gray-500">無推薦大使</p>';
+            }
+            
+            // 同時更新佣金預覽
+            updateCommissionPreview();
+        }
+
+        // 更新佣金預覽
+        function updateCommissionPreview() {
+            const partnerCode = document.getElementById('edit_partner_code').value;
+            const roomPrice = parseFloat(document.getElementById('edit_room_price').value) || 0;
+            const previewDiv = document.getElementById('commissionPreview');
+            
+            if (!partnerCode) {
+                previewDiv.innerHTML = '<p class="text-sm text-gray-500">無佣金</p>';
+                return;
+            }
+            
+            const partner = allData.partners.find(p => p.partner_code === partnerCode);
+            if (!partner) {
+                previewDiv.innerHTML = '<p class="text-sm text-gray-500">大使不存在</p>';
+                return;
+            }
+            
+            const expectedCommission = calculateExpectedCommission(partner.level, roomPrice);
+            previewDiv.innerHTML = `
+                <div class="text-sm">
+                    <p class="font-medium text-blue-700">預計佣金</p>
+                    <p class="text-xs text-blue-600">現金：$${expectedCommission.cash}</p>
+                    <p class="text-xs text-blue-600">住宿金：$${expectedCommission.accommodation}</p>
+                </div>
+            `;
+        }
+
+        // 儲存訂單變更
+        async function saveBookingChanges(bookingId) {
+            try {
+                const formData = {
+                    action: 'update_booking',
+                    booking_id: bookingId,
+                    guest_name: document.getElementById('edit_guest_name').value.trim(),
+                    guest_phone: document.getElementById('edit_guest_phone').value.trim(),
+                    guest_email: document.getElementById('edit_guest_email').value.trim(),
+                    partner_code: document.getElementById('edit_partner_code').value || null,
+                    checkin_date: document.getElementById('edit_checkin_date').value,
+                    checkout_date: document.getElementById('edit_checkout_date').value,
+                    room_price: parseFloat(document.getElementById('edit_room_price').value) || 0,
+                    stay_status: document.getElementById('edit_stay_status').value,
+                    payment_status: document.getElementById('edit_payment_status').value,
+                    notes: document.getElementById('edit_notes').value.trim()
+                };
+
+                // 驗證必填欄位
+                if (!formData.guest_name || !formData.guest_phone || !formData.checkin_date || !formData.checkout_date || !formData.room_price) {
+                    alert('請填寫所有必填欄位！');
+                    return;
+                }
+
+                // 驗證日期邏輯
+                if (new Date(formData.checkin_date) >= new Date(formData.checkout_date)) {
+                    alert('退房日期必須晚於入住日期！');
+                    return;
+                }
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccessMessage('✅ 訂單更新成功！');
+                    closeModal('editBookingModal');
+                    await loadRealData(); // 重新載入數據
+                    displayBookings(allData.bookings);
+                } else {
+                    alert('❌ 更新失敗：' + result.error);
+                }
+            } catch (error) {
+                console.error('更新訂單失敗:', error);
+                alert('❌ 更新失敗：' + error.message);
+            }
+        }
+
+        // 刪除訂單
+        async function deleteBooking(bookingId) {
+            const booking = allData.bookings.find(b => b.id == bookingId);
+            if (!booking) {
+                alert('找不到訂房記錄');
+                return;
+            }
+
+            const confirmMessage = `⚠️ 確定要刪除以下訂房嗎？\n\n房客：${booking.guest_name}\n入住期間：${booking.checkin_date} ~ ${booking.checkout_date}\n${booking.partner_code ? `推薦大使：${booking.partner_code}` : '無推薦大使'}\n\n刪除後將無法復原！`;
             
             if (!confirm(confirmMessage)) {
                 return;
             }
 
             try {
-                // 這裡需要新的後端 API 來處理取消訂單
-                // 暫時先更新前端顯示，實際需要與後端同步
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        action: 'cancel_booking',
-                        booking_id: bookingId,
-                        cancelled_reason: '管理員取消'
+                        action: 'delete_booking',
+                        booking_id: bookingId
                     })
                 });
 
                 const result = await response.json();
                 
                 if (result.success) {
-                    showSuccessMessage('✅ 訂單已成功取消！');
+                    showSuccessMessage('✅ 訂單已成功刪除！');
+                    closeModal('editBookingModal');
                     await loadRealData(); // 重新載入數據
                     displayBookings(allData.bookings);
                 } else {
-                    alert('❌ 取消失敗：' + result.error);
+                    alert('❌ 刪除失敗：' + result.error);
                 }
             } catch (error) {
-                console.error('取消訂單失敗:', error);
-                alert('❌ 取消失敗：' + error.message);
+                console.error('刪除訂單失敗:', error);
+                alert('❌ 刪除失敗：' + error.message);
             }
         }
 

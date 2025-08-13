@@ -135,8 +135,11 @@ function doPost(e) {
       case 'get_dashboard_data':
         return handleGetDashboardData(data, e);
 
-      case 'cancel_booking':
-        return handleCancelBooking(data, e);
+      case 'update_booking':
+        return handleUpdateBooking(data, e);
+
+      case 'delete_booking':
+        return handleDeleteBooking(data, e);
         
       default:
         Logger.log('未知動作: ' + (data.action || 'undefined'));
@@ -535,8 +538,8 @@ function handleGetDashboardData(data, e) {
   }
 }
 
-// ===== 處理取消訂房 =====
-function handleCancelBooking(data, e) {
+// ===== 處理更新訂房 =====
+function handleUpdateBooking(data, e) {
   try {
     const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
     const bookingsSheet = spreadsheet.getSheetByName('Bookings');
@@ -551,16 +554,14 @@ function handleCancelBooking(data, e) {
     const bookingId = parseInt(data.booking_id);
     const timestamp = new Date();
     
-    // 1. 找到要取消的訂房記錄
+    // 1. 找到要更新的訂房記錄
     const bookingRange = bookingsSheet.getDataRange();
     const bookingValues = bookingRange.getValues();
     let bookingRowIndex = -1;
-    let bookingData = null;
     
     for (let i = 1; i < bookingValues.length; i++) {
       if (bookingValues[i][0] === bookingId) { // 假設ID在第一列
         bookingRowIndex = i + 1; // Google Sheets 行數從1開始
-        bookingData = bookingValues[i];
         break;
       }
     }
@@ -572,37 +573,27 @@ function handleCancelBooking(data, e) {
       });
     }
     
-    // 2. 檢查訂房是否已經完成或已取消
-    const currentStatus = bookingData[9]; // stay_status 在第10列
-    if (currentStatus === 'COMPLETED') {
-      return createJsonResponse({
-        success: false,
-        error: '已完成的訂房無法取消'
-      });
-    }
-    
-    if (currentStatus === 'CANCELLED') {
-      return createJsonResponse({
-        success: false,
-        error: '此訂房已經被取消'
-      });
-    }
-    
-    // 3. 更新訂房狀態為已取消
-    bookingsSheet.getRange(bookingRowIndex, 10).setValue('CANCELLED'); // stay_status
-    bookingsSheet.getRange(bookingRowIndex, 12).setValue('CANCELLED'); // commission_status
-    bookingsSheet.getRange(bookingRowIndex, 17).setValue('admin'); // manually_confirmed_by
-    bookingsSheet.getRange(bookingRowIndex, 18).setValue(timestamp); // manually_confirmed_at
-    bookingsSheet.getRange(bookingRowIndex, 19).setValue(data.cancelled_reason || '管理員取消'); // notes
+    // 2. 更新訂房資料
+    // 按照 setup-sheets-headers.js 中的欄位順序更新
+    bookingsSheet.getRange(bookingRowIndex, 2).setValue(data.partner_code || null); // partner_code
+    bookingsSheet.getRange(bookingRowIndex, 3).setValue(data.guest_name || ''); // guest_name
+    bookingsSheet.getRange(bookingRowIndex, 4).setValue(data.guest_phone || ''); // guest_phone
+    bookingsSheet.getRange(bookingRowIndex, 5).setValue(data.guest_email || ''); // guest_email
+    bookingsSheet.getRange(bookingRowIndex, 6).setValue(data.checkin_date || ''); // checkin_date
+    bookingsSheet.getRange(bookingRowIndex, 7).setValue(data.checkout_date || ''); // checkout_date
+    bookingsSheet.getRange(bookingRowIndex, 8).setValue(parseInt(data.room_price) || 0); // room_price
+    bookingsSheet.getRange(bookingRowIndex, 10).setValue(data.stay_status || 'PENDING'); // stay_status
+    bookingsSheet.getRange(bookingRowIndex, 11).setValue(data.payment_status || 'PENDING'); // payment_status
+    bookingsSheet.getRange(bookingRowIndex, 19).setValue(data.notes || ''); // notes
     bookingsSheet.getRange(bookingRowIndex, 21).setValue(timestamp); // updated_at
     
-    Logger.log('訂房取消處理完成: 訂房ID ' + bookingId);
+    Logger.log('訂房更新處理完成: 訂房ID ' + bookingId);
     
     const result = {
       success: true,
-      message: '訂房已成功取消',
+      message: '訂房資料更新成功',
       booking_id: bookingId,
-      cancelled_at: timestamp.toISOString()
+      updated_at: timestamp.toISOString()
     };
     
     // 如果是表單提交，返回 HTML 頁面
@@ -612,10 +603,10 @@ function handleCancelBooking(data, e) {
         <html>
         <head>
           <meta charset="UTF-8">
-          <title>取消成功</title>
+          <title>更新成功</title>
         </head>
         <body>
-          <h1>✅ 訂房取消成功！</h1>
+          <h1>✅ 訂房更新成功！</h1>
           <p>訂房ID：${bookingId}</p>
         </body>
         </html>
@@ -625,10 +616,84 @@ function handleCancelBooking(data, e) {
     }
     
   } catch (error) {
-    Logger.log('取消訂房錯誤: ' + error.toString());
+    Logger.log('更新訂房錯誤: ' + error.toString());
     return createJsonResponse({
       success: false,
-      error: '取消訂房失敗: ' + error.message
+      error: '更新訂房失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 處理刪除訂房 =====
+function handleDeleteBooking(data, e) {
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const bookingsSheet = spreadsheet.getSheetByName('Bookings');
+    
+    if (!bookingsSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到 Bookings 工作表'
+      });
+    }
+    
+    const bookingId = parseInt(data.booking_id);
+    
+    // 1. 找到要刪除的訂房記錄
+    const bookingRange = bookingsSheet.getDataRange();
+    const bookingValues = bookingRange.getValues();
+    let bookingRowIndex = -1;
+    
+    for (let i = 1; i < bookingValues.length; i++) {
+      if (bookingValues[i][0] === bookingId) { // 假設ID在第一列
+        bookingRowIndex = i + 1; // Google Sheets 行數從1開始
+        break;
+      }
+    }
+    
+    if (bookingRowIndex === -1) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到指定的訂房記錄'
+      });
+    }
+    
+    // 2. 刪除訂房記錄（刪除整行）
+    bookingsSheet.deleteRow(bookingRowIndex);
+    
+    Logger.log('訂房刪除處理完成: 訂房ID ' + bookingId);
+    
+    const result = {
+      success: true,
+      message: '訂房記錄已成功刪除',
+      booking_id: bookingId,
+      deleted_at: new Date().toISOString()
+    };
+    
+    // 如果是表單提交，返回 HTML 頁面
+    if (e.parameter && Object.keys(e.parameter).length > 0) {
+      return HtmlService.createHtmlOutput(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>刪除成功</title>
+        </head>
+        <body>
+          <h1>✅ 訂房刪除成功！</h1>
+          <p>訂房ID：${bookingId}</p>
+        </body>
+        </html>
+      `);
+    } else {
+      return createJsonResponse(result);
+    }
+    
+  } catch (error) {
+    Logger.log('刪除訂房錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '刪除訂房失敗: ' + error.message
     });
   }
 }

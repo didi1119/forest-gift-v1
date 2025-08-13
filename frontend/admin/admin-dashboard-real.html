@@ -536,13 +536,8 @@
                 return;
             }
 
-            // 調試：檢查第一筆訂房資料結構
+            // 檢查數據完整性
             if (bookings.length > 0) {
-                console.log('🔍 第一筆訂房資料結構:', bookings[0]);
-                console.log('🔍 commission_amount 值:', bookings[0].commission_amount);
-                console.log('🔍 booking_source 值:', bookings[0].booking_source);
-                console.log('🔍 所有欄位名稱:', Object.keys(bookings[0]));
-                
                 // 如果發現欄位對應錯誤，顯示修復提示
                 if (typeof bookings[0].commission_amount === 'string' && bookings[0].commission_amount !== '0') {
                     showDatabaseFixAlert();
@@ -875,8 +870,152 @@
             link.click();
         }
 
+        // 查看結算詳情
+        function viewPayoutDetails(payoutId) {
+            const payout = allData.payouts.find(p => p.id == payoutId);
+            if (!payout) {
+                alert('找不到結算記錄');
+                return;
+            }
+            
+            createPayoutDetailsModal(payout);
+        }
+        
+        // 創建結算詳情模態框
+        function createPayoutDetailsModal(payout) {
+            // 找到相關的夥伴信息
+            const partner = allData.partners.find(p => p.partner_code === payout.partner_code) || {};
+            
+            // 找到相關的訂房記錄
+            const relatedBookings = allData.bookings.filter(booking => {
+                return booking.partner_code === payout.partner_code && 
+                       booking.commission_status === 'CALCULATED';
+            });
+            
+            const modal = document.createElement('div');
+            modal.id = 'payoutDetailsModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-start mb-6">
+                        <h3 class="text-2xl font-bold">結算詳情</h3>
+                        <button onclick="closeModal('payoutDetailsModal')" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- 結算基本信息 -->
+                    <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                        <h4 class="font-bold mb-3">結算基本信息</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">結算ID：</span>
+                                <span class="font-medium">${payout.id || 'N/A'}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">大使代碼：</span>
+                                <span class="font-medium">${payout.partner_code}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">大使姓名：</span>
+                                <span class="font-medium">${partner.name || '未設定'}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">等級：</span>
+                                <span class="font-medium">${getLevelText(partner.level || '')}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">結算類型：</span>
+                                <span class="font-medium">${payout.payout_type === 'CASH' ? '現金' : '住宿金'}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">結算金額：</span>
+                                <span class="font-medium text-lg text-green-600">$${(payout.amount || 0).toLocaleString()}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">狀態：</span>
+                                <span class="font-medium ${payout.payout_status === 'COMPLETED' ? 'text-green-600' : 'text-yellow-600'}">
+                                    ${payout.payout_status === 'COMPLETED' ? '已付款' : '待付款'}
+                                </span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">建立時間：</span>
+                                <span class="font-medium">${formatDateDisplay(payout.created_at) || 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 相關訂房記錄 -->
+                    <div class="mb-6">
+                        <h4 class="font-bold mb-3">相關訂房記錄 (${relatedBookings.length}筆)</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm border">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="text-left py-2 px-3 border">房客</th>
+                                        <th class="text-center py-2 px-3 border">入住期間</th>
+                                        <th class="text-center py-2 px-3 border">房價</th>
+                                        <th class="text-center py-2 px-3 border">佣金</th>
+                                        <th class="text-center py-2 px-3 border">類型</th>
+                                        <th class="text-center py-2 px-3 border">確認時間</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${relatedBookings.map(booking => `
+                                        <tr class="border-b hover:bg-gray-50">
+                                            <td class="py-2 px-3 border">
+                                                <div class="font-medium">${booking.guest_name}</div>
+                                                <div class="text-xs text-gray-500">${booking.guest_phone}</div>
+                                            </td>
+                                            <td class="py-2 px-3 border text-center">
+                                                <div>${formatDateDisplay(booking.checkin_date)}</div>
+                                                <div class="text-xs text-gray-500">~ ${formatDateDisplay(booking.checkout_date)}</div>
+                                            </td>
+                                            <td class="py-2 px-3 border text-center font-medium">
+                                                $${(booking.room_price || 0).toLocaleString()}
+                                            </td>
+                                            <td class="py-2 px-3 border text-center font-medium text-green-600">
+                                                $${(booking.commission_amount || 0).toLocaleString()}
+                                            </td>
+                                            <td class="py-2 px-3 border text-center">
+                                                ${booking.commission_type === 'CASH' ? '現金' : '住宿金'}
+                                            </td>
+                                            <td class="py-2 px-3 border text-center text-xs">
+                                                ${formatDateDisplay(booking.manually_confirmed_at) || '-'}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- 操作按鈕 -->
+                    <div class="flex justify-end space-x-3 pt-4 border-t">
+                        <button type="button" onclick="cancelPayout('${payout.id}')" 
+                            class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                            🚫 取消此結算
+                        </button>
+                        <button type="button" onclick="editPayout('${payout.id}')" 
+                            class="px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                            ✏️ 修改結算
+                        </button>
+                        <button type="button" onclick="closeModal('payoutDetailsModal')" 
+                            class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                            關閉
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
         function generatePayoutReport() {
-            alert('結算報表功能開發中...');
+            createPayoutReportModal();
         }
 
         // 查看夥伴詳情
@@ -1343,7 +1482,13 @@
 
         // 查看結算詳情
         function viewPayoutDetails(payoutId) {
-            showSuccessMessage('結算詳情功能開發中');
+            const payout = allData.payouts.find(p => p.id == payoutId);
+            if (!payout) {
+                showErrorMessage('找不到結算記錄');
+                return;
+            }
+            
+            createPayoutDetailsModal(payout);
         }
         
         // 關閉模態框
@@ -2292,5 +2437,6 @@
             showTab('overview');
         });
     </script>
+    <script src="payout-functions.js"></script>
 </body>
 </html>

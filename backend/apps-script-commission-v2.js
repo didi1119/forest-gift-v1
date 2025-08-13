@@ -163,6 +163,12 @@ function doPost(e) {
           success: true,
           message: 'Bookings 表格結構已修復，現有資料已清空'
         });
+      
+      case 'cancel_payout':
+        return handleCancelPayout(data, e);
+      
+      case 'update_payout':
+        return handleUpdatePayout(data, e);
         
       default:
         Logger.log('未知動作: ' + (data.action || 'undefined'));
@@ -1051,6 +1057,245 @@ function fixBookingsStructure() {
     
   } catch (error) {
     Logger.log('❌ 修復錯誤: ' + error.toString());
+  }
+}
+
+// ===== 處理取消結算 =====
+function handleCancelPayout(data, e) {
+  try {
+    Logger.log('🚫 開始處理取消結算請求');
+    Logger.log('請求數據: ' + JSON.stringify(data));
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+    const partnersSheet = spreadsheet.getSheetByName('Partners');
+    
+    if (!payoutsSheet || !partnersSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到必要的工作表'
+      });
+    }
+    
+    const payoutId = data.payout_id;
+    if (!payoutId) {
+      return createJsonResponse({
+        success: false,
+        error: '缺少結算ID'
+      });
+    }
+    
+    // 1. 查找要取消的結算記錄
+    const payoutRange = payoutsSheet.getDataRange();
+    const payoutValues = payoutRange.getValues();
+    let payoutRowIndex = -1;
+    let payoutData = null;
+    
+    for (let i = 1; i < payoutValues.length; i++) {
+      if (String(payoutValues[i][0]) === String(payoutId)) {
+        payoutRowIndex = i + 1;
+        payoutData = payoutValues[i];
+        break;
+      }
+    }
+    
+    if (payoutRowIndex === -1) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到指定的結算記錄'
+      });
+    }
+    
+    const partnerCode = payoutData[1]; // partner_code
+    const payoutAmount = parseFloat(payoutData[3]) || 0; // amount
+    
+    // 2. 刪除結算記錄
+    payoutsSheet.deleteRow(payoutRowIndex);
+    Logger.log('✅ 結算記錄已刪除: ID ' + payoutId);
+    
+    // 3. 更新大使的待支付佣金（減少金額）
+    const partnerRange = partnersSheet.getDataRange();
+    const partnerValues = partnerRange.getValues();
+    
+    for (let i = 1; i < partnerValues.length; i++) {
+      if (partnerValues[i][1] === partnerCode) { // partner_code 在第2列
+        const currentPendingCommission = parseFloat(partnerValues[i][11]) || 0; // pending_commission
+        const newPendingCommission = Math.max(0, currentPendingCommission - payoutAmount);
+        
+        partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
+        partnersSheet.getRange(i + 1, 25).setValue(new Date()); // updated_at
+        
+        Logger.log('✅ 大使 ' + partnerCode + ' 待支付佣金已調整: $' + payoutAmount + ' -> 剩餘: $' + newPendingCommission);
+        break;
+      }
+    }
+    
+    const result = {
+      success: true,
+      message: '結算已成功取消',
+      payout_id: payoutId,
+      partner_code: partnerCode,
+      cancelled_amount: payoutAmount,
+      cancelled_at: new Date().toISOString()
+    };
+    
+    // 如果是表單提交，返回 HTML 頁面
+    if (e.parameter && Object.keys(e.parameter).length > 0) {
+      return HtmlService.createHtmlOutput(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>取消結算成功</title>
+        </head>
+        <body>
+          <h1>✅ 結算取消成功！</h1>
+          <p>結算ID：${payoutId}</p>
+          <p>大使：${partnerCode}</p>
+          <p>取消金額：$${payoutAmount.toLocaleString()}</p>
+        </body>
+        </html>
+      `);
+    } else {
+      return createJsonResponse(result);
+    }
+    
+  } catch (error) {
+    Logger.log('取消結算錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '取消結算失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 處理更新結算 =====
+function handleUpdatePayout(data, e) {
+  try {
+    Logger.log('✏️ 開始處理更新結算請求');
+    Logger.log('請求數據: ' + JSON.stringify(data));
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+    
+    if (!payoutsSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到 Payouts 工作表'
+      });
+    }
+    
+    const payoutId = data.payout_id;
+    if (!payoutId) {
+      return createJsonResponse({
+        success: false,
+        error: '缺少結算ID'
+      });
+    }
+    
+    // 驗證金額
+    const newAmount = parseFloat(data.amount) || 0;
+    if (newAmount <= 0) {
+      return createJsonResponse({
+        success: false,
+        error: '金額必須大於0'
+      });
+    }
+    
+    // 1. 查找要更新的結算記錄
+    const payoutRange = payoutsSheet.getDataRange();
+    const payoutValues = payoutRange.getValues();
+    let payoutRowIndex = -1;
+    let oldAmount = 0;
+    
+    for (let i = 1; i < payoutValues.length; i++) {
+      if (String(payoutValues[i][0]) === String(payoutId)) {
+        payoutRowIndex = i + 1;
+        oldAmount = parseFloat(payoutValues[i][3]) || 0; // 舊的金額
+        break;
+      }
+    }
+    
+    if (payoutRowIndex === -1) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到指定的結算記錄'
+      });
+    }
+    
+    const timestamp = new Date();
+    
+    // 2. 更新結算記錄
+    payoutsSheet.getRange(payoutRowIndex, 3).setValue(data.payout_type || 'CASH'); // payout_type
+    payoutsSheet.getRange(payoutRowIndex, 4).setValue(newAmount); // amount
+    payoutsSheet.getRange(payoutRowIndex, 7).setValue(data.payout_status || 'PENDING'); // payout_status
+    payoutsSheet.getRange(payoutRowIndex, 11).setValue(data.notes || ''); // notes
+    payoutsSheet.getRange(payoutRowIndex, 14).setValue(timestamp); // updated_at
+    
+    Logger.log('✅ 結算記錄已更新: ID ' + payoutId + ', 金額: $' + oldAmount + ' -> $' + newAmount);
+    
+    // 3. 如果金額有變化，更新大使的待支付佣金
+    if (oldAmount !== newAmount) {
+      const partnerCode = payoutValues[payoutRowIndex - 1][1]; // partner_code
+      const partnersSheet = spreadsheet.getSheetByName('Partners');
+      
+      if (partnersSheet) {
+        const partnerRange = partnersSheet.getDataRange();
+        const partnerValues = partnerRange.getValues();
+        
+        for (let i = 1; i < partnerValues.length; i++) {
+          if (partnerValues[i][1] === partnerCode) { // partner_code 在第2列
+            const currentPendingCommission = parseFloat(partnerValues[i][11]) || 0; // pending_commission
+            const amountDifference = newAmount - oldAmount;
+            const newPendingCommission = Math.max(0, currentPendingCommission + amountDifference);
+            
+            partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
+            partnersSheet.getRange(i + 1, 25).setValue(timestamp); // updated_at
+            
+            Logger.log('✅ 大使 ' + partnerCode + ' 待支付佣金已調整: 差額 $' + amountDifference + ', 新餘額: $' + newPendingCommission);
+            break;
+          }
+        }
+      }
+    }
+    
+    const result = {
+      success: true,
+      message: '結算記錄更新成功',
+      payout_id: payoutId,
+      old_amount: oldAmount,
+      new_amount: newAmount,
+      updated_at: timestamp.toISOString()
+    };
+    
+    // 如果是表單提交，返回 HTML 頁面
+    if (e.parameter && Object.keys(e.parameter).length > 0) {
+      return HtmlService.createHtmlOutput(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>更新結算成功</title>
+        </head>
+        <body>
+          <h1>✅ 結算更新成功！</h1>
+          <p>結算ID：${payoutId}</p>
+          <p>原金額：$${oldAmount.toLocaleString()}</p>
+          <p>新金額：$${newAmount.toLocaleString()}</p>
+          <p>狀態：${data.payout_status || 'PENDING'}</p>
+        </body>
+        </html>
+      `);
+    } else {
+      return createJsonResponse(result);
+    }
+    
+  } catch (error) {
+    Logger.log('更新結算錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '更新結算失敗: ' + error.message
+    });
   }
 }
 

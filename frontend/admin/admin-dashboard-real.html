@@ -540,6 +540,11 @@
                 console.log('🔍 commission_amount 值:', bookings[0].commission_amount);
                 console.log('🔍 booking_source 值:', bookings[0].booking_source);
                 console.log('🔍 所有欄位名稱:', Object.keys(bookings[0]));
+                
+                // 如果發現欄位對應錯誤，顯示修復提示
+                if (typeof bookings[0].commission_amount === 'string' && bookings[0].commission_amount !== '0') {
+                    showDatabaseFixAlert();
+                }
             }
 
             table.innerHTML = bookings.map(booking => {
@@ -1343,6 +1348,98 @@
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.remove();
+            }
+        }
+
+        // 顯示資料庫修復提示
+        function showDatabaseFixAlert() {
+            // 避免重複顯示
+            if (document.getElementById('dbFixAlert')) return;
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.id = 'dbFixAlert';
+            alertDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50 max-w-md';
+            alertDiv.innerHTML = `
+                <div>
+                    <h4 class="font-bold">⚠️ 資料庫結構錯誤</h4>
+                    <p class="text-sm mt-1">檢測到 Google Sheets 欄位順序不正確，這會導致佣金顯示錯誤。</p>
+                    <div class="mt-3 space-x-2">
+                        <button onclick="diagnoseDatabase()" class="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700">
+                            🔍 診斷
+                        </button>
+                        <button onclick="fixDatabase()" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                            🔧 修復
+                        </button>
+                        <button onclick="closeDatabaseAlert()" class="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700">
+                            關閉
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(alertDiv);
+        }
+
+        // 診斷資料庫
+        async function diagnoseDatabase() {
+            try {
+                const formData = new URLSearchParams();
+                formData.append('action', 'diagnose_bookings');
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+
+                const result = await response.text();
+                const data = JSON.parse(result);
+                
+                if (data.success) {
+                    alert('✅ 診斷完成！請到 Google Apps Script 控制台查看詳細日誌。');
+                } else {
+                    alert('❌ 診斷失敗：' + data.error);
+                }
+            } catch (error) {
+                alert('❌ 診斷錯誤：' + error.message);
+            }
+        }
+
+        // 修復資料庫結構
+        async function fixDatabase() {
+            if (!confirm('⚠️ 警告：這將清空現有的 Bookings 資料並重設結構。建議先備份資料。\n\n確定要繼續嗎？')) {
+                return;
+            }
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append('action', 'fix_bookings_structure');
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+
+                const result = await response.text();
+                const data = JSON.parse(result);
+                
+                if (data.success) {
+                    alert('✅ 資料庫結構已修復！現在可以重新新增訂房資料。');
+                    closeDatabaseAlert();
+                    await loadRealData(); // 重新載入資料
+                } else {
+                    alert('❌ 修復失敗：' + data.error);
+                }
+            } catch (error) {
+                alert('❌ 修復錯誤：' + error.message);
+            }
+        }
+
+        // 關閉資料庫提示
+        function closeDatabaseAlert() {
+            const alert = document.getElementById('dbFixAlert');
+            if (alert) {
+                alert.remove();
             }
         }
 

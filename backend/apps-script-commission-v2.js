@@ -140,6 +140,20 @@ function doPost(e) {
 
       case 'delete_booking':
         return handleDeleteBooking(data, e);
+
+      case 'diagnose_bookings':
+        diagnoseBookingsStructure();
+        return createJsonResponse({
+          success: true,
+          message: '診斷完成，請檢查 Apps Script 日誌'
+        });
+
+      case 'fix_bookings_structure':
+        fixBookingsStructure();
+        return createJsonResponse({
+          success: true,
+          message: 'Bookings 表格結構已修復，現有資料已清空'
+        });
         
       default:
         Logger.log('未知動作: ' + (data.action || 'undefined'));
@@ -815,6 +829,95 @@ function recordClick(params) {
     Logger.log('Clicks 記錄成功: ' + partnerCode);
   } catch (error) {
     Logger.log('recordClick 錯誤: ' + error.toString());
+  }
+}
+
+// ===== 診斷和修復函數 =====
+function diagnoseBookingsStructure() {
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const sheet = spreadsheet.getSheetByName('Bookings');
+    
+    if (!sheet) {
+      Logger.log('❌ 找不到 Bookings 工作表');
+      return;
+    }
+    
+    const range = sheet.getDataRange();
+    const values = range.getValues();
+    
+    if (values.length === 0) {
+      Logger.log('❌ Bookings 表格為空');
+      return;
+    }
+    
+    const headers = values[0];
+    Logger.log('📋 當前標題行: ' + JSON.stringify(headers));
+    Logger.log('📊 標題行數量: ' + headers.length);
+    
+    const expectedHeaders = [
+      'id', 'partner_code', 'guest_name', 'guest_phone', 'guest_email', 
+      'checkin_date', 'checkout_date', 'room_price', 'booking_source', 
+      'stay_status', 'payment_status', 'commission_status', 'commission_amount', 
+      'commission_type', 'is_first_referral_bonus', 'first_referral_bonus_amount',
+      'manually_confirmed_by', 'manually_confirmed_at', 'notes', 'created_at', 'updated_at'
+    ];
+    
+    Logger.log('📋 預期標題行: ' + JSON.stringify(expectedHeaders));
+    Logger.log('📊 預期標題數量: ' + expectedHeaders.length);
+    
+    // 檢查差異
+    const missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
+    const extraHeaders = headers.filter(h => h && !expectedHeaders.includes(h));
+    
+    Logger.log('❌ 缺少的標題: ' + JSON.stringify(missingHeaders));
+    Logger.log('➕ 多餘的標題: ' + JSON.stringify(extraHeaders));
+    
+    // 檢查第一筆資料
+    if (values.length > 1) {
+      const firstRow = values[1];
+      Logger.log('📋 第一筆資料: ' + JSON.stringify(firstRow));
+      
+      // 檢查各欄位的對應
+      headers.forEach((header, index) => {
+        if (header) {
+          Logger.log(`🔍 ${header} (索引${index}): ${firstRow[index]}`);
+        }
+      });
+    }
+    
+  } catch (error) {
+    Logger.log('❌ 診斷錯誤: ' + error.toString());
+  }
+}
+
+function fixBookingsStructure() {
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const sheet = spreadsheet.getSheetByName('Bookings');
+    
+    if (!sheet) {
+      Logger.log('❌ 找不到 Bookings 工作表');
+      return;
+    }
+    
+    const correctHeaders = [
+      'id', 'partner_code', 'guest_name', 'guest_phone', 'guest_email', 
+      'checkin_date', 'checkout_date', 'room_price', 'booking_source', 
+      'stay_status', 'payment_status', 'commission_status', 'commission_amount', 
+      'commission_type', 'is_first_referral_bonus', 'first_referral_bonus_amount',
+      'manually_confirmed_by', 'manually_confirmed_at', 'notes', 'created_at', 'updated_at'
+    ];
+    
+    // 清空工作表並重設標題
+    sheet.clear();
+    sheet.getRange(1, 1, 1, correctHeaders.length).setValues([correctHeaders]);
+    
+    Logger.log('✅ Bookings 工作表結構已修復');
+    Logger.log('📋 新標題行: ' + JSON.stringify(correctHeaders));
+    
+  } catch (error) {
+    Logger.log('❌ 修復錯誤: ' + error.toString());
   }
 }
 

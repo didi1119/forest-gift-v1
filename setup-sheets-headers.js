@@ -56,8 +56,13 @@ function setupPartnersHeaders(spreadsheet) {
     'coupon_link',                 // P: 優惠券追蹤連結
     'short_landing_link',          // Q: 主頁短網址
     'short_coupon_link',           // R: 優惠券短網址
-    'created_at',                  // S: 創建時間
-    'updated_at'                   // T: 更新時間
+    'bank_name',                   // S: 銀行名稱
+    'bank_code',                   // T: 銀行代碼
+    'bank_branch',                 // U: 分行名稱
+    'bank_account_name',           // V: 戶名
+    'bank_account_number',         // W: 帳號
+    'created_at',                  // X: 創建時間
+    'updated_at'                   // Y: 更新時間
   ];
   
   // 檢查是否已有標題行

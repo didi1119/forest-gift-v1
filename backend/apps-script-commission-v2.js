@@ -174,7 +174,8 @@ function handleCreatePartner(data, e) {
     // 按照標題行順序建立資料陣列
     // id, partner_code, name, email, phone, level, level_progress, total_successful_referrals, 
     // commission_preference, total_commission_earned, total_commission_paid, pending_commission, 
-    // coupon_code, coupon_url, landing_link, coupon_link, short_landing_link, short_coupon_link, 
+    // coupon_code, coupon_url, landing_link, coupon_link, short_landing_link, short_coupon_link,
+    // bank_name, bank_code, bank_branch, bank_account_name, bank_account_number, 
     // created_at, updated_at
     const partnerData = [
       '', // A: id (自動編號)
@@ -195,8 +196,13 @@ function handleCreatePartner(data, e) {
       data.coupon_link || '', // P: coupon_link
       data.short_landing_link || '', // Q: short_landing_link
       data.short_coupon_link || '', // R: short_coupon_link
-      timestamp, // S: created_at
-      timestamp  // T: updated_at
+      data.bank_name || '', // S: bank_name - 銀行名稱
+      data.bank_code || '', // T: bank_code - 銀行代碼
+      data.bank_branch || '', // U: bank_branch - 分行名稱
+      data.bank_account_name || '', // V: bank_account_name - 戶名
+      data.bank_account_number || '', // W: bank_account_number - 帳號
+      timestamp, // X: created_at
+      timestamp  // Y: updated_at
     ];
     
     Logger.log('準備插入資料到 Partners 工作表');

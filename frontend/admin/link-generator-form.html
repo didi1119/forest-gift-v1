@@ -78,6 +78,38 @@
                 </div>
             </div>
             
+            <!-- 銀行帳戶資訊區塊 -->
+            <div class="bg-gray-50 p-4 rounded-lg mt-6">
+                <h4 class="font-semibold text-stone-800 mb-4">💰 匯款帳戶資訊</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">銀行名稱</label>
+                        <input type="text" id="bankName" placeholder="例：台灣銀行" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">銀行代碼</label>
+                        <input type="text" id="bankCode" placeholder="例：004" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">分行名稱</label>
+                        <input type="text" id="bankBranch" placeholder="例：信義分行" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">戶名</label>
+                        <input type="text" id="bankAccountName" placeholder="帳戶持有人姓名" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-stone-700 mb-2">帳號</label>
+                        <input type="text" id="bankAccountNumber" placeholder="例：1234567890123" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                        <p class="text-xs text-stone-500 mt-1">請確認帳號正確，以確保佣金能順利匯款</p>
+                    </div>
+                </div>
+            </div>
+            
             <div class="space-y-3">
                 <button onclick="generateLinks()" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
                     🔗 生成專屬連結
@@ -242,7 +274,7 @@ ${shortLandingUrl}
 
 —— ${partnerName} 真誠推薦 ❤️`;
                 
-                // 保存生成的資料（包含原始連結和短網址）
+                // 保存生成的資料（包含原始連結、短網址和銀行帳戶資訊）
                 generatedData = {
                     action: 'create_partner',
                     partner_code: partnerCode,
@@ -253,7 +285,12 @@ ${shortLandingUrl}
                     landing_link: landingUrl,
                     coupon_link: trackedCouponUrl,
                     short_landing_link: shortLandingUrl,
-                    short_coupon_link: shortCouponUrl
+                    short_coupon_link: shortCouponUrl,
+                    bank_name: document.getElementById('bankName').value.trim(),
+                    bank_code: document.getElementById('bankCode').value.trim(),
+                    bank_branch: document.getElementById('bankBranch').value.trim(),
+                    bank_account_name: document.getElementById('bankAccountName').value.trim(),
+                    bank_account_number: document.getElementById('bankAccountNumber').value.trim()
                 };
                 
                 // 顯示結果（短網址）
@@ -290,7 +327,12 @@ ${landingUrl}
                     coupon_code: couponCode,
                     coupon_url: couponUrl,
                     landing_link: landingUrl,
-                    coupon_link: trackedCouponUrl
+                    coupon_link: trackedCouponUrl,
+                    bank_name: document.getElementById('bankName').value.trim(),
+                    bank_code: document.getElementById('bankCode').value.trim(),
+                    bank_branch: document.getElementById('bankBranch').value.trim(),
+                    bank_account_name: document.getElementById('bankAccountName').value.trim(),
+                    bank_account_number: document.getElementById('bankAccountNumber').value.trim()
                 };
                 
                 document.getElementById('landingLink').textContent = landingUrl;

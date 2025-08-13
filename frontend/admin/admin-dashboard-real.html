@@ -949,6 +949,32 @@
                             </div>
                         </div>
                         
+                        <div class="border-t pt-4">
+                            <h4 class="font-semibold mb-2">💰 匯款帳戶資訊</h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <p class="text-sm text-gray-600">銀行名稱</p>
+                                    <p class="font-semibold">${partner.bank_name || '未設定'}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">銀行代碼</p>
+                                    <p class="font-semibold">${partner.bank_code || '未設定'}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">分行</p>
+                                    <p class="font-semibold">${partner.bank_branch || '未設定'}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">戶名</p>
+                                    <p class="font-semibold">${partner.bank_account_name || '未設定'}</p>
+                                </div>
+                                <div class="col-span-2">
+                                    <p class="text-sm text-gray-600">帳號</p>
+                                    <p class="font-semibold">${partner.bank_account_number || '未設定'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="flex justify-end space-x-2 pt-4">
                             <button onclick="editPartner('${partner.partner_code}')" 
                                 class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
@@ -989,7 +1015,7 @@
             modal.id = 'editPartnerModal';
             
             modal.innerHTML = `
-                <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-4">
                         <h3 class="text-xl font-bold">編輯夥伴資料</h3>
                         <button onclick="closeModal('editPartnerModal')" class="text-gray-500 hover:text-gray-700">
@@ -999,7 +1025,7 @@
                         </button>
                     </div>
                     
-                    <form id="editPartnerForm" class="space-y-4">
+                    <form id="editPartnerForm" class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700">夥伴代碼</label>
                             <input type="text" value="${partner.partner_code}" disabled 
@@ -1032,7 +1058,41 @@
                             </select>
                         </div>
                         
-                        <div class="flex justify-end space-x-2 pt-4">
+                        <div class="col-span-2 border-t pt-4 mt-4">
+                            <h4 class="font-semibold mb-3">💰 匯款帳戶資訊</h4>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">銀行名稱</label>
+                            <input type="text" id="editBankName" value="${partner.bank_name || ''}" 
+                                class="mt-1 block w-full rounded-md border-gray-300">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">銀行代碼</label>
+                            <input type="text" id="editBankCode" value="${partner.bank_code || ''}" 
+                                class="mt-1 block w-full rounded-md border-gray-300">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">分行名稱</label>
+                            <input type="text" id="editBankBranch" value="${partner.bank_branch || ''}" 
+                                class="mt-1 block w-full rounded-md border-gray-300">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">戶名</label>
+                            <input type="text" id="editBankAccountName" value="${partner.bank_account_name || ''}" 
+                                class="mt-1 block w-full rounded-md border-gray-300">
+                        </div>
+                        
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">帳號</label>
+                            <input type="text" id="editBankAccountNumber" value="${partner.bank_account_number || ''}" 
+                                class="mt-1 block w-full rounded-md border-gray-300">
+                        </div>
+                        
+                        <div class="flex justify-end space-x-2 pt-4 col-span-2">
                             <button type="button" onclick="savePartnerEdit('${partner.partner_code}')" 
                                 class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
                                 儲存變更
@@ -1061,7 +1121,12 @@
                     name: document.getElementById('editName').value,
                     email: document.getElementById('editEmail').value,
                     phone: document.getElementById('editPhone').value,
-                    commission_preference: document.getElementById('editCommissionPref').value
+                    commission_preference: document.getElementById('editCommissionPref').value,
+                    bank_name: document.getElementById('editBankName').value,
+                    bank_code: document.getElementById('editBankCode').value,
+                    bank_branch: document.getElementById('editBankBranch').value,
+                    bank_account_name: document.getElementById('editBankAccountName').value,
+                    bank_account_number: document.getElementById('editBankAccountNumber').value
                 };
                 
                 // 重新顯示列表

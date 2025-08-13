@@ -352,6 +352,7 @@
             try {
                 showLoadingSpinner('載入數據中...');
                 console.log('🔄 開始載入真實數據...');
+                console.log('🌐 請求 URL:', APPS_SCRIPT_URL);
                 
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
@@ -362,6 +363,7 @@
                 });
                 
                 console.log('📡 收到回應:', response.status, response.statusText);
+                console.log('📡 回應類型:', response.headers.get('content-type'));
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
@@ -1597,6 +1599,9 @@
                     }
                 }
 
+                console.log('🌐 發送請求到:', APPS_SCRIPT_URL);
+                console.log('📤 請求內容:', formData.toString());
+
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     headers: {
@@ -1605,7 +1610,16 @@
                     body: formData.toString()
                 });
 
+                console.log('📡 回應狀態:', response.status, response.statusText);
+                console.log('📡 回應 headers:', response.headers);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
                 const result = await response.text();
+                console.log('📄 原始回應:', result);
+                
                 let data;
                 try {
                     data = JSON.parse(result);

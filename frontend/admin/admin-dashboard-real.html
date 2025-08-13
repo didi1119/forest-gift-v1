@@ -1602,40 +1602,51 @@
                 console.log('🌐 發送請求到:', APPS_SCRIPT_URL);
                 console.log('📤 請求內容:', formData.toString());
 
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: formData.toString()
-                });
+                // 使用表單提交方式避免 CORS 問題
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
 
-                console.log('📡 回應狀態:', response.status, response.statusText);
-                console.log('📡 回應 headers:', response.headers);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                // 添加所有數據作為隱藏輸入
+                for (const [key, value] of Object.entries(updateData)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value || '';
+                    form.appendChild(input);
                 }
 
-                const result = await response.text();
-                console.log('📄 原始回應:', result);
-                
-                let data;
-                try {
-                    data = JSON.parse(result);
-                } catch (parseError) {
-                    console.error('❌ JSON 解析失敗:', parseError);
-                    console.error('原始內容:', result);
-                    throw new Error('回應格式不正確: ' + parseError.message);
+                // 創建隱藏的 iframe（如果不存在）
+                let iframe = document.getElementById('hiddenFrame');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'hiddenFrame';
+                    iframe.name = 'hiddenFrame';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
                 }
-                
-                if (data.success) {
-                    showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
-                    await loadRealData(); // 重新載入數據
-                    displayBookings(allData.bookings);
-                } else {
-                    alert('❌ 更新失敗：' + data.error);
-                }
+
+                // 監聽 iframe 載入完成事件
+                iframe.onload = function() {
+                    setTimeout(() => {
+                        showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
+                        
+                        // 重新載入數據
+                        loadRealData().then(() => {
+                            displayBookings(allData.bookings);
+                        });
+                        
+                        submitButton.textContent = originalText;
+                        submitButton.disabled = false;
+                    }, 1000);
+                };
+
+                // 提交表單
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
             } catch (error) {
                 console.error('更新訂房狀態失敗:', error);
                 alert('❌ 更新失敗：' + error.message);

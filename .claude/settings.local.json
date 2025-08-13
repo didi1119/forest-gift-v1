@@ -6,7 +6,8 @@
       "Bash(make status:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(make:*)"
     ],
     "deny": []
   }

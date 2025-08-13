@@ -1406,32 +1406,111 @@
 
         // 修復資料庫結構
         async function fixDatabase() {
-            if (!confirm('⚠️ 警告：這將清空現有的 Bookings 資料並重設結構。建議先備份資料。\n\n確定要繼續嗎？')) {
-                return;
-            }
+            // 顯示手動修復說明
+            showManualFixInstructions();
+        }
 
+        // 顯示手動修復說明
+        function showManualFixInstructions() {
+            const modal = document.createElement('div');
+            modal.id = 'manualFixModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold text-red-600">🔧 手動修復 Google Sheets 結構</h3>
+                        <button onclick="closeModal('manualFixModal')" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <p class="text-sm"><strong>問題：</strong>Google Sheets 的 Bookings 表格欄位順序不正確，導致佣金顯示錯誤。</p>
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h4 class="font-bold mb-2">📋 修復步驟：</h4>
+                            <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>打開您的 Google Sheets：<br>
+                                    <a href="https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit" target="_blank" class="text-blue-600 underline">點擊這裡打開</a>
+                                </li>
+                                <li>找到 "Bookings" 工作表</li>
+                                <li>刪除第一行（標題行）</li>
+                                <li>在 A1 儲存格開始，依序輸入以下標題：</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-bold mb-2">📝 正確的標題行（請依序複製到 A1:U1）：</h4>
+                            <div class="bg-white border rounded p-2 text-xs font-mono">
+                                <div class="grid grid-cols-3 gap-1">
+                                    <div>A1: id</div>
+                                    <div>B1: partner_code</div>
+                                    <div>C1: guest_name</div>
+                                    <div>D1: guest_phone</div>
+                                    <div>E1: guest_email</div>
+                                    <div>F1: checkin_date</div>
+                                    <div>G1: checkout_date</div>
+                                    <div>H1: room_price</div>
+                                    <div>I1: booking_source</div>
+                                    <div>J1: stay_status</div>
+                                    <div>K1: payment_status</div>
+                                    <div>L1: commission_status</div>
+                                    <div>M1: commission_amount</div>
+                                    <div>N1: commission_type</div>
+                                    <div>O1: is_first_referral_bonus</div>
+                                    <div>P1: first_referral_bonus_amount</div>
+                                    <div>Q1: manually_confirmed_by</div>
+                                    <div>R1: manually_confirmed_at</div>
+                                    <div>S1: notes</div>
+                                    <div>T1: created_at</div>
+                                    <div>U1: updated_at</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <h4 class="font-bold mb-2">⚠️ 重要提醒：</h4>
+                            <ul class="list-disc list-inside space-y-1 text-sm">
+                                <li>修復後需要清除所有現有的訂房資料行（保留標題行）</li>
+                                <li>或者您可以嘗試重新排列現有資料以符合新的欄位順序</li>
+                                <li>建議先備份現有資料</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button onclick="copyHeadersToClipboard()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                📋 複製標題到剪貼板
+                            </button>
+                            <button onclick="closeModal('manualFixModal')" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                                關閉
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // 複製標題到剪貼板
+        async function copyHeadersToClipboard() {
+            const headers = 'id\tpartner_code\tguest_name\tguest_phone\tguest_email\tcheckin_date\tcheckout_date\troom_price\tbooking_source\tstay_status\tpayment_status\tcommission_status\tcommission_amount\tcommission_type\tis_first_referral_bonus\tfirst_referral_bonus_amount\tmanually_confirmed_by\tmanually_confirmed_at\tnotes\tcreated_at\tupdated_at';
+            
             try {
-                const formData = new URLSearchParams();
-                formData.append('action', 'fix_bookings_structure');
-
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData.toString()
-                });
-
-                const result = await response.text();
-                const data = JSON.parse(result);
-                
-                if (data.success) {
-                    alert('✅ 資料庫結構已修復！現在可以重新新增訂房資料。');
-                    closeDatabaseAlert();
-                    await loadRealData(); // 重新載入資料
-                } else {
-                    alert('❌ 修復失敗：' + data.error);
-                }
+                await navigator.clipboard.writeText(headers);
+                alert('✅ 標題已複製到剪貼板！您可以在 Google Sheets 中選擇 A1:U1 範圍後貼上。');
             } catch (error) {
-                alert('❌ 修復錯誤：' + error.message);
+                // 備用方法
+                const textArea = document.createElement('textarea');
+                textArea.value = headers;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('✅ 標題已複製到剪貼板！您可以在 Google Sheets 中選擇 A1:U1 範圍後貼上。');
             }
         }
 

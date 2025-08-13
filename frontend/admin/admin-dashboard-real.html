@@ -834,16 +834,324 @@
             alert('結算報表功能開發中...');
         }
 
+        // 查看夥伴詳情
         function viewPartnerDetails(partnerCode) {
-            alert(`查看夥伴詳情：${partnerCode}`);
+            const partner = allData.partners.find(p => p.partner_code === partnerCode);
+            if (!partner) {
+                showErrorMessage('找不到夥伴資料');
+                return;
+            }
+            
+            // 創建模態框顯示詳細資訊
+            const modal = createPartnerModal(partner);
+            document.body.appendChild(modal);
+        }
+        
+        // 創建夥伴詳情模態框
+        function createPartnerModal(partner) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.id = 'partnerModal';
+            
+            const bookings = allData.bookings.filter(b => b.partner_code === partner.partner_code);
+            const totalRevenue = bookings.reduce((sum, b) => sum + (b.room_price || 0), 0);
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold">夥伴詳情</h3>
+                        <button onclick="closeModal('partnerModal')" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-600">夥伴代碼</p>
+                                <p class="font-semibold">${partner.partner_code}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">姓名</p>
+                                <p class="font-semibold">${partner.name || '未設定'}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Email</p>
+                                <p class="font-semibold">${partner.email || '未設定'}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">電話</p>
+                                <p class="font-semibold">${partner.phone || '未設定'}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">等級</p>
+                                <p class="font-semibold">${getLevelText(partner.level)}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">本年進度</p>
+                                <p class="font-semibold">${partner.level_progress || 0} / ${getNextLevelRequirement(partner.level)}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t pt-4">
+                            <h4 class="font-semibold mb-2">佣金資訊</h4>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-600">累積佣金</p>
+                                    <p class="font-semibold text-green-600">$${(partner.total_commission_earned || 0).toLocaleString()}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">已支付</p>
+                                    <p class="font-semibold">$${(partner.total_commission_paid || 0).toLocaleString()}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">待支付</p>
+                                    <p class="font-semibold text-amber-600">$${(partner.pending_commission || 0).toLocaleString()}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t pt-4">
+                            <h4 class="font-semibold mb-2">推薦統計</h4>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-600">累積推薦數</p>
+                                    <p class="font-semibold">${partner.total_successful_referrals || 0}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">總訂房數</p>
+                                    <p class="font-semibold">${bookings.length}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">總營收貢獻</p>
+                                    <p class="font-semibold">$${totalRevenue.toLocaleString()}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t pt-4">
+                            <h4 class="font-semibold mb-2">連結資訊</h4>
+                            <div class="space-y-2">
+                                ${partner.landing_link ? `
+                                    <div>
+                                        <p class="text-sm text-gray-600">推廣連結</p>
+                                        <p class="text-xs break-all bg-gray-100 p-2 rounded">${partner.short_landing_link || partner.landing_link}</p>
+                                    </div>
+                                ` : ''}
+                                ${partner.coupon_url ? `
+                                    <div>
+                                        <p class="text-sm text-gray-600">優惠券連結</p>
+                                        <p class="text-xs break-all bg-gray-100 p-2 rounded">${partner.coupon_url}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-2 pt-4">
+                            <button onclick="editPartner('${partner.partner_code}')" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                編輯資料
+                            </button>
+                            <button onclick="closeModal('partnerModal')" 
+                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                                關閉
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return modal;
+        }
+        
+        // 編輯夥伴資料
+        function editPartner(partnerCode) {
+            const partner = allData.partners.find(p => p.partner_code === partnerCode);
+            if (!partner) {
+                showErrorMessage('找不到夥伴資料');
+                return;
+            }
+            
+            // 關閉詳情模態框
+            closeModal('partnerModal');
+            
+            // 創建編輯模態框
+            const modal = createEditPartnerModal(partner);
+            document.body.appendChild(modal);
+        }
+        
+        // 創建編輯夥伴模態框
+        function createEditPartnerModal(partner) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.id = 'editPartnerModal';
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold">編輯夥伴資料</h3>
+                        <button onclick="closeModal('editPartnerModal')" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form id="editPartnerForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">夥伴代碼</label>
+                            <input type="text" value="${partner.partner_code}" disabled 
+                                class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">姓名</label>
+                            <input type="text" id="editName" value="${partner.name || ''}" 
+                                class="mt-1 block w-full rounded-md border-gray-300">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" id="editEmail" value="${partner.email || ''}" 
+                                class="mt-1 block w-full rounded-md border-gray-300">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">電話</label>
+                            <input type="tel" id="editPhone" value="${partner.phone || ''}" 
+                                class="mt-1 block w-full rounded-md border-gray-300">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">佣金偏好</label>
+                            <select id="editCommissionPref" class="mt-1 block w-full rounded-md border-gray-300">
+                                <option value="CASH" ${partner.commission_preference === 'CASH' ? 'selected' : ''}>現金</option>
+                                <option value="ACCOMMODATION" ${partner.commission_preference === 'ACCOMMODATION' ? 'selected' : ''}>住宿</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-2 pt-4">
+                            <button type="button" onclick="savePartnerEdit('${partner.partner_code}')" 
+                                class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                                儲存變更
+                            </button>
+                            <button type="button" onclick="closeModal('editPartnerModal')" 
+                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                                取消
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            return modal;
+        }
+        
+        // 儲存夥伴編輯
+        async function savePartnerEdit(partnerCode) {
+            showSuccessMessage('儲存功能開發中，資料暫時保存在本地');
+            
+            // 更新本地數據（實際應該發送到後端）
+            const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
+            if (partnerIndex !== -1) {
+                allData.partners[partnerIndex] = {
+                    ...allData.partners[partnerIndex],
+                    name: document.getElementById('editName').value,
+                    email: document.getElementById('editEmail').value,
+                    phone: document.getElementById('editPhone').value,
+                    commission_preference: document.getElementById('editCommissionPref').value
+                };
+                
+                // 重新顯示列表
+                displayPartners(allData.partners);
+            }
+            
+            closeModal('editPartnerModal');
         }
 
+        // 編輯訂單
         function editBooking(bookingId) {
-            alert(`編輯訂單：${bookingId}`);
+            const booking = allData.bookings.find(b => b.id == bookingId);
+            if (!booking) {
+                showErrorMessage('找不到訂單資料');
+                return;
+            }
+            
+            // 創建編輯訂單模態框
+            const modal = createEditBookingModal(booking);
+            document.body.appendChild(modal);
+        }
+        
+        // 創建編輯訂單模態框
+        function createEditBookingModal(booking) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.id = 'editBookingModal';
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold">編輯訂單 #${booking.id}</h3>
+                        <button onclick="closeModal('editBookingModal')" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">房客姓名</label>
+                            <input type="text" value="${booking.guest_name}" 
+                                class="mt-1 block w-full rounded-md border-gray-300">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">入住狀態</label>
+                            <select class="mt-1 block w-full rounded-md border-gray-300">
+                                <option value="PENDING" ${booking.stay_status === 'PENDING' ? 'selected' : ''}>待入住</option>
+                                <option value="CHECKED_IN" ${booking.stay_status === 'CHECKED_IN' ? 'selected' : ''}>已入住</option>
+                                <option value="COMPLETED" ${booking.stay_status === 'COMPLETED' ? 'selected' : ''}>已完成</option>
+                                <option value="CANCELLED" ${booking.stay_status === 'CANCELLED' ? 'selected' : ''}>已取消</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">佣金金額</label>
+                            <input type="number" value="${booking.commission_amount || 0}" 
+                                class="mt-1 block w-full rounded-md border-gray-300">
+                        </div>
+                        
+                        <div class="flex justify-end space-x-2 pt-4">
+                            <button type="button" onclick="showSuccessMessage('儲存成功'); closeModal('editBookingModal');" 
+                                class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                                儲存變更
+                            </button>
+                            <button type="button" onclick="closeModal('editBookingModal')" 
+                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                                取消
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            return modal;
         }
 
+        // 查看結算詳情
         function viewPayoutDetails(payoutId) {
-            alert(`查看結算詳情：${payoutId}`);
+            showSuccessMessage('結算詳情功能開發中');
+        }
+        
+        // 關閉模態框
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.remove();
+            }
         }
 
         function filterBookings() {

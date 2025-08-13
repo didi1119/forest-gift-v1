@@ -534,6 +534,14 @@
                 return;
             }
 
+            // 調試：檢查第一筆訂房資料結構
+            if (bookings.length > 0) {
+                console.log('🔍 第一筆訂房資料結構:', bookings[0]);
+                console.log('🔍 commission_amount 值:', bookings[0].commission_amount);
+                console.log('🔍 booking_source 值:', bookings[0].booking_source);
+                console.log('🔍 所有欄位名稱:', Object.keys(bookings[0]));
+            }
+
             table.innerHTML = bookings.map(booking => {
                 const statusClass = getStatusClass(booking.stay_status);
                 const statusText = getStatusText(booking.stay_status);

@@ -409,7 +409,7 @@ function handleConfirmCheckinCompletion(data, e) {
         
         if (rowGuestName === data.guest_name && 
             rowGuestPhone === String(data.guest_phone) && 
-            formatDate(rowCheckinDate) === data.checkin_date) {
+            formatDate(rowCheckinDate) === formatDate(data.checkin_date)) {
           Logger.log('✅ 找到匹配的記錄！行號: ' + (i + 1));
           bookingRowIndex = i + 1;
           bookingData = bookingValues[i];
@@ -418,7 +418,20 @@ function handleConfirmCheckinCompletion(data, e) {
       }
       
       if (bookingRowIndex === -1) {
-        Logger.log('❌ 複合條件查找失敗');
+        Logger.log('❌ 複合條件查找失敗，嘗試只用姓名+電話查找...');
+        
+        // 備用方案：只用姓名+電話查找（不考慮日期）
+        for (let i = 1; i < bookingValues.length; i++) {
+          const rowGuestName = bookingValues[i][2];
+          const rowGuestPhone = String(bookingValues[i][3]);
+          
+          if (rowGuestName === data.guest_name && rowGuestPhone === String(data.guest_phone)) {
+            Logger.log('✅ 備用查找成功！行號: ' + (i + 1));
+            bookingRowIndex = i + 1;
+            bookingData = bookingValues[i];
+            break;
+          }
+        }
       }
     }
     
@@ -770,12 +783,23 @@ function createJsonResponse(data) {
 // 格式化日期以便比較
 function formatDate(date) {
   if (!date) return '';
-  if (typeof date === 'string') return date;
+  
+  // 如果已經是 YYYY-MM-DD 格式的字串，直接返回
+  if (typeof date === 'string') {
+    // 處理 ISO 格式字串 (如 2025-08-10T16:00:00.000Z)
+    if (date.includes('T')) {
+      return date.split('T')[0];
+    }
+    return date;
+  }
+  
+  // 如果是 Date 物件
   if (date instanceof Date) {
     return date.getFullYear() + '-' + 
            String(date.getMonth() + 1).padStart(2, '0') + '-' + 
            String(date.getDate()).padStart(2, '0');
   }
+  
   return String(date);
 }
 

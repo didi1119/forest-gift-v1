@@ -339,26 +339,36 @@
             try {
                 console.log('開始載入大使列表...');
                 
-                // 使用 POST 請求來獲取資料，與管理後台一致
+                // 使用與管理後台完全相同的請求方式
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: JSON.stringify({
-                        action: 'get_dashboard_data'
-                    })
+                    body: 'action=get_dashboard_data'
                 });
                 
-                const result = await response.json();
-                console.log('API 回應:', result);
+                const result = await response.text();
+                console.log('📄 原始回應內容:', result);
                 
-                if (result.success && result.data && result.data.partners) {
-                    allPartners = result.data.partners;
+                let data;
+                try {
+                    data = JSON.parse(result);
+                } catch (parseError) {
+                    console.error('❌ JSON 解析失敗:', parseError);
+                    console.error('原始內容:', result);
+                    throw new Error('回應格式不正確: ' + parseError.message);
+                }
+                
+                console.log('📊 解析後的數據:', data);
+                
+                if (data.success && data.data && data.data.partners) {
+                    allPartners = data.data.partners;
                     console.log('載入大使數量:', allPartners.length);
                     populatePartnerSelect();
                 } else {
-                    console.error('載入大使列表失敗: 無有效資料');
+                    console.error('載入大使列表失敗: 無有效資料', data);
+                    throw new Error('API 返回錯誤: ' + (data.error || '無有效資料'));
                 }
             } catch (error) {
                 console.error('載入大使列表失敗:', error);

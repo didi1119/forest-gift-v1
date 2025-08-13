@@ -3,7 +3,9 @@
     "allow": [
       "Bash(node:*)",
       "Bash(git push:*)",
-      "Bash(make status:*)"
+      "Bash(make status:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

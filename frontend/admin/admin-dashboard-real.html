@@ -1629,34 +1629,49 @@
                 }
 
                 // 監聽 iframe 載入完成事件
-                iframe.onload = function() {
+                const frameLoadHandler = () => {
                     setTimeout(() => {
+                        console.log('🔄 確認入住完成，更新前端數據...', booking.id);
+                        
                         // 立即更新前端數據，避免需要等待後端
                         const bookingIndex = allData.bookings.findIndex(b => b.id == booking.id);
+                        console.log('📍 找到訂房索引:', bookingIndex, '原狀態:', allData.bookings[bookingIndex]?.stay_status);
+                        
                         if (bookingIndex !== -1) {
                             allData.bookings[bookingIndex].stay_status = 'COMPLETED';
+                            console.log('✅ 已更新訂房狀態為 COMPLETED');
+                            
                             if (commissionData) {
                                 allData.bookings[bookingIndex].commission_amount = commissionData.commission_amount;
                                 allData.bookings[bookingIndex].commission_type = commissionData.commission_type;
+                                console.log('💰 已更新佣金資訊:', commissionData);
                             }
                         }
                         
                         showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
                         
                         // 立即刷新顯示
+                        console.log('🔄 重新顯示訂房列表...');
                         displayBookings(allData.bookings);
                         
                         // 背景重新載入完整數據確保一致性
                         setTimeout(() => {
+                            console.log('🔄 背景載入完整數據...');
                             loadRealData().then(() => {
                                 displayBookings(allData.bookings);
+                                console.log('✅ 數據重載完成');
                             });
                         }, 2000);
                         
                         submitButton.textContent = originalText;
                         submitButton.disabled = false;
+                        
+                        // 移除事件監聽器
+                        iframe.removeEventListener('load', frameLoadHandler);
                     }, 500);
                 };
+                
+                iframe.addEventListener('load', frameLoadHandler);
 
                 // 提交表單
                 document.body.appendChild(form);
@@ -2108,7 +2123,17 @@
                     frame.removeEventListener('load', frameLoadHandler);
                 };
                 
-                document.getElementById('hiddenFrame').addEventListener('load', frameLoadHandler);
+                // 確保隱藏iframe存在
+                let hiddenFrame = document.getElementById('hiddenFrame');
+                if (!hiddenFrame) {
+                    hiddenFrame = document.createElement('iframe');
+                    hiddenFrame.id = 'hiddenFrame';
+                    hiddenFrame.name = 'hiddenFrame';
+                    hiddenFrame.style.display = 'none';
+                    document.body.appendChild(hiddenFrame);
+                }
+                
+                hiddenFrame.addEventListener('load', frameLoadHandler);
                 form.submit();
                 
             } catch (error) {
@@ -2190,7 +2215,17 @@
                     frame.removeEventListener('load', frameLoadHandler);
                 };
                 
-                document.getElementById('hiddenFrame').addEventListener('load', frameLoadHandler);
+                // 確保隱藏iframe存在
+                let hiddenFrame = document.getElementById('hiddenFrame');
+                if (!hiddenFrame) {
+                    hiddenFrame = document.createElement('iframe');
+                    hiddenFrame.id = 'hiddenFrame';
+                    hiddenFrame.name = 'hiddenFrame';
+                    hiddenFrame.style.display = 'none';
+                    document.body.appendChild(hiddenFrame);
+                }
+                
+                hiddenFrame.addEventListener('load', frameLoadHandler);
                 form.submit();
                 
             } catch (error) {

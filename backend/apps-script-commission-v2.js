@@ -454,10 +454,13 @@ function handleConfirmCheckinCompletion(data, e) {
     bookingsSheet.getRange(bookingRowIndex, 18).setValue(timestamp); // manually_confirmed_at
     bookingsSheet.getRange(bookingRowIndex, 21).setValue(timestamp); // updated_at
     
+    // 取得實際的 booking ID (如果有的話)
+    const actualBookingId = bookingData[0] || 'N/A';
+    
     let result = {
       success: true,
       message: '入住確認完成',
-      booking_id: bookingId,
+      booking_id: actualBookingId,
       commission_calculated: false,
       level_upgraded: false
     };
@@ -526,13 +529,13 @@ function handleConfirmCheckinCompletion(data, e) {
             data.partner_code,
             data.commission_type || 'CASH', // payout_type
             commissionAmount, // amount
-            bookingId.toString(), // related_booking_ids
+            actualBookingId.toString(), // related_booking_ids
             data.commission_type === 'CASH' ? 'BANK_TRANSFER' : 'ACCOMMODATION_VOUCHER', // payout_method
             'PENDING', // payout_status
             '', // bank_transfer_date
             '', // bank_transfer_reference
             '', // accommodation_voucher_code
-            `入住確認佣金 - 訂房 #${bookingId}`, // notes
+            `入住確認佣金 - 訂房 #${actualBookingId}`, // notes
             'admin', // created_by
             timestamp, // created_at
             timestamp  // updated_at
@@ -558,7 +561,7 @@ function handleConfirmCheckinCompletion(data, e) {
         </head>
         <body>
           <h1>✅ 入住確認完成！</h1>
-          <p>訂房ID：${bookingId}</p>
+          <p>訂房ID：${actualBookingId}</p>
           ${result.commission_calculated ? `<p>佣金：$${result.commission_amount}</p>` : ''}
           ${result.level_upgraded ? `<p>🎉 大使等級晉升：${result.new_level}</p>` : ''}
         </body>

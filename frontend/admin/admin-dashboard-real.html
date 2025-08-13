@@ -549,7 +549,7 @@
                 }
             }
 
-            table.innerHTML = bookings.map(booking => {
+            table.innerHTML = bookings.map((booking, index) => {
                 const statusClass = getStatusClass(booking.stay_status);
                 const statusText = getStatusText(booking.stay_status);
                 const partner = booking.partner_code ? allData.partners.find(p => p.partner_code === booking.partner_code) : null;
@@ -607,12 +607,12 @@
                         <td class="py-4 px-4 text-center">
                             <div class="flex flex-col space-y-1">
                                 ${canConfirmStay ? `
-                                    <button onclick="confirmStayCompletion('${booking.id}')" 
+                                    <button onclick="confirmStayCompletion(${index})" 
                                         class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700">
                                         ✅ 確認入住
                                     </button>
                                 ` : ''}
-                                <button onclick="editBooking('${booking.id}')" 
+                                <button onclick="editBooking(${index})" 
                                     class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">
                                     ✏️ 編輯訂單
                                 </button>
@@ -1536,8 +1536,8 @@
         }
 
         // 確認入住完成
-        async function confirmStayCompletion(bookingId) {
-            const booking = allData.bookings.find(b => b.id == bookingId);
+        async function confirmStayCompletion(bookingIndex) {
+            const booking = allData.bookings[bookingIndex];
             if (!booking) {
                 alert('找不到訂房記錄');
                 return;
@@ -1580,12 +1580,15 @@
                            String(date.getDate()).padStart(2, '0');
                 }
 
+                // 由於 Google Sheets 中的 ID 欄位為空，改用組合鍵識別
                 const updateData = {
                     action: 'confirm_checkin_completion',
-                    booking_id: booking.id || '',
+                    booking_id: booking.id || '', // 保留原有邏輯
                     guest_name: booking.guest_name,
                     guest_phone: String(booking.guest_phone || ''),
                     checkin_date: formatDateForBackend(booking.checkin_date),
+                    checkout_date: formatDateForBackend(booking.checkout_date), // 增加退房日期幫助識別
+                    room_price: booking.room_price, // 增加房價幫助識別
                     ...commissionData
                 };
                 
@@ -1628,50 +1631,50 @@
                     document.body.appendChild(iframe);
                 }
 
-                // 監聽 iframe 載入完成事件
-                const frameLoadHandler = () => {
-                    setTimeout(() => {
-                        console.log('🔄 確認入住完成，更新前端數據...', booking.id);
+                // 因為 Apps Script 有 X-Frame-Options 限制，使用延時回調
+                setTimeout(() => {
+                    console.log('🔄 確認入住完成，更新前端數據...', booking.guest_name, booking.guest_phone);
+                    
+                    // 由於 booking.id 為空，使用 guest_name + guest_phone 來找到對應記錄
+                    const bookingIndex = allData.bookings.findIndex(b => 
+                        b.guest_name === booking.guest_name && 
+                        String(b.guest_phone) === String(booking.guest_phone) &&
+                        b.checkin_date === booking.checkin_date
+                    );
+                    console.log('📍 根據姓名+電話+入住日期找到訂房索引:', bookingIndex);
+                    
+                    if (bookingIndex !== -1) {
+                        const oldStatus = allData.bookings[bookingIndex].stay_status;
+                        allData.bookings[bookingIndex].stay_status = 'COMPLETED';
+                        console.log('✅ 已更新訂房狀態:', oldStatus, '→ COMPLETED');
                         
-                        // 立即更新前端數據，避免需要等待後端
-                        const bookingIndex = allData.bookings.findIndex(b => b.id == booking.id);
-                        console.log('📍 找到訂房索引:', bookingIndex, '原狀態:', allData.bookings[bookingIndex]?.stay_status);
-                        
-                        if (bookingIndex !== -1) {
-                            allData.bookings[bookingIndex].stay_status = 'COMPLETED';
-                            console.log('✅ 已更新訂房狀態為 COMPLETED');
-                            
-                            if (commissionData) {
-                                allData.bookings[bookingIndex].commission_amount = commissionData.commission_amount;
-                                allData.bookings[bookingIndex].commission_type = commissionData.commission_type;
-                                console.log('💰 已更新佣金資訊:', commissionData);
-                            }
+                        if (commissionData) {
+                            allData.bookings[bookingIndex].commission_amount = commissionData.commission_amount;
+                            allData.bookings[bookingIndex].commission_type = commissionData.commission_type;
+                            allData.bookings[bookingIndex].commission_status = 'CALCULATED';
+                            console.log('💰 已更新佣金資訊:', commissionData);
                         }
-                        
-                        showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
                         
                         // 立即刷新顯示
                         console.log('🔄 重新顯示訂房列表...');
                         displayBookings(allData.bookings);
                         
-                        // 背景重新載入完整數據確保一致性
-                        setTimeout(() => {
-                            console.log('🔄 背景載入完整數據...');
-                            loadRealData().then(() => {
-                                displayBookings(allData.bookings);
-                                console.log('✅ 數據重載完成');
-                            });
-                        }, 2000);
-                        
-                        submitButton.textContent = originalText;
-                        submitButton.disabled = false;
-                        
-                        // 移除事件監聽器
-                        iframe.removeEventListener('load', frameLoadHandler);
-                    }, 500);
-                };
-                
-                iframe.addEventListener('load', frameLoadHandler);
+                        showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
+                    } else {
+                        console.error('❌ 找不到對應的訂房記錄');
+                        showSuccessMessage('✅ 確認請求已發送，請重新載入查看結果');
+                    }
+                    
+                    // 背景重新載入完整數據確保一致性
+                    setTimeout(() => {
+                        console.log('🔄 背景載入完整數據...');
+                        loadRealData().then(() => {
+                            displayBookings(allData.bookings);
+                            console.log('✅ 數據重載完成');
+                        });
+                    }, 3000);
+                    
+                }, 1000);
 
                 // 提交表單
                 document.body.appendChild(form);
@@ -1803,8 +1806,8 @@
         }
 
         // 編輯訂單
-        function editBooking(bookingId) {
-            const booking = allData.bookings.find(b => b.id == bookingId);
+        function editBooking(bookingIndex) {
+            const booking = allData.bookings[bookingIndex];
             if (!booking) {
                 alert('找不到訂房記錄');
                 return;
@@ -1941,7 +1944,7 @@
                                 class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
                                 取消
                             </button>
-                            <button type="button" onclick="deleteBooking('${booking.id}')" 
+                            <button type="button" onclick="deleteBooking(${index})" 
                                 class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                                 刪除訂單
                             </button>
@@ -2143,8 +2146,8 @@
         }
 
         // 刪除訂單
-        async function deleteBooking(bookingId) {
-            const booking = allData.bookings.find(b => b.id == bookingId);
+        async function deleteBooking(bookingIndex) {
+            const booking = allData.bookings[bookingIndex];
             if (!booking) {
                 alert('找不到訂房記錄');
                 return;
@@ -2170,50 +2173,32 @@
                 actionInput.value = 'delete_booking';
                 form.appendChild(actionInput);
                 
+                // 傳遞足夠的資訊讓後端識別記錄
                 const bookingIdInput = document.createElement('input');
                 bookingIdInput.type = 'hidden';
                 bookingIdInput.name = 'booking_id';
-                bookingIdInput.value = bookingId;
+                bookingIdInput.value = booking.id || '';
                 form.appendChild(bookingIdInput);
                 
-                document.body.appendChild(form);
+                const guestNameInput = document.createElement('input');
+                guestNameInput.type = 'hidden';
+                guestNameInput.name = 'guest_name';
+                guestNameInput.value = booking.guest_name;
+                form.appendChild(guestNameInput);
                 
-                // 監聽回應
-                const frameLoadHandler = () => {
-                    try {
-                        const frame = document.getElementById('hiddenFrame');
-                        const frameContent = frame.contentDocument || frame.contentWindow.document;
-                        const result = frameContent.body ? frameContent.body.textContent : '';
-                        
-                        if (result) {
-                            const data = JSON.parse(result);
-                            if (data.success) {
-                                showSuccessMessage('✅ 訂單已成功刪除！');
-                                closeModal('editBookingModal');
-                                setTimeout(() => {
-                                    loadRealData().then(() => {
-                                        displayBookings(allData.bookings);
-                                    });
-                                }, 1000);
-                            } else {
-                                alert('❌ 刪除失敗：' + data.error);
-                            }
-                        }
-                    } catch (error) {
-                        console.error('解析回應失敗:', error);
-                        // 假設成功，重新載入數據
-                        showSuccessMessage('✅ 訂單刪除完成！');
-                        closeModal('editBookingModal');
-                        setTimeout(() => {
-                            loadRealData().then(() => {
-                                displayBookings(allData.bookings);
-                            });
-                        }, 1000);
-                    }
-                    
-                    document.body.removeChild(form);
-                    frame.removeEventListener('load', frameLoadHandler);
-                };
+                const guestPhoneInput = document.createElement('input');
+                guestPhoneInput.type = 'hidden';
+                guestPhoneInput.name = 'guest_phone';
+                guestPhoneInput.value = booking.guest_phone;
+                form.appendChild(guestPhoneInput);
+                
+                const checkinDateInput = document.createElement('input');
+                checkinDateInput.type = 'hidden';
+                checkinDateInput.name = 'checkin_date';
+                checkinDateInput.value = booking.checkin_date;
+                form.appendChild(checkinDateInput);
+                
+                document.body.appendChild(form);
                 
                 // 確保隱藏iframe存在
                 let hiddenFrame = document.getElementById('hiddenFrame');
@@ -2225,8 +2210,42 @@
                     document.body.appendChild(hiddenFrame);
                 }
                 
-                hiddenFrame.addEventListener('load', frameLoadHandler);
                 form.submit();
+                
+                // 由於 X-Frame-Options 限制，使用延時回調
+                setTimeout(() => {
+                    console.log('🗑️ 刪除請求已發送，更新前端數據...', booking.guest_name);
+                    
+                    // 從前端數據中移除該記錄
+                    const bookingIndexToRemove = allData.bookings.findIndex(b => 
+                        b.guest_name === booking.guest_name && 
+                        String(b.guest_phone) === String(booking.guest_phone) &&
+                        b.checkin_date === booking.checkin_date
+                    );
+                    
+                    if (bookingIndexToRemove !== -1) {
+                        allData.bookings.splice(bookingIndexToRemove, 1);
+                        console.log('✅ 已從前端數據移除記錄');
+                        
+                        // 立即刷新顯示
+                        displayBookings(allData.bookings);
+                        showSuccessMessage('✅ 訂單已成功刪除！');
+                        closeModal('editBookingModal');
+                        
+                        // 背景重新載入完整數據確保一致性
+                        setTimeout(() => {
+                            loadRealData().then(() => {
+                                displayBookings(allData.bookings);
+                                console.log('✅ 刪除操作完成，數據已重載');
+                            });
+                        }, 2000);
+                    } else {
+                        console.error('❌ 找不到要刪除的記錄');
+                        showSuccessMessage('✅ 刪除請求已發送，請重新載入查看結果');
+                    }
+                    
+                    document.body.removeChild(form);
+                }, 1000);
                 
             } catch (error) {
                 console.error('刪除訂單失敗:', error);

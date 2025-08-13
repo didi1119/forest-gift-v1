@@ -361,7 +361,6 @@ function handleConfirmCheckinCompletion(data, e) {
       });
     }
     
-    const bookingId = parseInt(data.booking_id);
     const timestamp = new Date();
     
     // 1. 更新訂房狀態
@@ -370,11 +369,34 @@ function handleConfirmCheckinCompletion(data, e) {
     let bookingRowIndex = -1;
     let bookingData = null;
     
-    for (let i = 1; i < bookingValues.length; i++) {
-      if (bookingValues[i][0] === bookingId) { // 假設ID在第一列
-        bookingRowIndex = i + 1; // Google Sheets 行數從1開始
-        bookingData = bookingValues[i];
-        break;
+    // 如果有 booking_id 且不為空，嘗試用 ID 查找
+    if (data.booking_id && data.booking_id !== '') {
+      const bookingId = parseInt(data.booking_id);
+      if (!isNaN(bookingId)) {
+        for (let i = 1; i < bookingValues.length; i++) {
+          if (bookingValues[i][0] === bookingId) {
+            bookingRowIndex = i + 1;
+            bookingData = bookingValues[i];
+            break;
+          }
+        }
+      }
+    }
+    
+    // 如果用 ID 找不到，嘗試用複合條件查找（房客姓名+電話+入住日期）
+    if (bookingRowIndex === -1 && data.guest_name && data.guest_phone && data.checkin_date) {
+      for (let i = 1; i < bookingValues.length; i++) {
+        const rowGuestName = bookingValues[i][2]; // guest_name 在第3列 (索引2)
+        const rowGuestPhone = String(bookingValues[i][3]); // guest_phone 在第4列 (索引3)
+        const rowCheckinDate = bookingValues[i][5]; // checkin_date 在第6列 (索引5)
+        
+        if (rowGuestName === data.guest_name && 
+            rowGuestPhone === String(data.guest_phone) && 
+            formatDate(rowCheckinDate) === data.checkin_date) {
+          bookingRowIndex = i + 1;
+          bookingData = bookingValues[i];
+          break;
+        }
       }
     }
     
@@ -384,6 +406,7 @@ function handleConfirmCheckinCompletion(data, e) {
         error: '找不到指定的訂房記錄'
       });
     }
+    
     
     // 更新訂房狀態為已完成
     bookingsSheet.getRange(bookingRowIndex, 10).setValue('COMPLETED'); // stay_status
@@ -720,6 +743,18 @@ function createJsonResponse(data) {
   return ContentService
     .createTextOutput(jsonString)
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// 格式化日期以便比較
+function formatDate(date) {
+  if (!date) return '';
+  if (typeof date === 'string') return date;
+  if (date instanceof Date) {
+    return date.getFullYear() + '-' + 
+           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+           String(date.getDate()).padStart(2, '0');
+  }
+  return String(date);
 }
 
 function htmlEscape(str) {

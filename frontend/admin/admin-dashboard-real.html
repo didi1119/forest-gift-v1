@@ -1544,7 +1544,7 @@
             const partner = booking.partner_code ? allData.partners.find(p => p.partner_code === booking.partner_code) : null;
             if (!partner) {
                 if (confirm('此訂房沒有推薦大使，是否確認完成入住？')) {
-                    await updateBookingStatus(bookingId, 'COMPLETED', null);
+                    await updateBookingStatus(booking, 'COMPLETED', null);
                 }
                 return;
             }
@@ -1554,7 +1554,7 @@
 
             if (commissionType === 'cash' || commissionType === 'accommodation') {
                 const commissionAmount = expectedCommission[commissionType];
-                await updateBookingStatus(bookingId, 'COMPLETED', {
+                await updateBookingStatus(booking, 'COMPLETED', {
                     commission_amount: commissionAmount,
                     commission_type: commissionType.toUpperCase(),
                     partner_code: booking.partner_code
@@ -1563,11 +1563,14 @@
         }
 
         // 更新訂房狀態
-        async function updateBookingStatus(bookingId, status, commissionData) {
+        async function updateBookingStatus(booking, status, commissionData) {
             try {
                 const updateData = {
                     action: 'confirm_checkin_completion',
-                    booking_id: bookingId,
+                    booking_id: booking.id || '',
+                    guest_name: booking.guest_name,
+                    guest_phone: booking.guest_phone,
+                    checkin_date: booking.checkin_date,
                     ...commissionData
                 };
 

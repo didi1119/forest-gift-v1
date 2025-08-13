@@ -28,6 +28,8 @@
 - ✅ **卡片使用行為追蹤** - 深度分析用戶偏好和行為模式
 - ✅ **三級大使晉升制度** - 自動化等級管理和獎勵發放
 - ✅ **多維度數據分析** - 轉換漏斗、趨勢分析、排行榜
+- ✅ **Partners 匯款帳戶系統** - 完整銀行帳戶資訊管理
+- ✅ **自動部署工具** - 一鍵推送到 GitHub Pages
 
 ## 🚀 技術架構
 
@@ -220,6 +222,47 @@ const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
 - [完整系統操作手冊](docs/COMPLETE_SYSTEM_GUIDE.md) - 佣金管理和操作指南
 - [資料庫結構說明](docs/database-structure-v2.md) - Google Sheets 結構文件
 
+## 🚀 自動部署工具
+
+系統提供多種自動部署方式，方便快速推送更新到 GitHub Pages：
+
+### 方式一：使用 Makefile（推薦）
+```bash
+# 快速部署（自動生成提交訊息）
+make deploy
+
+# 部署並自訂提交訊息
+make deploy-msg MSG="修復 Partners 匯款帳戶功能"
+
+# 查看 Git 狀態
+make status
+
+# 僅推送現有提交
+make push
+
+# 顯示幫助
+make help
+```
+
+### 方式二：使用 Node.js 腳本
+```bash
+# 快速部署
+node deploy.js
+
+# 自訂提交訊息
+node deploy.js "修復 Partners 匯款帳戶功能"
+```
+
+### 方式三：使用 Bash 腳本
+```bash
+# 執行自動部署
+./auto-deploy.sh
+```
+
+### 部署完成後可立即測試
+- 🌐 **主站**：https://didi1119.github.io/forest-gift-v1
+- 📱 **管理後台**：https://didi1119.github.io/forest-gift-v1/frontend/admin/admin-dashboard-real.html
+
 ## 🤝 貢獻指南
 
 歡迎提交 Issue 和 Pull Request！
@@ -230,6 +273,18 @@ const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
 3. 提交變更 (`git commit -m 'Add some AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 開啟 Pull Request
+
+### 快速開發流程
+```bash
+# 修改程式碼
+# ...
+
+# 快速部署並測試
+make deploy
+
+# 測試線上版本
+# https://didi1119.github.io/forest-gift-v1
+```
 
 ## 🛡️ 安全性功能
 

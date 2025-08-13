@@ -349,12 +349,16 @@ function handleCreateBooking(data, e) {
 // ===== 處理確認入住完成 =====
 function handleConfirmCheckinCompletion(data, e) {
   try {
+    Logger.log('=== 開始處理確認入住 ===');
+    Logger.log('接收到的資料: ' + JSON.stringify(data));
+    
     const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
     const bookingsSheet = spreadsheet.getSheetByName('Bookings');
     const partnersSheet = spreadsheet.getSheetByName('Partners');
     const payoutsSheet = spreadsheet.getSheetByName('Payouts');
     
     if (!bookingsSheet || !partnersSheet || !payoutsSheet) {
+      Logger.log('❌ 找不到必要的工作表');
       return createJsonResponse({
         success: false,
         error: '找不到必要的工作表'
@@ -368,6 +372,14 @@ function handleConfirmCheckinCompletion(data, e) {
     const bookingValues = bookingRange.getValues();
     let bookingRowIndex = -1;
     let bookingData = null;
+    
+    Logger.log('📊 Bookings 表格資料行數: ' + bookingValues.length);
+    if (bookingValues.length > 0) {
+      Logger.log('📋 標題行: ' + JSON.stringify(bookingValues[0]));
+    }
+    if (bookingValues.length > 1) {
+      Logger.log('📋 第一筆資料: ' + JSON.stringify(bookingValues[1]));
+    }
     
     // 如果有 booking_id 且不為空，嘗試用 ID 查找
     if (data.booking_id && data.booking_id !== '') {
@@ -385,18 +397,28 @@ function handleConfirmCheckinCompletion(data, e) {
     
     // 如果用 ID 找不到，嘗試用複合條件查找（房客姓名+電話+入住日期）
     if (bookingRowIndex === -1 && data.guest_name && data.guest_phone && data.checkin_date) {
+      Logger.log('🔍 開始用複合條件查找...');
+      Logger.log('查找條件 - 姓名: ' + data.guest_name + ', 電話: ' + data.guest_phone + ', 入住日期: ' + data.checkin_date);
+      
       for (let i = 1; i < bookingValues.length; i++) {
         const rowGuestName = bookingValues[i][2]; // guest_name 在第3列 (索引2)
         const rowGuestPhone = String(bookingValues[i][3]); // guest_phone 在第4列 (索引3)
         const rowCheckinDate = bookingValues[i][5]; // checkin_date 在第6列 (索引5)
         
+        Logger.log(`🔍 第${i+1}行資料 - 姓名: ${rowGuestName}, 電話: ${rowGuestPhone}, 入住: ${formatDate(rowCheckinDate)}`);
+        
         if (rowGuestName === data.guest_name && 
             rowGuestPhone === String(data.guest_phone) && 
             formatDate(rowCheckinDate) === data.checkin_date) {
+          Logger.log('✅ 找到匹配的記錄！行號: ' + (i + 1));
           bookingRowIndex = i + 1;
           bookingData = bookingValues[i];
           break;
         }
+      }
+      
+      if (bookingRowIndex === -1) {
+        Logger.log('❌ 複合條件查找失敗');
       }
     }
     

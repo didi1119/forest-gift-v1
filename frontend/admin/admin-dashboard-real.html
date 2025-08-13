@@ -1566,14 +1566,18 @@
         // 更新訂房狀態
         async function updateBookingStatus(booking, status, commissionData) {
             try {
+                console.log('🔍 準備確認入住的訂房資料:', booking);
+                
                 const updateData = {
                     action: 'confirm_checkin_completion',
                     booking_id: booking.id || '',
                     guest_name: booking.guest_name,
-                    guest_phone: booking.guest_phone,
+                    guest_phone: String(booking.guest_phone || ''),
                     checkin_date: booking.checkin_date,
                     ...commissionData
                 };
+                
+                console.log('📤 發送到後端的資料:', updateData);
 
                 // 使用表單格式提交，與其他 API 保持一致
                 const formData = new URLSearchParams();

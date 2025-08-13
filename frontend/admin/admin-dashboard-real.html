@@ -2206,7 +2206,16 @@
                 const checkinDateInput = document.createElement('input');
                 checkinDateInput.type = 'hidden';
                 checkinDateInput.name = 'checkin_date';
-                checkinDateInput.value = booking.checkin_date;
+                // 轉換為後端期望的格式
+                const formatDateForBackend = (dateStr) => {
+                    if (!dateStr) return '';
+                    const date = new Date(dateStr);
+                    if (isNaN(date.getTime())) return dateStr;
+                    return date.getFullYear() + '-' + 
+                           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                           String(date.getDate()).padStart(2, '0');
+                };
+                checkinDateInput.value = formatDateForBackend(booking.checkin_date);
                 form.appendChild(checkinDateInput);
                 
                 document.body.appendChild(form);

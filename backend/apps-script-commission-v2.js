@@ -95,6 +95,15 @@ function doPost(e) {
     
     let data;
     
+    // 檢查事件物件是否存在
+    if (!e) {
+      Logger.log('⚠️ 事件物件為空，可能是測試執行');
+      return createJsonResponse({
+        success: false,
+        error: '無效的請求：缺少事件物件'
+      });
+    }
+    
     // 檢查是否是表單提交 (form data)
     if (e.parameter && Object.keys(e.parameter).length > 0) {
       Logger.log('表單提交資料: ' + JSON.stringify(e.parameter));
@@ -794,7 +803,9 @@ function handleDeleteBooking(data, e) {
         </head>
         <body>
           <h1>✅ 訂房刪除成功！</h1>
-          <p>訂房ID：${bookingId}</p>
+          <p>房客：${data.guest_name}</p>
+          <p>電話：${data.guest_phone}</p>
+          <p>刪除時間：${result.deleted_at}</p>
         </body>
         </html>
       `);
@@ -1044,6 +1055,24 @@ function fixBookingsStructure() {
 }
 
 // ===== 測試函數 =====
+
+function testDeleteWithCorrectDate() {
+  // 根據執行記錄，che min chiu 電話３３３的記錄入住日期是2025-08-12
+  const testData = {
+    action: 'delete_booking',
+    guest_name: 'che min chiu',
+    guest_phone: '３３３',
+    checkin_date: '2025-08-12'  // 使用正確的日期
+  };
+  
+  Logger.log('=== 使用正確日期測試刪除 ===');
+  try {
+    const result = handleDeleteBooking(testData, { parameter: testData });
+    Logger.log('刪除測試結果: ' + result.getContent());
+  } catch (error) {
+    Logger.log('刪除測試失敗: ' + error.toString());
+  }
+}
 function testCommissionSystem() {
   Logger.log('=== 測試佣金系統 ===');
   

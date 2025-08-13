@@ -557,6 +557,14 @@
                 const isCheckoutPassed = booking.checkout_date && new Date(booking.checkout_date) < new Date();
                 const canConfirmStay = booking.stay_status !== 'COMPLETED' && isCheckoutPassed;
                 
+                // 調試信息
+                if (index === 0) {
+                    console.log('🔍 第一筆訂房按鈕顯示邏輯:');
+                    console.log('  - stay_status:', booking.stay_status);
+                    console.log('  - stay_status !== COMPLETED:', booking.stay_status !== 'COMPLETED');
+                    console.log('  - isCheckoutPassed:', isCheckoutPassed);
+                    console.log('  - canConfirmStay:', canConfirmStay);
+                }
                 
                 return `
                     <tr class="border-b hover:bg-stone-50">

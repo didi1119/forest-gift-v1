@@ -190,6 +190,9 @@ function doPost(e) {
       
       case 'fix_commission_discrepancies':
         return handleFixCommissionDiscrepancies(data, e);
+      
+      case 'rebuild_payouts':
+        return handleRebuildPayouts(data, e);
         
       default:
         Logger.log('未知動作: ' + (data.action || 'undefined'));
@@ -1305,10 +1308,15 @@ function handleUpdatePayout(data, e) {
     
     // 3. 如果金額有變化，根據結算類型更新大使的佣金
     if (oldAmount !== newAmount) {
-      const partnerCode = payoutValues[payoutRowIndex - 1][1]; // partner_code
-      const payoutType = payoutValues[payoutRowIndex - 1][2]; // payout_type
-      const payoutMethod = payoutValues[payoutRowIndex - 1][5]; // payout_method
-      const payoutStatus = payoutValues[payoutRowIndex - 1][6]; // payout_status
+      // 重新獲取最新的 payout 數據，因為可能剛更新過
+      const updatedPayoutRange = payoutsSheet.getDataRange();
+      const updatedPayoutValues = updatedPayoutRange.getValues();
+      const updatedPayoutData = updatedPayoutValues[payoutRowIndex - 1];
+      
+      const partnerCode = updatedPayoutData[1]; // partner_code
+      const payoutType = updatedPayoutData[2]; // payout_type
+      const payoutMethod = updatedPayoutData[5]; // payout_method
+      const payoutStatus = updatedPayoutData[6]; // payout_status
       const partnersSheet = spreadsheet.getSheetByName('Partners');
       
       Logger.log('📊 結算記錄修改: 類型=' + payoutType + ', 方法=' + payoutMethod + ', 狀態=' + payoutStatus);
@@ -1808,8 +1816,19 @@ function handleRepairPayouts(data, e) {
 
     // 1. 確保標題行正確
     if (values.length === 0 || JSON.stringify(values[0]) !== JSON.stringify(expectedHeaders)) {
+      // 清空現有內容並重新建立正確結構
+      payoutsSheet.clear();
       payoutsSheet.getRange(1, 1, 1, expectedHeaders.length).setValues([expectedHeaders]);
-      repairActions.push('修復標題行');
+      repairActions.push('清空並重建標題行');
+      
+      // 如果原本有數據但結構錯誤，警告用戶
+      if (values.length > 1) {
+        Logger.log('⚠️ 警告：Payouts 表格結構錯誤，已清空重建。原有 ' + (values.length - 1) + ' 筆記錄已遺失。');
+        repairActions.push('警告：原有 ' + (values.length - 1) + ' 筆錯誤記錄已清空');
+      }
+      
+      // 重新讀取空白表格
+      values = [expectedHeaders];
     }
 
     // 2. 為缺少 ID 的記錄補充 ID
@@ -2115,6 +2134,92 @@ function handleFixCommissionDiscrepancies(data, e) {
     return createJsonResponse({
       success: false,
       error: '修復失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 重建 Payouts 表格數據 =====
+function handleRebuildPayouts(data, e) {
+  try {
+    Logger.log('🔄 開始重建 Payouts 表格');
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+    const bookingsSheet = spreadsheet.getSheetByName('Bookings');
+    const partnersSheet = spreadsheet.getSheetByName('Partners');
+    
+    if (!payoutsSheet || !bookingsSheet || !partnersSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到必要的工作表'
+      });
+    }
+    
+    // 1. 清空並重建 Payouts 表格結構
+    const expectedHeaders = [
+      'ID', 'partner_code', 'payout_type', 'amount', 'related_booking_ids',
+      'payout_method', 'payout_status', 'bank_transfer_date', 'bank_transfer_reference',
+      'accommodation_voucher_code', 'notes', 'created_by', 'created_at', 'updated_at'
+    ];
+    
+    payoutsSheet.clear();
+    payoutsSheet.getRange(1, 1, 1, expectedHeaders.length).setValues([expectedHeaders]);
+    Logger.log('✅ Payouts 表格結構已重建');
+    
+    // 2. 從已完成的訂房記錄重建結算記錄
+    const bookingsData = getSheetData(spreadsheet, 'Bookings');
+    const partnersData = getSheetData(spreadsheet, 'Partners');
+    const timestamp = new Date();
+    
+    let rebuildCount = 0;
+    let payoutId = 1;
+    
+    for (const booking of bookingsData) {
+      if (booking.stay_status === 'COMPLETED' && booking.partner_code && booking.commission_amount > 0) {
+        // 找到對應的大使
+        const partner = partnersData.find(p => p.partner_code === booking.partner_code);
+        if (!partner) continue;
+        
+        // 創建結算記錄
+        const payoutData = [
+          payoutId++, // ID
+          booking.partner_code, // partner_code
+          booking.commission_type || 'ACCOMMODATION', // payout_type
+          booking.commission_amount, // amount
+          booking.ID || '', // related_booking_ids
+          booking.commission_type === 'CASH' ? 'BANK_TRANSFER' : 'ACCOMMODATION_VOUCHER', // payout_method
+          'PENDING', // payout_status
+          '', // bank_transfer_date
+          '', // bank_transfer_reference
+          '', // accommodation_voucher_code
+          `入住確認佣金 - 訂房 #${booking.ID} (${booking.guest_name})`, // notes
+          booking.manually_confirmed_by || 'admin', // created_by
+          booking.manually_confirmed_at || timestamp, // created_at
+          timestamp // updated_at
+        ];
+        
+        payoutsSheet.appendRow(payoutData);
+        rebuildCount++;
+        
+        Logger.log('📝 重建結算記錄: ' + booking.partner_code + ', $' + booking.commission_amount);
+      }
+    }
+    
+    Logger.log('✅ Payouts 重建完成: ' + rebuildCount + ' 筆記錄');
+    
+    return createJsonResponse({
+      success: true,
+      message: 'Payouts 表格重建完成',
+      records_rebuilt: rebuildCount,
+      headers_set: expectedHeaders.length,
+      rebuilt_at: timestamp.toISOString()
+    });
+    
+  } catch (error) {
+    Logger.log('重建 Payouts 錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '重建失敗: ' + error.message
     });
   }
 }

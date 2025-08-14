@@ -253,7 +253,7 @@
                                 <th class="text-center py-3 px-4">類型</th>
                                 <th class="text-center py-3 px-4">金額</th>
                                 <th class="text-left py-3 px-4">相關訂房</th>
-                                <th class="text-center py-3 px-4">狀態</th>
+                                <th class="text-left py-3 px-4">來源</th>
                                 <th class="text-left py-3 px-4">建立時間</th>
                                 <th class="text-center py-3 px-4">操作</th>
                             </tr>
@@ -706,9 +706,6 @@
             }
 
             table.innerHTML = payouts.map((payout, index) => {
-                const statusClass = payout.payout_status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
-                const statusText = payout.payout_status === 'COMPLETED' ? '已付款' : '待付款';
-                
                 // 使用 payout.id 或 index 作為備用
                 const payoutIdentifier = payout.id || index;
                 console.log(`📋 Payout ${index}:`, {
@@ -717,6 +714,9 @@
                     partner_code: payout.partner_code,
                     amount: payout.amount
                 });
+                
+                // 生成來源描述
+                const sourceInfo = generatePayoutSourceDescription(payout);
                 
                 return `
                     <tr class="border-b hover:bg-stone-50">
@@ -732,10 +732,13 @@
                         <td class="py-4 px-4">
                             ${payout.related_booking_ids || '-'}
                         </td>
-                        <td class="py-4 px-4 text-center">
-                            <span class="px-2 py-1 rounded text-xs ${statusClass}">
-                                ${statusText}
-                            </span>
+                        <td class="py-4 px-4">
+                            <div class="space-y-1">
+                                <span class="inline-block px-2 py-1 rounded text-xs ${sourceInfo.class}">
+                                    ${sourceInfo.text}
+                                </span>
+                                ${sourceInfo.detail ? `<div class="text-xs text-gray-600">${sourceInfo.detail}</div>` : ''}
+                            </div>
                         </td>
                         <td class="py-4 px-4 text-sm text-stone-600">
                             ${formatDate(payout.created_at)}
@@ -2950,6 +2953,79 @@
                     showErrorMessage('❌ 連接失敗: ' + error.message);
                 }
             });
+        }
+
+        // 生成結算來源描述
+        function generatePayoutSourceDescription(payout) {
+            // 根據不同的來源生成描述
+            const method = payout.payout_method || '';
+            const notes = payout.notes || '';
+            const relatedBookings = payout.related_booking_ids;
+            
+            // 1. 手動調整的結算
+            if (method === 'MANUAL_ADJUSTMENT' || notes.includes('手動調整') || notes.includes('管理者') || notes.includes('手動修改')) {
+                return {
+                    text: '👤 管理者手動調整',
+                    class: 'bg-purple-100 text-purple-800',
+                    detail: notes || '管理者手動調整佣金'
+                };
+            }
+            
+            // 2. 來自房客入住完成的佣金
+            if (relatedBookings && relatedBookings !== '-' && relatedBookings.trim() !== '') {
+                // 嘗試找到相關的訂房記錄
+                const bookingIds = relatedBookings.toString().split(',');
+                let guestInfo = '';
+                
+                if (allData && allData.bookings) {
+                    const relatedBooking = allData.bookings.find(b => 
+                        bookingIds.some(id => b.id == id.trim())
+                    );
+                    
+                    if (relatedBooking) {
+                        guestInfo = `房客: ${relatedBooking.guest_name}`;
+                        if (relatedBooking.guest_phone) {
+                            // 只顯示電話的後4位
+                            const phone = relatedBooking.guest_phone.toString();
+                            const maskedPhone = phone.length > 4 ? 
+                                phone.slice(0, -4).replace(/./g, '*') + phone.slice(-4) : 
+                                phone;
+                            guestInfo += ` (${maskedPhone})`;
+                        }
+                    }
+                }
+                
+                return {
+                    text: '🏨 房客入住完成',
+                    class: 'bg-green-100 text-green-800',
+                    detail: guestInfo || `訂房ID: ${bookingIds[0]}`
+                };
+            }
+            
+            // 3. 系統自動計算的佣金
+            if (method === 'AUTO_CALCULATION' || payout.payout_type === 'ACCOMMODATION') {
+                return {
+                    text: '⚙️ 系統自動計算',
+                    class: 'bg-blue-100 text-blue-800',
+                    detail: '基於訂房自動計算佣金'
+                };
+            }
+            
+            // 4. 結算撤銷或調整
+            if (payout.payout_type === 'ADJUSTMENT_REVERSAL' || notes.includes('撤銷') || notes.includes('取消')) {
+                return {
+                    text: '🔄 結算調整',
+                    class: 'bg-orange-100 text-orange-800',
+                    detail: '結算撤銷或金額調整'
+                };
+            }
+            
+            // 5. 預設情況
+            return {
+                text: '📊 一般結算',
+                class: 'bg-gray-100 text-gray-800',
+                detail: notes || '常規結算記錄'
+            };
         }
 
         // 診斷結算問題

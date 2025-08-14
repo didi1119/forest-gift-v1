@@ -431,7 +431,9 @@
                 let errorMsg = '載入真實數據失敗: ' + error.message;
                 
                 if (error.message.includes('403')) {
-                    errorMsg += '\n可能是 Google Apps Script 權限問題，請確認部署設定。';
+                    errorMsg += '\n⚠️ Google Apps Script 權限問題！';
+                    showAppsScriptFixModal();
+                    return; // 不顯示一般錯誤訊息，而是顯示專門的修復指導
                 } else if (error.message.includes('Failed to fetch')) {
                     errorMsg += '\n網路連線問題，請確認網路狀態。';
                 }
@@ -2852,6 +2854,94 @@
                 'LV3_GUARDIAN': 'NT$1,500 住宿金（可轉換 NT$800現金）'
             };
             return commissionMap[level] || '依等級計算';
+        }
+
+        // 顯示 Apps Script 修復指導
+        function showAppsScriptFixModal() {
+            const modal = document.createElement('div');
+            modal.id = 'appsScriptFixModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-red-600">🚨 Google Apps Script 403 錯誤</h2>
+                        <button onclick="closeModal('appsScriptFixModal')" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                            <h3 class="font-bold text-red-800 mb-2">🔍 問題診斷：</h3>
+                            <p class="text-sm text-red-700">Google Apps Script 回傳 403 Forbidden 錯誤，表示權限設定有問題。</p>
+                        </div>
+                        
+                        <div class="space-y-4 mb-6">
+                            <h3 class="font-bold text-lg">🔧 快速修復步驟：</h3>
+                            
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-2">1. 重新部署 Apps Script</h4>
+                                <ul class="text-sm space-y-1 ml-4">
+                                    <li>• 前往 <a href="https://script.google.com" target="_blank" class="text-blue-600 underline">Google Apps Script</a></li>
+                                    <li>• 找到知音計畫專案</li>
+                                    <li>• 點擊 "部署" → "管理部署" → 刪除舊部署</li>
+                                    <li>• 點擊 "建立部署"，類型選擇 "網路應用程式"</li>
+                                    <li>• <strong>執行身分：我</strong></li>
+                                    <li>• <strong>存取權限：任何人</strong></li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-2">2. 完成授權</h4>
+                                <ul class="text-sm space-y-1 ml-4">
+                                    <li>• 部署時會要求授權，點擊 "授權存取"</li>
+                                    <li>• 如果看到 "此應用程式未經驗證"，點擊 "進階" → "前往專案"</li>
+                                    <li>• 點擊 "允許" 完成授權</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="bg-yellow-50 p-4 rounded-lg">
+                                <h4 class="font-semibold mb-2">3. 更新 URL</h4>
+                                <p class="text-sm">部署完成後，將新的 URL 更新到前端代碼的 <code class="bg-gray-200 px-1 rounded">APPS_SCRIPT_URL</code> 變數中。</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <button onclick="window.open('google-apps-script-fix.html', '_blank')" 
+                                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                📖 查看詳細修復指南
+                            </button>
+                            <button onclick="retryConnection()" 
+                                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                🔄 重試連接
+                            </button>
+                            <button onclick="closeModal('appsScriptFixModal')" 
+                                class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">
+                                關閉
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        // 重試連接
+        function retryConnection() {
+            closeModal('appsScriptFixModal');
+            loadRealData().then(() => {
+                showSuccessMessage('✅ 連接成功！問題已解決。');
+            }).catch(error => {
+                if (error.message.includes('403')) {
+                    showErrorMessage('⚠️ 仍有 403 錯誤，請按照修復指南重新部署 Apps Script');
+                } else {
+                    showErrorMessage('❌ 連接失敗: ' + error.message);
+                }
+            });
         }
 
         // 診斷結算問題

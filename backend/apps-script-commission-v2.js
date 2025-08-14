@@ -178,6 +178,12 @@ function doPost(e) {
       
       case 'deduct_accommodation_points':
         return handleDeductAccommodationPoints(data, e);
+      
+      case 'diagnose_payouts':
+        return handleDiagnosePayouts(data, e);
+      
+      case 'repair_payouts':
+        return handleRepairPayouts(data, e);
         
       default:
         Logger.log('未知動作: ' + (data.action || 'undefined'));
@@ -1530,6 +1536,177 @@ function handleCreatePayout(data, e) {
     return createJsonResponse({
       success: false,
       error: '創建結算失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 診斷和修復 Payouts 表格結構 =====
+function handleDiagnosePayouts(data, e) {
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+    
+    if (!payoutsSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到 Payouts 工作表'
+      });
+    }
+
+    const expectedHeaders = [
+      'ID', 'partner_code', 'payout_type', 'amount', 'related_booking_ids',
+      'payout_method', 'payout_status', 'bank_transfer_date', 'bank_transfer_reference',
+      'accommodation_voucher_code', 'notes', 'created_by', 'created_at', 'updated_at'
+    ];
+
+    const range = payoutsSheet.getDataRange();
+    const values = range.getValues();
+    
+    if (values.length === 0) {
+      // 空工作表，創建標題行
+      payoutsSheet.getRange(1, 1, 1, expectedHeaders.length).setValues([expectedHeaders]);
+      return createJsonResponse({
+        success: true,
+        message: '已創建 Payouts 表格標題行',
+        action: 'created_headers',
+        headers: expectedHeaders
+      });
+    }
+
+    const currentHeaders = values[0];
+    const diagnosis = {
+      current_headers: currentHeaders,
+      expected_headers: expectedHeaders,
+      headers_match: JSON.stringify(currentHeaders) === JSON.stringify(expectedHeaders),
+      current_data_count: values.length - 1,
+      issues: []
+    };
+
+    // 檢查標題行是否正確
+    if (!diagnosis.headers_match) {
+      diagnosis.issues.push('標題行不匹配');
+      
+      // 修復標題行
+      payoutsSheet.getRange(1, 1, 1, expectedHeaders.length).setValues([expectedHeaders]);
+      diagnosis.issues.push('已修復標題行');
+    }
+
+    // 檢查現有資料的結構
+    if (values.length > 1) {
+      const sampleData = values.slice(1, Math.min(6, values.length)); // 取前5筆資料作為樣本
+      diagnosis.sample_data = sampleData.map((row, index) => {
+        const rowData = {};
+        expectedHeaders.forEach((header, colIndex) => {
+          rowData[header] = row[colIndex] || '';
+        });
+        return { row_number: index + 2, data: rowData };
+      });
+
+      // 檢查是否有空的 ID
+      const missingIds = [];
+      for (let i = 1; i < values.length; i++) {
+        if (!values[i][0] || values[i][0] === '') {
+          missingIds.push(i + 1); // 行號
+        }
+      }
+      
+      if (missingIds.length > 0) {
+        diagnosis.issues.push(`發現 ${missingIds.length} 筆記錄缺少 ID`);
+        diagnosis.missing_id_rows = missingIds;
+      }
+    }
+
+    return createJsonResponse({
+      success: true,
+      diagnosis: diagnosis,
+      repair_needed: diagnosis.issues.length > 0
+    });
+
+  } catch (error) {
+    Logger.log('診斷 Payouts 表格錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '診斷失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 修復 Payouts 表格資料 =====
+function handleRepairPayouts(data, e) {
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+    
+    if (!payoutsSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到 Payouts 工作表'
+      });
+    }
+
+    const expectedHeaders = [
+      'ID', 'partner_code', 'payout_type', 'amount', 'related_booking_ids',
+      'payout_method', 'payout_status', 'bank_transfer_date', 'bank_transfer_reference',
+      'accommodation_voucher_code', 'notes', 'created_by', 'created_at', 'updated_at'
+    ];
+
+    const range = payoutsSheet.getDataRange();
+    const values = range.getValues();
+    const repairActions = [];
+
+    // 1. 確保標題行正確
+    if (values.length === 0 || JSON.stringify(values[0]) !== JSON.stringify(expectedHeaders)) {
+      payoutsSheet.getRange(1, 1, 1, expectedHeaders.length).setValues([expectedHeaders]);
+      repairActions.push('修復標題行');
+    }
+
+    // 2. 為缺少 ID 的記錄補充 ID
+    if (values.length > 1) {
+      let maxId = 0;
+      const updatedRows = [];
+      
+      // 找出現有的最大 ID
+      for (let i = 1; i < values.length; i++) {
+        const currentId = parseInt(values[i][0]) || 0;
+        if (currentId > maxId) {
+          maxId = currentId;
+        }
+      }
+      
+      // 為缺少 ID 的行分配新 ID
+      for (let i = 1; i < values.length; i++) {
+        if (!values[i][0] || values[i][0] === '') {
+          maxId++;
+          values[i][0] = maxId;
+          updatedRows.push(i + 1);
+        }
+      }
+      
+      if (updatedRows.length > 0) {
+        // 更新整個資料範圍
+        payoutsSheet.getRange(1, 1, values.length, Math.max(values[0].length, expectedHeaders.length)).setValues(values);
+        repairActions.push(`為 ${updatedRows.length} 筆記錄分配了新的 ID`);
+      }
+    }
+
+    // 3. 確保所有列都有足夠的列數
+    const currentCols = payoutsSheet.getLastColumn();
+    if (currentCols < expectedHeaders.length) {
+      repairActions.push(`擴展表格列數從 ${currentCols} 到 ${expectedHeaders.length}`);
+    }
+
+    return createJsonResponse({
+      success: true,
+      message: '修復完成',
+      actions: repairActions,
+      headers: expectedHeaders
+    });
+
+  } catch (error) {
+    Logger.log('修復 Payouts 表格錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '修復失敗: ' + error.message
     });
   }
 }

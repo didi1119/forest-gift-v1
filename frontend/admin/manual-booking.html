@@ -41,6 +41,18 @@
                         <label class="block text-sm font-medium text-stone-700 mb-2">房客Email</label>
                         <input type="email" id="guestEmail" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none" placeholder="guest@example.com">
                     </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">
+                            💳 匯款帳號末五碼
+                            <span class="text-xs text-gray-500">（選填）</span>
+                        </label>
+                        <input type="text" id="bankAccountLast5" maxlength="5" pattern="[0-9]{5}" 
+                            class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none" 
+                            placeholder="例：12345" 
+                            title="請輸入5位數字">
+                        <p class="text-xs text-stone-500 mt-1">用於對帳確認</p>
+                    </div>
                 </div>
 
                 <!-- 推薦大使資訊 -->
@@ -156,6 +168,7 @@
                 guest_name: document.getElementById('guestName').value.trim(),
                 guest_phone: document.getElementById('guestPhone').value.trim(),
                 guest_email: document.getElementById('guestEmail').value.trim(),
+                bank_account_last5: document.getElementById('bankAccountLast5').value.trim(),
                 checkin_date: document.getElementById('checkinDate').value,
                 checkout_date: document.getElementById('checkoutDate').value,
                 room_price: parseInt(document.getElementById('roomPrice').value) || 0,

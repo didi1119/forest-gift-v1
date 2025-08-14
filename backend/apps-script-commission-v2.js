@@ -325,6 +325,7 @@ function handleCreateBooking(data, e) {
       '', // manually_confirmed_by
       '', // manually_confirmed_at
       data.notes || '',
+      data.bank_account_last5 || '', // bank_account_last5 - 新增匯款帳號末五碼
       timestamp, // created_at
       timestamp  // updated_at
     ];
@@ -684,7 +685,8 @@ function handleUpdateBooking(data, e) {
     bookingsSheet.getRange(bookingRowIndex, 10).setValue(data.stay_status || 'PENDING'); // stay_status
     bookingsSheet.getRange(bookingRowIndex, 11).setValue(data.payment_status || 'PENDING'); // payment_status
     bookingsSheet.getRange(bookingRowIndex, 19).setValue(data.notes || ''); // notes
-    bookingsSheet.getRange(bookingRowIndex, 21).setValue(timestamp); // updated_at
+    bookingsSheet.getRange(bookingRowIndex, 20).setValue(data.bank_account_last5 || ''); // bank_account_last5
+    bookingsSheet.getRange(bookingRowIndex, 22).setValue(timestamp); // updated_at (adjusted for new column)
     
     Logger.log('訂房更新處理完成: 訂房ID ' + bookingId);
     

@@ -143,9 +143,21 @@ function getPaymentMethodText(method) {
 
 // 取消結算
 async function cancelPayout(payoutId) {
-    const payout = allData.payouts.find(p => p.id == payoutId);
+    console.log('🔍 嘗試取消結算 ID:', payoutId);
+    
+    let payout = allData.payouts.find(p => p.id == payoutId);
+    
+    // 如果找不到，嘗試用索引
     if (!payout) {
-        alert('找不到結算記錄');
+        const payoutIndex = parseInt(payoutId);
+        if (!isNaN(payoutIndex) && payoutIndex >= 0 && payoutIndex < allData.payouts.length) {
+            payout = allData.payouts[payoutIndex];
+        }
+    }
+    
+    if (!payout) {
+        console.error('❌ 找不到結算記錄，ID:', payoutId);
+        alert('找不到結算記錄。請重新載入數據後再試。');
         return;
     }
     
@@ -224,9 +236,21 @@ async function cancelPayout(payoutId) {
 
 // 修改結算
 function editPayout(payoutId) {
-    const payout = allData.payouts.find(p => p.id == payoutId);
+    console.log('🔍 嘗試編輯結算 ID:', payoutId);
+    
+    let payout = allData.payouts.find(p => p.id == payoutId);
+    
+    // 如果找不到，嘗試用索引
     if (!payout) {
-        alert('找不到結算記錄');
+        const payoutIndex = parseInt(payoutId);
+        if (!isNaN(payoutIndex) && payoutIndex >= 0 && payoutIndex < allData.payouts.length) {
+            payout = allData.payouts[payoutIndex];
+        }
+    }
+    
+    if (!payout) {
+        console.error('❌ 找不到結算記錄，ID:', payoutId);
+        alert('找不到結算記錄。請重新載入數據後再試。');
         return;
     }
     

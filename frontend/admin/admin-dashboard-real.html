@@ -235,9 +235,14 @@
             <div class="brand-card p-8">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="font-serif text-2xl font-semibold brand-accent">結算管理</h2>
-                    <button onclick="generatePayoutReport()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
-                        📊 生成結算報表
-                    </button>
+                    <div class="flex space-x-3">
+                        <button onclick="diagnosePayout()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700">
+                            🔧 診斷結算問題
+                        </button>
+                        <button onclick="generatePayoutReport()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                            📊 生成結算報表
+                        </button>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -392,6 +397,20 @@
                     console.log('- Payouts:', allData.payouts?.length || 0);
                     console.log('- Clicks:', allData.clicks?.length || 0);
                     
+                    // 檢查 Payouts 數據結構
+                    if (allData.payouts && allData.payouts.length > 0) {
+                        console.log('📊 Payouts 數據結構檢查:');
+                        allData.payouts.forEach((payout, index) => {
+                            console.log(`  Payout ${index}:`, {
+                                id: payout.id,
+                                partner_code: payout.partner_code,
+                                payout_type: payout.payout_type,
+                                amount: payout.amount,
+                                payout_status: payout.payout_status
+                            });
+                        });
+                    }
+                    
                     showSuccessMessage(`成功載入 ${allData.partners?.length || 0} 位夥伴的資料！`);
                 } else {
                     throw new Error(data.error || '載入數據失敗');
@@ -401,9 +420,23 @@
                 
             } catch (error) {
                 console.error('❌ 載入真實數據失敗:', error);
+                console.error('錯誤詳情:', {
+                    message: error.message,
+                    stack: error.stack
+                });
+                
                 hideLoadingSpinner();
                 
-                showErrorMessage('載入真實數據失敗，使用模擬數據: ' + error.message);
+                // 更詳細的錯誤訊息
+                let errorMsg = '載入真實數據失敗: ' + error.message;
+                
+                if (error.message.includes('403')) {
+                    errorMsg += '\n可能是 Google Apps Script 權限問題，請確認部署設定。';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMsg += '\n網路連線問題，請確認網路狀態。';
+                }
+                
+                showErrorMessage(errorMsg);
                 
                 // 使用模擬數據作為備用方案
                 loadMockData();
@@ -670,9 +703,18 @@
                 return;
             }
 
-            table.innerHTML = payouts.map(payout => {
+            table.innerHTML = payouts.map((payout, index) => {
                 const statusClass = payout.payout_status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
                 const statusText = payout.payout_status === 'COMPLETED' ? '已付款' : '待付款';
+                
+                // 使用 payout.id 或 index 作為備用
+                const payoutIdentifier = payout.id || index;
+                console.log(`📋 Payout ${index}:`, {
+                    id: payout.id,
+                    identifier: payoutIdentifier,
+                    partner_code: payout.partner_code,
+                    amount: payout.amount
+                });
                 
                 return `
                     <tr class="border-b hover:bg-stone-50">
@@ -697,8 +739,9 @@
                             ${formatDate(payout.created_at)}
                         </td>
                         <td class="py-4 px-4 text-center">
-                            <button onclick="viewPayoutDetails('${payout.id}')" 
-                                class="text-blue-600 hover:underline text-sm">
+                            <button onclick="viewPayoutDetails('${payoutIdentifier}')" 
+                                class="text-blue-600 hover:underline text-sm"
+                                title="查看結算詳情 (ID: ${payoutIdentifier})">
                                 詳情
                             </button>
                         </td>
@@ -1506,12 +1549,34 @@
 
         // 查看結算詳情
         function viewPayoutDetails(payoutId) {
-            const payout = allData.payouts.find(p => p.id == payoutId);
-            if (!payout) {
-                showErrorMessage('找不到結算記錄');
+            console.log('🔍 查找結算記錄 ID:', payoutId);
+            console.log('📋 所有 payouts 數據:', allData.payouts);
+            
+            if (!allData.payouts || allData.payouts.length === 0) {
+                showErrorMessage('系統中無任何結算記錄');
                 return;
             }
             
+            // 嘗試多種匹配方式
+            let payout = allData.payouts.find(p => p.id == payoutId);
+            
+            if (!payout) {
+                // 嘗試索引匹配
+                const payoutIndex = parseInt(payoutId);
+                if (!isNaN(payoutIndex) && payoutIndex >= 0 && payoutIndex < allData.payouts.length) {
+                    payout = allData.payouts[payoutIndex];
+                    console.log('✅ 通過索引找到結算記錄:', payout);
+                }
+            }
+            
+            if (!payout) {
+                console.error('❌ 找不到結算記錄，ID:', payoutId);
+                console.error('可用的 payout IDs:', allData.payouts.map(p => p.id));
+                showErrorMessage(`找不到結算記錄 (ID: ${payoutId})。請重新載入數據後再試。`);
+                return;
+            }
+            
+            console.log('✅ 找到結算記錄:', payout);
             createPayoutDetailsModal(payout);
         }
         
@@ -2787,6 +2852,89 @@
                 'LV3_GUARDIAN': 'NT$1,500 住宿金（可轉換 NT$800現金）'
             };
             return commissionMap[level] || '依等級計算';
+        }
+
+        // 診斷結算問題
+        function diagnosePayout() {
+            console.log('🔧 開始診斷結算問題...');
+            
+            const modal = document.createElement('div');
+            modal.id = 'diagnosticModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            
+            let diagnosticResults = [];
+            
+            // 檢查 allData
+            if (!allData) {
+                diagnosticResults.push('❌ allData 未初始化');
+            } else {
+                diagnosticResults.push('✅ allData 已初始化');
+            }
+            
+            // 檢查 payouts 陣列
+            if (!allData.payouts) {
+                diagnosticResults.push('❌ allData.payouts 不存在');
+            } else if (!Array.isArray(allData.payouts)) {
+                diagnosticResults.push('❌ allData.payouts 不是陣列');
+            } else {
+                diagnosticResults.push(`✅ allData.payouts 是陣列，長度: ${allData.payouts.length}`);
+                
+                if (allData.payouts.length > 0) {
+                    diagnosticResults.push('📊 Payouts 結構分析:');
+                    allData.payouts.forEach((payout, index) => {
+                        diagnosticResults.push(`  ${index}: ID=${payout.id || 'undefined'}, partner=${payout.partner_code}, amount=${payout.amount}, status=${payout.payout_status}`);
+                    });
+                    
+                    // 檢查 ID 問題
+                    const withoutId = allData.payouts.filter(p => !p.id || p.id === '');
+                    if (withoutId.length > 0) {
+                        diagnosticResults.push(`⚠️  發現 ${withoutId.length} 筆記錄沒有 ID`);
+                    }
+                }
+            }
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-yellow-800">🔧 結算系統診斷報告</h2>
+                        <button onclick="closeModal('diagnosticModal')" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="p-6">
+                        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                            <h3 class="font-bold mb-3">診斷結果：</h3>
+                            <div class="space-y-2 text-sm font-mono">
+                                ${diagnosticResults.map(result => `<div>${result}</div>`).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                            <h3 class="font-bold mb-3">建議解決方案：</h3>
+                            <ul class="space-y-2 text-sm">
+                                <li>1. 如果結算記錄為空，請到 <a href="payouts-diagnostic.html" target="_blank" class="text-blue-600 underline">結算診斷工具</a> 修復</li>
+                                <li>2. 如果有記錄但沒有 ID，系統會自動使用索引作為備用</li>
+                                <li>3. 如果遇到 403 錯誤，請檢查 Google Apps Script 部署設定</li>
+                                <li>4. 建議重新載入數據後再試</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <button onclick="location.reload()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                🔄 重新載入頁面
+                            </button>
+                            <button onclick="closeModal('diagnosticModal')" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">
+                                關閉
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
         }
 
         // 頁面載入時執行

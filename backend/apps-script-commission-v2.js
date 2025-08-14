@@ -184,6 +184,12 @@ function doPost(e) {
       
       case 'repair_payouts':
         return handleRepairPayouts(data, e);
+      
+      case 'audit_commissions':
+        return handleAuditCommissions(data, e);
+      
+      case 'fix_commission_discrepancies':
+        return handleFixCommissionDiscrepancies(data, e);
         
       default:
         Logger.log('未知動作: ' + (data.action || 'undefined'));
@@ -1124,26 +1130,72 @@ function handleCancelPayout(data, e) {
     }
     
     const partnerCode = payoutData[1]; // partner_code
+    const payoutType = payoutData[2]; // payout_type
     const payoutAmount = parseFloat(payoutData[3]) || 0; // amount
+    const payoutMethod = payoutData[5]; // payout_method
+    const payoutStatus = payoutData[6]; // payout_status
+    
+    Logger.log('📋 結算記錄詳情:');
+    Logger.log('  大使: ' + partnerCode + ', 類型: ' + payoutType + ', 金額: $' + payoutAmount);
+    Logger.log('  方法: ' + payoutMethod + ', 狀態: ' + payoutStatus);
     
     // 2. 刪除結算記錄
     payoutsSheet.deleteRow(payoutRowIndex);
     Logger.log('✅ 結算記錄已刪除: ID ' + payoutId);
     
-    // 3. 更新大使的待支付佣金（減少金額）
+    // 3. 根據結算類型更新大使的佣金（反向操作）
     const partnerRange = partnersSheet.getDataRange();
     const partnerValues = partnerRange.getValues();
+    let partnerRowIndex = -1;
     
     for (let i = 1; i < partnerValues.length; i++) {
       if (partnerValues[i][1] === partnerCode) { // partner_code 在第2列
-        const currentPendingCommission = parseFloat(partnerValues[i][11]) || 0; // pending_commission
-        const newPendingCommission = Math.max(0, currentPendingCommission - payoutAmount);
-        
-        partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
-        partnersSheet.getRange(i + 1, 25).setValue(new Date()); // updated_at
-        
-        Logger.log('✅ 大使 ' + partnerCode + ' 待支付佣金已調整: $' + payoutAmount + ' -> 剩餘: $' + newPendingCommission);
+        partnerRowIndex = i + 1;
         break;
+      }
+    }
+    
+    if (partnerRowIndex === -1) {
+      Logger.log('⚠️ 找不到對應的大使記錄: ' + partnerCode);
+    } else {
+      const currentTotalEarned = parseFloat(partnerValues[partnerRowIndex-1][9]) || 0; // total_commission_earned
+      const currentPendingCommission = parseFloat(partnerValues[partnerRowIndex-1][11]) || 0; // pending_commission
+      
+      let adjustmentMade = false;
+      
+      // 根據不同的結算類型決定如何調整佣金
+      if (payoutMethod === 'MANUAL_ADJUSTMENT') {
+        // 手動調整記錄的取消 - 需要反向調整
+        if (payoutType === 'ACCOMMODATION' || payoutType === 'ADJUSTMENT_REVERSAL') {
+          // 這是對累積佣金的調整，需要反向操作
+          const adjustmentDirection = payoutStatus === 'COMPLETED' ? -1 : 1; // COMPLETED 表示增加，取消時要減少
+          const newTotalEarned = Math.max(0, currentTotalEarned + (adjustmentDirection * payoutAmount));
+          
+          partnersSheet.getRange(partnerRowIndex, 10).setValue(newTotalEarned); // total_commission_earned
+          Logger.log('🔄 反向調整累積佣金: ' + currentTotalEarned + ' → ' + newTotalEarned);
+          adjustmentMade = true;
+        }
+        
+        if (payoutType === 'CASH' || payoutType === 'ADJUSTMENT_REVERSAL') {
+          // 這是對待支付佣金的調整，需要反向操作
+          const adjustmentDirection = payoutStatus === 'PENDING' ? -1 : 1; // PENDING 表示增加，取消時要減少
+          const newPendingCommission = Math.max(0, currentPendingCommission + (adjustmentDirection * payoutAmount));
+          
+          partnersSheet.getRange(partnerRowIndex, 12).setValue(newPendingCommission); // pending_commission
+          Logger.log('🔄 反向調整待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission);
+          adjustmentMade = true;
+        }
+      } else {
+        // 普通結算記錄的取消 - 將金額加回待支付佣金
+        const newPendingCommission = currentPendingCommission + payoutAmount;
+        partnersSheet.getRange(partnerRowIndex, 12).setValue(newPendingCommission); // pending_commission
+        Logger.log('💰 結算取消，金額歸還待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission);
+        adjustmentMade = true;
+      }
+      
+      if (adjustmentMade) {
+        partnersSheet.getRange(partnerRowIndex, 25).setValue(new Date()); // updated_at
+        Logger.log('✅ 大使 ' + partnerCode + ' 佣金已調整');
       }
     }
     
@@ -1251,10 +1303,16 @@ function handleUpdatePayout(data, e) {
     
     Logger.log('✅ 結算記錄已更新: ID ' + payoutId + ', 金額: $' + oldAmount + ' -> $' + newAmount);
     
-    // 3. 如果金額有變化，更新大使的待支付佣金
+    // 3. 如果金額有變化，根據結算類型更新大使的佣金
     if (oldAmount !== newAmount) {
       const partnerCode = payoutValues[payoutRowIndex - 1][1]; // partner_code
+      const payoutType = payoutValues[payoutRowIndex - 1][2]; // payout_type
+      const payoutMethod = payoutValues[payoutRowIndex - 1][5]; // payout_method
+      const payoutStatus = payoutValues[payoutRowIndex - 1][6]; // payout_status
       const partnersSheet = spreadsheet.getSheetByName('Partners');
+      
+      Logger.log('📊 結算記錄修改: 類型=' + payoutType + ', 方法=' + payoutMethod + ', 狀態=' + payoutStatus);
+      Logger.log('📊 金額變化: $' + oldAmount + ' → $' + newAmount + ' (差額: ' + (newAmount - oldAmount) + ')');
       
       if (partnersSheet) {
         const partnerRange = partnersSheet.getDataRange();
@@ -1262,14 +1320,39 @@ function handleUpdatePayout(data, e) {
         
         for (let i = 1; i < partnerValues.length; i++) {
           if (partnerValues[i][1] === partnerCode) { // partner_code 在第2列
+            const currentTotalEarned = parseFloat(partnerValues[i][9]) || 0; // total_commission_earned
             const currentPendingCommission = parseFloat(partnerValues[i][11]) || 0; // pending_commission
             const amountDifference = newAmount - oldAmount;
-            const newPendingCommission = Math.max(0, currentPendingCommission + amountDifference);
             
-            partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
+            if (payoutMethod === 'MANUAL_ADJUSTMENT') {
+              // 手動調整記錄的修改
+              if (payoutType === 'ACCOMMODATION' && payoutStatus === 'COMPLETED') {
+                // 累積佣金調整
+                const newTotalEarned = Math.max(0, currentTotalEarned + amountDifference);
+                partnersSheet.getRange(i + 1, 10).setValue(newTotalEarned); // total_commission_earned
+                Logger.log('🔄 修改手動調整 - 累積佣金: ' + currentTotalEarned + ' → ' + newTotalEarned);
+              } else if (payoutType === 'CASH' && payoutStatus === 'PENDING') {
+                // 待支付佣金調整
+                const newPendingCommission = Math.max(0, currentPendingCommission + amountDifference);
+                partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
+                Logger.log('🔄 修改手動調整 - 待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission);
+              } else if (payoutType === 'ADJUSTMENT_REVERSAL') {
+                // 調整撤銷記錄的修改（反向操作）
+                if (payoutStatus === 'REVERSED') {
+                  const newTotalEarned = Math.max(0, currentTotalEarned - amountDifference);
+                  partnersSheet.getRange(i + 1, 10).setValue(newTotalEarned); // total_commission_earned
+                  Logger.log('🔄 修改調整撤銷 - 累積佣金: ' + currentTotalEarned + ' → ' + newTotalEarned);
+                }
+              }
+            } else {
+              // 普通結算記錄的修改 - 影響待支付佣金
+              const newPendingCommission = Math.max(0, currentPendingCommission + amountDifference);
+              partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
+              Logger.log('💰 修改普通結算 - 待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission);
+            }
+            
             partnersSheet.getRange(i + 1, 25).setValue(timestamp); // updated_at
-            
-            Logger.log('✅ 大使 ' + partnerCode + ' 待支付佣金已調整: 差額 $' + amountDifference + ', 新餘額: $' + newPendingCommission);
+            Logger.log('✅ 大使 ' + partnerCode + ' 佣金已根據結算修改調整');
             break;
           }
         }
@@ -1361,17 +1444,81 @@ function handleUpdatePartnerCommission(data, e) {
     
     const timestamp = new Date();
     
-    // 2. 更新夥伴佣金資料
+    // 2. 獲取當前佣金值
+    const currentTotalEarned = parseFloat(partnerValues[partnerRowIndex-1][9]) || 0; // total_commission_earned
+    const currentPendingCommission = parseFloat(partnerValues[partnerRowIndex-1][11]) || 0; // pending_commission
+    
     const newTotalEarned = parseFloat(data.total_commission_earned) || 0;
     const newPendingCommission = parseFloat(data.pending_commission) || 0;
     
+    // 計算調整差額
+    const totalEarnedAdjustment = newTotalEarned - currentTotalEarned;
+    const pendingCommissionAdjustment = newPendingCommission - currentPendingCommission;
+    
+    Logger.log('📊 佣金調整計算:');
+    Logger.log('  累積佣金: ' + currentTotalEarned + ' → ' + newTotalEarned + ' (差額: ' + totalEarnedAdjustment + ')');
+    Logger.log('  待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission + ' (差額: ' + pendingCommissionAdjustment + ')');
+    
+    // 3. 更新夥伴佣金資料
     partnersSheet.getRange(partnerRowIndex, 10).setValue(newTotalEarned); // total_commission_earned
     partnersSheet.getRange(partnerRowIndex, 12).setValue(newPendingCommission); // pending_commission
     partnersSheet.getRange(partnerRowIndex, 25).setValue(timestamp); // updated_at
     
     Logger.log('✅ 夥伴佣金已更新: ' + partnerCode + ', 累積: $' + newTotalEarned + ', 待付: $' + newPendingCommission);
     
-    // 3. 如果有調整原因，記錄到日誌表（如果存在）
+    // 4. 如果有顯著的調整，創建結算記錄
+    const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+    let payoutRecordsCreated = [];
+    
+    if (payoutsSheet && (Math.abs(totalEarnedAdjustment) > 0 || Math.abs(pendingCommissionAdjustment) > 0)) {
+      // 為累積佣金的調整創建記錄（如果調整金額不為零）
+      if (Math.abs(totalEarnedAdjustment) > 0) {
+        const totalAdjustmentRecord = [
+          '', // ID (自動編號)
+          partnerCode,
+          totalEarnedAdjustment > 0 ? 'ACCOMMODATION' : 'ADJUSTMENT_REVERSAL', // payout_type
+          Math.abs(totalEarnedAdjustment), // amount (使用絕對值)
+          '', // related_booking_ids (手動調整沒有相關訂房)
+          'MANUAL_ADJUSTMENT', // payout_method
+          totalEarnedAdjustment > 0 ? 'COMPLETED' : 'REVERSED', // payout_status
+          '', // bank_transfer_date
+          '', // bank_transfer_reference
+          '', // accommodation_voucher_code
+          `手動調整累積佣金 ${totalEarnedAdjustment > 0 ? '+' : ''}${totalEarnedAdjustment}` + (data.adjustment_reason ? ': ' + data.adjustment_reason : ''), // notes
+          'admin', // created_by
+          timestamp, // created_at
+          timestamp  // updated_at
+        ];
+        payoutsSheet.appendRow(totalAdjustmentRecord);
+        payoutRecordsCreated.push('累積佣金調整: ' + totalEarnedAdjustment);
+        Logger.log('📝 創建累積佣金調整記錄: ' + totalEarnedAdjustment);
+      }
+      
+      // 為待支付佣金的調整創建記錄（如果調整金額不為零）
+      if (Math.abs(pendingCommissionAdjustment) > 0) {
+        const pendingAdjustmentRecord = [
+          '', // ID (自動編號)
+          partnerCode,
+          pendingCommissionAdjustment > 0 ? 'CASH' : 'ADJUSTMENT_REVERSAL', // payout_type
+          Math.abs(pendingCommissionAdjustment), // amount
+          '', // related_booking_ids
+          'MANUAL_ADJUSTMENT', // payout_method
+          'PENDING', // payout_status (待支付調整都是 PENDING)
+          '', // bank_transfer_date
+          '', // bank_transfer_reference
+          '', // accommodation_voucher_code
+          `手動調整待支付佣金 ${pendingCommissionAdjustment > 0 ? '+' : ''}${pendingCommissionAdjustment}` + (data.adjustment_reason ? ': ' + data.adjustment_reason : ''), // notes
+          'admin', // created_by
+          timestamp, // created_at
+          timestamp  // updated_at
+        ];
+        payoutsSheet.appendRow(pendingAdjustmentRecord);
+        payoutRecordsCreated.push('待支付佣金調整: ' + pendingCommissionAdjustment);
+        Logger.log('📝 創建待支付佣金調整記錄: ' + pendingCommissionAdjustment);
+      }
+    }
+    
+    // 5. 記錄到調整日誌表（保持現有功能）
     if (data.adjustment_reason) {
       try {
         const logsSheet = spreadsheet.getSheetByName('Commission_Adjustment_Logs');
@@ -1399,6 +1546,11 @@ function handleUpdatePartnerCommission(data, e) {
       partner_code: partnerCode,
       total_commission_earned: newTotalEarned,
       pending_commission: newPendingCommission,
+      adjustments: {
+        total_earned_adjustment: totalEarnedAdjustment,
+        pending_commission_adjustment: pendingCommissionAdjustment,
+        payout_records_created: payoutRecordsCreated
+      },
       updated_at: timestamp.toISOString()
     };
     
@@ -1704,6 +1856,262 @@ function handleRepairPayouts(data, e) {
 
   } catch (error) {
     Logger.log('修復 Payouts 表格錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '修復失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 佣金一致性審計功能 =====
+function handleAuditCommissions(data, e) {
+  try {
+    Logger.log('🔍 開始佣金一致性審計');
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const partnersSheet = spreadsheet.getSheetByName('Partners');
+    const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+    const bookingsSheet = spreadsheet.getSheetByName('Bookings');
+    
+    if (!partnersSheet || !payoutsSheet || !bookingsSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到必要的工作表'
+      });
+    }
+    
+    const partnersData = getSheetData(spreadsheet, 'Partners');
+    const payoutsData = getSheetData(spreadsheet, 'Payouts');
+    const bookingsData = getSheetData(spreadsheet, 'Bookings');
+    
+    const auditResults = [];
+    const discrepancies = [];
+    
+    // 對每個大使進行審計
+    for (const partner of partnersData) {
+      const partnerCode = partner.partner_code;
+      if (!partnerCode) continue;
+      
+      // 從訂房記錄計算應得佣金
+      const partnerBookings = bookingsData.filter(booking => 
+        booking.partner_code === partnerCode && booking.stay_status === 'COMPLETED'
+      );
+      
+      let calculatedTotalEarned = 0;
+      const bookingCommissions = [];
+      
+      for (const booking of partnerBookings) {
+        const commissionRate = COMMISSION_RATES[partner.level];
+        if (commissionRate) {
+          const commission = commissionRate.accommodation; // 使用住宿金作為基準
+          calculatedTotalEarned += commission;
+          bookingCommissions.push({
+            booking_id: booking.ID,
+            guest_name: booking.guest_name,
+            commission: commission,
+            checkin_date: booking.checkin_date
+          });
+        }
+      }
+      
+      // 從結算記錄計算總結算金額
+      const partnerPayouts = payoutsData.filter(payout => payout.partner_code === partnerCode);
+      let calculatedTotalPayouts = 0;
+      let manualAdjustments = 0;
+      const payoutSummary = [];
+      
+      for (const payout of partnerPayouts) {
+        const amount = parseFloat(payout.amount) || 0;
+        
+        if (payout.payout_method === 'MANUAL_ADJUSTMENT') {
+          if (payout.payout_type === 'ACCOMMODATION' && payout.payout_status === 'COMPLETED') {
+            manualAdjustments += amount; // 正向調整
+          } else if (payout.payout_type === 'ADJUSTMENT_REVERSAL' && payout.payout_status === 'REVERSED') {
+            manualAdjustments -= amount; // 反向調整
+          }
+        } else {
+          calculatedTotalPayouts += amount;
+        }
+        
+        payoutSummary.push({
+          payout_id: payout.ID,
+          type: payout.payout_type,
+          method: payout.payout_method,
+          status: payout.payout_status,
+          amount: amount,
+          notes: payout.notes
+        });
+      }
+      
+      // 計算預期值
+      const expectedTotalEarned = calculatedTotalEarned + manualAdjustments;
+      const expectedPendingCommission = expectedTotalEarned - calculatedTotalPayouts;
+      
+      // 實際值
+      const actualTotalEarned = parseFloat(partner.total_commission_earned) || 0;
+      const actualPendingCommission = parseFloat(partner.pending_commission) || 0;
+      
+      // 檢查是否有差異
+      const totalEarnedDiff = Math.abs(expectedTotalEarned - actualTotalEarned);
+      const pendingCommissionDiff = Math.abs(expectedPendingCommission - actualPendingCommission);
+      const tolerance = 0.01; // 容許誤差
+      
+      const auditResult = {
+        partner_code: partnerCode,
+        partner_name: partner.name,
+        bookings_count: partnerBookings.length,
+        payouts_count: partnerPayouts.length,
+        expected: {
+          total_earned: expectedTotalEarned,
+          pending_commission: Math.max(0, expectedPendingCommission)
+        },
+        actual: {
+          total_earned: actualTotalEarned,
+          pending_commission: actualPendingCommission
+        },
+        differences: {
+          total_earned: expectedTotalEarned - actualTotalEarned,
+          pending_commission: expectedPendingCommission - actualPendingCommission
+        },
+        has_discrepancy: totalEarnedDiff > tolerance || pendingCommissionDiff > tolerance,
+        manual_adjustments: manualAdjustments,
+        booking_commissions: bookingCommissions,
+        payout_summary: payoutSummary
+      };
+      
+      auditResults.push(auditResult);
+      
+      if (auditResult.has_discrepancy) {
+        discrepancies.push(auditResult);
+      }
+    }
+    
+    const summaryStats = {
+      total_partners_audited: auditResults.length,
+      partners_with_discrepancies: discrepancies.length,
+      accuracy_rate: auditResults.length > 0 ? 
+        ((auditResults.length - discrepancies.length) / auditResults.length * 100).toFixed(1) + '%' : 
+        '100%'
+    };
+    
+    Logger.log('✅ 佣金審計完成: ' + auditResults.length + ' 個大使，' + discrepancies.length + ' 個差異');
+    
+    return createJsonResponse({
+      success: true,
+      message: '佣金一致性審計完成',
+      summary: summaryStats,
+      audit_results: auditResults,
+      discrepancies: discrepancies,
+      audit_timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    Logger.log('佣金審計錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '審計失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 自動修復佣金差異 =====
+function handleFixCommissionDiscrepancies(data, e) {
+  try {
+    Logger.log('🔧 開始自動修復佣金差異');
+    
+    // 先執行審計獲取差異
+    const auditResponse = handleAuditCommissions(data, e);
+    const auditData = JSON.parse(auditResponse.getContent());
+    
+    if (!auditData.success || auditData.discrepancies.length === 0) {
+      return createJsonResponse({
+        success: true,
+        message: '沒有發現需要修復的佣金差異',
+        discrepancies_found: 0
+      });
+    }
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const partnersSheet = spreadsheet.getSheetByName('Partners');
+    const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+    
+    const fixedDiscrepancies = [];
+    const timestamp = new Date();
+    
+    for (const discrepancy of auditData.discrepancies) {
+      const partnerCode = discrepancy.partner_code;
+      
+      // 找到夥伴記錄
+      const partnerRange = partnersSheet.getDataRange();
+      const partnerValues = partnerRange.getValues();
+      let partnerRowIndex = -1;
+      
+      for (let i = 1; i < partnerValues.length; i++) {
+        if (partnerValues[i][1] === partnerCode) {
+          partnerRowIndex = i + 1;
+          break;
+        }
+      }
+      
+      if (partnerRowIndex === -1) {
+        Logger.log('⚠️ 找不到大使記錄: ' + partnerCode);
+        continue;
+      }
+      
+      // 修復累積佣金
+      if (Math.abs(discrepancy.differences.total_earned) > 0.01) {
+        const correctedTotalEarned = discrepancy.expected.total_earned;
+        partnersSheet.getRange(partnerRowIndex, 10).setValue(correctedTotalEarned);
+        
+        // 創建修復記錄
+        const adjustmentRecord = [
+          '', // ID (自動編號)
+          partnerCode,
+          'SYSTEM_CORRECTION', // payout_type
+          Math.abs(discrepancy.differences.total_earned), // amount
+          '', // related_booking_ids
+          'SYSTEM_AUDIT', // payout_method
+          'COMPLETED', // payout_status
+          '', '', '', // bank info
+          `系統審計自動修復累積佣金差異: ${discrepancy.differences.total_earned > 0 ? '+' : ''}${discrepancy.differences.total_earned}`, // notes
+          'system', // created_by
+          timestamp, // created_at
+          timestamp  // updated_at
+        ];
+        payoutsSheet.appendRow(adjustmentRecord);
+      }
+      
+      // 修復待支付佣金
+      if (Math.abs(discrepancy.differences.pending_commission) > 0.01) {
+        const correctedPendingCommission = Math.max(0, discrepancy.expected.pending_commission);
+        partnersSheet.getRange(partnerRowIndex, 12).setValue(correctedPendingCommission);
+      }
+      
+      // 更新時間戳
+      partnersSheet.getRange(partnerRowIndex, 25).setValue(timestamp);
+      
+      fixedDiscrepancies.push({
+        partner_code: partnerCode,
+        corrections: {
+          total_earned: discrepancy.differences.total_earned,
+          pending_commission: discrepancy.differences.pending_commission
+        }
+      });
+      
+      Logger.log('✅ 已修復大使 ' + partnerCode + ' 的佣金差異');
+    }
+    
+    return createJsonResponse({
+      success: true,
+      message: '佣金差異修復完成',
+      discrepancies_found: auditData.discrepancies.length,
+      discrepancies_fixed: fixedDiscrepancies.length,
+      fixed_partners: fixedDiscrepancies,
+      fixed_at: timestamp.toISOString()
+    });
+    
+  } catch (error) {
+    Logger.log('修復佣金差異錯誤: ' + error.toString());
     return createJsonResponse({
       success: false,
       error: '修復失敗: ' + error.message

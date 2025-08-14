@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>佣金審計控制台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF8; color: #5C544B; }
+        h1, h2, h3, .font-serif { font-family: 'Noto Serif TC', serif; }
+        .brand-accent { color: #2E4B36; }
+        .brand-card { background-color: #FFFFFF; border: 1px solid #EAE6E1; border-radius: 1.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+        .json-output { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.5rem; padding: 1rem; font-family: 'Courier New', monospace; white-space: pre-wrap; font-size: 12px; max-height: 400px; overflow-y: auto; }
+        .status-ok { color: #16a34a; }
+        .status-warning { color: #ea580c; }
+        .status-error { color: #dc2626; }
+    </style>
+</head>
+<body class="antialiased min-h-screen py-8">
+    <div class="max-w-6xl mx-auto px-6">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold brand-accent mb-4">🔍 佣金審計控制台</h1>
+            <p class="text-lg text-stone-600">完整的佣金追蹤、審計和一致性驗證工具</p>
+        </header>
+
+        <!-- 控制面板 -->
+        <div class="brand-card p-8 mb-8">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">🎛️ 控制面板</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <button onclick="runAudit()" id="auditButton" class="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
+                    🔍 執行佣金審計
+                </button>
+                
+                <button onclick="fixDiscrepancies()" id="fixButton" class="bg-orange-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-700 transition duration-300 disabled:bg-gray-400" disabled>
+                    🔧 自動修復差異
+                </button>
+                
+                <button onclick="clearResults()" class="bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition duration-300">
+                    🗑️ 清空結果
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button onclick="repairPayouts()" class="bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition duration-300">
+                    🛠️ 修復 Payouts 表格
+                </button>
+                
+                <button onclick="exportAuditReport()" id="exportButton" class="bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transition duration-300 disabled:bg-gray-400" disabled>
+                    📊 匯出審計報告
+                </button>
+            </div>
+        </div>
+
+        <!-- 審計摘要 -->
+        <div id="summarySection" class="brand-card p-8 mb-8 hidden">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">📈 審計摘要</h2>
+            <div id="summaryContent" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- 摘要內容將由 JavaScript 動態填充 -->
+            </div>
+        </div>
+
+        <!-- 差異詳情 -->
+        <div id="discrepanciesSection" class="brand-card p-8 mb-8 hidden">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">⚠️ 發現的差異</h2>
+            <div id="discrepanciesList">
+                <!-- 差異列表將由 JavaScript 動態填充 -->
+            </div>
+        </div>
+
+        <!-- 詳細結果 -->
+        <div id="resultsSection" class="brand-card p-8 hidden">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">📋 詳細審計結果</h2>
+            
+            <div class="mb-4">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" id="showOnlyDiscrepancies" class="form-checkbox" onchange="filterResults()">
+                    <span class="ml-2">只顯示有差異的大使</span>
+                </label>
+            </div>
+            
+            <div id="auditResultsTable">
+                <!-- 審計結果表格將由 JavaScript 動態填充 -->
+            </div>
+        </div>
+
+        <!-- 原始數據 -->
+        <div id="rawDataSection" class="brand-card p-8 hidden">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">🔧 原始數據</h2>
+            <div id="rawDataOutput" class="json-output"></div>
+        </div>
+    </div>
+
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+        let auditData = null;
+        let allResults = [];
+
+        async function runAudit() {
+            const button = document.getElementById('auditButton');
+            const originalText = button.textContent;
+            button.textContent = '審計中...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'action=audit_commissions'
+                });
+
+                const result = await response.json();
+                auditData = result;
+                allResults = result.audit_results || [];
+                
+                if (result.success) {
+                    displayAuditResults(result);
+                    document.getElementById('fixButton').disabled = result.discrepancies.length === 0;
+                    document.getElementById('exportButton').disabled = false;
+                    showToast('✅ 審計完成！');
+                } else {
+                    showToast('❌ 審計失敗：' + result.error);
+                    document.getElementById('rawDataSection').classList.remove('hidden');
+                    document.getElementById('rawDataOutput').textContent = JSON.stringify(result, null, 2);
+                }
+
+            } catch (error) {
+                console.error('審計錯誤:', error);
+                showToast('❌ 審計失敗：' + error.message);
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+
+        async function fixDiscrepancies() {
+            if (!auditData || auditData.discrepancies.length === 0) {
+                showToast('⚠️ 沒有發現需要修復的差異');
+                return;
+            }
+
+            const button = document.getElementById('fixButton');
+            const originalText = button.textContent;
+            button.textContent = '修復中...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'action=fix_commission_discrepancies'
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(`✅ 修復完成！已修復 ${result.discrepancies_fixed} 個差異`);
+                    // 修復完成後重新執行審計
+                    setTimeout(() => runAudit(), 2000);
+                } else {
+                    showToast('❌ 修復失敗：' + result.error);
+                }
+
+            } catch (error) {
+                console.error('修復錯誤:', error);
+                showToast('❌ 修復失敗：' + error.message);
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+
+        async function repairPayouts() {
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'action=repair_payouts'
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('✅ Payouts 表格修復完成！');
+                } else {
+                    showToast('❌ 修復失敗：' + result.error);
+                }
+
+            } catch (error) {
+                console.error('修復錯誤:', error);
+                showToast('❌ 修復失敗：' + error.message);
+            }
+        }
+
+        function displayAuditResults(data) {
+            // 顯示摘要
+            const summarySection = document.getElementById('summarySection');
+            const summaryContent = document.getElementById('summaryContent');
+            
+            summaryContent.innerHTML = `
+                <div class="text-center">
+                    <div class="text-3xl font-bold status-ok">${data.summary.total_partners_audited}</div>
+                    <div class="text-sm text-gray-600">總大使數</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold ${data.summary.partners_with_discrepancies > 0 ? 'status-warning' : 'status-ok'}">
+                        ${data.summary.partners_with_discrepancies}
+                    </div>
+                    <div class="text-sm text-gray-600">發現差異</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold status-ok">${data.summary.accuracy_rate}</div>
+                    <div class="text-sm text-gray-600">準確率</div>
+                </div>
+            `;
+            summarySection.classList.remove('hidden');
+
+            // 顯示差異
+            if (data.discrepancies.length > 0) {
+                displayDiscrepancies(data.discrepancies);
+            }
+
+            // 顯示詳細結果
+            displayDetailedResults(data.audit_results);
+
+            // 顯示原始數據
+            document.getElementById('rawDataSection').classList.remove('hidden');
+            document.getElementById('rawDataOutput').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function displayDiscrepancies(discrepancies) {
+            const discrepanciesSection = document.getElementById('discrepanciesSection');
+            const discrepanciesList = document.getElementById('discrepanciesList');
+            
+            let html = '';
+            discrepancies.forEach(d => {
+                html += `
+                    <div class="mb-4 p-4 border-l-4 border-orange-500 bg-orange-50 rounded">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-semibold">${d.partner_code} - ${d.partner_name || '未設定'}</h4>
+                                <div class="text-sm text-gray-600 mt-1">
+                                    <p>累積佣金差異: <span class="${Math.abs(d.differences.total_earned) > 0 ? 'status-warning' : 'status-ok'}">
+                                        ${d.differences.total_earned > 0 ? '+' : ''}${d.differences.total_earned}
+                                    </span></p>
+                                    <p>待支付佣金差異: <span class="${Math.abs(d.differences.pending_commission) > 0 ? 'status-warning' : 'status-ok'}">
+                                        ${d.differences.pending_commission > 0 ? '+' : ''}${d.differences.pending_commission}
+                                    </span></p>
+                                </div>
+                            </div>
+                            <div class="text-right text-sm">
+                                <p>${d.bookings_count} 筆訂房</p>
+                                <p>${d.payouts_count} 筆結算</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            discrepanciesList.innerHTML = html;
+            discrepanciesSection.classList.remove('hidden');
+        }
+
+        function displayDetailedResults(results) {
+            const resultsSection = document.getElementById('resultsSection');
+            const table = document.getElementById('auditResultsTable');
+            
+            let html = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white border border-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left">大使</th>
+                                <th class="px-4 py-2 text-right">訂房數</th>
+                                <th class="px-4 py-2 text-right">結算數</th>
+                                <th class="px-4 py-2 text-right">預期累積</th>
+                                <th class="px-4 py-2 text-right">實際累積</th>
+                                <th class="px-4 py-2 text-right">預期待付</th>
+                                <th class="px-4 py-2 text-right">實際待付</th>
+                                <th class="px-4 py-2 text-center">狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            results.forEach(r => {
+                const statusClass = r.has_discrepancy ? 'bg-red-50' : 'bg-green-50';
+                const statusText = r.has_discrepancy ? '❌ 差異' : '✅ 正確';
+                
+                html += `
+                    <tr class="${statusClass} ${r.has_discrepancy ? '' : 'discrepancy-row'}">
+                        <td class="px-4 py-2 font-medium">${r.partner_code}</td>
+                        <td class="px-4 py-2 text-right">${r.bookings_count}</td>
+                        <td class="px-4 py-2 text-right">${r.payouts_count}</td>
+                        <td class="px-4 py-2 text-right">$${r.expected.total_earned.toLocaleString()}</td>
+                        <td class="px-4 py-2 text-right">$${r.actual.total_earned.toLocaleString()}</td>
+                        <td class="px-4 py-2 text-right">$${r.expected.pending_commission.toLocaleString()}</td>
+                        <td class="px-4 py-2 text-right">$${r.actual.pending_commission.toLocaleString()}</td>
+                        <td class="px-4 py-2 text-center">${statusText}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            table.innerHTML = html;
+            resultsSection.classList.remove('hidden');
+        }
+
+        function filterResults() {
+            const showOnlyDiscrepancies = document.getElementById('showOnlyDiscrepancies').checked;
+            const rows = document.querySelectorAll('#auditResultsTable tbody tr');
+            
+            rows.forEach(row => {
+                if (showOnlyDiscrepancies) {
+                    row.style.display = row.classList.contains('discrepancy-row') ? 'none' : 'table-row';
+                } else {
+                    row.style.display = 'table-row';
+                }
+            });
+        }
+
+        function exportAuditReport() {
+            if (!auditData) {
+                showToast('⚠️ 請先執行審計');
+                return;
+            }
+
+            const csv = generateCSVReport(auditData);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `commission_audit_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('📊 審計報告已匯出');
+        }
+
+        function generateCSVReport(data) {
+            const headers = [
+                '大使代碼', '大使姓名', '訂房數量', '結算數量', 
+                '預期累積佣金', '實際累積佣金', '累積差異',
+                '預期待付佣金', '實際待付佣金', '待付差異',
+                '手動調整', '是否有差異', '審計時間'
+            ];
+            
+            let csv = headers.join(',') + '\n';
+            
+            data.audit_results.forEach(r => {
+                const row = [
+                    r.partner_code,
+                    r.partner_name || '',
+                    r.bookings_count,
+                    r.payouts_count,
+                    r.expected.total_earned,
+                    r.actual.total_earned,
+                    r.differences.total_earned,
+                    r.expected.pending_commission,
+                    r.actual.pending_commission,
+                    r.differences.pending_commission,
+                    r.manual_adjustments,
+                    r.has_discrepancy ? '是' : '否',
+                    data.audit_timestamp
+                ];
+                csv += row.join(',') + '\n';
+            });
+            
+            return csv;
+        }
+
+        function clearResults() {
+            auditData = null;
+            allResults = [];
+            document.getElementById('summarySection').classList.add('hidden');
+            document.getElementById('discrepanciesSection').classList.add('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('rawDataSection').classList.add('hidden');
+            document.getElementById('fixButton').disabled = true;
+            document.getElementById('exportButton').disabled = true;
+            showToast('🗑️ 結果已清空');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity';
+            
+            if (message.includes('❌')) {
+                toast.className += ' bg-red-600 text-white';
+            } else if (message.includes('⚠️')) {
+                toast.className += ' bg-orange-600 text-white';
+            } else {
+                toast.className += ' bg-green-600 text-white';
+            }
+            
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 4000);
+        }
+    </script>
+</body>
+</html>

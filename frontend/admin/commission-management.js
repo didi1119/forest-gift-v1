@@ -161,29 +161,37 @@ async function saveCommissionChanges(partnerCode) {
         document.body.appendChild(form);
         form.submit();
         
-        // 延時回調處理結果
-        setTimeout(() => {
-            // 立即更新前端數據
-            const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
-            if (partnerIndex !== -1) {
-                allData.partners[partnerIndex].total_commission_earned = formData.total_commission_earned;
-                allData.partners[partnerIndex].pending_commission = formData.pending_commission;
-                allData.partners[partnerIndex].updated_at = new Date().toISOString();
-            }
-            
-            showSuccessMessage('✅ 佣金資料已更新！');
-            closeModal('quickCommissionEditModal');
-            displayPartners(allData.partners);
-            
-            // 背景重新載入數據
+        // 監聽 iframe 載入事件來確認提交結果
+        const iframe = document.getElementById('hiddenFrame');
+        iframe.onload = function() {
             setTimeout(() => {
+                // 立即更新前端數據
+                const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
+                if (partnerIndex !== -1) {
+                    allData.partners[partnerIndex].total_commission_earned = formData.total_commission_earned;
+                    allData.partners[partnerIndex].pending_commission = formData.pending_commission;
+                    allData.partners[partnerIndex].updated_at = new Date().toISOString();
+                }
+                
+                showSuccessMessage('✅ 佣金資料已更新！結算記錄已創建！');
+                closeModal('quickCommissionEditModal');
+                displayPartners(allData.partners);
+                
+                // 立即重新載入所有數據，包括 payouts
                 loadRealData().then(() => {
+                    console.log('📊 數據重新載入完成，Payouts 記錄數：', allData.payouts.length);
                     displayPartners(allData.partners);
+                    // 如果當前在結算管理頁面，也重新顯示 payouts
+                    if (typeof displayPayouts === 'function') {
+                        displayPayouts(allData.payouts);
+                    }
+                }).catch(error => {
+                    console.error('重新載入數據失敗:', error);
                 });
-            }, 2000);
-            
-            document.body.removeChild(form);
-        }, 1000);
+                
+                document.body.removeChild(form);
+            }, 1500);
+        };
         
     } catch (error) {
         console.error('更新佣金失敗:', error);

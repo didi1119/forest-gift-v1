@@ -201,12 +201,17 @@ async function cancelPayout(payoutId) {
             closeModal('payoutDetailsModal');
             displayPayouts(allData.payouts);
             
-            // 背景重新載入數據
-            setTimeout(() => {
-                loadRealData().then(() => {
-                    displayPayouts(allData.payouts);
-                });
-            }, 2000);
+            // 立即重新載入所有數據
+            loadRealData().then(() => {
+                console.log('📊 結算修改後數據重新載入完成');
+                displayPayouts(allData.payouts);
+                // 同時更新大使列表，因為佣金可能已連動調整
+                if (typeof displayPartners === 'function') {
+                    displayPartners(allData.partners);
+                }
+            }).catch(error => {
+                console.error('重新載入數據失敗:', error);
+            });
             
             document.body.removeChild(form);
         }, 1000);
@@ -362,12 +367,17 @@ async function savePayoutChanges(payoutId) {
             closeModal('payoutDetailsModal');
             displayPayouts(allData.payouts);
             
-            // 背景重新載入數據
-            setTimeout(() => {
-                loadRealData().then(() => {
-                    displayPayouts(allData.payouts);
-                });
-            }, 2000);
+            // 立即重新載入所有數據
+            loadRealData().then(() => {
+                console.log('📊 結算修改後數據重新載入完成');
+                displayPayouts(allData.payouts);
+                // 同時更新大使列表，因為佣金可能已連動調整
+                if (typeof displayPartners === 'function') {
+                    displayPartners(allData.partners);
+                }
+            }).catch(error => {
+                console.error('重新載入數據失敗:', error);
+            });
             
             document.body.removeChild(form);
         }, 1000);

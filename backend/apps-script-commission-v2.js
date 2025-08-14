@@ -1479,6 +1479,26 @@ function handleUpdatePartnerCommission(data, e) {
     let payoutRecordsCreated = [];
     
     if (payoutsSheet && (Math.abs(totalEarnedAdjustment) > 0 || Math.abs(pendingCommissionAdjustment) > 0)) {
+      // 確保 Payouts 表格結構正確
+      try {
+        const payoutsHeaders = payoutsSheet.getRange(1, 1, 1, payoutsSheet.getLastColumn()).getValues()[0];
+        const expectedHeaders = [
+          'ID', 'partner_code', 'payout_type', 'amount', 'related_booking_ids',
+          'payout_method', 'payout_status', 'bank_transfer_date', 'bank_transfer_reference',
+          'accommodation_voucher_code', 'notes', 'created_by', 'created_at', 'updated_at'
+        ];
+        
+        const headersMatch = JSON.stringify(payoutsHeaders) === JSON.stringify(expectedHeaders);
+        Logger.log('📋 Payouts 表格標題檢查: ' + (headersMatch ? '✅ 正確' : '❌ 錯誤'));
+        
+        if (!headersMatch) {
+          Logger.log('⚠️ Payouts 表格結構不正確，嘗試修復...');
+          payoutsSheet.getRange(1, 1, 1, expectedHeaders.length).setValues([expectedHeaders]);
+          Logger.log('✅ Payouts 表格標題已修復');
+        }
+      } catch (headerCheckError) {
+        Logger.log('⚠️ 無法檢查 Payouts 表格標題: ' + headerCheckError.toString());
+      }
       // 為累積佣金的調整創建記錄（如果調整金額不為零）
       if (Math.abs(totalEarnedAdjustment) > 0) {
         const totalAdjustmentRecord = [
@@ -1497,9 +1517,14 @@ function handleUpdatePartnerCommission(data, e) {
           timestamp, // created_at
           timestamp  // updated_at
         ];
-        payoutsSheet.appendRow(totalAdjustmentRecord);
-        payoutRecordsCreated.push('累積佣金調整: ' + totalEarnedAdjustment);
-        Logger.log('📝 創建累積佣金調整記錄: ' + totalEarnedAdjustment);
+        try {
+          payoutsSheet.appendRow(totalAdjustmentRecord);
+          payoutRecordsCreated.push('累積佣金調整: ' + totalEarnedAdjustment);
+          Logger.log('📝 創建累積佣金調整記錄: ' + totalEarnedAdjustment);
+        } catch (appendError) {
+          Logger.log('❌ 創建累積佣金調整記錄失敗: ' + appendError.toString());
+          Logger.log('📋 Payouts 表格標題: ' + JSON.stringify(payoutsSheet.getRange(1, 1, 1, payoutsSheet.getLastColumn()).getValues()[0]));
+        }
       }
       
       // 為待支付佣金的調整創建記錄（如果調整金額不為零）
@@ -1520,9 +1545,14 @@ function handleUpdatePartnerCommission(data, e) {
           timestamp, // created_at
           timestamp  // updated_at
         ];
-        payoutsSheet.appendRow(pendingAdjustmentRecord);
-        payoutRecordsCreated.push('待支付佣金調整: ' + pendingCommissionAdjustment);
-        Logger.log('📝 創建待支付佣金調整記錄: ' + pendingCommissionAdjustment);
+        try {
+          payoutsSheet.appendRow(pendingAdjustmentRecord);
+          payoutRecordsCreated.push('待支付佣金調整: ' + pendingCommissionAdjustment);
+          Logger.log('📝 創建待支付佣金調整記錄: ' + pendingCommissionAdjustment);
+        } catch (appendError) {
+          Logger.log('❌ 創建待支付佣金調整記錄失敗: ' + appendError.toString());
+          Logger.log('📋 Payouts 表格標題: ' + JSON.stringify(payoutsSheet.getRange(1, 1, 1, payoutsSheet.getLastColumn()).getValues()[0]));
+        }
       }
     }
     

@@ -1902,12 +1902,15 @@
                         showSuccessMessage('✅ 確認請求已發送，請重新載入查看結果');
                     }
                     
-                    // 背景重新載入完整數據確保一致性
+                    // 背景重新載入完整數據確保一致性（加上錯誤處理）
                     setTimeout(() => {
                         console.log('🔄 背景載入完整數據...');
                         loadRealData().then(() => {
                             displayBookings(allData.bookings);
                             console.log('✅ 數據重載完成');
+                        }).catch(error => {
+                            console.log('⚠️ 背景數據重載失敗（不影響操作）:', error.message);
+                            // 不顯示錯誤給用戶，因為前端數據已經更新了
                         });
                     }, 3000);
                     
@@ -2384,10 +2387,13 @@
                     closeModal('editBookingModal');
                     displayBookings(allData.bookings);
                     
-                    // 背景重新載入數據確保一致性
+                    // 背景重新載入數據確保一致性（加上錯誤處理）
                     setTimeout(() => {
                         loadRealData().then(() => {
                             displayBookings(allData.bookings);
+                            console.log('✅ 背景更新成功');
+                        }).catch(error => {
+                            console.log('⚠️ 背景更新失敗（不影響操作）:', error.message);
                         });
                     }, 2000);
                     
@@ -2499,11 +2505,13 @@
                         showSuccessMessage('✅ 訂單已成功刪除！');
                         closeModal('editBookingModal');
                         
-                        // 背景重新載入完整數據確保一致性
+                        // 背景重新載入完整數據確保一致性（加上錯誤處理）
                         setTimeout(() => {
                             loadRealData().then(() => {
                                 displayBookings(allData.bookings);
                                 console.log('✅ 刪除操作完成，數據已重載');
+                            }).catch(error => {
+                                console.log('⚠️ 背景數據重載失敗（不影響刪除操作）:', error.message);
                             });
                         }, 2000);
                     } else {

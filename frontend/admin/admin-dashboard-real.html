@@ -3374,46 +3374,70 @@
             try {
                 console.log('📤 手動訂房 - 發送數據:', submitData);
                 
-                // 使用 BookingDataManager 創建標準化參數
+                // 使用 form 提交避免 CORS 問題
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'booking_iframe';
+                form.style.display = 'none';
+
+                // 按標準順序添加表單字段
                 const params = BookingDataManager.createOrderedParams(submitData);
                 console.log('📤 手動訂房 - 按標準順序發送的參數:', params.toString());
                 
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: params.toString()
-                });
-                
-                console.log('📡 手動訂房 - 收到回應:', response.status, response.statusText);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                // 將 URLSearchParams 轉換為表單字段
+                for (const [key, value] of params.entries()) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
                 }
-                
-                const result = await response.text();
-                console.log('📥 手動訂房 - 後端回應:', result);
-                
-                // 立即處理結果
-                showSuccessMessage('✅ 訂房記錄已成功登記！');
-                
-                // 關閉模態框
-                closeModal('manualBookingModal');
-                
-                // 立即重新載入所有數據並切換到訂單管理頁
-                try {
-                    await loadRealData();
-                    showTab('bookings');
-                    displayBookings(allData.bookings);
-                    console.log('✅ 手動訂房登記完成，已切換到訂單管理頁');
-                } catch (error) {
-                    console.error('載入數據失敗:', error);
-                    showSuccessMessage('✅ 訂房已登記，請手動重新載入頁面查看');
+
+                document.body.appendChild(form);
+
+                // 創建隱藏的 iframe 用於提交
+                let iframe = document.getElementById('booking_iframe');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'booking_iframe';
+                    iframe.name = 'booking_iframe';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
                 }
+
+                // 提交表單
+                form.submit();
+                console.log('📡 手動訂房 - 表單已提交');
                 
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
+                // 延時處理結果（因為無法讀取iframe內容）
+                setTimeout(async () => {
+                    // 顯示成功訊息
+                    showSuccessMessage('✅ 訂房記錄處理中...');
+                    
+                    // 關閉模態框
+                    closeModal('manualBookingModal');
+                    
+                    // 重新載入所有數據並切換到訂單管理頁
+                    try {
+                        await loadRealData();
+                        showTab('bookings');
+                        displayBookings(allData.bookings);
+                        console.log('✅ 手動訂房登記完成，已切換到訂單管理頁');
+                        showSuccessMessage('✅ 訂房記錄已成功登記！');
+                    } catch (error) {
+                        console.error('載入數據失敗:', error);
+                        showSuccessMessage('✅ 訂房已登記，請手動重新載入頁面查看');
+                    }
+                    
+                    submitButton.textContent = originalText;
+                    submitButton.disabled = false;
+                    
+                    // 清理表單
+                    if (form && form.parentNode) {
+                        document.body.removeChild(form);
+                    }
+                }, 1500);
 
             } catch (error) {
                 console.error('登記失敗:', error);

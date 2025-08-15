@@ -247,6 +247,9 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="font-serif text-2xl font-semibold brand-accent">結算管理</h2>
                     <div class="flex space-x-3">
+                        <button onclick="diagnoseSheetFields()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                            🔧 診斷欄位問題
+                        </button>
                         <button onclick="diagnosePayout()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700">
                             🔧 診斷結算問題
                         </button>
@@ -3217,6 +3220,105 @@
                 class: 'bg-gray-100 text-gray-800',
                 detail: notes || '常規結算記錄'
             };
+        }
+
+        // 診斷 Google Sheets 欄位結構
+        function diagnoseSheetFields() {
+            const modal = document.createElement('div');
+            modal.id = 'sheetFieldsDiagnosticModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-start mb-6">
+                        <h3 class="text-2xl font-bold text-red-600">🔧 Google Sheets 欄位結構診斷</h3>
+                        <button onclick="closeModal('sheetFieldsDiagnosticModal')" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                        <h4 class="font-bold text-red-800 mb-2">⚠️ 發現問題：Google Sheets 欄位缺失</h4>
+                        <p class="text-red-700 text-sm">
+                            根據你提供的資料，Google Sheets 中缺少 <code class="bg-red-100 px-2 py-1 rounded">bank_account_last5</code> 欄位，
+                            導致匯款帳號末五碼被錯誤地放入 notes 欄位，並造成所有後續欄位錯位。
+                        </p>
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <h4 class="font-bold text-blue-800 mb-3">📋 正確的 Bookings 工作表欄位順序</h4>
+                        <div class="bg-white p-4 rounded border">
+                            <p class="text-sm font-mono mb-2">以下是 Bookings 工作表應該包含的所有欄位（第一列標題）：</p>
+                            <div class="bg-gray-100 p-3 rounded text-xs font-mono">
+                                id | partner_code | guest_name | guest_phone | guest_email | bank_account_last5 | 
+                                checkin_date | checkout_date | room_price | stay_status | payment_status | 
+                                commission_amount | commission_status | notes | created_at | updated_at
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                        <h4 class="font-bold text-yellow-800 mb-3">🔧 修復步驟</h4>
+                        <ol class="list-decimal list-inside space-y-2 text-sm">
+                            <li><strong>備份數據：</strong>先複製一份 Google Sheets 作為備份</li>
+                            <li><strong>在第6欄插入新欄位：</strong>在 guest_email 和 checkin_date 之間插入一欄</li>
+                            <li><strong>設定欄位標題：</strong>將新欄位的標題設為 <code>bank_account_last5</code></li>
+                            <li><strong>移動錯位資料：</strong>將 notes 欄位中的數字（如 12345、12333）移動到新的 bank_account_last5 欄位</li>
+                            <li><strong>清理錯位資料：</strong>將 created_at 欄位中的文字（如 tjgj）移回 notes 欄位</li>
+                            <li><strong>測試新增訂房：</strong>完成修復後，測試新增一筆訂房確認欄位對應正確</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                        <h4 class="font-bold text-green-800 mb-3">✅ 完整欄位說明</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs border">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="border px-2 py-1">欄位名稱</th>
+                                        <th class="border px-2 py-1">資料類型</th>
+                                        <th class="border px-2 py-1">說明</th>
+                                        <th class="border px-2 py-1">範例</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="border px-2 py-1">id</td><td class="border px-2 py-1">數字</td><td class="border px-2 py-1">訂房ID（自動生成）</td><td class="border px-2 py-1">1</td></tr>
+                                    <tr><td class="border px-2 py-1">partner_code</td><td class="border px-2 py-1">文字</td><td class="border px-2 py-1">推薦大使代碼</td><td class="border px-2 py-1">WANG001</td></tr>
+                                    <tr><td class="border px-2 py-1">guest_name</td><td class="border px-2 py-1">文字</td><td class="border px-2 py-1">房客姓名</td><td class="border px-2 py-1">王小明</td></tr>
+                                    <tr><td class="border px-2 py-1">guest_phone</td><td class="border px-2 py-1">文字</td><td class="border px-2 py-1">房客電話</td><td class="border px-2 py-1">0912345678</td></tr>
+                                    <tr><td class="border px-2 py-1">guest_email</td><td class="border px-2 py-1">文字</td><td class="border px-2 py-1">房客Email</td><td class="border px-2 py-1">wang@example.com</td></tr>
+                                    <tr class="bg-yellow-100"><td class="border px-2 py-1"><strong>bank_account_last5</strong></td><td class="border px-2 py-1">文字</td><td class="border px-2 py-1">匯款帳號末五碼</td><td class="border px-2 py-1">12345</td></tr>
+                                    <tr><td class="border px-2 py-1">checkin_date</td><td class="border px-2 py-1">日期</td><td class="border px-2 py-1">入住日期</td><td class="border px-2 py-1">2024-08-15</td></tr>
+                                    <tr><td class="border px-2 py-1">checkout_date</td><td class="border px-2 py-1">日期</td><td class="border px-2 py-1">退房日期</td><td class="border px-2 py-1">2024-08-17</td></tr>
+                                    <tr><td class="border px-2 py-1">room_price</td><td class="border px-2 py-1">數字</td><td class="border px-2 py-1">房價</td><td class="border px-2 py-1">5000</td></tr>
+                                    <tr><td class="border px-2 py-1">stay_status</td><td class="border px-2 py-1">文字</td><td class="border px-2 py-1">入住狀態</td><td class="border px-2 py-1">PENDING/COMPLETED</td></tr>
+                                    <tr><td class="border px-2 py-1">payment_status</td><td class="border px-2 py-1">文字</td><td class="border px-2 py-1">付款狀態</td><td class="border px-2 py-1">PAID/UNPAID</td></tr>
+                                    <tr><td class="border px-2 py-1">commission_amount</td><td class="border px-2 py-1">數字</td><td class="border px-2 py-1">佣金金額</td><td class="border px-2 py-1">500</td></tr>
+                                    <tr><td class="border px-2 py-1">commission_status</td><td class="border px-2 py-1">文字</td><td class="border px-2 py-1">佣金狀態</td><td class="border px-2 py-1">CALCULATED</td></tr>
+                                    <tr><td class="border px-2 py-1">notes</td><td class="border px-2 py-1">文字</td><td class="border px-2 py-1">備註</td><td class="border px-2 py-1">特殊要求</td></tr>
+                                    <tr><td class="border px-2 py-1">created_at</td><td class="border px-2 py-1">時間戳</td><td class="border px-2 py-1">建立時間</td><td class="border px-2 py-1">2024/8/15 下午 3:41:43</td></tr>
+                                    <tr><td class="border px-2 py-1">updated_at</td><td class="border px-2 py-1">時間戳</td><td class="border px-2 py-1">更新時間</td><td class="border px-2 py-1">2024/8/15 下午 3:41:43</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-4 border-t">
+                        <button type="button" onclick="closeModal('sheetFieldsDiagnosticModal')" 
+                            class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                            關閉
+                        </button>
+                        <a href="https://docs.google.com/spreadsheets" target="_blank" 
+                            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            📊 前往 Google Sheets
+                        </a>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
         }
 
         // 診斷結算問題

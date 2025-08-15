@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>知音大使管理後台 - 真實數據版</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // 抑制 Tailwind CSS 生產環境警告
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            }
+        }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
@@ -3483,7 +3491,7 @@
                         partner.total_points_used = (partner.total_points_used || 0) + points;
                     }
                     
-                    showSuccessMessage(\`✅ 成功轉換 \${points.toLocaleString()} 點為 NT$ \${cashAmount.toLocaleString()}！\`);
+                    showSuccessMessage('✅ 成功轉換 ' + points.toLocaleString() + ' 點為 NT$ ' + cashAmount.toLocaleString() + '！');
                     closeModal('pointsToCashModal');
                     displayPartners(allData.partners);
                     

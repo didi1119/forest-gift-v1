@@ -972,7 +972,7 @@
             }).join('');
         }
 
-        // 生成夥伴卡片
+        // 生成夥伴卡片 (簡潔單行風格)
         function generatePartnerCard(partner) {
             const levelClass = getLevelClass(partner.level);
             const levelText = getLevelText(partner.level);
@@ -986,59 +986,53 @@
             const smartActions = generateSmartActions(partner);
             
             return `
-                <div class="partner-card bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-300" 
+                <div class="brand-card hover:shadow-md transition-shadow duration-200" 
                      data-partner-code="${partner.partner_code}">
-                    <div class="p-6">
-                        <!-- 選擇框 -->
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex items-center">
-                                <input type="checkbox" class="partner-selector mr-3 h-4 w-4 text-blue-600 rounded" 
-                                       onchange="updateSelection()" data-partner-code="${partner.partner_code}">
-                                <div class="partner-identity flex items-center space-x-3">
-                                    <!-- 大使頭像 -->
-                                    <div class="partner-avatar w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 
-                                                rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                        ${(partner.name || partner.partner_code || '?')[0]}
-                                    </div>
-                                    <!-- 基本信息 -->
-                                    <div>
-                                        <h3 class="font-bold text-lg text-gray-900">${partner.name || '未設定姓名'}</h3>
-                                        <p class="text-sm text-gray-600">${partner.partner_code}</p>
-                                        <span class="inline-block px-2 py-1 rounded-full text-xs ${levelClass} mt-1">
-                                            ${levelText}
-                                        </span>
-                                    </div>
+                    <div class="flex items-center justify-between py-4 px-6">
+                        <!-- 左側：夥伴資訊 -->
+                        <div class="flex items-center space-x-4">
+                            <input type="checkbox" class="partner-selector h-4 w-4 text-blue-600 rounded border-gray-300" 
+                                   onchange="updateSelection()" data-partner-code="${partner.partner_code}">
+                            
+                            <div class="partner-info">
+                                <div class="flex items-center space-x-2">
+                                    <div class="font-semibold text-stone-800">${partner.name || '未設定姓名'}</div>
+                                    <div class="text-sm text-stone-600">${partner.partner_code}</div>
+                                    <div class="text-xs text-stone-500">${partner.email || ''}</div>
+                                </div>
+                                <div class="mt-1">
+                                    <span class="px-2 py-1 rounded text-xs ${levelClass}">${levelText}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 績效指標 -->
-                        <div class="performance-metrics flex justify-between items-center bg-gray-50 rounded-lg p-3 mb-4">
-                            <div class="metric text-center">
-                                <div class="number text-lg font-bold text-green-600">${completedReferrals}</div>
-                                <div class="label text-xs text-gray-600">完成推薦</div>
+                        <!-- 中間：績效指標 (單行顯示) -->
+                        <div class="flex items-center space-x-8 text-center">
+                            <div>
+                                <div class="font-semibold text-stone-800">${partner.level_progress || 0}</div>
+                                <div class="text-xs text-stone-500">/ ${getNextLevelRequirement(partner.level)}</div>
+                                <div class="text-xs text-stone-400">本年進度</div>
                             </div>
-                            <div class="metric text-center">
-                                <div class="number text-lg font-bold text-blue-600">${totalClicks}</div>
-                                <div class="label text-xs text-gray-600">本月點擊</div>
+                            <div>
+                                <div class="font-semibold text-stone-800">${totalClicks}</div>
+                                <div class="text-xs text-stone-400">點擊數</div>
                             </div>
-                            <div class="metric text-center">
-                                <div class="number text-lg font-bold text-purple-600">${conversionRate}%</div>
-                                <div class="label text-xs text-gray-600">轉換率</div>
+                            <div>
+                                <div class="font-semibold text-green-600">${completedReferrals}</div>
+                                <div class="text-xs text-stone-400">完成入住</div>
                             </div>
-                            <div class="metric text-center">
-                                <div class="number text-lg font-bold text-orange-600">${partner.level_progress || 0}</div>
-                                <div class="label text-xs text-gray-600">年度進度</div>
+                            <div>
+                                <div class="font-semibold text-blue-600">${accommodationBalance.toLocaleString()} 點</div>
+                                <div class="text-xs text-stone-400">可用點數</div>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-amber-600">NT$ ${pendingCash.toLocaleString()}</div>
+                                <div class="text-xs text-stone-400">待支付現金</div>
                             </div>
                         </div>
 
-                        <!-- 財務狀況 -->
-                        <div class="financial-status mb-4">
-                            ${generateFinancialDisplay(accommodationBalance, pendingCash)}
-                        </div>
-
-                        <!-- 智能操作區 -->
-                        <div class="action-zone flex justify-between items-center">
+                        <!-- 右側：操作區 -->
+                        <div class="action-zone">
                             ${smartActions}
                         </div>
                     </div>
@@ -1046,122 +1040,74 @@
             `;
         }
 
-        // 生成財務顯示
-        function generateFinancialDisplay(accommodationBalance, pendingCash) {
-            if (pendingCash > 0) {
-                // 有待支付現金，優先顯示
-                return `
-                    <div class="financial-primary">
-                        <div class="pending-cash bg-orange-50 border border-orange-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <div class="amount text-2xl font-bold text-orange-600">NT$ ${pendingCash.toLocaleString()}</div>
-                                    <div class="label text-sm text-orange-700">待支付現金</div>
-                                    <div class="payment-date text-xs text-orange-600 mt-1">⏰ 預計下月15日前轉帳</div>
-                                </div>
-                                <div class="status-badge bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-medium">
-                                    待結算
-                                </div>
-                            </div>
-                        </div>
-                        ${accommodationBalance > 0 ? `
-                            <div class="accommodation-balance mt-2 text-sm text-gray-600">
-                                另有住宿金 ${accommodationBalance.toLocaleString()} 點
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            } else if (accommodationBalance > 0) {
-                // 只有住宿金
-                const cashEquivalent = Math.floor(accommodationBalance * 0.5);
-                return `
-                    <div class="financial-primary">
-                        <div class="accommodation-balance bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <div class="amount text-2xl font-bold text-blue-600">${accommodationBalance.toLocaleString()}</div>
-                                    <div class="label text-sm text-blue-700">住宿金點數</div>
-                                    <div class="conversion-hint text-xs text-blue-600 mt-1">💡 可轉換 NT$ ${cashEquivalent.toLocaleString()} 現金</div>
-                                </div>
-                                <div class="status-badge bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
-                                    可使用
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                // 沒有餘額
-                return `
-                    <div class="financial-empty text-center py-4 text-gray-400">
-                        <div class="text-3xl mb-2">💼</div>
-                        <div class="text-sm">暫無可用餘額</div>
-                    </div>
-                `;
-            }
-        }
 
-        // 生成智能操作按鈕
+        // 生成智能操作按鈕 (原風格)
         function generateSmartActions(partner) {
             const accommodationBalance = partner.available_points || partner.total_commission_earned || 0;
             const pendingCash = partner.pending_cash || partner.pending_commission || 0;
             
-            let primaryAction = '';
-            let secondaryActions = [];
+            const actions = [];
             
-            // 狀態驅動的操作邏輯
+            // 狀態驅動的操作
             if (pendingCash > 0) {
-                // 有待支付現金 - 優先結算操作
-                primaryAction = `
+                actions.push(`
                     <button onclick="processPayout('${partner.partner_code}')" 
-                            class="primary-action bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                        💰 結算 NT$ ${pendingCash.toLocaleString()}
+                            class="text-orange-600 hover:underline text-xs px-2 py-1 bg-orange-50 rounded">
+                        💰 結算現金
                     </button>
-                `;
-                secondaryActions.push(`
+                `);
+                actions.push(`
                     <button onclick="revertToCash('${partner.partner_code}')" 
-                            class="text-orange-600 hover:text-orange-700 text-sm">
+                            class="text-blue-600 hover:underline text-xs px-2 py-1 bg-blue-50 rounded">
                         🔄 改回住宿金
                     </button>
                 `);
             } else if (accommodationBalance > 0) {
-                // 有住宿金 - 顯示轉現金選項
-                const cashAmount = Math.floor(accommodationBalance * 0.5);
-                primaryAction = `
+                actions.push(`
                     <button onclick="quickConvertToCash('${partner.partner_code}')" 
-                            class="primary-action bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                        💸 轉為現金 (NT$ ${cashAmount.toLocaleString()})
+                            class="text-green-600 hover:underline text-xs px-2 py-1 bg-green-50 rounded">
+                        💸 轉換現金
                     </button>
-                `;
+                `);
             }
             
-            // 通用管理操作
-            secondaryActions.push(`
-                <div class="relative">
+            // 通用操作 (保持原有風格)
+            actions.push(`
+                <button onclick="viewPartnerDetails('${partner.partner_code}')" 
+                        class="text-blue-600 hover:underline text-xs px-2 py-1 bg-blue-50 rounded">
+                    📋 詳情
+                </button>
+            `);
+            actions.push(`
+                <button onclick="manageAccommodationPoints('${partner.partner_code}')" 
+                        class="text-purple-600 hover:underline text-xs px-2 py-1 bg-purple-50 rounded">
+                    🏨 住宿金折抵
+                </button>
+            `);
+            
+            // 管理選單
+            actions.push(`
+                <div class="relative inline-block">
                     <button onclick="toggleManagementDropdown('${partner.partner_code}')" 
-                            class="text-gray-600 hover:text-gray-700 flex items-center space-x-1 text-sm">
-                        <span>⚙️ 管理</span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
+                            class="text-gray-600 hover:underline text-xs px-2 py-1 bg-gray-50 rounded">
+                        ⚙️ 更多
                     </button>
-                    <div id="management-${partner.partner_code}" class="hidden absolute right-0 top-full mt-2 bg-white border rounded-lg shadow-lg z-10 min-w-48">
-                        <button onclick="viewPartnerDetails('${partner.partner_code}')" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">📊 查看詳細記錄</button>
-                        <button onclick="editPartner('${partner.partner_code}')" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">📝 編輯基本資料</button>
-                        <button onclick="quickEditCommission('${partner.partner_code}')" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">🎯 調整佣金設定</button>
-                        <button onclick="manageAccommodationPoints('${partner.partner_code}')" class="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">🏨 住宿金折抵</button>
-                        <hr class="my-1">
-                        <button onclick="suspendPartner('${partner.partner_code}')" class="block w-full text-left px-4 py-2 hover:bg-red-50 text-sm text-red-600">🗑️ 停用帳戶</button>
+                    <div id="management-${partner.partner_code}" class="hidden absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-20 min-w-40">
+                        <button onclick="editPartner('${partner.partner_code}')" class="block w-full text-left px-3 py-2 hover:bg-gray-50 text-xs text-gray-700">📝 編輯資料</button>
+                        <button onclick="quickEditCommission('${partner.partner_code}')" class="block w-full text-left px-3 py-2 hover:bg-gray-50 text-xs text-gray-700">🎯 佣金設定</button>
+                        <button onclick="createPartnerPayout('${partner.partner_code}')" class="block w-full text-left px-3 py-2 hover:bg-gray-50 text-xs text-gray-700">💳 手動結算</button>
                     </div>
                 </div>
             `);
             
             return `
-                <div class="flex items-center space-x-3">
-                    ${primaryAction}
-                    <div class="flex items-center space-x-2">
-                        ${secondaryActions.join('')}
-                    </div>
+                <div class="flex flex-col space-y-1">
+                    ${actions.slice(0, 3).join('')}
+                    ${actions.length > 3 ? `
+                        <div class="flex space-x-1">
+                            ${actions.slice(3).join('')}
+                        </div>
+                    ` : ''}
                 </div>
             `;
         }

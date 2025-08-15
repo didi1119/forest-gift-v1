@@ -457,17 +457,10 @@ function manageAccommodationPoints(partnerCode) {
 
 // 創建住宿金點數管理模態框
 function createAccommodationPointsModal(partner) {
-    // 計算住宿金點數（假設住宿金結算=點數）
-    const accommodationPayouts = allData.payouts.filter(p => 
-        p.partner_code === partner.partner_code && 
-        p.payout_type === 'ACCOMMODATION' && 
-        p.payout_status === 'COMPLETED'
-    );
-    
-    const totalPoints = accommodationPayouts.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-    // 這裡應該要有已使用的點數記錄，目前先假設為0
-    const usedPoints = 0; 
-    const availablePoints = totalPoints - usedPoints;
+    // 直接使用夥伴資料中的可用點數和已使用點數
+    const availablePoints = partner.available_points || partner.total_commission_earned || 0;
+    const usedPoints = partner.total_points_used || 0;
+    const totalPoints = availablePoints + usedPoints;
     
     const modal = document.createElement('div');
     modal.id = 'accommodationPointsModal';
@@ -635,12 +628,32 @@ async function processPointsDeduction(partnerCode) {
         console.log('📥 點數抵扣 - 後端回應:', result);
         
         setTimeout(() => {
-            showSuccessMessage('✅ 住宿金點數抵扣處理中...');
+            // 立即更新前端數據
+            const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
+            if (partnerIndex !== -1) {
+                const partner = allData.partners[partnerIndex];
+                // 扣除可用點數
+                const currentPoints = partner.available_points || partner.total_commission_earned || 0;
+                partner.available_points = Math.max(0, currentPoints - deductAmount);
+                partner.total_points_used = (partner.total_points_used || 0) + deductAmount;
+                
+                console.log(`✅ 已扣除 ${partnerCode} 的 ${deductAmount} 點數`);
+                console.log(`剩餘可用點數: ${partner.available_points}`);
+            }
+            
+            showSuccessMessage(`✅ 成功抵扣 ${deductAmount.toLocaleString()} 住宿金點數！`);
             closeModal('accommodationPointsModal');
             
-            // 重新載入數據
+            // 重新顯示夥伴列表以反映更新
+            if (typeof displayPartners === 'function') {
+                displayPartners(allData.partners);
+            }
+            
+            // 背景重新載入數據確保一致性
             setTimeout(() => {
-                loadRealData();
+                loadRealData().catch(error => {
+                    console.log('⚠️ 背景數據重載失敗（不影響操作）:', error.message);
+                });
             }, 2000);
         }, 1000);
         

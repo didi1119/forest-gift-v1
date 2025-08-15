@@ -321,28 +321,28 @@ function handleCreateBooking(data, e) {
     
     const timestamp = new Date();
     const bookingData = [
-      '', // ID (自動編號)
-      data.partner_code || null, // partner_code
-      data.guest_name || '',
-      data.guest_phone || '',
-      data.guest_email || '',
-      data.checkin_date || '',
-      data.checkout_date || '',
-      parseInt(data.room_price) || 0, // room_price
-      data.booking_source || 'MANUAL_ENTRY',
-      data.stay_status || 'PENDING', // stay_status
-      data.payment_status || 'PENDING', // payment_status
-      'NOT_ELIGIBLE', // commission_status - 預設不符合
-      0, // commission_amount - 預設0
-      'ACCOMMODATION', // commission_type - 預設住宿金
-      false, // is_first_referral_bonus
-      0, // first_referral_bonus_amount
-      '', // manually_confirmed_by
-      '', // manually_confirmed_at
-      data.notes || '',
-      data.bank_account_last5 || '', // bank_account_last5 - 新增匯款帳號末五碼
-      timestamp, // created_at
-      timestamp  // updated_at
+      '', // ID (自動編號) - A列
+      data.partner_code || null, // partner_code - B列
+      data.guest_name || '', // guest_name - C列
+      data.guest_phone || '', // guest_phone - D列
+      data.guest_email || '', // guest_email - E列
+      data.bank_account_last5 || '', // bank_account_last5 - F列 ⭐ 移到正確位置
+      data.checkin_date || '', // checkin_date - G列
+      data.checkout_date || '', // checkout_date - H列
+      parseInt(data.room_price) || 0, // room_price - I列
+      data.booking_source || 'MANUAL_ENTRY', // booking_source - J列
+      data.stay_status || 'PENDING', // stay_status - K列
+      data.payment_status || 'PENDING', // payment_status - L列
+      'NOT_ELIGIBLE', // commission_status - M列
+      0, // commission_amount - N列
+      'ACCOMMODATION', // commission_type - O列
+      false, // is_first_referral_bonus - P列
+      0, // first_referral_bonus_amount - Q列
+      '', // manually_confirmed_by - R列
+      '', // manually_confirmed_at - S列
+      data.notes || '', // notes - T列
+      timestamp, // created_at - U列
+      timestamp  // updated_at - V列
     ];
     
     Logger.log('準備插入資料到 Bookings 工作表');
@@ -441,9 +441,9 @@ function handleConfirmCheckinCompletion(data, e) {
       Logger.log('查找條件 - 姓名: ' + data.guest_name + ', 電話: ' + data.guest_phone + ', 入住日期: ' + data.checkin_date);
       
       for (let i = 1; i < bookingValues.length; i++) {
-        const rowGuestName = bookingValues[i][2]; // guest_name 在第3列 (索引2)
-        const rowGuestPhone = String(bookingValues[i][3]); // guest_phone 在第4列 (索引3)
-        const rowCheckinDate = bookingValues[i][5]; // checkin_date 在第6列 (索引5)
+        const rowGuestName = bookingValues[i][2]; // guest_name 在第3列 (索引2) - C列
+        const rowGuestPhone = String(bookingValues[i][3]); // guest_phone 在第4列 (索引3) - D列
+        const rowCheckinDate = bookingValues[i][6]; // checkin_date 在第7列 (索引6) - G列 ⭐ 修復位置
         
         Logger.log(`🔍 第${i+1}行資料 - 姓名: ${rowGuestName}, 電話: ${rowGuestPhone}, 入住: ${formatDate(rowCheckinDate)}`);
         
@@ -483,16 +483,16 @@ function handleConfirmCheckinCompletion(data, e) {
     }
     
     
-    // 更新訂房狀態為已完成
-    bookingsSheet.getRange(bookingRowIndex, 10).setValue('COMPLETED'); // stay_status
-    bookingsSheet.getRange(bookingRowIndex, 12).setValue('CALCULATED'); // commission_status
-    bookingsSheet.getRange(bookingRowIndex, 13).setValue(data.commission_amount || 0); // commission_amount
-    bookingsSheet.getRange(bookingRowIndex, 14).setValue(data.commission_type || 'CASH'); // commission_type
-    bookingsSheet.getRange(bookingRowIndex, 15).setValue(data.is_first_referral_bonus || false); // is_first_referral_bonus
-    bookingsSheet.getRange(bookingRowIndex, 16).setValue(data.first_referral_bonus_amount || 0); // first_referral_bonus_amount
-    bookingsSheet.getRange(bookingRowIndex, 17).setValue('admin'); // manually_confirmed_by
-    bookingsSheet.getRange(bookingRowIndex, 18).setValue(timestamp); // manually_confirmed_at
-    bookingsSheet.getRange(bookingRowIndex, 21).setValue(timestamp); // updated_at
+    // 更新訂房狀態為已完成 - 按照正確的欄位順序
+    bookingsSheet.getRange(bookingRowIndex, 11).setValue('COMPLETED'); // stay_status - K列 ⭐ 修復位置
+    bookingsSheet.getRange(bookingRowIndex, 13).setValue('CALCULATED'); // commission_status - M列 ⭐ 修復位置  
+    bookingsSheet.getRange(bookingRowIndex, 14).setValue(data.commission_amount || 0); // commission_amount - N列 ⭐ 修復位置
+    bookingsSheet.getRange(bookingRowIndex, 15).setValue(data.commission_type || 'CASH'); // commission_type - O列 ⭐ 修復位置
+    bookingsSheet.getRange(bookingRowIndex, 16).setValue(data.is_first_referral_bonus || false); // is_first_referral_bonus - P列 ⭐ 修復位置
+    bookingsSheet.getRange(bookingRowIndex, 17).setValue(data.first_referral_bonus_amount || 0); // first_referral_bonus_amount - Q列 ⭐ 修復位置
+    bookingsSheet.getRange(bookingRowIndex, 18).setValue('admin'); // manually_confirmed_by - R列 ⭐ 修復位置
+    bookingsSheet.getRange(bookingRowIndex, 19).setValue(timestamp); // manually_confirmed_at - S列 ⭐ 修復位置
+    bookingsSheet.getRange(bookingRowIndex, 22).setValue(timestamp); // updated_at - V列 ⭐ 修復位置
     
     // 取得實際的 booking ID (如果有的話)
     const actualBookingId = bookingData[0] || 'N/A';
@@ -689,19 +689,19 @@ function handleUpdateBooking(data, e) {
     }
     
     // 2. 更新訂房資料
-    // 按照 setup-sheets-headers.js 中的欄位順序更新
-    bookingsSheet.getRange(bookingRowIndex, 2).setValue(data.partner_code || null); // partner_code
-    bookingsSheet.getRange(bookingRowIndex, 3).setValue(data.guest_name || ''); // guest_name
-    bookingsSheet.getRange(bookingRowIndex, 4).setValue(data.guest_phone || ''); // guest_phone
-    bookingsSheet.getRange(bookingRowIndex, 5).setValue(data.guest_email || ''); // guest_email
-    bookingsSheet.getRange(bookingRowIndex, 6).setValue(data.checkin_date || ''); // checkin_date
-    bookingsSheet.getRange(bookingRowIndex, 7).setValue(data.checkout_date || ''); // checkout_date
-    bookingsSheet.getRange(bookingRowIndex, 8).setValue(parseInt(data.room_price) || 0); // room_price
-    bookingsSheet.getRange(bookingRowIndex, 10).setValue(data.stay_status || 'PENDING'); // stay_status
-    bookingsSheet.getRange(bookingRowIndex, 11).setValue(data.payment_status || 'PENDING'); // payment_status
-    bookingsSheet.getRange(bookingRowIndex, 19).setValue(data.notes || ''); // notes
-    bookingsSheet.getRange(bookingRowIndex, 20).setValue(data.bank_account_last5 || ''); // bank_account_last5
-    bookingsSheet.getRange(bookingRowIndex, 22).setValue(timestamp); // updated_at (adjusted for new column)
+    // 按照正確的欄位順序更新
+    bookingsSheet.getRange(bookingRowIndex, 2).setValue(data.partner_code || null); // partner_code - B列
+    bookingsSheet.getRange(bookingRowIndex, 3).setValue(data.guest_name || ''); // guest_name - C列
+    bookingsSheet.getRange(bookingRowIndex, 4).setValue(data.guest_phone || ''); // guest_phone - D列
+    bookingsSheet.getRange(bookingRowIndex, 5).setValue(data.guest_email || ''); // guest_email - E列
+    bookingsSheet.getRange(bookingRowIndex, 6).setValue(data.bank_account_last5 || ''); // bank_account_last5 - F列 ⭐ 修復位置
+    bookingsSheet.getRange(bookingRowIndex, 7).setValue(data.checkin_date || ''); // checkin_date - G列
+    bookingsSheet.getRange(bookingRowIndex, 8).setValue(data.checkout_date || ''); // checkout_date - H列
+    bookingsSheet.getRange(bookingRowIndex, 9).setValue(parseInt(data.room_price) || 0); // room_price - I列
+    bookingsSheet.getRange(bookingRowIndex, 11).setValue(data.stay_status || 'PENDING'); // stay_status - K列
+    bookingsSheet.getRange(bookingRowIndex, 12).setValue(data.payment_status || 'PENDING'); // payment_status - L列
+    bookingsSheet.getRange(bookingRowIndex, 20).setValue(data.notes || ''); // notes - T列
+    bookingsSheet.getRange(bookingRowIndex, 22).setValue(timestamp); // updated_at - V列
     
     Logger.log('訂房更新處理完成: 訂房ID ' + bookingId);
     
@@ -783,9 +783,9 @@ function handleDeleteBooking(data, e) {
       Logger.log('查找條件 - 姓名: ' + data.guest_name + ', 電話: ' + data.guest_phone + ', 入住日期: ' + data.checkin_date);
       
       for (let i = 1; i < bookingValues.length; i++) {
-        const rowGuestName = bookingValues[i][2]; // guest_name 在第3列 (索引2)
-        const rowGuestPhone = String(bookingValues[i][3]); // guest_phone 在第4列 (索引3)
-        const rowCheckinDate = bookingValues[i][5]; // checkin_date 在第6列 (索引5)
+        const rowGuestName = bookingValues[i][2]; // guest_name 在第3列 (索引2) - C列
+        const rowGuestPhone = String(bookingValues[i][3]); // guest_phone 在第4列 (索引3) - D列
+        const rowCheckinDate = bookingValues[i][6]; // checkin_date 在第7列 (索引6) - G列 ⭐ 修復位置
         
         Logger.log(`🔍 第${i+1}行資料 - 姓名: ${rowGuestName}, 電話: ${rowGuestPhone}, 入住: ${formatDate(rowCheckinDate)}`);
         

@@ -133,38 +133,40 @@ async function saveCommissionChanges(partnerCode) {
             adjustment_reason: document.getElementById('edit_commission_reason').value.trim()
         };
         
-        // 使用表單提交方式
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = APPS_SCRIPT_URL;
-        form.target = 'hiddenFrame';
-        form.style.display = 'none';
+        // 使用 fetch 提交方式，確保按照標準欄位順序發送數據
+        const params = new URLSearchParams();
         
+        // 首先添加 action
+        params.append('action', formData.action);
+        
+        // 添加其他參數（佣金管理相關）
         Object.keys(formData).forEach(key => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = formData[key];
-            form.appendChild(input);
+            if (key !== 'action') {
+                params.append(key, formData[key] || '');
+            }
         });
         
-        // 確保隱藏iframe存在
-        let hiddenFrame = document.getElementById('hiddenFrame');
-        if (!hiddenFrame) {
-            hiddenFrame = document.createElement('iframe');
-            hiddenFrame.id = 'hiddenFrame';
-            hiddenFrame.name = 'hiddenFrame';
-            hiddenFrame.style.display = 'none';
-            document.body.appendChild(hiddenFrame);
+        console.log('📤 佣金管理 - 發送數據:', formData);
+        
+        const response = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: params.toString()
+        });
+        
+        console.log('📡 佣金管理 - 收到回應:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
         
-        document.body.appendChild(form);
-        form.submit();
+        const result = await response.text();
+        console.log('📥 佣金管理 - 後端回應:', result);
         
-        // 監聽 iframe 載入事件來確認提交結果
-        const iframe = document.getElementById('hiddenFrame');
-        iframe.onload = function() {
-            setTimeout(() => {
+        // 延時處理結果
+        setTimeout(() => {
                 // 立即更新前端數據
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                 if (partnerIndex !== -1) {
@@ -188,8 +190,6 @@ async function saveCommissionChanges(partnerCode) {
                 }).catch(error => {
                     console.error('重新載入數據失敗:', error);
                 });
-                
-                document.body.removeChild(form);
             }, 1500);
         };
         
@@ -396,42 +396,52 @@ async function submitMixedPayout(partnerCode) {
 
 // 創建單一類型結算
 async function createSinglePayout(partnerCode, payoutType, amount, notes) {
-    return new Promise((resolve, reject) => {
-        try {
-            const formData = {
-                action: 'create_payout',
-                partner_code: partnerCode,
-                payout_type: payoutType,
-                amount: amount,
-                notes: notes
-            };
-            
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = APPS_SCRIPT_URL;
-            form.target = 'hiddenFrame';
-            form.style.display = 'none';
-            
-            Object.keys(formData).forEach(key => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = formData[key];
-                form.appendChild(input);
-            });
-            
-            document.body.appendChild(form);
-            form.submit();
-            
-            setTimeout(() => {
-                document.body.removeChild(form);
-                resolve();
-            }, 500);
-            
-        } catch (error) {
-            reject(error);
+    try {
+        const formData = {
+            action: 'create_payout',
+            partner_code: partnerCode,
+            payout_type: payoutType,
+            amount: amount,
+            notes: notes
+        };
+        
+        // 使用 fetch 方式，確保按照標準順序發送數據
+        const params = new URLSearchParams();
+        
+        // 首先添加 action
+        params.append('action', formData.action);
+        
+        // 添加其他參數
+        Object.keys(formData).forEach(key => {
+            if (key !== 'action') {
+                params.append(key, formData[key] || '');
+            }
+        });
+        
+        console.log('📤 創建結算 - 發送數據:', formData);
+        
+        const response = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: params.toString()
+        });
+        
+        console.log('📡 創建結算 - 收到回應:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
-    });
+        
+        const result = await response.text();
+        console.log('📥 創建結算 - 後端回應:', result);
+        
+        return result;
+        
+    } catch (error) {
+        throw error;
+    }
 }
 
 // 住宿金點數管理
@@ -592,28 +602,41 @@ async function processPointsDeduction(partnerCode) {
             notes: notes
         };
         
-        // 使用表單提交
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = APPS_SCRIPT_URL;
-        form.target = 'hiddenFrame';
-        form.style.display = 'none';
+        // 使用 fetch 方式，確保按照標準順序發送數據
+        const params = new URLSearchParams();
         
+        // 首先添加 action
+        params.append('action', formData.action);
+        
+        // 添加其他參數
         Object.keys(formData).forEach(key => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = formData[key];
-            form.appendChild(input);
+            if (key !== 'action') {
+                params.append(key, formData[key] || '');
+            }
         });
         
-        document.body.appendChild(form);
-        form.submit();
+        console.log('📤 點數抵扣 - 發送數據:', formData);
+        
+        const response = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: params.toString()
+        });
+        
+        console.log('📡 點數抵扣 - 收到回應:', response.status, response.statusText);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+        }
+        
+        const result = await response.text();
+        console.log('📥 點數抵扣 - 後端回應:', result);
         
         setTimeout(() => {
             showSuccessMessage('✅ 住宿金點數抵扣處理中...');
             closeModal('accommodationPointsModal');
-            document.body.removeChild(form);
             
             // 重新載入數據
             setTimeout(() => {

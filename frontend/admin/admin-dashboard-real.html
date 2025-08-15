@@ -123,6 +123,9 @@
             <button onclick="showTab('analytics')" id="tab-analytics" class="tab-button">
                 📈 數據分析
             </button>
+            <button onclick="showTab('linkgen')" id="tab-linkgen" class="tab-button">
+                🔗 連結生成器
+            </button>
         </div>
 
         <!-- 概覽儀表標籤內容 -->
@@ -301,6 +304,137 @@
                             <div id="popularCards" class="space-y-2">
                                 <div class="loading-spinner"></div> 載入中...
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 連結生成器標籤內容 -->
+        <div id="content-linkgen" class="tab-content hidden">
+            <div class="brand-card p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-serif text-2xl font-semibold brand-accent">🔗 知音大使專屬連結生成器</h2>
+                    <div class="flex space-x-3">
+                        <button onclick="loadPartnersForLinkGen()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                            🔄 重新載入夥伴
+                        </button>
+                        <a href="link-generator-form.html" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                            📝 獨立頁面版本
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 生成表單 -->
+                <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                    <h3 class="font-bold text-lg mb-4">生成專屬連結</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">選擇夥伴或輸入新夥伴</label>
+                            <select id="linkgen_partner_select" onchange="onPartnerSelect()" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                                <option value="">-- 選擇現有夥伴或新增 --</option>
+                                <option value="new">➕ 新增夥伴</option>
+                            </select>
+                        </div>
+                        
+                        <div id="linkgen_new_partner_name" class="hidden">
+                            <label class="block text-sm font-medium text-stone-700 mb-2">夥伴姓名 *</label>
+                            <input type="text" id="linkgen_partnerName" placeholder="例：王小明" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">夥伴代碼 *</label>
+                            <input type="text" id="linkgen_partnerCode" placeholder="例：WANG001" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                            <p class="text-xs text-stone-500 mt-1">建議格式：大寫字母+數字</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">Email</label>
+                            <input type="email" id="linkgen_partnerEmail" placeholder="partner@example.com" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">優惠券代碼</label>
+                            <input type="text" id="linkgen_couponCode" placeholder="例：FOREST_WANG001" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                        </div>
+                        
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-stone-700 mb-2">專屬優惠券連結 *</label>
+                            <input type="url" id="linkgen_couponUrl" placeholder="例：https://lin.ee/abc123" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                            <p class="text-xs text-stone-500 mt-1">請貼上從 LINE 官方帳號後台取得的專屬優惠券連結</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 銀行帳戶資訊 -->
+                    <div class="bg-white p-4 rounded-lg mb-6">
+                        <h4 class="font-semibold text-stone-800 mb-4">💰 匯款帳戶資訊</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-stone-700 mb-2">銀行名稱</label>
+                                <input type="text" id="linkgen_bankName" placeholder="例：台灣銀行" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-stone-700 mb-2">銀行代碼</label>
+                                <input type="text" id="linkgen_bankCode" placeholder="例：004" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-stone-700 mb-2">分行名稱</label>
+                                <input type="text" id="linkgen_bankBranch" placeholder="例：信義分行" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-stone-700 mb-2">戶名</label>
+                                <input type="text" id="linkgen_bankAccountName" placeholder="帳戶持有人姓名" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                            </div>
+                            
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-stone-700 mb-2">帳號</label>
+                                <input type="text" id="linkgen_bankAccountNumber" placeholder="例：1234567890123" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-3">
+                        <button onclick="generatePartnerLinks()" class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
+                            🔗 生成專屬連結
+                        </button>
+                        
+                        <button onclick="savePartnerToSheets()" class="flex-1 bg-green-800 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-900 transition duration-300">
+                            💾 儲存到 Google Sheets
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 生成結果 -->
+                <div id="linkgen_resultSection" class="bg-white p-6 rounded-lg hidden">
+                    <h3 class="font-bold text-lg mb-4">生成結果</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">主頁連結</label>
+                            <div class="bg-gray-100 p-3 rounded font-mono text-sm break-all" id="linkgen_landingLink"></div>
+                            <button onclick="copyLinkText('linkgen_landingLink')" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                📋 複製連結
+                            </button>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-2">LINE 官方帳號連結</label>
+                            <div class="bg-gray-100 p-3 rounded font-mono text-sm break-all" id="linkgen_couponLink"></div>
+                            <button onclick="copyLinkText('linkgen_couponLink')" class="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                                📋 複製連結
+                            </button>
+                        </div>
+                        
+                        <div class="bg-amber-50 p-4 rounded-lg">
+                            <h4 class="font-semibold text-amber-800 mb-2">📱 分享範本</h4>
+                            <div class="text-sm text-amber-700 whitespace-pre-wrap" id="linkgen_shareTemplate"></div>
+                            <button onclick="copyLinkText('linkgen_shareTemplate')" class="mt-3 px-3 py-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700">
+                                📋 複製範本
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -3111,9 +3245,239 @@
             document.body.appendChild(modal);
         }
 
+        // ========== 連結生成器功能 ==========
+        let linkgenGeneratedData = null;
+
+        // 載入夥伴列表到選擇器
+        async function loadPartnersForLinkGen() {
+            try {
+                if (allData.partners.length === 0) {
+                    await loadRealData();
+                }
+                
+                const select = document.getElementById('linkgen_partner_select');
+                select.innerHTML = `
+                    <option value="">-- 選擇現有夥伴或新增 --</option>
+                    <option value="new">➕ 新增夥伴</option>
+                `;
+                
+                allData.partners.forEach(partner => {
+                    const option = document.createElement('option');
+                    option.value = partner.partner_code;
+                    option.textContent = `${partner.name} (${partner.partner_code})`;
+                    select.appendChild(option);
+                });
+                
+                showSuccessMessage('✅ 夥伴列表已載入');
+            } catch (error) {
+                console.error('載入夥伴失敗:', error);
+                showErrorMessage('載入夥伴失敗：' + error.message);
+            }
+        }
+
+        // 選擇夥伴時的處理
+        function onPartnerSelect() {
+            const select = document.getElementById('linkgen_partner_select');
+            const selectedValue = select.value;
+            const nameDiv = document.getElementById('linkgen_new_partner_name');
+            
+            if (selectedValue === 'new') {
+                // 顯示姓名輸入欄位
+                nameDiv.classList.remove('hidden');
+                // 清空所有欄位
+                document.getElementById('linkgen_partnerName').value = '';
+                document.getElementById('linkgen_partnerCode').value = '';
+                document.getElementById('linkgen_partnerEmail').value = '';
+                document.getElementById('linkgen_couponCode').value = '';
+                document.getElementById('linkgen_couponUrl').value = '';
+                document.getElementById('linkgen_bankName').value = '';
+                document.getElementById('linkgen_bankCode').value = '';
+                document.getElementById('linkgen_bankBranch').value = '';
+                document.getElementById('linkgen_bankAccountName').value = '';
+                document.getElementById('linkgen_bankAccountNumber').value = '';
+            } else if (selectedValue) {
+                // 選擇現有夥伴
+                nameDiv.classList.add('hidden');
+                const partner = allData.partners.find(p => p.partner_code === selectedValue);
+                if (partner) {
+                    document.getElementById('linkgen_partnerCode').value = partner.partner_code;
+                    document.getElementById('linkgen_partnerEmail').value = partner.email || '';
+                    document.getElementById('linkgen_couponCode').value = partner.coupon_code || '';
+                    document.getElementById('linkgen_couponUrl').value = partner.coupon_url || '';
+                    document.getElementById('linkgen_bankName').value = partner.bank_name || '';
+                    document.getElementById('linkgen_bankCode').value = partner.bank_code || '';
+                    document.getElementById('linkgen_bankBranch').value = partner.bank_branch || '';
+                    document.getElementById('linkgen_bankAccountName').value = partner.bank_account_name || '';
+                    document.getElementById('linkgen_bankAccountNumber').value = partner.bank_account_number || '';
+                }
+            } else {
+                // 未選擇
+                nameDiv.classList.add('hidden');
+            }
+        }
+
+        // 生成連結
+        async function generatePartnerLinks() {
+            const select = document.getElementById('linkgen_partner_select');
+            const selectedValue = select.value;
+            
+            let partnerName = '';
+            const partnerCode = document.getElementById('linkgen_partnerCode').value.trim();
+            const couponUrl = document.getElementById('linkgen_couponUrl').value.trim();
+            
+            if (selectedValue === 'new') {
+                partnerName = document.getElementById('linkgen_partnerName').value.trim();
+                if (!partnerName) {
+                    showErrorMessage('請填寫夥伴姓名');
+                    return;
+                }
+            } else if (selectedValue) {
+                const partner = allData.partners.find(p => p.partner_code === selectedValue);
+                partnerName = partner ? partner.name : '';
+            } else {
+                showErrorMessage('請選擇夥伴或新增夥伴');
+                return;
+            }
+            
+            if (!partnerCode) {
+                showErrorMessage('請填寫夥伴代碼');
+                return;
+            }
+            
+            if (!couponUrl) {
+                showErrorMessage('請提供專屬優惠券連結');
+                return;
+            }
+            
+            // 顯示結果區域
+            document.getElementById('linkgen_resultSection').classList.remove('hidden');
+            
+            // 生成連結
+            const landingUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=landing`;
+            const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
+            
+            // 生成分享範本
+            const shareText = `🌲 來自靜謐森林的特別邀請
+
+親愛的朋友，我想與你分享一個很特別的地方 —— 一片能讓心靈真正休息的森林。
+
+這裡不只是住宿，更是一場回到內心家園的旅程。我為你準備了一份專屬的森林禮物，希望能為你的生活帶來一些不一樣的寧靜與感動。
+
+🎁 點擊連結，開始你的森林之旅：
+${landingUrl}
+
+期待你也能在這裡，找到屬於自己的那份安靜。
+
+—— ${partnerName} 真誠推薦 ❤️`;
+            
+            // 保存生成的資料
+            linkgenGeneratedData = {
+                action: 'create_partner',
+                partner_code: partnerCode,
+                name: partnerName,
+                email: document.getElementById('linkgen_partnerEmail').value.trim(),
+                coupon_code: document.getElementById('linkgen_couponCode').value.trim(),
+                coupon_url: couponUrl,
+                landing_link: landingUrl,
+                coupon_link: trackedCouponUrl,
+                bank_name: document.getElementById('linkgen_bankName').value.trim(),
+                bank_code: document.getElementById('linkgen_bankCode').value.trim(),
+                bank_branch: document.getElementById('linkgen_bankBranch').value.trim(),
+                bank_account_name: document.getElementById('linkgen_bankAccountName').value.trim(),
+                bank_account_number: document.getElementById('linkgen_bankAccountNumber').value.trim()
+            };
+            
+            // 顯示結果
+            document.getElementById('linkgen_landingLink').textContent = landingUrl;
+            document.getElementById('linkgen_couponLink').textContent = trackedCouponUrl;
+            document.getElementById('linkgen_shareTemplate').textContent = shareText;
+            
+            showSuccessMessage('✅ 連結生成成功！');
+            
+            // 滾動到結果區域
+            document.getElementById('linkgen_resultSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 儲存到 Google Sheets
+        async function savePartnerToSheets() {
+            if (!linkgenGeneratedData) {
+                showErrorMessage('請先生成連結');
+                return;
+            }
+            
+            try {
+                // 使用表單提交方式
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+                
+                // 添加所有數據作為隱藏輸入
+                for (const [key, value] of Object.entries(linkgenGeneratedData)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value || '';
+                    form.appendChild(input);
+                }
+                
+                // 確保隱藏iframe存在
+                let hiddenFrame = document.getElementById('hiddenFrame');
+                if (!hiddenFrame) {
+                    hiddenFrame = document.createElement('iframe');
+                    hiddenFrame.id = 'hiddenFrame';
+                    hiddenFrame.name = 'hiddenFrame';
+                    hiddenFrame.style.display = 'none';
+                    document.body.appendChild(hiddenFrame);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
+                
+                // 延時處理結果
+                setTimeout(() => {
+                    showSuccessMessage('✅ 資料已儲存到 Google Sheets！');
+                    
+                    // 重新載入數據
+                    loadRealData().then(() => {
+                        loadPartnersForLinkGen();
+                    });
+                    
+                    document.body.removeChild(form);
+                }, 2000);
+                
+            } catch (error) {
+                console.error('儲存失敗:', error);
+                showErrorMessage('❌ 儲存失敗：' + error.message);
+            }
+        }
+
+        // 複製文字
+        function copyLinkText(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent || element.innerText;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showSuccessMessage('✅ 已複製到剪貼簿');
+            }).catch(err => {
+                console.error('複製失敗:', err);
+                // 退化方案：選取文字
+                const range = document.createRange();
+                range.selectNode(element);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                alert('請按 Ctrl+C 複製');
+            });
+        }
+
         // 頁面載入時執行
         document.addEventListener('DOMContentLoaded', () => {
             showTab('overview');
+            // 自動載入夥伴列表
+            setTimeout(() => {
+                loadPartnersForLinkGen();
+            }, 1000);
         });
     </script>
     <script src="payout-functions.js"></script>

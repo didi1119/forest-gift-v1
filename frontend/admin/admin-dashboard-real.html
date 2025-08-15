@@ -446,6 +446,31 @@
         // Apps Script API 配置
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
         
+        // 檢查 Apps Script 連線狀態
+        async function checkAppsScriptConnection() {
+            try {
+                console.log('🔍 檢查 Apps Script 連線...');
+                const testUrl = `${APPS_SCRIPT_URL}?action=test`;
+                
+                // 嘗試使用 fetch
+                const response = await fetch(testUrl, {
+                    method: 'GET',
+                    mode: 'no-cors' // 避免 CORS 問題
+                });
+                
+                console.log('✅ Apps Script 連線測試完成');
+                return true;
+            } catch (error) {
+                console.error('❌ Apps Script 連線失敗:', error);
+                showErrorMessage(`Apps Script 連線失敗。請檢查：
+1. 開啟 google-apps-script-fix.html 查看修復指南
+2. 確認 Apps Script 已正確部署
+3. 權限設定為「任何人」
+4. 執行身分為「我」`);
+                return false;
+            }
+        }
+        
         // 全域變數
         let allData = {
             partners: [],
@@ -2195,7 +2220,7 @@
         }
 
         // 創建訂單編輯模態框
-        function createBookingEditModal(booking, index) {
+        function createBookingEditModal(booking, bookingIndex) {
             // 格式化日期為 HTML date input 需要的格式
             const formatDateForInput = (dateStr) => {
                 if (!dateStr) return '';
@@ -2355,7 +2380,9 @@
             const form = modal.querySelector('#editBookingForm');
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
-                saveBookingChanges(booking.id);
+                // 使用 booking.id 或 bookingIndex 作為標識符
+                const bookingIdentifier = booking.id || bookingIndex;
+                saveBookingChanges(bookingIdentifier);
             });
 
             return modal;
@@ -2437,11 +2464,21 @@
         }
 
         // 儲存訂單變更
-        async function saveBookingChanges(bookingId) {
+        async function saveBookingChanges(bookingIdentifier) {
             try {
+                // bookingIdentifier 可能是 booking.id 或陣列索引
+                const booking = typeof bookingIdentifier === 'number' 
+                    ? allData.bookings[bookingIdentifier]
+                    : allData.bookings.find(b => b.id == bookingIdentifier);
+                    
+                if (!booking) {
+                    showErrorMessage('找不到訂房記錄');
+                    return;
+                }
+                
                 const formData = {
                     action: 'update_booking',
-                    booking_id: bookingId,
+                    booking_id: booking.id || bookingIdentifier,
                     guest_name: document.getElementById('edit_guest_name').value.trim(),
                     guest_phone: document.getElementById('edit_guest_phone').value.trim(),
                     guest_email: document.getElementById('edit_guest_email').value.trim(),
@@ -2500,10 +2537,13 @@
                 // 延時處理結果（因為CORS限制無法讀取iframe內容）
                 setTimeout(() => {
                     // 立即更新前端數據
-                    const bookingIndex = allData.bookings.findIndex(b => b.id == booking.id);
-                    if (bookingIndex !== -1) {
-                        allData.bookings[bookingIndex] = {
-                            ...allData.bookings[bookingIndex],
+                    const updateIndex = typeof bookingIdentifier === 'number' 
+                        ? bookingIdentifier 
+                        : allData.bookings.findIndex(b => b.id == bookingIdentifier);
+                    
+                    if (updateIndex !== -1) {
+                        allData.bookings[updateIndex] = {
+                            ...allData.bookings[updateIndex],
                             partner_code: formData.partner_code,
                             guest_name: formData.guest_name,
                             guest_phone: formData.guest_phone,
@@ -3472,7 +3512,21 @@ ${landingUrl}
         }
 
         // 頁面載入時執行
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 先檢查 Apps Script 連線
+            const isConnected = await checkAppsScriptConnection();
+            
+            if (!isConnected) {
+                // 顯示錯誤提示
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50';
+                alertDiv.innerHTML = `
+                    <strong>⚠️ Apps Script 連線問題</strong><br>
+                    <a href="google-apps-script-fix.html" target="_blank" class="underline">點此查看修復指南</a>
+                `;
+                document.body.appendChild(alertDiv);
+            }
+            
             showTab('overview');
             // 自動載入夥伴列表
             setTimeout(() => {

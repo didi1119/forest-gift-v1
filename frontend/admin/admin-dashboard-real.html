@@ -340,6 +340,24 @@
         <!-- 數據分析標籤內容 -->
         <div id="content-analytics" class="tab-content hidden">
             <div class="space-y-8">
+                <!-- 快速導航區塊 -->
+                <div class="brand-card p-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="font-serif text-xl font-semibold brand-accent mb-2">📊 數據分析中心</h2>
+                            <p class="text-sm text-stone-600">查看詳細的禮物使用分析和大使表現數據</p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <a href="analytics-dashboard.html" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                📈 詳細分析儀表板
+                            </a>
+                            <a href="resources.html" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                                🌲 資源中心
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- 宣傳效果分析 -->
                 <div class="brand-card p-8">
                     <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">大使宣傳效果分析</h2>
@@ -356,19 +374,15 @@
                     </div>
                 </div>
 
-                <!-- 神諭卡片使用統計 -->
+                <!-- 禮物偏好統計 -->
                 <div class="brand-card p-8">
-                    <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">神諭卡片使用統計</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <canvas id="giftCardChart" width="400" height="200"></canvas>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold mb-4">熱門卡片排行</h3>
-                            <div id="popularCards" class="space-y-2">
-                                <div class="loading-spinner"></div> 載入中...
-                            </div>
-                        </div>
+                    <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">禮物偏好分析</h2>
+                    <div class="bg-blue-50 p-6 rounded-lg text-center">
+                        <div class="text-lg font-semibold text-blue-800 mb-2">📊 完整禮物分析</div>
+                        <p class="text-sm text-blue-600 mb-4">查看詳細的禮物使用頻率、季節性偏好和設計建議</p>
+                        <a href="analytics-dashboard.html" target="_blank" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            前往詳細分析 →
+                        </a>
                     </div>
                 </div>
             </div>

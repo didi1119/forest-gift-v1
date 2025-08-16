@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知音計畫 - 資源中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF8; color: #5C544B; }
+        h1, h2, h3, .font-serif { font-family: 'Noto Serif TC', serif; }
+        .brand-accent { color: #2E4B36; }
+        .brand-card { background-color: #FFFFFF; border: 1px solid #EAE6E1; border-radius: 1.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+        .resource-card { 
+            transition: all 0.3s ease; 
+            cursor: pointer;
+        }
+        .resource-card:hover { 
+            transform: translateY(-4px); 
+            box-shadow: 0 15px 50px rgba(0,0,0,0.1); 
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen py-8">
+    <div class="max-w-6xl mx-auto px-6">
+        <!-- 頁首 -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold brand-accent mb-4">🌲 知音計畫資源中心</h1>
+            <p class="text-lg text-stone-600 mb-6">快速存取重要頁面與工具</p>
+            <div class="flex justify-center">
+                <button onclick="window.history.back()" class="bg-stone-200 text-stone-700 px-4 py-2 rounded-lg hover:bg-stone-300 transition-colors">
+                    ← 返回管理後台
+                </button>
+            </div>
+        </header>
+
+        <!-- 主要資源區塊 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            
+            <!-- 申請審核系統 -->
+            <div class="brand-card p-8 resource-card" onclick="openResource('application-review-dashboard.html')">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">📋</span>
+                    </div>
+                    <h3 class="text-xl font-semibold brand-accent mb-3">申請審核系統</h3>
+                    <p class="text-sm text-stone-600 mb-4">管理大使申請與審核流程</p>
+                    <div class="text-xs text-blue-600 bg-blue-50 px-3 py-1 rounded-full inline-block">
+                        申請管理
+                    </div>
+                </div>
+            </div>
+
+            <!-- 佣金管理系統 -->
+            <div class="brand-card p-8 resource-card" onclick="openResource('commission-audit.html')">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">💰</span>
+                    </div>
+                    <h3 class="text-xl font-semibold brand-accent mb-3">佣金審核系統</h3>
+                    <p class="text-sm text-stone-600 mb-4">佣金計算與稽核工具</p>
+                    <div class="text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full inline-block">
+                        財務管理
+                    </div>
+                </div>
+            </div>
+
+            <!-- 結算診斷工具 -->
+            <div class="brand-card p-8 resource-card" onclick="openResource('payouts-diagnostic.html')">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">🔧</span>
+                    </div>
+                    <h3 class="text-xl font-semibold brand-accent mb-3">結算診斷工具</h3>
+                    <p class="text-sm text-stone-600 mb-4">診斷並修復結算問題</p>
+                    <div class="text-xs text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full inline-block">
+                        系統工具
+                    </div>
+                </div>
+            </div>
+
+            <!-- 手動訂房系統 -->
+            <div class="brand-card p-8 resource-card" onclick="openResource('manual-booking.html')">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">📝</span>
+                    </div>
+                    <h3 class="text-xl font-semibold brand-accent mb-3">手動訂房系統</h3>
+                    <p class="text-sm text-stone-600 mb-4">手動登記訂房資料</p>
+                    <div class="text-xs text-purple-600 bg-purple-50 px-3 py-1 rounded-full inline-block">
+                        訂房管理
+                    </div>
+                </div>
+            </div>
+
+            <!-- 入住確認系統 -->
+            <div class="brand-card p-8 resource-card" onclick="openResource('manual-checkin-confirm.html')">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">✅</span>
+                    </div>
+                    <h3 class="text-xl font-semibold brand-accent mb-3">入住確認系統</h3>
+                    <p class="text-sm text-stone-600 mb-4">確認大使推薦入住完成</p>
+                    <div class="text-xs text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full inline-block">
+                        入住確認
+                    </div>
+                </div>
+            </div>
+
+            <!-- 連結生成工具 -->
+            <div class="brand-card p-8 resource-card" onclick="openResource('link-generator-form.html')">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">🔗</span>
+                    </div>
+                    <h3 class="text-xl font-semibold brand-accent mb-3">連結生成工具</h3>
+                    <p class="text-sm text-stone-600 mb-4">為大使生成追蹤連結</p>
+                    <div class="text-xs text-pink-600 bg-pink-50 px-3 py-1 rounded-full inline-block">
+                        行銷工具
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 前台頁面區塊 -->
+        <div class="mb-12">
+            <h2 class="text-2xl font-semibold brand-accent mb-6 text-center">🌐 前台頁面資源</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <!-- 主頁 -->
+                <div class="brand-card p-6 resource-card" onclick="openResource('../index.html', true)">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-lg">🏠</span>
+                        </div>
+                        <h4 class="font-semibold brand-accent mb-2">主頁</h4>
+                        <p class="text-xs text-stone-600">網站首頁</p>
+                    </div>
+                </div>
+
+                <!-- 森林故事 -->
+                <div class="brand-card p-6 resource-card" onclick="openResource('../story.html', true)">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-lg">📖</span>
+                        </div>
+                        <h4 class="font-semibold brand-accent mb-2">森林故事</h4>
+                        <p class="text-xs text-stone-600">品牌故事頁面</p>
+                    </div>
+                </div>
+
+                <!-- 邀請頁面 -->
+                <div class="brand-card p-6 resource-card" onclick="openResource('../invitation.html', true)">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-lg">💌</span>
+                        </div>
+                        <h4 class="font-semibold brand-accent mb-2">邀請頁面</h4>
+                        <p class="text-xs text-stone-600">大使邀請頁</p>
+                    </div>
+                </div>
+
+                <!-- 森林音樂 -->
+                <div class="brand-card p-6 resource-card" onclick="openResource('../music.html', true)">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-lg">🎵</span>
+                        </div>
+                        <h4 class="font-semibold brand-accent mb-2">森林音樂</h4>
+                        <p class="text-xs text-stone-600">音樂體驗頁</p>
+                    </div>
+                </div>
+
+                <!-- 森林地圖 -->
+                <div class="brand-card p-6 resource-card" onclick="openResource('../inner_map.html', true)">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-lg">🗺️</span>
+                        </div>
+                        <h4 class="font-semibold brand-accent mb-2">森林地圖</h4>
+                        <p class="text-xs text-stone-600">互動地圖</p>
+                    </div>
+                </div>
+
+                <!-- 隱私政策 -->
+                <div class="brand-card p-6 resource-card" onclick="openResource('../policy.html', true)">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-lg">📄</span>
+                        </div>
+                        <h4 class="font-semibold brand-accent mb-2">隱私政策</h4>
+                        <p class="text-xs text-stone-600">政策條款</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 快捷操作區塊 -->
+        <div class="mb-12">
+            <h2 class="text-2xl font-semibold brand-accent mb-6 text-center">⚡ 快捷操作</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Google Sheets 直達 -->
+                <div class="brand-card p-6 resource-card" onclick="openExternalResource('https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit')">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-lg">📊</span>
+                        </div>
+                        <h4 class="font-semibold brand-accent mb-2">Google Sheets</h4>
+                        <p class="text-xs text-stone-600 mb-3">直接開啟資料庫</p>
+                        <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">外部連結</div>
+                    </div>
+                </div>
+
+                <!-- GitHub 專案 -->
+                <div class="brand-card p-6 resource-card" onclick="openExternalResource('https://github.com/didi1119/forest-gift-v1')">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-lg">🔧</span>
+                        </div>
+                        <h4 class="font-semibold brand-accent mb-2">GitHub 專案</h4>
+                        <p class="text-xs text-stone-600 mb-3">原始碼管理</p>
+                        <div class="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">外部連結</div>
+                    </div>
+                </div>
+
+                <!-- Google Apps Script -->
+                <div class="brand-card p-6 resource-card" onclick="openExternalResource('https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec')">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-lg">⚙️</span>
+                        </div>
+                        <h4 class="font-semibold brand-accent mb-2">Apps Script API</h4>
+                        <p class="text-xs text-stone-600 mb-3">後端 API 服務</p>
+                        <div class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">外部連結</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 頁尾 -->
+        <footer class="text-center text-stone-500 text-sm border-t pt-8">
+            <p>知音計畫資源中心 | 最後更新：<span id="lastUpdate"></span></p>
+        </footer>
+    </div>
+
+    <script>
+        // 設定最後更新時間
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleString('zh-TW');
+
+        // 開啟資源頁面
+        function openResource(path, isNewTab = false) {
+            if (isNewTab) {
+                window.open(path, '_blank');
+            } else {
+                window.location.href = path;
+            }
+        }
+
+        // 開啟外部資源
+        function openExternalResource(url) {
+            window.open(url, '_blank');
+        }
+
+        // 複製連結功能
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('連結已複製到剪貼簿！');
+            }).catch(err => {
+                console.error('複製失敗:', err);
+            });
+        }
+
+        // 頁面載入完成後的動畫
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.resource-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    card.style.transition = 'all 0.5s ease';
+                    
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 100);
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

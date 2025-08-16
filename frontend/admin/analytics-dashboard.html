@@ -48,9 +48,9 @@
                 <div class="text-xs text-stone-500 mt-1" id="topAmbassadorName">-</div>
             </div>
             <div class="brand-card p-6 text-center">
-                <div class="text-3xl font-bold text-amber-600" id="mostPopularCard">-</div>
-                <div class="text-sm text-stone-600 mt-1">最受歡迎卡片</div>
-                <div class="text-xs text-stone-500 mt-1">神諭卡片使用率</div>
+                <div class="text-3xl font-bold text-amber-600" id="mostPopularGift">-</div>
+                <div class="text-sm text-stone-600 mt-1">最受歡迎禮物</div>
+                <div class="text-xs text-stone-500 mt-1">禮物選擇統計</div>
             </div>
         </div>
 
@@ -106,26 +106,32 @@
             </div>
         </div>
 
-        <!-- 神諭卡片使用分析 -->
+        <!-- 森林禮物使用分析 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- 卡片使用統計 -->
+            <!-- 禮物選擇統計 -->
             <div class="brand-card p-8">
-                <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">神諭卡片使用統計</h2>
+                <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">森林禮物選擇統計</h2>
                 <div class="chart-container">
-                    <canvas id="giftCardChart"></canvas>
+                    <canvas id="giftChart"></canvas>
                 </div>
                 <div class="mt-4 text-center">
                     <div class="text-sm text-stone-600">
-                        總卡片互動次數：<span id="totalCardInteractions" class="font-semibold">-</span>
+                        總禮物選擇次數：<span id="totalGiftSelections" class="font-semibold">-</span>
+                    </div>
+                    <div class="text-xs text-stone-500 mt-1">
+                        作為未來禮物設計參考
                     </div>
                 </div>
             </div>
 
-            <!-- 熱門卡片排行 -->
+            <!-- 熱門禮物排行 -->
             <div class="brand-card p-8">
-                <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">熱門卡片排行 TOP 10</h2>
-                <div id="popularCardsRanking" class="space-y-3">
+                <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">熱門禮物排行 TOP 10</h2>
+                <div id="popularGiftsRanking" class="space-y-3">
                     <div class="text-center py-8 text-stone-500">載入中...</div>
+                </div>
+                <div class="mt-4 text-xs text-stone-600 bg-blue-50 p-3 rounded-lg">
+                    💡 設計建議：根據使用頻率優化熱門禮物，考慮推出更多類似款式
                 </div>
             </div>
         </div>
@@ -252,24 +258,24 @@
 
         // 生成模擬分析數據
         function generateMockAnalyticsData() {
-            // 模擬神諭卡片數據
-            const cardNames = [
-                '長日 (The Longest Day)', '永夜 (The Longest Night)', '春分 (Vernal Equinox)', 
-                '秋分 (Autumnal Equinox)', '乾旱 (The Drought)', '洪水 (The Flood)', 
-                '大火 (The Great Fire)', '深雪 (The Deep Snow)', '濃霧 (The Thick Fog)',
-                '雷暴 (The Thunderstorm)', '晴空 (The Clear Sky)', '星空 (The Starry Sky)',
-                '巨木 (The Giant Tree)', '河流 (The River)', '瀑布 (The Waterfall)',
-                '洞穴 (The Cave)', '動物遷徙 (The Great Migration)', '腐木 (The Decomposing Log)',
-                '菌絲網絡 (The Mycelial Network)', '鳥群共舞 (The Murmuration)'
+            // 模擬森林禮物數據
+            const giftNames = [
+                '手工檜木筷子', '天然蜂蜜', '有機茶葉禮盒', 
+                '手製香皂組合', '竹纖維毛巾', '精油擴香組', 
+                '陶瓷茶具組', '原木杯墊組', '植物染圍巾',
+                '手工皮革筆記本', '天然護手霜', '薰衣草香包',
+                '竹製餐具組', '森林音樂CD', '手繪明信片組',
+                '天然潤唇膏', '精選堅果禮盒', '有機咖啡豆',
+                '手工織品小包', '木質手機架'
             ];
             
-            // 生成模擬點擊數據（包含卡片選擇）
+            // 生成模擬點擊數據（包含禮物選擇）
             analyticsData.clicks = [];
             for (let i = 0; i < 150; i++) {
                 analyticsData.clicks.push({
                     partner_code: `DEMO${String(Math.floor(Math.random() * 5) + 1).padStart(3, '0')}`,
                     timestamp: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-                    gift_card_selected: cardNames[Math.floor(Math.random() * cardNames.length)] || null
+                    gift_selected: giftNames[Math.floor(Math.random() * giftNames.length)] || null
                 });
             }
 
@@ -314,16 +320,16 @@
                 { conversionRate: 0, name: '-' }
             );
             
-            // 找出最受歡迎的卡片
-            const cardStats = calculateCardStats();
-            const mostPopular = cardStats.length > 0 ? cardStats[0] : { name: '-' };
+            // 找出最受歡迎的禮物
+            const giftStats = calculateGiftStats();
+            const mostPopular = giftStats.length > 0 ? giftStats[0] : { name: '-' };
             
             // 更新顯示
             document.getElementById('totalConversionRate').textContent = conversionRate + '%';
             document.getElementById('avgCommissionPerBooking').textContent = '$' + avgCommission;
             document.getElementById('topAmbassadorConversion').textContent = topAmbassador.conversionRate.toFixed(1) + '%';
             document.getElementById('topAmbassadorName').textContent = topAmbassador.name;
-            document.getElementById('mostPopularCard').textContent = mostPopular.name.split(' ')[0] || '-';
+            document.getElementById('mostPopularGift').textContent = mostPopular.name || '-';
         }
 
         // 計算夥伴統計
@@ -346,16 +352,16 @@
             });
         }
 
-        // 計算卡片統計
-        function calculateCardStats() {
-            const cardCounts = {};
+        // 計算禮物統計
+        function calculateGiftStats() {
+            const giftCounts = {};
             analyticsData.clicks.forEach(click => {
-                if (click.gift_card_selected) {
-                    cardCounts[click.gift_card_selected] = (cardCounts[click.gift_card_selected] || 0) + 1;
+                if (click.gift_selected) {
+                    giftCounts[click.gift_selected] = (giftCounts[click.gift_selected] || 0) + 1;
                 }
             });
             
-            return Object.entries(cardCounts)
+            return Object.entries(giftCounts)
                 .map(([name, count]) => ({ name, count }))
                 .sort((a, b) => b.count - a.count);
         }
@@ -391,14 +397,32 @@
                 }
             });
 
-            // 神諭卡片圖表
-            const ctx3 = document.getElementById('giftCardChart').getContext('2d');
-            charts.giftCard = new Chart(ctx3, {
+            // 森林禮物圖表
+            const ctx3 = document.getElementById('giftChart').getContext('2d');
+            charts.gift = new Chart(ctx3, {
                 type: 'pie',
                 data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${context.label}: ${context.parsed} 次 (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
                 }
             });
 
@@ -428,7 +452,7 @@
         function updateAllCharts() {
             updateAmbassadorChart();
             updateLevelChart();
-            updateCardChart();
+            updateGiftChart();
             updateTrendChart();
             updateFunnelAnalysis();
         }
@@ -486,52 +510,57 @@
             document.getElementById('lv3Count').textContent = levelCounts.LV3_GUARDIAN + ' 人';
         }
 
-        // 更新卡片圖表
-        function updateCardChart() {
-            const cardStats = calculateCardStats();
-            const top10Cards = cardStats.slice(0, 10);
+        // 更新禮物圖表
+        function updateGiftChart() {
+            const giftStats = calculateGiftStats();
+            const top10Gifts = giftStats.slice(0, 10);
             
             const colors = [
-                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
-                '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+                '#2E4B36', '#4B7C4B', '#6B9F6B', '#8FBC8F', '#A8D4A8',
+                '#F4A460', '#DEB887', '#CD853F', '#D2691E', '#B8860B'
             ];
             
-            charts.giftCard.data.labels = top10Cards.map(c => c.name.split(' ')[0]);
-            charts.giftCard.data.datasets[0].data = top10Cards.map(c => c.count);
-            charts.giftCard.data.datasets[0].backgroundColor = colors.slice(0, top10Cards.length);
-            charts.giftCard.update();
+            charts.gift.data.labels = top10Gifts.map(g => g.name);
+            charts.gift.data.datasets[0].data = top10Gifts.map(g => g.count);
+            charts.gift.data.datasets[0].backgroundColor = colors.slice(0, top10Gifts.length);
+            charts.gift.update();
             
-            // 更新總互動次數
-            const totalInteractions = cardStats.reduce((sum, card) => sum + card.count, 0);
-            document.getElementById('totalCardInteractions').textContent = totalInteractions.toLocaleString();
+            // 更新總選擇次數
+            const totalSelections = giftStats.reduce((sum, gift) => sum + gift.count, 0);
+            document.getElementById('totalGiftSelections').textContent = totalSelections.toLocaleString();
             
-            // 更新熱門卡片排行
-            updatePopularCardsRanking(cardStats.slice(0, 10));
+            // 更新熱門禮物排行
+            updatePopularGiftsRanking(giftStats.slice(0, 10));
         }
 
-        // 更新熱門卡片排行
-        function updatePopularCardsRanking(cardStats) {
-            const container = document.getElementById('popularCardsRanking');
+        // 更新熱門禮物排行
+        function updatePopularGiftsRanking(giftStats) {
+            const container = document.getElementById('popularGiftsRanking');
             
-            if (cardStats.length === 0) {
+            if (giftStats.length === 0) {
                 container.innerHTML = '<div class="text-center py-8 text-stone-500">暫無數據</div>';
                 return;
             }
             
-            container.innerHTML = cardStats.map((card, index) => `
-                <div class="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
+            container.innerHTML = giftStats.map((gift, index) => `
+                <div class="flex items-center justify-between p-3 bg-stone-50 rounded-lg hover:bg-stone-100 transition-colors">
                     <div class="flex items-center">
                         <div class="w-8 h-8 flex items-center justify-center rounded-full ${index < 3 ? 'bg-amber-100 text-amber-800' : 'bg-stone-200 text-stone-600'} font-semibold mr-3">
                             ${index + 1}
                         </div>
                         <div>
-                            <div class="font-medium text-sm">${card.name.split(' ')[0]}</div>
-                            <div class="text-xs text-stone-500">${card.name}</div>
+                            <div class="font-medium text-sm text-stone-800">${gift.name}</div>
+                            <div class="text-xs text-stone-500">
+                                ${index < 3 ? '🔥 熱門選擇' : index < 5 ? '📈 穩定成長' : '💡 潛力禮物'}
+                            </div>
                         </div>
                     </div>
                     <div class="text-right">
-                        <div class="font-semibold text-green-600">${card.count}</div>
-                        <div class="text-xs text-stone-500">次使用</div>
+                        <div class="font-semibold text-green-600">${gift.count}</div>
+                        <div class="text-xs text-stone-500">次選擇</div>
+                        <div class="text-xs text-blue-600 mt-1">
+                            ${((gift.count / giftStats.reduce((sum, g) => sum + g.count, 0)) * 100).toFixed(1)}%
+                        </div>
                     </div>
                 </div>
             `).join('');

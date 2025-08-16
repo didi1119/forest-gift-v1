@@ -211,6 +211,21 @@ const BOOKING_FIELDS = {
   - 403錯誤來自Google Apps Script的自動重定向響應
   - 批量操作等功能如需重載數據，應使用較長的延遲時間
 
+### 2024-08-16 轉換現金功能後端問題 🚨
+- **問題**：`"未知的動作: convert_points_to_cash"`
+- **根因**：Google Apps Script後端代碼版本過舊，缺少新功能處理函數
+- **症狀**：
+  - 使用住宿金正常（舊功能存在）
+  - 轉換現金失敗（新功能不存在）
+  - 200狀態碼但返回錯誤：`{"success":false,"error":"未知的動作: convert_points_to_cash"}`
+- **解決方案**：
+  1. 更新Google Apps Script代碼為最新版本
+  2. 確保包含`handleConvertPointsToCash`函數
+  3. 重新部署Google Apps Script
+- **預防措施**：
+  - 本地代碼更新後，及時同步到Google Apps Script
+  - 測試新功能前確認後端代碼已部署
+
 ### 2024年系統標準化更新 🎯
 - **問題**：Google Sheets 欄位錯位，顯示 "$MANUAL_ENTRY", "44", "$ACCOMMODATION"
 - **根因**：資料庫缺少 ID 欄位，導致所有欄位左移一位

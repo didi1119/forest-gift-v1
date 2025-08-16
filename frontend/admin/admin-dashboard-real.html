@@ -4450,7 +4450,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-1">轉換點數</label>
                             <input type="number" id="points_to_convert" 
                                 class="w-full p-3 border rounded-md" min="1" max="${availablePoints}" step="1"
-                                placeholder="輸入要轉換的點數" onchange="updateCashAmount()">
+                                placeholder="輸入要轉換的點數" onchange="updateConvertedCashDisplay()" oninput="updateConvertedCashDisplay()">
                             <div class="text-xs text-gray-500 mt-1">最多可轉換 ${availablePoints.toLocaleString()} 點</div>
                         </div>
                         
@@ -4510,15 +4510,37 @@
         // 設定轉換點數
         function setConvertPoints(points) {
             document.getElementById('points_to_convert').value = points;
-            updateCashAmount();
+            updateConvertedCashDisplay();
         }
 
-        // 更新現金金額顯示
-        function updateCashAmount() {
-            const points = parseInt(document.getElementById('points_to_convert').value) || 0;
-            const exchangeRate = 0.5;
+        // 更新轉換後的現金顯示（專門用於點數轉換）
+        function updateConvertedCashDisplay() {
+            const pointsInput = document.getElementById('points_to_convert');
+            const cashDisplay = document.getElementById('cash_amount_display');
+            
+            if (!pointsInput || !cashDisplay) {
+                console.error('找不到點數輸入或現金顯示元素');
+                return;
+            }
+            
+            const points = parseFloat(pointsInput.value) || 0;
+            const exchangeRate = 0.5; // 轉換比例：1點 = 0.5元
             const cashAmount = Math.floor(points * exchangeRate);
-            document.getElementById('cash_amount_display').textContent = `NT$ ${cashAmount.toLocaleString()}`;
+            
+            cashDisplay.textContent = `NT$ ${cashAmount.toLocaleString()}`;
+            console.log(`更新現金顯示: ${points} 點 → NT$ ${cashAmount}`);
+        }
+
+        // 更新現金金額顯示（commission-management.js 中的函數保留）
+        // 注意：這個函數在 commission-management.js 中有完整實現
+        // 這裡只是避免調用時出錯的兼容性處理
+        function updateCashAmount() {
+            // 如果是在點數轉換模態框中調用
+            if (document.getElementById('points_to_convert') && document.getElementById('cash_amount_display')) {
+                updateConvertedCashDisplay();
+                return;
+            }
+            // 否則交給 commission-management.js 處理
         }
 
         // 提交點數轉現金

@@ -617,51 +617,77 @@ function handleConfirmCheckinCompletion(data, e) {
       }
       
       if (partnerRowIndex !== -1) {
+        // 檢查是否為重新確認（之前已經有結算記錄）
+        const payoutsRange = payoutsSheet.getDataRange();
+        const payoutsValues = payoutsRange.getValues();
+        let isReconfirm = false;
+        let previousCommission = 0;
+        
+        // 查找是否已有此訂單的結算記錄
+        for (let i = 1; i < payoutsValues.length; i++) {
+          const relatedBookingIds = String(payoutsValues[i][4] || ''); // related_booking_ids
+          if (relatedBookingIds.includes(String(actualBookingId))) {
+            isReconfirm = true;
+            previousCommission = parseFloat(payoutsValues[i][3]) || 0; // amount
+            Logger.log('🔄 發現重新確認：之前佣金 $' + previousCommission);
+            break;
+          }
+        }
+        
         // 更新大使統計
         const currentProgress = partnerData[6] || 0; // level_progress
         const currentTotal = partnerData[7] || 0; // total_successful_referrals
         const currentCommissionEarned = partnerData[9] || 0; // total_commission_earned
         const currentPendingCommission = partnerData[11] || 0; // pending_commission
         
-        const newProgress = currentProgress + 1;
-        const newTotal = currentTotal + 1;
-        const commissionAmount = parseFloat(data.commission_amount) || 0;
-        const newCommissionEarned = currentCommissionEarned + commissionAmount;
-        // 修復：佣金只加在 total_commission_earned，不重複加在 pending_commission
-        // const newPendingCommission = currentPendingCommission + commissionAmount;
+        // 如果是重新確認，不增加進度和總數
+        const newProgress = isReconfirm ? currentProgress : currentProgress + 1;
+        const newTotal = isReconfirm ? currentTotal : currentTotal + 1;
+        
+        // 使用傳入的佣金金額或根據當前等級計算
+        let commissionAmount = parseFloat(data.commission_amount) || 0;
+        
+        // 如果是重新確認，使用之前的佣金金額，避免因等級變化導致佣金不一致
+        if (isReconfirm && previousCommission > 0) {
+          commissionAmount = previousCommission;
+          Logger.log('🔄 使用之前的佣金金額: $' + commissionAmount);
+        }
+        
+        // 如果是重新確認，佣金不重複累加
+        const newCommissionEarned = isReconfirm ? currentCommissionEarned : currentCommissionEarned + commissionAmount;
         
         // 更新大使資料
         partnersSheet.getRange(partnerRowIndex, 7).setValue(newProgress); // level_progress
         partnersSheet.getRange(partnerRowIndex, 8).setValue(newTotal); // total_successful_referrals
         partnersSheet.getRange(partnerRowIndex, 10).setValue(newCommissionEarned); // total_commission_earned
-        // 修復：不更新 pending_commission，佣金只記錄在 total_commission_earned
-        // partnersSheet.getRange(partnerRowIndex, 12).setValue(newPendingCommission); // pending_commission
         
         // 標記已領取首次推薦獎勵
-        if (data.is_first_referral_bonus) {
+        if (data.is_first_referral_bonus && !isReconfirm) {
           partnersSheet.getRange(partnerRowIndex, 17).setValue(true); // first_referral_bonus_claimed
         }
         
         partnersSheet.getRange(partnerRowIndex, 25).setValue(timestamp); // updated_at
         
-        // 檢查等級晉升
+        // 檢查等級晉升（只在非重新確認時檢查）
         const currentLevel = partnerData[5] || 'LV1_INSIDER'; // level
         let newLevel = currentLevel;
         
-        if (currentLevel === 'LV1_INSIDER' && newProgress >= LEVEL_REQUIREMENTS.LV2_GUIDE) {
-          newLevel = 'LV2_GUIDE';
-        } else if (currentLevel === 'LV2_GUIDE' && newProgress >= LEVEL_REQUIREMENTS.LV3_GUARDIAN) {
-          newLevel = 'LV3_GUARDIAN';
+        if (!isReconfirm) {
+          if (currentLevel === 'LV1_INSIDER' && newProgress >= LEVEL_REQUIREMENTS.LV2_GUIDE) {
+            newLevel = 'LV2_GUIDE';
+          } else if (currentLevel === 'LV2_GUIDE' && newProgress >= LEVEL_REQUIREMENTS.LV3_GUARDIAN) {
+            newLevel = 'LV3_GUARDIAN';
+          }
+          
+          if (newLevel !== currentLevel) {
+            partnersSheet.getRange(partnerRowIndex, 6).setValue(newLevel); // level
+            result.level_upgraded = true;
+            result.new_level = newLevel;
+          }
         }
         
-        if (newLevel !== currentLevel) {
-          partnersSheet.getRange(partnerRowIndex, 6).setValue(newLevel); // level
-          result.level_upgraded = true;
-          result.new_level = newLevel;
-        }
-        
-        // 3. 記錄佣金發放記錄
-        if (commissionAmount > 0) {
+        // 3. 記錄佣金發放記錄（只在非重新確認時創建）
+        if (commissionAmount > 0 && !isReconfirm) {
           const payoutsSheet = spreadsheet.getSheetByName('Payouts');
           const newPayoutId = generateNextId(payoutsSheet, 'Payout');
           Logger.log('生成新的 Payout ID: ' + newPayoutId);
@@ -686,6 +712,11 @@ function handleConfirmCheckinCompletion(data, e) {
           payoutsSheet.appendRow(payoutData);
           result.commission_calculated = true;
           result.commission_amount = commissionAmount;
+        } else if (isReconfirm) {
+          Logger.log('🔄 重新確認訂單，不創建新的結算記錄');
+          result.message = '重新確認入住完成（不重複計算佣金）';
+          result.commission_amount = commissionAmount;
+          result.is_reconfirm = true;
         }
       }
     }
@@ -1326,6 +1357,9 @@ function handleCancelPayout(data, e) {
     } else {
       const currentTotalEarned = parseFloat(partnerValues[partnerRowIndex-1][9]) || 0; // total_commission_earned
       const currentPendingCommission = parseFloat(partnerValues[partnerRowIndex-1][11]) || 0; // pending_commission
+      const currentLevelProgress = parseInt(partnerValues[partnerRowIndex-1][6]) || 0; // level_progress
+      const currentTotalReferrals = parseInt(partnerValues[partnerRowIndex-1][7]) || 0; // total_successful_referrals
+      const currentLevel = partnerValues[partnerRowIndex-1][5] || 'LV1_INSIDER'; // level
       
       let adjustmentMade = false;
       
@@ -1365,6 +1399,33 @@ function handleCancelPayout(data, e) {
             const newPendingCommission = Math.max(0, currentPendingCommission - payoutAmount);
             partnersSheet.getRange(partnerRowIndex, 12).setValue(newPendingCommission); // pending_commission
             Logger.log('❌ 取消結算，扣除待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission);
+          }
+          
+          // 扣除等級進度和總推薦數（如果有相關訂單）
+          if (relatedBookingIds && relatedBookingIds !== '-' && relatedBookingIds !== '') {
+            const bookingCount = String(relatedBookingIds).split(',').length;
+            const newLevelProgress = Math.max(0, currentLevelProgress - bookingCount);
+            const newTotalReferrals = Math.max(0, currentTotalReferrals - bookingCount);
+            
+            partnersSheet.getRange(partnerRowIndex, 7).setValue(newLevelProgress); // level_progress
+            partnersSheet.getRange(partnerRowIndex, 8).setValue(newTotalReferrals); // total_successful_referrals
+            
+            Logger.log('❌ 扣除等級進度: ' + currentLevelProgress + ' → ' + newLevelProgress);
+            Logger.log('❌ 扣除總推薦數: ' + currentTotalReferrals + ' → ' + newTotalReferrals);
+            
+            // 檢查是否需要降級
+            let newLevel = currentLevel;
+            if (newLevelProgress < LEVEL_REQUIREMENTS.LV3_GUARDIAN && currentLevel === 'LV3_GUARDIAN') {
+              newLevel = 'LV2_GUIDE';
+            }
+            if (newLevelProgress < LEVEL_REQUIREMENTS.LV2_GUIDE && (currentLevel === 'LV2_GUIDE' || currentLevel === 'LV3_GUARDIAN')) {
+              newLevel = 'LV1_INSIDER';
+            }
+            
+            if (newLevel !== currentLevel) {
+              partnersSheet.getRange(partnerRowIndex, 6).setValue(newLevel); // level
+              Logger.log('📉 等級降級: ' + currentLevel + ' → ' + newLevel);
+            }
           }
           
           adjustmentMade = true;

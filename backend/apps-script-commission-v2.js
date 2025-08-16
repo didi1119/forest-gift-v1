@@ -2267,12 +2267,41 @@ function handleDeductAccommodationPoints(data, e) {
     let accommodationUsageSheet = spreadsheet.getSheetByName('Accommodation_Usage');
     if (!accommodationUsageSheet) {
       accommodationUsageSheet = spreadsheet.insertSheet('Accommodation_Usage');
-      // ✅ 設定標題行 - 添加住宿日期欄位
-      const headers = [
-        'id', 'partner_code', 'deduct_amount', 'related_booking_id', 
-        'usage_date', 'usage_type', 'notes', 'created_by', 'created_at', 'updated_at'
-      ];
-      accommodationUsageSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      Logger.log('✅ 創建新的 Accommodation_Usage 工作表');
+    }
+    
+    // ✅ 檢查並更新表格標題行結構
+    const expectedHeaders = [
+      'id', 'partner_code', 'deduct_amount', 'related_booking_id', 
+      'usage_date', 'usage_type', 'notes', 'created_by', 'created_at', 'updated_at'
+    ];
+    
+    const currentHeaders = accommodationUsageSheet.getLastRow() > 0 ? 
+      accommodationUsageSheet.getRange(1, 1, 1, accommodationUsageSheet.getLastColumn()).getValues()[0] : [];
+    
+    const headersMatch = JSON.stringify(currentHeaders.slice(0, expectedHeaders.length)) === JSON.stringify(expectedHeaders);
+    
+    if (!headersMatch) {
+      Logger.log('⚠️ Accommodation_Usage 表格結構需要更新');
+      Logger.log('當前標題: ' + JSON.stringify(currentHeaders));
+      Logger.log('預期標題: ' + JSON.stringify(expectedHeaders));
+      
+      // 備份現有數據（如果有的話）
+      const existingData = accommodationUsageSheet.getLastRow() > 1 ? 
+        accommodationUsageSheet.getRange(2, 1, accommodationUsageSheet.getLastRow() - 1, accommodationUsageSheet.getLastColumn()).getValues() : [];
+      
+      // 清除並重建表格結構
+      accommodationUsageSheet.clear();
+      accommodationUsageSheet.getRange(1, 1, 1, expectedHeaders.length).setValues([expectedHeaders]);
+      
+      // 恢復現有數據（如果有的話且結構兼容）
+      if (existingData.length > 0) {
+        Logger.log(`🔄 恢復 ${existingData.length} 筆現有數據`);
+        // 根據舊結構調整數據到新結構
+        accommodationUsageSheet.getRange(2, 1, existingData.length, existingData[0].length).setValues(existingData);
+      }
+      
+      Logger.log('✅ Accommodation_Usage 表格結構已更新');
     }
     
     if (!partnersSheet || !accommodationUsageSheet) {

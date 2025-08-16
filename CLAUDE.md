@@ -308,3 +308,4 @@ const BOOKING_FIELDS = {
 
 *本文件隨專案更新而持續維護，最後更新：2024年8月16日*
 - 紀錄表單結構還有業務邏輯
+- 。Google Apps Script 在 GitHub Pages 上確實會被 CORS 政策阻擋，我需要改回使用 form 提交方式。

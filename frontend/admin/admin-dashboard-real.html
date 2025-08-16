@@ -976,8 +976,11 @@
         function generatePartnerCard(partner) {
             const levelClass = getLevelClass(partner.level);
             const levelText = getLevelText(partner.level);
-            const accommodationBalance = partner.available_points || partner.total_commission_earned || 0;
-            const pendingCash = partner.pending_cash || partner.pending_commission || 0;
+            // ✅ 修復：使用正確的住宿金餘額計算
+            const totalEarned = parseFloat(partner.total_commission_earned) || 0;
+            const totalPaid = parseFloat(partner.total_commission_paid) || 0;
+            const accommodationBalance = totalEarned - totalPaid;
+            const pendingCash = parseFloat(partner.pending_commission) || 0;
             const totalClicks = getPartnerClicks(partner.partner_code);
             const completedReferrals = partner.total_successful_referrals || 0;
             const conversionRate = totalClicks > 0 ? ((completedReferrals / totalClicks) * 100).toFixed(1) : '0.0';

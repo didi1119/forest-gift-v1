@@ -193,6 +193,20 @@ const BOOKING_FIELDS = {
 
 ## 重要開發里程碑
 
+### 2024-08-16 修復403錯誤問題 🔧
+- **問題**：使用form.submit()後調用loadRealData()會導致403錯誤
+- **原因**：Google Apps Script的form.submit()回應會觸發額外的請求，與loadRealData()衝突
+- **症狀**：
+  - 轉換現金成功但出現403錯誤：`script.googleusercontent.com/macros/echo Failed to load resource: 403`
+  - Console顯示：`✅ 成功轉換 166 點為 NT$ 83！` 但有錯誤
+- **解決方案**：
+  1. 移除form.submit()後的loadRealData()調用
+  2. 只更新本地數據，避免立即重新請求
+  3. 讓使用者手動刷新或延遲較長時間後再更新
+- **注意事項**：
+  - 使用住宿金功能正常是因為沒有在成功後立即調用loadRealData()
+  - 批量操作等功能如需重載數據，應使用較長的延遲時間
+
 ### 2024年系統標準化更新 🎯
 - **問題**：Google Sheets 欄位錯位，顯示 "$MANUAL_ENTRY", "44", "$ACCOMMODATION"
 - **根因**：資料庫缺少 ID 欄位，導致所有欄位左移一位

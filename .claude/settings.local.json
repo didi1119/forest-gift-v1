@@ -9,7 +9,8 @@
       "Bash(rm:*)",
       "Bash(make:*)",
       "Bash(tail:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "additionalDirectories": [

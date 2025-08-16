@@ -4415,10 +4415,8 @@
                     closeModal('pointsToCashModal');
                     displayPartners(allData.partners);
                     
-                    // 重新載入數據
-                    setTimeout(() => {
-                        loadRealData();
-                    }, 2000);
+                    // 不要在這裡重新載入數據，因為會導致403錯誤
+                    // form.submit() 的回應會觸發額外的請求
                     
                     document.body.removeChild(form);
                 }, 1000);
@@ -4624,10 +4622,19 @@ ${landingUrl}
                 setTimeout(() => {
                     showSuccessMessage('✅ 資料已儲存到 Google Sheets！');
                     
-                    // 重新載入數據
-                    loadRealData().then(() => {
-                        loadPartnersForLinkGen();
-                    });
+                    // 不要立即重新載入數據，避免403錯誤
+                    // 只更新本地的夥伴列表
+                    if (linkgenGeneratedData && linkgenGeneratedData.partner_code) {
+                        // 將新夥伴加入本地數據
+                        const newPartner = {
+                            partner_code: linkgenGeneratedData.partner_code,
+                            name: linkgenGeneratedData.name,
+                            email: linkgenGeneratedData.email,
+                            // 其他必要欄位...
+                        };
+                        allData.partners.push(newPartner);
+                        loadPartnersForLinkGen(); // 只更新下拉選單
+                    }
                     
                     document.body.removeChild(form);
                 }, 2000);

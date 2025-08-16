@@ -972,7 +972,7 @@
             }).join('');
         }
 
-        // 生成夥伴卡片 (簡潔單行風格)
+        // 生成夥伴卡片 (訂單管理風格)
         function generatePartnerCard(partner) {
             const levelClass = getLevelClass(partner.level);
             const levelText = getLevelText(partner.level);
@@ -989,54 +989,93 @@
             const smartActions = generateSmartActions(partner);
             
             return `
-                <div class="brand-card hover:shadow-md transition-shadow duration-200" 
+                <div class="brand-card hover:shadow-lg transition-all duration-300 mb-6" 
                      data-partner-code="${partner.partner_code}">
-                    <div class="flex items-center justify-between py-4 px-6">
-                        <!-- 左側：夥伴資訊 -->
-                        <div class="flex items-center space-x-4">
-                            <input type="checkbox" class="partner-selector h-4 w-4 text-blue-600 rounded border-gray-300" 
-                                   onchange="updateSelection()" data-partner-code="${partner.partner_code}">
+                    
+                    <!-- 頂部：基本資訊區 -->
+                    <div class="bg-green-50 p-6 rounded-t-3xl border-b border-green-100">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <input type="checkbox" class="partner-selector h-5 w-5 text-green-600 rounded border-gray-300" 
+                                       onchange="updateSelection()" data-partner-code="${partner.partner_code}">
+                                
+                                <div class="partner-info">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <h3 class="text-xl font-semibold brand-accent">${partner.name || '未設定姓名'}</h3>
+                                        <span class="text-sm font-medium text-stone-600 bg-white px-3 py-1 rounded-full">${partner.partner_code}</span>
+                                        <span class="px-3 py-1 rounded-full text-sm font-medium ${levelClass}">${levelText}</span>
+                                    </div>
+                                    <div class="text-sm text-stone-600">
+                                        📧 ${partner.email || '未設定信箱'} | 📱 ${partner.phone || '未設定電話'}
+                                    </div>
+                                </div>
+                            </div>
                             
-                            <div class="partner-info">
-                                <div class="flex items-center space-x-2">
-                                    <div class="font-semibold text-stone-800">${partner.name || '未設定姓名'}</div>
-                                    <div class="text-sm text-stone-600">${partner.partner_code}</div>
-                                    <div class="text-xs text-stone-500">${partner.email || ''}</div>
-                                </div>
-                                <div class="mt-1">
-                                    <span class="px-2 py-1 rounded text-xs ${levelClass}">${levelText}</span>
-                                </div>
+                            <!-- 快速狀態指示 -->
+                            <div class="text-right">
+                                <div class="text-sm text-stone-500">建立時間</div>
+                                <div class="font-medium text-stone-700">${formatDateDisplay(partner.created_at) || '未知'}</div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- 中間：績效指標 (單行顯示) -->
-                        <div class="flex items-center space-x-8 text-center">
-                            <div>
-                                <div class="font-semibold text-stone-800">${partner.level_progress || 0}</div>
+                    <!-- 中間：績效數據區 -->
+                    <div class="bg-blue-50 p-6 border-b border-blue-100">
+                        <h4 class="text-lg font-semibold text-blue-800 mb-4">📊 績效概覽</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <div class="text-center bg-white p-3 rounded-lg border border-blue-200">
+                                <div class="text-2xl font-bold text-blue-600">${partner.level_progress || 0}</div>
                                 <div class="text-xs text-stone-500">/ ${getNextLevelRequirement(partner.level)}</div>
-                                <div class="text-xs text-stone-400">本年進度</div>
+                                <div class="text-sm text-stone-600 mt-1">年度進度</div>
                             </div>
-                            <div>
-                                <div class="font-semibold text-stone-800">${totalClicks}</div>
-                                <div class="text-xs text-stone-400">點擊數</div>
+                            <div class="text-center bg-white p-3 rounded-lg border border-blue-200">
+                                <div class="text-2xl font-bold text-purple-600">${totalClicks}</div>
+                                <div class="text-sm text-stone-600 mt-1">連結點擊</div>
                             </div>
-                            <div>
-                                <div class="font-semibold text-green-600">${completedReferrals}</div>
-                                <div class="text-xs text-stone-400">完成入住</div>
+                            <div class="text-center bg-white p-3 rounded-lg border border-blue-200">
+                                <div class="text-2xl font-bold text-green-600">${completedReferrals}</div>
+                                <div class="text-sm text-stone-600 mt-1">完成入住</div>
                             </div>
-                            <div>
-                                <div class="font-semibold text-blue-600">${accommodationBalance.toLocaleString()} 點</div>
-                                <div class="text-xs text-stone-400">可用點數</div>
+                            <div class="text-center bg-white p-3 rounded-lg border border-blue-200">
+                                <div class="text-xl font-bold text-indigo-600">${conversionRate}%</div>
+                                <div class="text-sm text-stone-600 mt-1">轉換率</div>
                             </div>
-                            <div>
-                                <div class="font-semibold text-amber-600">NT$ ${pendingCash.toLocaleString()}</div>
-                                <div class="text-xs text-stone-400">待支付現金</div>
+                            <div class="text-center bg-white p-3 rounded-lg border border-blue-200">
+                                <div class="text-xl font-bold text-emerald-600">${totalEarned.toLocaleString()}</div>
+                                <div class="text-sm text-stone-600 mt-1">累積佣金</div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- 右側：操作區 -->
-                        <div class="action-zone">
-                            ${smartActions}
+                    <!-- 底部：財務資訊與操作區 -->
+                    <div class="bg-amber-50 p-6 rounded-b-3xl">
+                        <div class="flex items-center justify-between">
+                            <!-- 左側：財務概覽 -->
+                            <div class="flex-1">
+                                <h4 class="text-lg font-semibold text-amber-800 mb-4">💰 財務狀況</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="bg-white p-4 rounded-lg border border-amber-200">
+                                        <div class="text-sm text-stone-600 mb-1">可用住宿金</div>
+                                        <div class="text-2xl font-bold text-blue-600">${accommodationBalance.toLocaleString()}</div>
+                                        <div class="text-xs text-stone-500">點數</div>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-lg border border-amber-200">
+                                        <div class="text-sm text-stone-600 mb-1">待支付現金</div>
+                                        <div class="text-2xl font-bold text-amber-600">NT$ ${pendingCash.toLocaleString()}</div>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-lg border border-amber-200">
+                                        <div class="text-sm text-stone-600 mb-1">佣金偏好</div>
+                                        <div class="text-lg font-medium ${partner.commission_preference === 'CASH' ? 'text-green-600' : 'text-blue-600'}">
+                                            ${partner.commission_preference === 'CASH' ? '💵 現金' : '🏠 住宿金'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 右側：操作按鈕區 -->
+                            <div class="ml-6 flex-shrink-0">
+                                ${smartActions}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1053,46 +1092,62 @@
             
             const pendingCash = parseFloat(partner.pending_commission) || 0;
             
-            // 🎨 統一的操作介面設計
+            // 🎨 訂單管理風格的操作介面設計
             return `
-                <div class="flex flex-col space-y-2">
-                    <!-- 主要快速操作區 -->
-                    <div class="flex flex-wrap gap-2">
+                <div class="flex flex-col space-y-3 min-w-64">
+                    <!-- 主要財務操作區 -->
+                    <div class="space-y-2">
                         ${accommodationBalance > 0 ? `
                             <button onclick="showPartnerActionsModal('${partner.partner_code}', 'accommodation')" 
-                                    class="flex-1 min-w-24 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 px-3 py-2 rounded-lg text-xs font-medium hover:from-blue-100 hover:to-blue-200 transition-all border border-blue-200">
-                                🏨 住宿金 $${accommodationBalance.toLocaleString()}
+                                    class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all duration-300 flex items-center justify-center">
+                                🏨 使用住宿金 (${accommodationBalance.toLocaleString()} 點)
                             </button>
                         ` : ''}
                         
                         ${pendingCash > 0 ? `
                             <button onclick="showPartnerActionsModal('${partner.partner_code}', 'cash')" 
-                                    class="flex-1 min-w-24 bg-gradient-to-r from-green-50 to-green-100 text-green-700 px-3 py-2 rounded-lg text-xs font-medium hover:from-green-100 hover:to-green-200 transition-all border border-green-200">
-                                💰 現金 $${pendingCash.toLocaleString()}
+                                    class="w-full bg-green-600 text-white px-4 py-3 rounded-lg text-sm font-semibold hover:bg-green-700 transition-all duration-300 flex items-center justify-center">
+                                💰 結算現金 (NT$ ${pendingCash.toLocaleString()})
                             </button>
                         ` : ''}
                         
+                        ${accommodationBalance === 0 && pendingCash === 0 ? `
+                            <div class="bg-gray-100 text-gray-500 px-4 py-3 rounded-lg text-sm text-center">
+                                暫無可用餘額
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- 管理操作區 -->
+                    <div class="grid grid-cols-2 gap-2">
                         <button onclick="viewPartnerDetails('${partner.partner_code}')" 
-                                class="bg-gray-50 text-gray-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-100 transition-all border border-gray-200">
+                                class="bg-white text-stone-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-stone-50 transition-all border-2 border-stone-200">
                             📋 詳情
+                        </button>
+                        
+                        <button onclick="editPartner('${partner.partner_code}')" 
+                                class="bg-white text-stone-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-stone-50 transition-all border-2 border-stone-200">
+                            ✏️ 編輯
                         </button>
                     </div>
                     
-                    <!-- 管理操作選單 -->
+                    <!-- 進階操作選單 -->
                     <div class="relative">
                         <button onclick="toggleManagementDropdown('${partner.partner_code}')" 
-                                class="w-full bg-gray-50 text-gray-600 px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-100 transition-all border border-gray-200 flex items-center justify-center">
-                            ⚙️ 管理操作
-                            <svg class="ml-1 w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                class="w-full bg-amber-100 text-amber-800 px-3 py-2 rounded-lg text-sm font-medium hover:bg-amber-200 transition-all border border-amber-300 flex items-center justify-center">
+                            ⚙️ 進階管理
+                            <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        <div id="management-${partner.partner_code}" class="hidden absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-20 w-full min-w-48">
-                            <button onclick="editPartner('${partner.partner_code}')" class="block w-full text-left px-4 py-3 hover:bg-gray-50 text-xs text-gray-700 border-b">📝 編輯夥伴資料</button>
-                            <button onclick="quickEditCommission('${partner.partner_code}')" class="block w-full text-left px-4 py-3 hover:bg-gray-50 text-xs text-gray-700 border-b">🎯 佣金設定</button>
-                            <button onclick="createPartnerPayout('${partner.partner_code}')" class="block w-full text-left px-4 py-3 hover:bg-gray-50 text-xs text-gray-700 border-b">💳 手動結算</button>
-                            <button onclick="generatePartnerLinks('${partner.partner_code}')" class="block w-full text-left px-4 py-3 hover:bg-gray-50 text-xs text-gray-700 border-b">🔗 生成推薦連結</button>
-                            <button onclick="viewPartnerHistory('${partner.partner_code}')" class="block w-full text-left px-4 py-3 hover:bg-gray-50 text-xs text-gray-700">📈 佣金歷史</button>
+                        <div id="management-${partner.partner_code}" class="hidden absolute right-0 top-full mt-1 bg-white border-2 border-stone-200 rounded-xl shadow-lg z-20 w-56">
+                            <div class="p-2">
+                                <button onclick="quickEditCommission('${partner.partner_code}')" class="block w-full text-left px-3 py-2 hover:bg-green-50 text-sm text-stone-700 rounded-lg mb-1">🎯 佣金設定</button>
+                                <button onclick="createPartnerPayout('${partner.partner_code}')" class="block w-full text-left px-3 py-2 hover:bg-blue-50 text-sm text-stone-700 rounded-lg mb-1">💳 手動結算</button>
+                                <button onclick="generatePartnerLinks('${partner.partner_code}')" class="block w-full text-left px-3 py-2 hover:bg-purple-50 text-sm text-stone-700 rounded-lg mb-1">🔗 生成連結</button>
+                                <div class="border-t border-stone-200 my-2"></div>
+                                <button onclick="viewPartnerHistory('${partner.partner_code}')" class="block w-full text-left px-3 py-2 hover:bg-amber-50 text-sm text-stone-700 rounded-lg">📈 佣金歷史</button>
+                            </div>
                         </div>
                     </div>
                 </div>

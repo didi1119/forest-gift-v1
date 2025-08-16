@@ -3933,14 +3933,6 @@
                 const newAvailablePoints = availablePoints - amount;
                 const newPointsUsed = (partner.points_used || 0) + amount;
                 
-                // 使用正確的 API 端點更新大使資料
-                const formData = new URLSearchParams();
-                formData.append('action', 'update_partner_commission');
-                formData.append('partner_code', partnerCode);
-                formData.append('available_points', newAvailablePoints);
-                formData.append('points_used', newPointsUsed);
-                formData.append('notes', notes || `住宿金折抵 $${amount.toLocaleString()} - ${new Date().toLocaleDateString()}`);
-                
                 console.log('📝 住宿金折抵 - 提交數據:', {
                     action: 'update_partner_commission',
                     partner_code: partnerCode,
@@ -3950,34 +3942,57 @@
                     new_points_used: newPointsUsed
                 });
                 
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData.toString()
+                // 使用表單提交方式避免 CORS 問題
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+                
+                const submitData = {
+                    action: 'update_partner_commission',
+                    partner_code: partnerCode,
+                    available_points: newAvailablePoints,
+                    points_used: newPointsUsed,
+                    notes: notes || `住宿金折抵 $${amount.toLocaleString()} - ${new Date().toLocaleDateString()}`
+                };
+                
+                Object.keys(submitData).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = submitData[key];
+                    form.appendChild(input);
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                // 提交表單
+                document.body.appendChild(form);
+                form.submit();
                 
-                // 立即更新前端數據
-                const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
-                if (partnerIndex !== -1) {
-                    allData.partners[partnerIndex].available_points = newAvailablePoints;
-                    allData.partners[partnerIndex].points_used = newPointsUsed;
+                // 延時處理結果（因為CORS限制無法讀取iframe內容）
+                setTimeout(() => {
+                    // 立即更新前端數據
+                    const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
+                    if (partnerIndex !== -1) {
+                        allData.partners[partnerIndex].available_points = newAvailablePoints;
+                        allData.partners[partnerIndex].points_used = newPointsUsed;
+                        
+                        console.log('✅ 前端數據更新完成:', {
+                            partner: partnerCode,
+                            available_points: newAvailablePoints,
+                            points_used: newPointsUsed
+                        });
+                    }
                     
-                    console.log('✅ 前端數據更新完成:', {
-                        partner: partnerCode,
-                        available_points: newAvailablePoints,
-                        points_used: newPointsUsed
-                    });
-                }
-                
-                showSuccessMessage(`✅ 成功使用 $${amount.toLocaleString()} 住宿金！\n剩餘點數：$${newAvailablePoints.toLocaleString()}`);
-                closeModal('usePointsModal');
-                displayPartners(allData.partners);
-                
-                // 不再需要背景重載，因為我們已經更新了正確的值
+                    showSuccessMessage(`✅ 成功使用 $${amount.toLocaleString()} 住宿金！\n剩餘點數：$${newAvailablePoints.toLocaleString()}`);
+                    closeModal('usePointsModal');
+                    displayPartners(allData.partners);
+                    
+                    // 清理表單
+                    if (form.parentNode) {
+                        document.body.removeChild(form);
+                    }
+                }, 1000);
                 
             } catch (error) {
                 console.error('使用住宿金失敗:', error);

@@ -320,7 +320,7 @@ function handleCreatePartner(data, e) {
   }
 }
 
-// ===== 通用 ID 生成函數 =====
+// ===== 通用 ID 生成函數（改進版）=====
 function generateNextId(sheet, tableName) {
   try {
     // 處理空表格的情況
@@ -339,24 +339,45 @@ function generateNextId(sheet, tableName) {
     }
     
     let maxId = 0;
+    const existingIds = new Set(); // 記錄所有已存在的 ID
     
     // 從第二行開始（跳過標題行），查找最大的 ID
     for (let i = 1; i < values.length; i++) {
       const currentId = values[i][0]; // ID 在第一列（A列）
       
       // 檢查是否為有效數字
+      let numId = null;
       if (typeof currentId === 'number' && !isNaN(currentId) && currentId > 0) {
-        maxId = Math.max(maxId, currentId);
+        numId = currentId;
       } else if (typeof currentId === 'string' && currentId !== '') {
-        const numId = parseInt(currentId);
-        if (!isNaN(numId) && numId > 0) {
-          maxId = Math.max(maxId, numId);
+        const parsed = parseInt(currentId);
+        if (!isNaN(parsed) && parsed > 0) {
+          numId = parsed;
         }
+      }
+      
+      if (numId !== null) {
+        existingIds.add(numId);
+        maxId = Math.max(maxId, numId);
       }
     }
     
-    const nextId = maxId + 1;
-    Logger.log(`生成 ${tableName} ID: 當前最大 ID = ${maxId}, 新 ID = ${nextId}`);
+    // 生成新 ID：使用 maxId + 1，但要確保不與現有 ID 衝突
+    let nextId = maxId + 1;
+    
+    // 額外檢查：確保新 ID 不存在（防止併發問題）
+    while (existingIds.has(nextId)) {
+      Logger.log(`警告：ID ${nextId} 已存在，遞增到 ${nextId + 1}`);
+      nextId++;
+    }
+    
+    // 安全檢查：如果 nextId 太小（可能是錯誤），使用更大的值
+    if (nextId < 1) {
+      Logger.log(`警告：計算出的 ID ${nextId} 太小，使用時間戳基礎 ID`);
+      nextId = 100000 + (Date.now() % 900000); // 100000-999999 範圍
+    }
+    
+    Logger.log(`生成 ${tableName} ID: 當前最大 ID = ${maxId}, 新 ID = ${nextId}, 已存在 ${existingIds.size} 筆記錄`);
     return nextId;
     
   } catch (error) {

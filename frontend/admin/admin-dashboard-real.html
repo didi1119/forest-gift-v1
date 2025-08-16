@@ -3048,12 +3048,18 @@
         // 儲存訂單變更
         async function saveBookingChanges(bookingIdentifier) {
             try {
-                // bookingIdentifier 可能是 booking.id 或陣列索引
-                const existingBooking = typeof bookingIdentifier === 'number' 
-                    ? allData.bookings[bookingIdentifier]
-                    : allData.bookings.find(b => b.id == bookingIdentifier);
+                // 優先使用 id 查找，如果找不到再試試作為索引
+                let existingBooking = allData.bookings.find(b => b.id == bookingIdentifier);
+                
+                // 如果用 id 找不到，並且 identifier 是有效的索引，則使用索引
+                if (!existingBooking && typeof bookingIdentifier === 'number' && 
+                    bookingIdentifier >= 0 && bookingIdentifier < allData.bookings.length) {
+                    existingBooking = allData.bookings[bookingIdentifier];
+                }
                     
                 if (!existingBooking) {
+                    console.error('找不到訂房記錄，bookingIdentifier:', bookingIdentifier);
+                    console.error('所有訂房記錄:', allData.bookings);
                     showErrorMessage('找不到訂房記錄');
                     return;
                 }
@@ -3191,38 +3197,22 @@
                            String(date.getDate()).padStart(2, '0');
                 };
                 
-                // 使用 fetch 方式，與其他正常功能保持一致
-                const params = new URLSearchParams();
-                params.append('action', 'delete_booking');
-                params.append('booking_id', booking.id || '');
-                params.append('guest_name', booking.guest_name);
-                params.append('guest_phone', booking.guest_phone);
-                params.append('checkin_date', formatDateForBackend(booking.checkin_date));
-                
-                console.log('📤 刪除訂房 - 發送數據:', {
+                // 使用 form 提交方式避免 CORS 問題
+                const deleteData = {
                     action: 'delete_booking',
                     booking_id: booking.id || '',
                     guest_name: booking.guest_name,
                     guest_phone: booking.guest_phone,
                     checkin_date: formatDateForBackend(booking.checkin_date)
-                });
+                };
                 
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: params.toString()
-                });
+                console.log('📤 刪除訂房 - 發送數據:', deleteData);
                 
-                console.log('📡 刪除訂房 - 收到回應:', response.status, response.statusText);
+                // 使用統一的 iframe 表單提交函數
+                submitToBackendViaForm(deleteData);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
-                }
-                
-                const result = await response.text();
-                console.log('📥 刪除訂房 - 後端回應:', result);
+                // 給後端一些時間處理
+                await new Promise(resolve => setTimeout(resolve, 1500));
                 
                 // 立即更新前端數據
                 console.log('🗑️ 刪除請求已發送，更新前端數據...', booking.guest_name);
@@ -5396,21 +5386,12 @@ ${landingUrl}
 
                 console.log('🚀 準備創建手動調整記錄:', adjustmentData);
 
-                // 創建調整記錄
-                const response1 = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: new URLSearchParams(adjustmentData)
-                });
-
-                const result1 = await response1.json();
-                console.log('📝 調整記錄創建回應:', result1);
-
-                if (!result1.success) {
-                    throw new Error(result1.error || '創建調整記錄失敗');
-                }
+                // 使用 form 提交方式避免 CORS 問題
+                // 第一步：創建調整記錄
+                submitToBackendViaForm(adjustmentData);
+                
+                // 給後端時間處理第一個請求
+                await new Promise(resolve => setTimeout(resolve, 1500));
 
                 // 🎯 更新夥伴佣金資訊
                 const updateData = {
@@ -5423,20 +5404,13 @@ ${landingUrl}
 
                 console.log('🚀 準備更新夥伴佣金:', updateData);
 
-                const response2 = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: new URLSearchParams(updateData)
-                });
-
-                const result2 = await response2.json();
-                console.log('📝 夥伴佣金更新回應:', result2);
-
-                if (!result2.success) {
-                    throw new Error(result2.error || '更新夥伴佣金失敗');
-                }
+                // 第二步：更新佣金資訊
+                submitToBackendViaForm(updateData);
+                
+                // 給後端時間處理第二個請求
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                console.log('✅ 佣金調整請求已發送');
 
                 // 🎯 更新本地數據
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);

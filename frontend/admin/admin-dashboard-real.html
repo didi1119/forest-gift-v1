@@ -962,38 +962,6 @@
             clicks: []
         };
 
-        // 標籤切換功能
-        function showTab(tabName) {
-            // 隱藏所有標籤內容
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            
-            // 移除所有標籤的 active 狀態
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active');
-            });
-            
-            // 顯示選中的標籤內容
-            document.getElementById(`content-${tabName}`).classList.remove('hidden');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-            
-            // 根據標籤載入相應數據
-            switch(tabName) {
-                case 'overview':
-                    loadOverviewData();
-                    break;
-                case 'bookings':
-                    loadBookingsData();
-                    break;
-                case 'payouts':
-                    loadPayoutsData();
-                    break;
-                case 'analytics':
-                    loadAnalyticsData();
-                    break;
-            }
-        }
 
         // 載入真實數據
         async function loadRealData() {
@@ -6222,27 +6190,41 @@ ${landingUrl}
             link.click();
         }
 
-        // 當數據分析標籤被點擊時載入分析數據
+        // 標籤切換功能（修復版本，包含所有標籤的數據載入）
         function showTab(tabName) {
-            // 呼叫原有的 showTab 函數邏輯
+            // 隱藏所有標籤內容
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.add('hidden');
             });
+            
+            // 移除所有標籤的 active 狀態
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.classList.remove('active');
             });
             
+            // 顯示選中的標籤內容
             const targetContent = document.getElementById(`content-${tabName}`);
             const targetButton = document.getElementById(`tab-${tabName}`);
             
             if (targetContent) targetContent.classList.remove('hidden');
             if (targetButton) targetButton.classList.add('active');
             
-            // 如果是數據分析標籤，載入分析數據
-            if (tabName === 'analytics') {
-                setTimeout(() => {
-                    loadAnalyticsData();
-                }, 100);
+            // 根據標籤載入相應數據
+            switch(tabName) {
+                case 'overview':
+                    loadOverviewData();
+                    break;
+                case 'bookings':
+                    loadBookingsData();
+                    break;
+                case 'payouts':
+                    loadPayoutsData();
+                    break;
+                case 'analytics':
+                    setTimeout(() => {
+                        loadAnalyticsData();
+                    }, 100);
+                    break;
             }
         }
     </script>

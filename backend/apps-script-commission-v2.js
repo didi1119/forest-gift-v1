@@ -1326,6 +1326,8 @@ function handleCancelPayout(data, e) {
     } else {
       const currentTotalEarned = parseFloat(partnerValues[partnerRowIndex-1][9]) || 0; // total_commission_earned
       const currentPendingCommission = parseFloat(partnerValues[partnerRowIndex-1][11]) || 0; // pending_commission
+      const currentLevelProgress = parseFloat(partnerValues[partnerRowIndex-1][6]) || 0; // level_progress
+      const currentTotalReferrals = parseFloat(partnerValues[partnerRowIndex-1][7]) || 0; // total_successful_referrals
       
       let adjustmentMade = false;
       
@@ -1365,6 +1367,33 @@ function handleCancelPayout(data, e) {
             const newPendingCommission = Math.max(0, currentPendingCommission - payoutAmount);
             partnersSheet.getRange(partnerRowIndex, 12).setValue(newPendingCommission); // pending_commission
             Logger.log('❌ 取消結算，扣除待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission);
+          }
+          
+          // 如果有相關訂單，扣除等級進度（取消成功推薦）
+          if (relatedBookingIds && relatedBookingIds !== '-' && relatedBookingIds !== '') {
+            const bookingCount = String(relatedBookingIds).split(',').length;
+            const newLevelProgress = Math.max(0, currentLevelProgress - bookingCount);
+            const newTotalReferrals = Math.max(0, currentTotalReferrals - bookingCount);
+            
+            partnersSheet.getRange(partnerRowIndex, 7).setValue(newLevelProgress); // level_progress
+            partnersSheet.getRange(partnerRowIndex, 8).setValue(newTotalReferrals); // total_successful_referrals
+            
+            Logger.log('📉 扣除等級進度: ' + currentLevelProgress + ' → ' + newLevelProgress);
+            Logger.log('📉 扣除累積推薦: ' + currentTotalReferrals + ' → ' + newTotalReferrals);
+            
+            // 檢查是否需要降級
+            const currentLevel = partnerValues[partnerRowIndex-1][5]; // level
+            let newLevel = currentLevel;
+            if (newLevelProgress < 10 && currentLevel === 'LV3_GUARDIAN') {
+              newLevel = 'LV2_GUIDE';
+            } else if (newLevelProgress < 5 && currentLevel === 'LV2_GUIDE') {
+              newLevel = 'LV1_INSIDER';
+            }
+            
+            if (newLevel !== currentLevel) {
+              partnersSheet.getRange(partnerRowIndex, 6).setValue(newLevel); // level
+              Logger.log('⬇️ 等級降級: ' + currentLevel + ' → ' + newLevel);
+            }
           }
           
           adjustmentMade = true;

@@ -145,7 +145,11 @@ function getPaymentMethodText(method) {
 async function cancelPayout(payoutId) {
     console.log('🔍 嘗試取消結算 ID:', payoutId);
     
-    let payout = allData.payouts.find(p => p.id == payoutId);
+    // 同時檢查 id 和 ID 欄位（Google Sheets 可能用大寫）
+    let payout = allData.payouts.find(p => 
+        p.id == payoutId || p.ID == payoutId || 
+        String(p.id) === String(payoutId) || String(p.ID) === String(payoutId)
+    );
     
     // 如果找不到，嘗試用索引
     if (!payout) {
@@ -153,6 +157,15 @@ async function cancelPayout(payoutId) {
         if (!isNaN(payoutIndex) && payoutIndex >= 0 && payoutIndex < allData.payouts.length) {
             payout = allData.payouts[payoutIndex];
         }
+    }
+    
+    // 調試輸出
+    if (!payout) {
+        console.error('找不到 payout，所有 payouts:', allData.payouts.map(p => ({
+            id: p.id,
+            ID: p.ID,
+            partner_code: p.partner_code
+        })));
     }
     
     if (!payout) {
@@ -238,7 +251,11 @@ async function cancelPayout(payoutId) {
 function editPayout(payoutId) {
     console.log('🔍 嘗試編輯結算 ID:', payoutId);
     
-    let payout = allData.payouts.find(p => p.id == payoutId);
+    // 同時檢查 id 和 ID 欄位（Google Sheets 可能用大寫）
+    let payout = allData.payouts.find(p => 
+        p.id == payoutId || p.ID == payoutId || 
+        String(p.id) === String(payoutId) || String(p.ID) === String(payoutId)
+    );
     
     // 如果找不到，嘗試用索引
     if (!payout) {
@@ -246,6 +263,15 @@ function editPayout(payoutId) {
         if (!isNaN(payoutIndex) && payoutIndex >= 0 && payoutIndex < allData.payouts.length) {
             payout = allData.payouts[payoutIndex];
         }
+    }
+    
+    // 調試輸出
+    if (!payout) {
+        console.error('找不到 payout，所有 payouts:', allData.payouts.map(p => ({
+            id: p.id,
+            ID: p.ID,
+            partner_code: p.partner_code
+        })));
     }
     
     if (!payout) {

@@ -1541,6 +1541,72 @@
             `).join('');
         }
 
+        // 刷新特定類型的數據
+        async function refreshData(dataType) {
+            try {
+                console.log(`🔄 刷新 ${dataType} 數據...`);
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=get_all_data`);
+                const newData = await response.json();
+                
+                if (newData.success && newData.data) {
+                    // 更新特定類型的數據
+                    if (dataType === 'bookings' && newData.data.bookings) {
+                        allData.bookings = normalizeBookings(newData.data.bookings);
+                        displayBookings(allData.bookings);
+                    } else if (dataType === 'payouts' && newData.data.payouts) {
+                        allData.payouts = newData.data.payouts;
+                        displayPayouts(allData.payouts);
+                    } else if (dataType === 'partners' && newData.data.partners) {
+                        allData.partners = newData.data.partners;
+                        displayPartners(allData.partners);
+                    }
+                    console.log(`✅ ${dataType} 數據已刷新`);
+                }
+            } catch (error) {
+                console.error(`刷新 ${dataType} 失敗:`, error);
+            }
+        }
+
+        // 統一的 iframe 表單提交函數（避免 CORS 問題）
+        function submitToBackendViaForm(data) {
+            // 創建隱藏的 iframe 來接收回應
+            let iframe = document.getElementById('hiddenFrame');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.name = 'hiddenFrame';
+                iframe.id = 'hiddenFrame';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+            
+            // 創建表單
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = APPS_SCRIPT_URL;
+            form.target = 'hiddenFrame';
+            form.style.display = 'none';
+            
+            // 添加數據作為表單欄位
+            Object.keys(data).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = data[key] || '';
+                form.appendChild(input);
+            });
+            
+            // 提交表單
+            document.body.appendChild(form);
+            form.submit();
+            
+            // 清理表單元素
+            setTimeout(() => {
+                document.body.removeChild(form);
+            }, 1000);
+            
+            console.log('📤 表單已提交:', data);
+        }
+
         // 輔助函數
         function getLevelClass(level) {
             const classes = {
@@ -1805,11 +1871,11 @@
                     
                     <!-- 操作按鈕 -->
                     <div class="flex justify-end space-x-3 pt-4 border-t">
-                        <button type="button" onclick="cancelPayout('${payout.id}')" 
+                        <button type="button" onclick="cancelPayout('${payout.id || payout.ID}')" 
                             class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                             🚫 取消此結算
                         </button>
-                        <button type="button" onclick="editPayout('${payout.id}')" 
+                        <button type="button" onclick="editPayout('${payout.id || payout.ID}')" 
                             class="px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
                             ✏️ 修改結算
                         </button>
@@ -3145,10 +3211,12 @@
                     throw new Error(responseData.error || '後端更新失敗');
                 }
                 
-                // 立即更新前端數據（不使用 setTimeout）
-                const updateIndex = typeof bookingIdentifier === 'number' 
-                    ? bookingIdentifier 
-                    : allData.bookings.findIndex(b => b.id == bookingIdentifier);
+                // 立即更新前端數據
+                // 使用原始姓名和電話找到正確的記錄進行更新
+                const updateIndex = allData.bookings.findIndex(b => 
+                    b.guest_name === existingBooking.guest_name && 
+                    String(b.guest_phone) === String(existingBooking.guest_phone)
+                );
                 
                 if (updateIndex !== -1) {
                     // 使用標準化後的完整 booking 數據更新本地記錄
@@ -3157,14 +3225,22 @@
                         ...updatedBooking,
                         updated_at: new Date().toISOString()
                     };
-                    console.log('✅ 已更新前端訂單數據（使用標準化格式）');
+                    console.log('✅ 已更新前端訂單數據，索引:', updateIndex);
                 } else {
-                    console.error('❌ 找不到要更新的訂單索引');
+                    console.error('❌ 找不到要更新的訂單');
+                    // 如果找不到，等待後端處理完成後重新載入
+                    setTimeout(() => {
+                        loadRealData();
+                    }, 2000);
                 }
                 
                 showSuccessMessage('✅ 訂單更新成功！');
                 closeModal('editBookingModal');
-                displayBookings(allData.bookings);
+                
+                // 重新顯示更新後的訂單列表
+                setTimeout(() => {
+                    displayBookings(allData.bookings);
+                }, 500);
                 
             } catch (error) {
                 console.error('更新訂單失敗:', error);
@@ -6147,6 +6223,8 @@ ${landingUrl}
                     break;
                 case 'payouts':
                     loadPayoutsData();
+                    // 自動刷新結算數據以獲取最新狀態
+                    refreshData('payouts');
                     break;
                 case 'analytics':
                     setTimeout(() => {

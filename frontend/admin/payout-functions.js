@@ -110,11 +110,11 @@ function createPayoutDetailsModal(payout) {
             <!-- 操作按鈕 -->
             <div class="flex justify-end space-x-3 pt-4 border-t">
                 ${payout.payout_status !== 'COMPLETED' ? `
-                    <button type="button" onclick="editPayout('${payout.id}')" 
+                    <button type="button" onclick="editPayout('${payout.id || payout.ID}')" 
                         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                         ✏️ 修改
                     </button>
-                    <button type="button" onclick="cancelPayout('${payout.id}')" 
+                    <button type="button" onclick="cancelPayout('${payout.id || payout.ID}')" 
                         class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                         🚫 取消結算
                     </button>

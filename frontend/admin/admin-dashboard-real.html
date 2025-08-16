@@ -3852,15 +3852,17 @@
                         <!-- 使用金額 -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">折抵金額 *</label>
-                            <input type="number" id="use_amount" required min="100" max="${availablePoints}" 
+                            <input type="number" id="use_amount" required min="1" max="${availablePoints}" step="1" 
                                 class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
-                                placeholder="請輸入折抵金額">
+                                placeholder="請輸入折抵金額"
+                                oninput="validateUseAmount(this, ${availablePoints})">
+                            <div class="text-xs text-gray-500 mt-1">最大可使用：$${availablePoints.toLocaleString()}</div>
                             <div class="mt-2 flex gap-2">
-                                <button type="button" onclick="setQuickAmount('use_amount', 1000, ${availablePoints})" 
+                                <button type="button" onclick="setQuickAmount('use_amount', Math.min(1000, ${availablePoints}), ${availablePoints})" 
                                     class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$1,000</button>
-                                <button type="button" onclick="setQuickAmount('use_amount', 2000, ${availablePoints})" 
+                                <button type="button" onclick="setQuickAmount('use_amount', Math.min(2000, ${availablePoints}), ${availablePoints})" 
                                     class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$2,000</button>
-                                <button type="button" onclick="setQuickAmount('use_amount', 3000, ${availablePoints})" 
+                                <button type="button" onclick="setQuickAmount('use_amount', Math.min(3000, ${availablePoints}), ${availablePoints})" 
                                     class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$3,000</button>
                                 <button type="button" onclick="setQuickAmount('use_amount', ${availablePoints}, ${availablePoints})" 
                                     class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">全部</button>
@@ -3915,15 +3917,38 @@
             const bookingRef = document.getElementById('use_booking_ref').value;
             const notes = document.getElementById('use_notes').value;
             
+            // 驗證金額
+            const availablePoints = partner.available_points || partner.total_commission_earned || 0;
+            if (amount <= 0) {
+                showErrorMessage('折抵金額必須大於 0');
+                return;
+            }
+            if (amount > availablePoints) {
+                showErrorMessage(`折抵金額不能超過可用點數 $${availablePoints.toLocaleString()}`);
+                return;
+            }
+            
             try {
-                // 準備提交數據
+                // 計算更新後的值
+                const newAvailablePoints = availablePoints - amount;
+                const newPointsUsed = (partner.points_used || 0) + amount;
+                
+                // 使用正確的 API 端點更新大使資料
                 const formData = new URLSearchParams();
-                formData.append('action', 'use_accommodation_points');
+                formData.append('action', 'update_partner_commission');
                 formData.append('partner_code', partnerCode);
-                formData.append('amount', amount);
-                formData.append('checkin_date', checkinDate);
-                formData.append('booking_ref', bookingRef || '');
-                formData.append('notes', notes || `住宿金折抵 - ${new Date().toLocaleDateString()}`);
+                formData.append('available_points', newAvailablePoints);
+                formData.append('points_used', newPointsUsed);
+                formData.append('notes', notes || `住宿金折抵 $${amount.toLocaleString()} - ${new Date().toLocaleDateString()}`);
+                
+                console.log('📝 住宿金折抵 - 提交數據:', {
+                    action: 'update_partner_commission',
+                    partner_code: partnerCode,
+                    original_points: availablePoints,
+                    use_amount: amount,
+                    new_available_points: newAvailablePoints,
+                    new_points_used: newPointsUsed
+                });
                 
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
@@ -3938,21 +3963,21 @@
                 // 立即更新前端數據
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                 if (partnerIndex !== -1) {
-                    const currentPoints = allData.partners[partnerIndex].available_points || 0;
-                    allData.partners[partnerIndex].available_points = currentPoints - amount;
-                    allData.partners[partnerIndex].points_used = (allData.partners[partnerIndex].points_used || 0) + amount;
+                    allData.partners[partnerIndex].available_points = newAvailablePoints;
+                    allData.partners[partnerIndex].points_used = newPointsUsed;
+                    
+                    console.log('✅ 前端數據更新完成:', {
+                        partner: partnerCode,
+                        available_points: newAvailablePoints,
+                        points_used: newPointsUsed
+                    });
                 }
                 
-                showSuccessMessage(`✅ 成功使用 $${amount.toLocaleString()} 住宿金！`);
+                showSuccessMessage(`✅ 成功使用 $${amount.toLocaleString()} 住宿金！\n剩餘點數：$${newAvailablePoints.toLocaleString()}`);
                 closeModal('usePointsModal');
                 displayPartners(allData.partners);
                 
-                // 背景重新載入數據
-                setTimeout(() => {
-                    loadRealData().then(() => {
-                        displayPartners(allData.partners);
-                    });
-                }, 2000);
+                // 不再需要背景重載，因為我們已經更新了正確的值
                 
             } catch (error) {
                 console.error('使用住宿金失敗:', error);
@@ -3965,6 +3990,38 @@
             const input = document.getElementById(inputId);
             if (input) {
                 input.value = Math.min(amount, max);
+                // 觸發驗證
+                validateUseAmount(input, max);
+            }
+        }
+
+        // 驗證使用金額
+        function validateUseAmount(input, maxAmount) {
+            const value = parseFloat(input.value);
+            const warningDiv = input.parentNode.querySelector('.amount-warning');
+            
+            // 移除既有警告
+            if (warningDiv) {
+                warningDiv.remove();
+            }
+            
+            if (value > maxAmount) {
+                input.value = maxAmount;
+                const warning = document.createElement('div');
+                warning.className = 'amount-warning text-xs text-red-600 mt-1';
+                warning.textContent = `金額已調整為最大可用值: $${maxAmount.toLocaleString()}`;
+                input.parentNode.appendChild(warning);
+                
+                setTimeout(() => {
+                    if (warning.parentNode) {
+                        warning.remove();
+                    }
+                }, 3000);
+            } else if (value <= 0) {
+                const warning = document.createElement('div');
+                warning.className = 'amount-warning text-xs text-red-600 mt-1';
+                warning.textContent = '金額必須大於 0';
+                input.parentNode.appendChild(warning);
             }
         }
 

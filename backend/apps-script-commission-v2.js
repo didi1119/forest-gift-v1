@@ -2507,13 +2507,17 @@ function handleConvertPointsToCash(data, e) {
     // 3. 創建現金結算記錄到 Payouts 表
     const payoutData = [
       '', // ID (自動編號)
-      partnerCode,
+      partnerCode, // partner_code
       'CASH', // payout_type
       cashAmount, // amount
+      '', // related_booking_ids
+      'BANK_TRANSFER', // payout_method
       'PENDING', // payout_status
-      '', // payout_date
-      '', // booking_ids
-      `住宿金轉換：${pointsUsed}點 → $${cashAmount} - ${notes}`,
+      '', // bank_transfer_date
+      '', // bank_transfer_reference
+      '', // accommodation_voucher_code
+      `住宿金轉換：${pointsUsed}點 → $${cashAmount} - ${notes}`, // notes
+      'admin', // created_by
       timestamp, // created_at
       timestamp  // updated_at
     ];

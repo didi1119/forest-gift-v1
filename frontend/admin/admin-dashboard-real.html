@@ -4082,13 +4082,7 @@
                     available_points: availablePoints
                 });
                 
-                // ✅ 使用 form 提交方式避免 CORS 問題，但修改後端以返回 JSON 而非 HTML
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = APPS_SCRIPT_URL;
-                form.target = 'hiddenFrame';
-                form.style.display = 'none';
-                
+                // 使用 fetch API 避免 403 錯誤
                 const submitData = {
                     action: 'deduct_accommodation_points',
                     partner_code: partnerCode,
@@ -4098,58 +4092,68 @@
                     notes: notes || `住宿金折抵 $${amount.toLocaleString()} - ${checkinDate || new Date().toLocaleDateString()}`
                 };
                 
+                console.log('🏨 使用住宿金 - 提交數據:', submitData);
+                
+                const params = new URLSearchParams();
                 Object.keys(submitData).forEach(key => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = submitData[key];
-                    form.appendChild(input);
+                    params.append(key, submitData[key]);
                 });
                 
-                // 確保隱藏的 iframe 存在
-                let hiddenFrame = document.getElementById('hiddenFrame');
-                if (!hiddenFrame) {
-                    hiddenFrame = document.createElement('iframe');
-                    hiddenFrame.id = 'hiddenFrame';
-                    hiddenFrame.name = 'hiddenFrame';
-                    hiddenFrame.style.display = 'none';
-                    document.body.appendChild(hiddenFrame);
+                console.log('📤 正在提交到 Google Apps Script...');
+                
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params.toString()
+                });
+                
+                console.log('📡 收到回應:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
                 }
                 
-                // 提交表單
-                document.body.appendChild(form);
-                form.submit();
+                const result = await response.text();
+                console.log('📄 後端回應內容:', result);
                 
-                // 延時處理結果（假設操作成功）
-                setTimeout(() => {
-                    // 更新前端數據
-                    const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
-                    if (partnerIndex !== -1) {
-                        // 更新 total_commission_paid，這樣住宿金餘額會自動減少
-                        const currentPaid = parseFloat(allData.partners[partnerIndex].total_commission_paid) || 0;
-                        allData.partners[partnerIndex].total_commission_paid = currentPaid + amount;
-                        
-                        const newBalance = availablePoints - amount;
-                        console.log('✅ 前端數據更新完成:', {
-                            partner: partnerCode,
-                            total_commission_paid: allData.partners[partnerIndex].total_commission_paid,
-                            accommodation_balance: newBalance
-                        });
-                    }
+                // 嘗試解析JSON回應
+                let responseData;
+                try {
+                    responseData = JSON.parse(result);
+                    console.log('📊 解析後的回應:', responseData);
+                } catch (parseError) {
+                    console.error('❌ JSON 解析失敗:', parseError);
+                    console.error('原始內容:', result);
+                    throw new Error('後端回應格式不正確: ' + parseError.message);
+                }
+                
+                if (!responseData.success) {
+                    throw new Error(responseData.error || '使用住宿金失敗');
+                }
+                
+                console.log('✅ 使用住宿金成功！後端確認:', responseData);
+                
+                // 更新前端數據
+                const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
+                if (partnerIndex !== -1) {
+                    // 更新 total_commission_paid，這樣住宿金餘額會自動減少
+                    const currentPaid = parseFloat(allData.partners[partnerIndex].total_commission_paid) || 0;
+                    allData.partners[partnerIndex].total_commission_paid = currentPaid + amount;
                     
                     const newBalance = availablePoints - amount;
-                    showSuccessMessage(`✅ 成功使用 $${amount.toLocaleString()} 住宿金！\n剩餘餘額：$${newBalance.toLocaleString()}`);
-                    closeModal('usePointsModal');
-                    displayPartners(allData.partners);
-                    
-                    // 不要立即重新載入數據，避免403錯誤
-                    // 數據已經更新到後端，前端也已更新
-                    
-                    // 清理表單
-                    if (form.parentNode) {
-                        document.body.removeChild(form);
-                    }
-                }, 2000); // 給後端處理時間
+                    console.log('✅ 前端數據更新完成:', {
+                        partner: partnerCode,
+                        total_commission_paid: allData.partners[partnerIndex].total_commission_paid,
+                        accommodation_balance: newBalance
+                    });
+                }
+                
+                const newBalance = availablePoints - amount;
+                showSuccessMessage(`✅ 成功使用 $${amount.toLocaleString()} 住宿金！\n剩餘餘額：$${newBalance.toLocaleString()}`);
+                closeModal('usePointsModal');
+                displayPartners(allData.partners);
                 
             } catch (error) {
                 console.error('使用住宿金失敗:', error);

@@ -1470,7 +1470,7 @@
                               payout.payout_type === 'ADJUSTMENT' ? '調整' : '住宿金'}
                         </td>
                         <td class="py-4 px-4 text-center font-semibold">
-                            $${(payout.amount || 0).toLocaleString()}
+                            ${payout.amount < 0 ? '-' : ''}$${Math.abs(payout.amount || 0).toLocaleString()}
                         </td>
                         <td class="py-4 px-4">
                             ${payout.related_booking_ids || '-'}
@@ -5493,7 +5493,7 @@ ${landingUrl}
                     action: 'create_payout',
                     partner_code: partnerCode,
                     payout_type: 'ADJUSTMENT',
-                    amount: Math.abs(adjustmentAmount), // 記錄調整金額的絕對值
+                    amount: adjustmentAmount, // 保留原始值（可能為負）
                     payout_method: 'MANUAL_ADJUSTMENT',
                     payout_status: 'COMPLETED',
                     notes: `👤 管理者手動調整 - ${notes} - 累積佣金 ${adjustmentText} - ${new Date().toLocaleString()}`
@@ -5501,29 +5501,25 @@ ${landingUrl}
 
                 console.log('🚀 準備創建手動調整記錄:', adjustmentData);
 
-                // 使用 form 提交方式避免 CORS 問題
-                // 第一步：創建調整記錄
-                submitToBackendViaForm(adjustmentData);
-                
-                // 給後端時間處理第一個請求
-                await new Promise(resolve => setTimeout(resolve, 1500));
-
-                // 🎯 更新夥伴佣金資訊
+                // 只發送一次請求：更新佣金資訊（不需要單獨創建 payout）
+                // 後端會自動記錄調整歷史
                 const updateData = {
                     action: 'update_partner_commission',
                     partner_code: partnerCode,
                     total_commission_earned: totalEarned,
                     total_commission_paid: totalPaid,
-                    pending_commission: pendingCash
+                    pending_commission: pendingCash,
+                    adjustment_amount: adjustmentAmount, // 傳遞調整金額
+                    adjustment_notes: notes // 傳遞調整備註
                 };
 
-                console.log('🚀 準備更新夥伴佣金:', updateData);
+                console.log('🚀 準備更新夥伴佣金（含調整記錄）:', updateData);
 
-                // 第二步：更新佣金資訊
+                // 使用 form 提交方式避免 CORS 問題
                 submitToBackendViaForm(updateData);
                 
-                // 給後端時間處理第二個請求
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // 給後端時間處理
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
                 console.log('✅ 佣金調整請求已發送');
 
@@ -5536,17 +5532,30 @@ ${landingUrl}
                     allData.partners[partnerIndex].pending_cash = pendingCash;
                 }
 
-                // 添加新的調整記錄到本地 payouts 數據
-                allData.payouts.push({
+                // 只在本地添加一個調整記錄（不要重複）
+                // 注意：後端會自動創建記錄，所以這裡只是暫時顯示用
+                const tempAdjustmentRecord = {
                     id: `adj_${Date.now()}`,
                     partner_code: partnerCode,
                     payout_type: 'ADJUSTMENT',
-                    amount: Math.abs(adjustmentAmount), // 使用實際的調整金額
+                    amount: adjustmentAmount, // 保留原始值（可能為負）
                     payout_method: 'MANUAL_ADJUSTMENT',
                     payout_status: 'COMPLETED',
                     notes: `手動調整累積佣金 ${adjustmentText}`, // 簡潔的說明
                     created_at: new Date().toISOString()
-                });
+                };
+                
+                // 檢查是否已存在相同的調整記錄（避免重複）
+                const existingRecord = allData.payouts.find(p => 
+                    p.partner_code === partnerCode && 
+                    p.payout_type === 'ADJUSTMENT' &&
+                    p.notes && p.notes.includes(adjustmentText) &&
+                    Math.abs(new Date(p.created_at).getTime() - new Date().getTime()) < 5000 // 5秒內
+                );
+                
+                if (!existingRecord) {
+                    allData.payouts.push(tempAdjustmentRecord);
+                }
 
                 showSuccessMessage('✅ 佣金資訊已更新，調整記錄已保存');
                 closeModal('partnerModal');

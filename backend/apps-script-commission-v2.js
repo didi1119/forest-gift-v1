@@ -2267,10 +2267,10 @@ function handleDeductAccommodationPoints(data, e) {
     let accommodationUsageSheet = spreadsheet.getSheetByName('Accommodation_Usage');
     if (!accommodationUsageSheet) {
       accommodationUsageSheet = spreadsheet.insertSheet('Accommodation_Usage');
-      // 設定標題行
+      // ✅ 設定標題行 - 添加住宿日期欄位
       const headers = [
         'id', 'partner_code', 'deduct_amount', 'related_booking_id', 
-        'usage_type', 'notes', 'created_by', 'created_at', 'updated_at'
+        'usage_date', 'usage_type', 'notes', 'created_by', 'created_at', 'updated_at'
       ];
       accommodationUsageSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
     }
@@ -2285,6 +2285,7 @@ function handleDeductAccommodationPoints(data, e) {
     const partnerCode = data.partner_code;
     const deductAmount = parseFloat(data.deduct_amount) || 0;
     const relatedBookingId = data.related_booking_id || '';
+    const usageDate = data.usage_date || '';
     const notes = data.notes || '';
     
     if (!partnerCode || deductAmount <= 0) {
@@ -2294,14 +2295,47 @@ function handleDeductAccommodationPoints(data, e) {
       });
     }
     
+    // ✅ 查找夥伴記錄並驗證餘額
+    const partnerRange = partnersSheet.getDataRange();
+    const partnerValues = partnerRange.getValues();
+    let partnerRowIndex = -1;
+    let currentEarned = 0;
+    let currentPaid = 0;
+    
+    for (let i = 1; i < partnerValues.length; i++) {
+      if (partnerValues[i][1] === partnerCode) { // B欄位是 partner_code
+        partnerRowIndex = i + 1; // 轉換為 1-based 索引
+        currentEarned = parseFloat(partnerValues[i][9]) || 0; // J欄位 total_commission_earned
+        currentPaid = parseFloat(partnerValues[i][10]) || 0;  // K欄位 total_commission_paid
+        break;
+      }
+    }
+    
+    if (partnerRowIndex === -1) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到指定的夥伴代碼: ' + partnerCode
+      });
+    }
+    
+    // ✅ 檢查餘額是否足夠
+    const availableBalance = currentEarned - currentPaid;
+    if (deductAmount > availableBalance) {
+      return createJsonResponse({
+        success: false,
+        error: `餘額不足。可用：$${availableBalance.toLocaleString()}，要扣除：$${deductAmount.toLocaleString()}`
+      });
+    }
+    
     const timestamp = new Date();
     
-    // 1. 記錄住宿金使用
+    // 1. 記錄住宿金使用 - 添加住宿日期
     const usageData = [
       '', // ID (自動編號)
       partnerCode,
       deductAmount,
       relatedBookingId,
+      usageDate, // ✅ 住宿日期
       'DEDUCTION', // usage_type
       notes,
       'admin', // created_by
@@ -2312,14 +2346,21 @@ function handleDeductAccommodationPoints(data, e) {
     accommodationUsageSheet.appendRow(usageData);
     Logger.log('✅ 住宿金使用記錄已創建');
     
-    // 2. 可選：更新夥伴的已使用住宿金統計（如果有這個欄位）
-    // 這裡可以根據需要添加邏輯來追蹤已使用的住宿金總額
+    // ✅ 2. 更新夥伴的 total_commission_paid 統計
+    const newPaid = currentPaid + deductAmount;
+    partnersSheet.getRange(partnerRowIndex, 11).setValue(newPaid); // K欄位
+    
+    Logger.log(`✅ 更新 ${partnerCode} 的 total_commission_paid: ${currentPaid} → ${newPaid}`);
+    Logger.log(`💰 住宿金餘額: ${availableBalance} → ${availableBalance - deductAmount}`);
     
     const result = {
       success: true,
       message: '住宿金點數抵扣記錄成功',
       partner_code: partnerCode,
       deduct_amount: deductAmount,
+      usage_date: usageDate,
+      before_balance: availableBalance,
+      after_balance: availableBalance - deductAmount,
       created_at: timestamp.toISOString()
     };
     
@@ -2336,6 +2377,8 @@ function handleDeductAccommodationPoints(data, e) {
           <h1>✅ 住宿金點數抵扣成功！</h1>
           <p>夥伴代碼：${partnerCode}</p>
           <p>抵扣金額：$${deductAmount.toLocaleString()}</p>
+          <p>住宿日期：${usageDate}</p>
+          <p>剩餘餘額：$${(availableBalance - deductAmount).toLocaleString()}</p>
           <p>說明：${notes}</p>
         </body>
         </html>

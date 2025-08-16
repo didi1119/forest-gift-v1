@@ -1027,7 +1027,11 @@
                                    onchange="updateSelection()" data-partner-code="${partner.partner_code}">
                             <div class="flex-grow">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <h3 class="font-bold text-lg text-stone-800">${partner.name || '未設定姓名'}</h3>
+                                    <h3 class="font-bold text-lg text-stone-800 hover:text-blue-600 cursor-pointer transition-colors" 
+                                        onclick="viewPartnerDetails('${partner.partner_code}')"
+                                        title="點擊查看詳情">
+                                        ${partner.name || '未設定姓名'}
+                                    </h3>
                                     <span class="text-sm text-stone-500 font-mono">${partner.partner_code}</span>
                                 </div>
                                 <div class="mt-1">
@@ -1123,15 +1127,10 @@
                             </svg>
                         </button>
                         
-                        <!-- 下拉選單：這裡的 onclick 都對應原有的函式 -->
+                        <!-- 簡化的下拉選單：只保留必要功能 -->
                         <div id="${dropdownId}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
                             <a href="#" onclick="viewPartnerDetails('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📋 查看詳情</a>
-                            <a href="#" onclick="editPartner('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📝 編輯資料</a>
                             ${pendingCash > 0 ? `<a href="#" onclick="showPartnerActionsModal('${partner.partner_code}', 'cash')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">💰 處理結算</a>` : ''}
-                            <a href="#" onclick="quickEditCommission('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🎯 佣金設定</a>
-                            <a href="#" onclick="createPartnerPayout('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">💳 手動結算</a>
-                            <a href="#" onclick="generatePartnerLinks('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🔗 產生連結</a>
-                            <a href="#" onclick="viewPartnerHistory('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📈 佣金歷史</a>
                         </div>
                     </div>
                 </div>
@@ -1765,8 +1764,14 @@
                         </div>
                         
                         <div class="border-t pt-4">
-                            <h4 class="font-semibold mb-2">佣金資訊</h4>
-                            <div class="grid grid-cols-3 gap-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-semibold">佣金資訊</h4>
+                                <button onclick="enableCommissionEdit('${partner.partner_code}')" 
+                                        class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors">
+                                    📝 編輯
+                                </button>
+                            </div>
+                            <div id="commission-view-${partner.partner_code}" class="grid grid-cols-3 gap-4">
                                 <div>
                                     <p class="text-sm text-gray-600">可用點數</p>
                                     <p class="font-semibold text-blue-600">${((parseFloat(partner.total_commission_earned) || 0) - (parseFloat(partner.total_commission_paid) || 0)).toLocaleString()} 點</p>
@@ -1778,6 +1783,44 @@
                                 <div>
                                     <p class="text-sm text-gray-600">待支付現金</p>
                                     <p class="font-semibold text-amber-600">NT$ ${(partner.pending_cash || partner.pending_commission || 0).toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <div id="commission-edit-${partner.partner_code}" class="hidden space-y-3">
+                                <div class="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="text-sm text-gray-600">累積佣金</label>
+                                        <input type="number" id="edit-total-earned-${partner.partner_code}" 
+                                               value="${parseFloat(partner.total_commission_earned) || 0}"
+                                               class="w-full px-2 py-1 border rounded text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="text-sm text-gray-600">已使用點數</label>
+                                        <input type="number" id="edit-total-paid-${partner.partner_code}" 
+                                               value="${parseFloat(partner.total_commission_paid) || 0}"
+                                               class="w-full px-2 py-1 border rounded text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="text-sm text-gray-600">待支付現金</label>
+                                        <input type="number" id="edit-pending-cash-${partner.partner_code}" 
+                                               value="${parseFloat(partner.pending_cash || partner.pending_commission) || 0}"
+                                               class="w-full px-2 py-1 border rounded text-sm">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600">調整備註</label>
+                                    <input type="text" id="edit-notes-${partner.partner_code}" 
+                                           placeholder="請說明調整原因..."
+                                           class="w-full px-2 py-1 border rounded text-sm">
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="saveCommissionEdit('${partner.partner_code}')" 
+                                            class="bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600 transition-colors">
+                                        ✅ 儲存
+                                    </button>
+                                    <button onclick="cancelCommissionEdit('${partner.partner_code}')" 
+                                            class="bg-gray-500 text-white px-4 py-2 rounded text-sm hover:bg-gray-600 transition-colors">
+                                        ❌ 取消
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -5165,22 +5208,187 @@ ${landingUrl}
             }
 
             try {
-                // 這裡應該呼叫現有的結算完成功能
-                // 暫時更新前端狀態
+                // 🎯 查找對應的 pending payout 記錄
+                const pendingPayout = allData.payouts.find(p => 
+                    p.partner_code === partnerCode && 
+                    p.payout_status === 'PENDING' && 
+                    p.payout_type === 'CASH' &&
+                    parseFloat(p.amount) === pendingAmount
+                );
+
+                if (!pendingPayout) {
+                    if (!batchMode) showErrorMessage('找不到對應的待結算記錄');
+                    return;
+                }
+
+                // 🎯 調用後端 API 更新結算狀態
+                const updateData = {
+                    action: 'update_payout',
+                    payout_id: pendingPayout.id,
+                    amount: pendingAmount,
+                    payout_status: 'PAID',
+                    notes: `👤 管理者手動處理結算 - ${new Date().toLocaleString()}`
+                };
+
+                console.log('🚀 準備更新結算狀態:', updateData);
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams(updateData)
+                });
+
+                const result = await response.json();
+                console.log('📝 結算狀態更新回應:', result);
+
+                if (!result.success) {
+                    throw new Error(result.error || '更新結算狀態失敗');
+                }
+
+                // 🎯 更新本地數據
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                 if (partnerIndex !== -1) {
                     allData.partners[partnerIndex].pending_cash = 0;
                     allData.partners[partnerIndex].pending_commission = 0;
                 }
 
+                // 更新 payouts 數據
+                const payoutIndex = allData.payouts.findIndex(p => p.id === pendingPayout.id);
+                if (payoutIndex !== -1) {
+                    allData.payouts[payoutIndex].payout_status = 'PAID';
+                    allData.payouts[payoutIndex].notes = updateData.notes;
+                }
+
                 if (!batchMode) {
                     showSuccessMessage(`✅ 結算完成！已轉帳 NT$ ${pendingAmount.toLocaleString()}`);
                     displayPartners(allData.partners);
+                    closeModal('partnerActionsModal');
                 }
 
             } catch (error) {
-                console.error('結算失敗:', error);
+                console.error('❌ 結算失敗:', error);
                 if (!batchMode) showErrorMessage('❌ 結算失敗：' + error.message);
+            }
+        }
+
+        // 佣金編輯功能
+        function enableCommissionEdit(partnerCode) {
+            document.getElementById(`commission-view-${partnerCode}`).classList.add('hidden');
+            document.getElementById(`commission-edit-${partnerCode}`).classList.remove('hidden');
+        }
+
+        function cancelCommissionEdit(partnerCode) {
+            document.getElementById(`commission-view-${partnerCode}`).classList.remove('hidden');
+            document.getElementById(`commission-edit-${partnerCode}`).classList.add('hidden');
+        }
+
+        async function saveCommissionEdit(partnerCode) {
+            const totalEarned = parseFloat(document.getElementById(`edit-total-earned-${partnerCode}`).value) || 0;
+            const totalPaid = parseFloat(document.getElementById(`edit-total-paid-${partnerCode}`).value) || 0;
+            const pendingCash = parseFloat(document.getElementById(`edit-pending-cash-${partnerCode}`).value) || 0;
+            const notes = document.getElementById(`edit-notes-${partnerCode}`).value.trim();
+
+            if (!notes) {
+                showErrorMessage('請填寫調整備註');
+                return;
+            }
+
+            if (totalEarned < 0 || totalPaid < 0 || pendingCash < 0) {
+                showErrorMessage('金額不能為負數');
+                return;
+            }
+
+            if (totalPaid > totalEarned) {
+                showErrorMessage('已使用點數不能超過累積佣金');
+                return;
+            }
+
+            try {
+                // 🎯 創建手動調整記錄到 Payouts 表
+                const adjustmentData = {
+                    action: 'create_payout',
+                    partner_code: partnerCode,
+                    payout_type: 'ADJUSTMENT',
+                    amount: 0, // 手動調整記錄，金額為0
+                    payout_method: 'MANUAL_ADJUSTMENT',
+                    payout_status: 'COMPLETED',
+                    notes: `👤 管理者手動調整 - ${notes} - ${new Date().toLocaleString()}`
+                };
+
+                console.log('🚀 準備創建手動調整記錄:', adjustmentData);
+
+                // 創建調整記錄
+                const response1 = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams(adjustmentData)
+                });
+
+                const result1 = await response1.json();
+                console.log('📝 調整記錄創建回應:', result1);
+
+                if (!result1.success) {
+                    throw new Error(result1.error || '創建調整記錄失敗');
+                }
+
+                // 🎯 更新夥伴佣金資訊
+                const updateData = {
+                    action: 'update_partner_commission',
+                    partner_code: partnerCode,
+                    total_commission_earned: totalEarned,
+                    total_commission_paid: totalPaid,
+                    pending_commission: pendingCash
+                };
+
+                console.log('🚀 準備更新夥伴佣金:', updateData);
+
+                const response2 = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams(updateData)
+                });
+
+                const result2 = await response2.json();
+                console.log('📝 夥伴佣金更新回應:', result2);
+
+                if (!result2.success) {
+                    throw new Error(result2.error || '更新夥伴佣金失敗');
+                }
+
+                // 🎯 更新本地數據
+                const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
+                if (partnerIndex !== -1) {
+                    allData.partners[partnerIndex].total_commission_earned = totalEarned;
+                    allData.partners[partnerIndex].total_commission_paid = totalPaid;
+                    allData.partners[partnerIndex].pending_commission = pendingCash;
+                    allData.partners[partnerIndex].pending_cash = pendingCash;
+                }
+
+                // 添加新的調整記錄到本地 payouts 數據
+                allData.payouts.push({
+                    id: result1.payout_id || `adj_${Date.now()}`,
+                    partner_code: partnerCode,
+                    payout_type: 'ADJUSTMENT',
+                    amount: 0,
+                    payout_method: 'MANUAL_ADJUSTMENT',
+                    payout_status: 'COMPLETED',
+                    notes: adjustmentData.notes,
+                    created_at: new Date().toISOString()
+                });
+
+                showSuccessMessage('✅ 佣金資訊已更新，調整記錄已保存');
+                closeModal('partnerModal');
+                displayPartners(allData.partners);
+
+            } catch (error) {
+                console.error('❌ 佣金編輯失敗:', error);
+                showErrorMessage('❌ 佣金編輯失敗：' + error.message);
             }
         }
 

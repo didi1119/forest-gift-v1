@@ -239,6 +239,11 @@ function handleCreatePartner(data, e) {
     }
     
     const timestamp = new Date();
+    
+    // 生成新的 partner ID
+    const newPartnerId = generateNextId(sheet, 'Partner');
+    Logger.log('生成新的 Partner ID: ' + newPartnerId);
+    
     // 按照標題行順序建立資料陣列
     // id, partner_code, name, email, phone, level, level_progress, total_successful_referrals, 
     // commission_preference, total_commission_earned, total_commission_paid, pending_commission, 
@@ -246,7 +251,7 @@ function handleCreatePartner(data, e) {
     // bank_name, bank_code, bank_branch, bank_account_name, bank_account_number, 
     // created_at, updated_at
     const partnerData = [
-      '', // A: id (自動編號)
+      newPartnerId, // A: id (自動生成)
       data.partner_code || 'UNKNOWN', // B: partner_code
       data.name || '', // C: name
       data.email || '', // D: email
@@ -315,6 +320,60 @@ function handleCreatePartner(data, e) {
   }
 }
 
+// ===== 通用 ID 生成函數 =====
+function generateNextId(sheet, tableName) {
+  try {
+    // 處理空表格的情況
+    if (!sheet || sheet.getLastRow() === 0) {
+      Logger.log(`${tableName} 表格為空，從 ID 1 開始`);
+      return 1;
+    }
+    
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+    
+    // 如果只有標題行，從 1 開始
+    if (values.length <= 1) {
+      Logger.log(`${tableName} 表格只有標題行，從 ID 1 開始`);
+      return 1;
+    }
+    
+    let maxId = 0;
+    
+    // 從第二行開始（跳過標題行），查找最大的 ID
+    for (let i = 1; i < values.length; i++) {
+      const currentId = values[i][0]; // ID 在第一列（A列）
+      
+      // 檢查是否為有效數字
+      if (typeof currentId === 'number' && !isNaN(currentId) && currentId > 0) {
+        maxId = Math.max(maxId, currentId);
+      } else if (typeof currentId === 'string' && currentId !== '') {
+        const numId = parseInt(currentId);
+        if (!isNaN(numId) && numId > 0) {
+          maxId = Math.max(maxId, numId);
+        }
+      }
+    }
+    
+    const nextId = maxId + 1;
+    Logger.log(`生成 ${tableName} ID: 當前最大 ID = ${maxId}, 新 ID = ${nextId}`);
+    return nextId;
+    
+  } catch (error) {
+    Logger.log(`生成 ${tableName} ID 時發生錯誤: ` + error.toString());
+    // 如果發生錯誤，使用時間戳作為備用方案
+    // 確保不會與現有 ID 衝突，使用較大的數字
+    const backupId = 100000 + (Date.now() % 900000); // 100000-999999 範圍
+    Logger.log(`使用備用 ID: ${backupId}`);
+    return backupId;
+  }
+}
+
+// ===== 生成下一個 Booking ID =====
+function generateNextBookingId(bookingsSheet) {
+  return generateNextId(bookingsSheet, 'Booking');
+}
+
 // ===== 處理建立訂房 =====
 function handleCreateBooking(data, e) {
   try {
@@ -329,8 +388,13 @@ function handleCreateBooking(data, e) {
     }
     
     const timestamp = new Date();
+    
+    // 生成新的 booking ID
+    const newBookingId = generateNextBookingId(sheet);
+    Logger.log('生成新的 Booking ID: ' + newBookingId);
+    
     const bookingData = [
-      '', // ID (自動編號) - A列
+      newBookingId, // ID (自動生成) - A列
       data.partner_code || null, // partner_code - B列
       data.guest_name || '', // guest_name - C列
       data.guest_phone || '', // guest_phone - D列
@@ -361,6 +425,7 @@ function handleCreateBooking(data, e) {
     const result = {
       success: true,
       message: '訂房記錄建立成功',
+      booking_id: newBookingId,
       guest_name: data.guest_name,
       partner_code: data.partner_code,
       timestamp: timestamp.toISOString()
@@ -377,6 +442,7 @@ function handleCreateBooking(data, e) {
         </head>
         <body>
           <h1>✅ 訂房記錄建立成功！</h1>
+          <p>訂房ID：${newBookingId}</p>
           <p>房客姓名：${data.guest_name}</p>
           ${data.partner_code ? `<p>推薦大使：${data.partner_code}</p>` : ''}
         </body>
@@ -540,13 +606,15 @@ function handleConfirmCheckinCompletion(data, e) {
         const newTotal = currentTotal + 1;
         const commissionAmount = parseFloat(data.commission_amount) || 0;
         const newCommissionEarned = currentCommissionEarned + commissionAmount;
-        const newPendingCommission = currentPendingCommission + commissionAmount;
+        // 修復：佣金只加在 total_commission_earned，不重複加在 pending_commission
+        // const newPendingCommission = currentPendingCommission + commissionAmount;
         
         // 更新大使資料
         partnersSheet.getRange(partnerRowIndex, 7).setValue(newProgress); // level_progress
         partnersSheet.getRange(partnerRowIndex, 8).setValue(newTotal); // total_successful_referrals
         partnersSheet.getRange(partnerRowIndex, 10).setValue(newCommissionEarned); // total_commission_earned
-        partnersSheet.getRange(partnerRowIndex, 12).setValue(newPendingCommission); // pending_commission
+        // 修復：不更新 pending_commission，佣金只記錄在 total_commission_earned
+        // partnersSheet.getRange(partnerRowIndex, 12).setValue(newPendingCommission); // pending_commission
         
         // 標記已領取首次推薦獎勵
         if (data.is_first_referral_bonus) {
@@ -573,8 +641,12 @@ function handleConfirmCheckinCompletion(data, e) {
         
         // 3. 記錄佣金發放記錄
         if (commissionAmount > 0) {
+          const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+          const newPayoutId = generateNextId(payoutsSheet, 'Payout');
+          Logger.log('生成新的 Payout ID: ' + newPayoutId);
+          
           const payoutData = [
-            '', // ID (自動編號)
+            newPayoutId, // ID (自動生成)
             data.partner_code,
             data.commission_type || 'CASH', // payout_type
             commissionAmount, // amount
@@ -675,25 +747,59 @@ function handleUpdateBooking(data, e) {
       });
     }
     
-    const bookingId = parseInt(data.booking_id);
     const timestamp = new Date();
     
     // 1. 找到要更新的訂房記錄
     const bookingRange = bookingsSheet.getDataRange();
     const bookingValues = bookingRange.getValues();
     let bookingRowIndex = -1;
+    let bookingData = null;
     
-    for (let i = 1; i < bookingValues.length; i++) {
-      if (bookingValues[i][0] === bookingId) { // 假設ID在第一列
-        bookingRowIndex = i + 1; // Google Sheets 行數從1開始
-        break;
+    Logger.log('📊 更新訂房 - Bookings 表格資料行數: ' + bookingValues.length);
+    Logger.log('📋 更新訂房 - 搜尋條件: booking_id=' + data.booking_id + ', guest_name=' + data.guest_name + ', guest_phone=' + data.guest_phone);
+    
+    // 如果有 booking_id 且不為空，嘗試用 ID 查找
+    if (data.booking_id && data.booking_id !== '' && !isNaN(parseInt(data.booking_id))) {
+      const bookingId = parseInt(data.booking_id);
+      for (let i = 1; i < bookingValues.length; i++) {
+        if (bookingValues[i][0] === bookingId) {
+          bookingRowIndex = i + 1;
+          bookingData = bookingValues[i];
+          Logger.log('✅ 用 ID 找到記錄：行號 ' + bookingRowIndex);
+          break;
+        }
+      }
+    }
+    
+    // 如果用 ID 找不到，使用複合條件查找（原始姓名+電話）
+    if (bookingRowIndex === -1) {
+      const searchName = data.original_guest_name || data.guest_name;
+      const searchPhone = data.original_guest_phone || data.guest_phone;
+      
+      if (searchName && searchPhone) {
+        Logger.log('🔍 開始用複合條件查找（姓名+電話）...');
+        Logger.log('🔍 搜尋目標: 姓名=' + searchName + ', 電話=' + searchPhone);
+        
+        for (let i = 1; i < bookingValues.length; i++) {
+          const rowGuestName = bookingValues[i][2]; // guest_name 在第3列
+          const rowGuestPhone = String(bookingValues[i][3]); // guest_phone 在第4列
+          
+          Logger.log(`🔍 第${i+1}行: 姓名=${rowGuestName}, 電話=${rowGuestPhone}`);
+          
+          if (rowGuestName === searchName && rowGuestPhone === String(searchPhone)) {
+            Logger.log('✅ 複合條件查找成功！行號: ' + (i + 1));
+            bookingRowIndex = i + 1;
+            bookingData = bookingValues[i];
+            break;
+          }
+        }
       }
     }
     
     if (bookingRowIndex === -1) {
       return createJsonResponse({
         success: false,
-        error: '找不到指定的訂房記錄'
+        error: '找不到指定的訂房記錄。請確認姓名和電話號碼正確。'
       });
     }
     
@@ -712,12 +818,16 @@ function handleUpdateBooking(data, e) {
     bookingsSheet.getRange(bookingRowIndex, 20).setValue(data.notes || ''); // notes - T列
     bookingsSheet.getRange(bookingRowIndex, 22).setValue(timestamp); // updated_at - V列
     
-    Logger.log('訂房更新處理完成: 訂房ID ' + bookingId);
+    // 取得實際的 booking ID (如果有的話)
+    const actualBookingId = bookingData[0] || 'N/A';
+    Logger.log('訂房更新處理完成: 行號 ' + bookingRowIndex + ', ID ' + actualBookingId);
     
     const result = {
       success: true,
       message: '訂房資料更新成功',
-      booking_id: bookingId,
+      booking_id: actualBookingId,
+      guest_name: data.guest_name,
+      guest_phone: data.guest_phone,
       updated_at: timestamp.toISOString()
     };
     
@@ -1510,8 +1620,11 @@ function handleUpdatePartnerCommission(data, e) {
       }
       // 為累積佣金的調整創建記錄（如果調整金額不為零）
       if (Math.abs(totalEarnedAdjustment) > 0) {
+        const newPayoutId = generateNextId(payoutsSheet, 'Payout');
+        Logger.log('生成新的 Payout ID (累積佣金調整): ' + newPayoutId);
+        
         const totalAdjustmentRecord = [
-          '', // ID (自動編號)
+          newPayoutId, // ID (自動生成)
           partnerCode,
           totalEarnedAdjustment > 0 ? 'ACCOMMODATION' : 'ADJUSTMENT_REVERSAL', // payout_type
           Math.abs(totalEarnedAdjustment), // amount (使用絕對值)
@@ -1538,8 +1651,11 @@ function handleUpdatePartnerCommission(data, e) {
       
       // 為待支付佣金的調整創建記錄（如果調整金額不為零）
       if (Math.abs(pendingCommissionAdjustment) > 0) {
+        const newPayoutId2 = generateNextId(payoutsSheet, 'Payout');
+        Logger.log('生成新的 Payout ID (待支付調整): ' + newPayoutId2);
+        
         const pendingAdjustmentRecord = [
-          '', // ID (自動編號)
+          newPayoutId2, // ID (自動生成)
           partnerCode,
           pendingCommissionAdjustment > 0 ? 'CASH' : 'ADJUSTMENT_REVERSAL', // payout_type
           Math.abs(pendingCommissionAdjustment), // amount
@@ -1570,8 +1686,11 @@ function handleUpdatePartnerCommission(data, e) {
       try {
         const logsSheet = spreadsheet.getSheetByName('Commission_Adjustment_Logs');
         if (logsSheet) {
+          const newLogId = generateNextId(logsSheet, 'CommissionAdjustmentLog');
+          Logger.log('生成新的 CommissionAdjustmentLog ID: ' + newLogId);
+          
           const logData = [
-            '', // ID
+            newLogId, // ID (自動生成)
             partnerCode,
             newTotalEarned,
             newPendingCommission,
@@ -1663,8 +1782,11 @@ function handleCreatePayout(data, e) {
     const timestamp = new Date();
     
     // 1. 創建結算記錄
+    const newPayoutId = generateNextId(payoutsSheet, 'Payout');
+    Logger.log('生成新的 Payout ID: ' + newPayoutId);
+    
     const payoutData = [
-      '', // ID (自動編號)
+      newPayoutId, // ID (自動生成)
       partnerCode,
       payoutType, // payout_type
       amount, // amount
@@ -2122,8 +2244,11 @@ function handleFixCommissionDiscrepancies(data, e) {
         partnersSheet.getRange(partnerRowIndex, 10).setValue(correctedTotalEarned);
         
         // 創建修復記錄
+        const newPayoutId = generateNextId(payoutsSheet, 'Payout');
+        Logger.log('生成新的 Payout ID (佣金修復): ' + newPayoutId);
+        
         const adjustmentRecord = [
-          '', // ID (自動編號)
+          newPayoutId, // ID (自動生成)
           partnerCode,
           'SYSTEM_CORRECTION', // payout_type
           Math.abs(discrepancy.differences.total_earned), // amount
@@ -2368,8 +2493,11 @@ function handleDeductAccommodationPoints(data, e) {
     const timestamp = new Date();
     
     // 1. 記錄住宿金使用 - 添加住宿日期
+    const newUsageId = generateNextId(accommodationUsageSheet, 'AccommodationUsage');
+    Logger.log('生成新的 AccommodationUsage ID: ' + newUsageId);
+    
     const usageData = [
-      '', // ID (自動編號)
+      newUsageId, // ID (自動生成)
       partnerCode,
       deductAmount,
       relatedBookingId,
@@ -2490,8 +2618,11 @@ function handleConvertPointsToCash(data, e) {
     const timestamp = new Date();
     
     // 1. 記錄住宿金使用（轉換現金）
+    const newUsageId = generateNextId(accommodationUsageSheet, 'AccommodationUsage');
+    Logger.log('生成新的 AccommodationUsage ID (轉換現金): ' + newUsageId);
+    
     const usageData = [
-      '', // ID (自動編號)
+      newUsageId, // ID (自動生成)
       partnerCode,
       pointsUsed,
       '', // related_booking_id
@@ -2511,8 +2642,11 @@ function handleConvertPointsToCash(data, e) {
     partnersSheet.getRange(partnerRowIndex, 11).setValue(newPaid); // K欄位
     
     // 3. 創建現金結算記錄到 Payouts 表
+    const newPayoutId = generateNextId(payoutsSheet, 'Payout');
+    Logger.log('生成新的 Payout ID (轉換現金): ' + newPayoutId);
+    
     const payoutData = [
-      '', // ID (自動編號)
+      newPayoutId, // ID (自動生成)
       partnerCode, // partner_code
       'CASH', // payout_type
       cashAmount, // amount

@@ -2478,6 +2478,19 @@
             }
         }
 
+        // 創建或獲取隱藏的 iframe（統一處理 403 錯誤）
+        function getOrCreateHiddenIframe() {
+            let iframe = document.getElementById('hiddenFrame');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.name = 'hiddenFrame';
+                iframe.id = 'hiddenFrame';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+            }
+            return iframe;
+        }
+
         // 計算預期佣金
         function calculateExpectedCommission(level, roomPrice) {
             const commissionRates = {
@@ -2576,14 +2589,7 @@
                 }
 
                 // 創建隱藏的 iframe 來接收回應
-                let iframe = document.getElementById('hiddenFrame');
-                if (!iframe) {
-                    iframe = document.createElement('iframe');
-                    iframe.name = 'hiddenFrame';
-                    iframe.id = 'hiddenFrame';
-                    iframe.style.display = 'none';
-                    document.body.appendChild(iframe);
-                }
+                const iframe = getOrCreateHiddenIframe();
 
                 document.body.appendChild(form);
                 form.submit();
@@ -2820,7 +2826,7 @@
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-6">
-                        <h3 class="text-2xl font-bold">編輯訂單 #${bookingIndex + 1}</h3>
+                        <h3 class="text-2xl font-bold">編輯訂單 #${booking.id || (bookingIndex + 1)}</h3>
                         <button onclick="closeModal('editBookingModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -3082,9 +3088,16 @@
                 }
 
                 // 準備提交到後端的數據（包含 action 和識別符）
+                // 修復：由於資料庫 ID 欄位可能為空，使用複合查找方式
+                console.log('📋 編輯訂房 - 原始訂房資料 ID:', existingBooking.id);
+                
                 const submitData = {
                     action: 'update_booking',
-                    booking_id: existingBooking.id || bookingIdentifier,
+                    // 傳遞 ID（如果有的話）和查找必要資訊
+                    booking_id: existingBooking.id || '',
+                    // 添加原始的姓名和電話作為查找條件（使用更新前的值）
+                    original_guest_name: existingBooking.guest_name,
+                    original_guest_phone: existingBooking.guest_phone,
                     ...updatedBooking
                 };
 
@@ -3111,14 +3124,7 @@
                 }
 
                 // 創建隱藏的 iframe 來接收回應
-                let iframe = document.getElementById('hiddenFrame');
-                if (!iframe) {
-                    iframe = document.createElement('iframe');
-                    iframe.name = 'hiddenFrame';
-                    iframe.id = 'hiddenFrame';
-                    iframe.style.display = 'none';
-                    document.body.appendChild(iframe);
-                }
+                const iframe = getOrCreateHiddenIframe();
 
                 document.body.appendChild(form);
                 form.submit();
@@ -3701,9 +3707,11 @@
             }
             
             // 2. 來自房客入住完成的佣金
-            if (relatedBookings && relatedBookings !== '-' && relatedBookings.trim() !== '') {
+            // 修復：確保 relatedBookings 是字串才呼叫 trim()
+            const bookingsStr = relatedBookings ? relatedBookings.toString() : '';
+            if (bookingsStr && bookingsStr !== '-' && bookingsStr.trim() !== '') {
                 // 嘗試找到相關的訂房記錄
-                const bookingIds = relatedBookings.toString().split(',');
+                const bookingIds = bookingsStr.split(',');
                 let guestInfo = '';
                 
                 if (allData && allData.bookings) {

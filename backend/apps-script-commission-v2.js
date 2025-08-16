@@ -179,6 +179,9 @@ function doPost(e) {
       case 'deduct_accommodation_points':
         return handleDeductAccommodationPoints(data, e);
       
+      case 'convert_points_to_cash':
+        return handleConvertPointsToCash(data, e);
+      
       case 'diagnose_payouts':
         return handleDiagnosePayouts(data, e);
       
@@ -2401,6 +2404,153 @@ function handleDeductAccommodationPoints(data, e) {
     return createJsonResponse({
       success: false,
       error: '住宿金點數抵扣失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 處理住宿金轉換現金 =====
+function handleConvertPointsToCash(data, e) {
+  try {
+    Logger.log('💸 開始處理住宿金轉換現金請求');
+    Logger.log('請求數據: ' + JSON.stringify(data));
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const partnersSheet = spreadsheet.getSheetByName('Partners');
+    const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+    
+    // 創建或獲取住宿金使用記錄表
+    let accommodationUsageSheet = spreadsheet.getSheetByName('Accommodation_Usage');
+    if (!accommodationUsageSheet) {
+      accommodationUsageSheet = spreadsheet.insertSheet('Accommodation_Usage');
+      const headers = [
+        'id', 'partner_code', 'deduct_amount', 'related_booking_id', 
+        'usage_date', 'usage_type', 'notes', 'created_by', 'created_at', 'updated_at'
+      ];
+      accommodationUsageSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    }
+    
+    if (!partnersSheet || !payoutsSheet || !accommodationUsageSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到必要的工作表'
+      });
+    }
+    
+    const partnerCode = data.partner_code;
+    const pointsUsed = parseFloat(data.points_used) || 0;
+    const cashAmount = parseFloat(data.cash_amount) || 0;
+    const exchangeRate = parseFloat(data.exchange_rate) || 0.5;
+    const notes = data.notes || '';
+    
+    if (!partnerCode || pointsUsed <= 0 || cashAmount <= 0) {
+      return createJsonResponse({
+        success: false,
+        error: '缺少必要參數或金額無效'
+      });
+    }
+    
+    // 查找夥伴記錄並驗證餘額
+    const partnerRange = partnersSheet.getDataRange();
+    const partnerValues = partnerRange.getValues();
+    let partnerRowIndex = -1;
+    let currentEarned = 0;
+    let currentPaid = 0;
+    
+    for (let i = 1; i < partnerValues.length; i++) {
+      if (partnerValues[i][1] === partnerCode) { // B欄位是 partner_code
+        partnerRowIndex = i + 1; // 轉換為 1-based 索引
+        currentEarned = parseFloat(partnerValues[i][9]) || 0; // J欄位 total_commission_earned
+        currentPaid = parseFloat(partnerValues[i][10]) || 0;  // K欄位 total_commission_paid
+        break;
+      }
+    }
+    
+    if (partnerRowIndex === -1) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到指定的夥伴代碼: ' + partnerCode
+      });
+    }
+    
+    // 檢查住宿金餘額是否足夠
+    const availableBalance = currentEarned - currentPaid;
+    if (pointsUsed > availableBalance) {
+      return createJsonResponse({
+        success: false,
+        error: `住宿金餘額不足。可用：$${availableBalance.toLocaleString()}，要轉換：$${pointsUsed.toLocaleString()}`
+      });
+    }
+    
+    const timestamp = new Date();
+    
+    // 1. 記錄住宿金使用（轉換現金）
+    const usageData = [
+      '', // ID (自動編號)
+      partnerCode,
+      pointsUsed,
+      '', // related_booking_id
+      '', // usage_date
+      'CONVERT_TO_CASH', // usage_type
+      `轉換現金：${pointsUsed}點 → $${cashAmount} (比例:${exchangeRate}) - ${notes}`,
+      'admin', // created_by
+      timestamp, // created_at
+      timestamp  // updated_at
+    ];
+    
+    accommodationUsageSheet.appendRow(usageData);
+    Logger.log('✅ 住宿金轉換記錄已創建');
+    
+    // 2. 更新夥伴的 total_commission_paid 統計
+    const newPaid = currentPaid + pointsUsed;
+    partnersSheet.getRange(partnerRowIndex, 11).setValue(newPaid); // K欄位
+    
+    // 3. 創建現金結算記錄到 Payouts 表
+    const payoutData = [
+      '', // ID (自動編號)
+      partnerCode,
+      'CASH', // payout_type
+      cashAmount, // amount
+      'PENDING', // payout_status
+      '', // payout_date
+      '', // booking_ids
+      `住宿金轉換：${pointsUsed}點 → $${cashAmount} - ${notes}`,
+      timestamp, // created_at
+      timestamp  // updated_at
+    ];
+    
+    payoutsSheet.appendRow(payoutData);
+    Logger.log('✅ 現金結算記錄已創建');
+    
+    // 4. 更新夥伴的 pending_commission 統計
+    const currentPending = parseFloat(partnerValues[partnerRowIndex-1][11]) || 0; // L欄位
+    const newPending = currentPending + cashAmount;
+    partnersSheet.getRange(partnerRowIndex, 12).setValue(newPending); // L欄位
+    
+    Logger.log(`✅ 轉換完成：${partnerCode}`);
+    Logger.log(`💰 住宿金：${availableBalance} → ${availableBalance - pointsUsed}`);
+    Logger.log(`💵 待結算現金：${currentPending} → ${newPending}`);
+    
+    const result = {
+      success: true,
+      message: '住宿金轉換現金成功',
+      partner_code: partnerCode,
+      points_used: pointsUsed,
+      cash_amount: cashAmount,
+      exchange_rate: exchangeRate,
+      before_accommodation_balance: availableBalance,
+      after_accommodation_balance: availableBalance - pointsUsed,
+      before_pending_cash: currentPending,
+      after_pending_cash: newPending,
+      created_at: timestamp.toISOString()
+    };
+    
+    return createJsonResponse(result);
+    
+  } catch (error) {
+    Logger.log('住宿金轉換現金錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '住宿金轉換現金失敗: ' + error.message
     });
   }
 }

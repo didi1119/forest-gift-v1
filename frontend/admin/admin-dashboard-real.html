@@ -4150,24 +4150,30 @@
 
         // 點數轉現金
         function convertPointsToCash(partnerCode) {
+            closeModal('partnerActionsModal'); // 先關閉操作選單
+            
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到夥伴資料');
                 return;
             }
             
-            const availablePoints = partner.available_points || partner.total_commission_earned || 0;
+            // ✅ 修復：使用正確的餘額計算
+            const totalEarned = parseFloat(partner.total_commission_earned) || 0;
+            const totalPaid = parseFloat(partner.total_commission_paid) || 0;
+            const availablePoints = totalEarned - totalPaid;
+            
             if (availablePoints <= 0) {
-                showErrorMessage('該大使目前沒有可用點數');
+                showErrorMessage('該大使目前沒有可用住宿金餘額');
                 return;
             }
             
-            createPointsToCashModal(partner);
+            createPointsToCashModal(partner, availablePoints);
         }
 
         // 創建點數轉現金模態框
-        function createPointsToCashModal(partner) {
-            const availablePoints = partner.available_points || partner.total_commission_earned || 0;
+        function createPointsToCashModal(partner, availablePoints) {
+            // ✅ 使用傳入的正確餘額參數
             const exchangeRate = 0.5; // 點數轉現金比例 (50%)
             
             const modal = document.createElement('div');
@@ -4325,14 +4331,26 @@
                 form.submit();
                 
                 setTimeout(() => {
-                    // 立即更新前端數據
+                    // ✅ 修復：立即更新前端數據使用正確邏輯
                     const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                     if (partnerIndex !== -1) {
                         const partner = allData.partners[partnerIndex];
-                        const availablePoints = partner.available_points || partner.total_commission_earned || 0;
-                        partner.available_points = Math.max(0, availablePoints - points);
-                        partner.pending_cash = (partner.pending_cash || partner.pending_commission || 0) + cashAmount;
-                        partner.total_points_used = (partner.total_points_used || 0) + points;
+                        
+                        // 更新住宿金統計：增加 total_commission_paid
+                        const currentPaid = parseFloat(partner.total_commission_paid) || 0;
+                        partner.total_commission_paid = currentPaid + points;
+                        
+                        // 更新待結算現金：增加 pending_commission
+                        const currentPending = parseFloat(partner.pending_commission) || 0;
+                        partner.pending_commission = currentPending + cashAmount;
+                        
+                        console.log('✅ 轉換現金前端數據更新:', {
+                            partner: partnerCode,
+                            points_used: points,
+                            cash_amount: cashAmount,
+                            total_commission_paid: partner.total_commission_paid,
+                            pending_commission: partner.pending_commission
+                        });
                     }
                     
                     showSuccessMessage('✅ 成功轉換 ' + points.toLocaleString() + ' 點為 NT$ ' + cashAmount.toLocaleString() + '！');

@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 防止瀏覽器快取 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>知音大使管理後台 - 真實數據版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -6252,7 +6256,8 @@ ${landingUrl}
             }
         }
     </script>
-    <script src="payout-functions.js"></script>
-    <script src="commission-management.js"></script>
+    <!-- 外部 JavaScript 文件，添加版本號防止快取 -->
+    <script src="payout-functions.js?v=20240816"></script>
+    <script src="commission-management.js?v=20240816"></script>
 </body>
 </html>

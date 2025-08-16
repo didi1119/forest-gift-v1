@@ -5917,7 +5917,12 @@ ${landingUrl}
                 }
                 
                 updateAnalyticsMetrics();
-                initializeAnalyticsCharts();
+                
+                // 只在圖表尚未初始化時才初始化
+                if (!analyticsCharts.ambassadorPerformance && !analyticsCharts.levelDistribution && !analyticsCharts.giftClick) {
+                    initializeAnalyticsCharts();
+                }
+                
                 updateAllAnalyticsCharts();
                 updateAnalyticsDetailedTable();
                 
@@ -5974,6 +5979,17 @@ ${landingUrl}
             if (typeof Chart === 'undefined') {
                 console.log('Chart.js 未載入，跳過圖表初始化');
                 return;
+            }
+
+            // 銷毀現有圖表以避免重複創建
+            if (analyticsCharts.ambassadorPerformance) {
+                analyticsCharts.ambassadorPerformance.destroy();
+            }
+            if (analyticsCharts.levelDistribution) {
+                analyticsCharts.levelDistribution.destroy();
+            }
+            if (analyticsCharts.giftClick) {
+                analyticsCharts.giftClick.destroy();
             }
 
             // 大使績效圖表

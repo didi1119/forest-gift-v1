@@ -10,7 +10,7 @@
 - **HTML5 + JavaScript (ES6+)**：主要開發語言
 - **Tailwind CSS**：UI 框架，採用 JIT 模式
 - **Noto Fonts**：中文字體支援
-- **原生 Fetch API**：API 通訊
+- **原生 Fetch API + 表單提交**：混合 API 通訊模式
 
 ### 後端技術棧
 - **Google Apps Script**：無伺服器後端解決方案
@@ -18,7 +18,7 @@
 - **CORS 處理**：支援跨域請求
 
 ### 部署架構
-- **前端**：可部署至 GitHub Pages 或任何靜態託管服務
+- **前端**：GitHub Pages 靜態託管
 - **後端**：Google Apps Script 雲端執行
 - **資料庫**：Google Sheets 雲端存儲
 
@@ -26,7 +26,7 @@
 
 ```
 知音計畫/
-├── CLAUDE.md                           # 專案說明文件
+├── CLAUDE.md                           # 專案說明文件 🆕
 ├── frontend/
 │   └── admin/                          # 管理後台
 │       ├── admin-dashboard-real.html   # 主控制台 🎯
@@ -37,7 +37,7 @@
 │       ├── payout-functions.js         # 結算功能模組
 │       └── google-apps-script-fix.html # 故障排除指南
 └── backend/                            # Google Apps Script 代碼
-    └── main.gs                         # 主要後端邏輯 (需更新)
+    └── apps-script-commission-v2.js    # 主要後端邏輯
 ```
 
 ## 核心功能模組
@@ -91,6 +91,18 @@
 - **銀行匯款**：支援台灣主要銀行
 - **結算記錄**：完整的歷史紀錄
 
+### 4.1 住宿金折抵功能 🆕
+- **即時折抵**：大使可使用累積的住宿金點數折抵房費
+- **金額驗證**：自動驗證折抵金額不超過可用點數
+- **模態框界面**：專業的折抵申請界面
+  - 入住日期選擇（必填）
+  - 折抵金額輸入與即時驗證
+  - 快速金額按鈕（$1000, $2000, $3000, 全部）
+  - 相關訂房ID和備註欄位
+- **即時更新**：前端數據立即反映變化
+- **Google Sheets 連動**：自動更新 `available_points` 和 `points_used` 欄位
+- **CORS 相容**：使用表單提交避免瀏覽器限制
+
 ### 5. 連結生成系統 (Link Generator)
 - **追蹤連結**：透過 Apps Script 中繼服務
 - **短網址**：TinyURL / is.gd 整合
@@ -106,7 +118,7 @@
                 ↓
 自動計算佣金 → 更新大使等級 → 創建結算記錄
                 ↓
-結算支付 → 住宿金累積 → 點數使用追蹤
+結算支付 → 住宿金累積 → 點數使用追蹤 🆕
 ```
 
 ## 關鍵技術實作
@@ -123,9 +135,10 @@ const BookingDataManager = {
 }
 ```
 
-### 2. 統一的 API 通訊模式
+### 2. 混合 API 通訊模式
+
+**方式一：Fetch API（推薦用於數據獲取）**
 ```javascript
-// 所有 API 調用都使用此模式
 const params = BookingDataManager.createOrderedParams(submitData);
 const response = await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
@@ -134,7 +147,41 @@ const response = await fetch(APPS_SCRIPT_URL, {
 });
 ```
 
-### 3. 標準化欄位定義
+**方式二：表單提交（用於避免 CORS 問題）** 🆕
+```javascript
+const form = document.createElement('form');
+form.method = 'POST';
+form.action = APPS_SCRIPT_URL;
+form.target = 'hiddenFrame';  // 使用隱藏 iframe 接收回應
+form.style.display = 'none';
+
+Object.keys(submitData).forEach(key => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = submitData[key];
+    form.appendChild(input);
+});
+
+document.body.appendChild(form);
+form.submit();
+```
+
+### 3. 住宿金折抵核心函數 🆕
+```javascript
+// 主要功能函數
+function useAccommodationPoints(partnerCode)     // 開啟折抵模態框
+function submitUsePoints(event, partnerCode)     // 提交折抵申請
+function validateUseAmount(input, maxAmount)     // 即時金額驗證
+function setQuickAmount(inputId, amount, max)    // 快速金額選擇
+
+// 使用 update_partner_commission API 端點更新點數
+action: 'update_partner_commission'
+available_points: newAvailablePoints  // 扣除後的可用點數
+points_used: newPointsUsed           // 累積已使用點數
+```
+
+### 4. 標準化欄位定義
 ```javascript
 const BOOKING_FIELDS = {
     FIELD_ORDER: [/* 22 個標準欄位 */],
@@ -156,10 +203,22 @@ const BOOKING_FIELDS = {
   4. 統一 API 調用方式 (form.submit → fetch)
   5. 確保數據按正確順序發送到後端
 
+### 2024年8月住宿金折抵功能開發 🆕
+- **新增功能**：完整的住宿金折抵系統
+- **技術挑戰**：
+  1. **CORS 問題**：fetch API 被瀏覽器 CORS 政策阻擋
+  2. **數據持久性**：避免系統重載後點數復原
+  3. **金額驗證**：確保折抵金額不超過可用點數
+- **解決方案**：
+  1. 使用表單提交 + 隱藏 iframe 避免 CORS
+  2. 立即更新前端數據，移除自動重載機制
+  3. 添加即時驗證和智慧快速選擇按鈕
+  4. 使用 `update_partner_commission` API 端點更新點數
+
 ### API 一致性更新
 - **問題**：部分功能出現 403 Forbidden 錯誤
 - **原因**：混用 form.submit() 和 fetch() 方式
-- **解決**：統一改為 fetch() API 調用
+- **解決**：採用混合模式，根據功能需求選擇適當的通訊方式
 
 ## Google Apps Script 後端架構
 
@@ -168,17 +227,13 @@ const BOOKING_FIELDS = {
 - `POST /?action=update_booking` - 更新訂房資料
 - `POST /?action=confirm_checkin_completion` - 確認入住完成
 - `POST /?action=create_payout` - 創建結算記錄
-- `POST /?action=update_partner_commission` - 更新大使佣金
+- `POST /?action=update_partner_commission` - 更新大使佣金 🆕
 - `GET /?action=get_all_data` - 獲取所有數據
 
-### 建議的後端優化
-```javascript
-// 需要實作的標準化後端邏輯
-function normalizeBookingData(params) { /* 數據標準化 */ }
-function validateBookingData(booking) { /* 數據驗證 */ }
-function createBooking(params) { /* 創建訂房 */ }
-function updateBooking(params) { /* 更新訂房 */ }
-```
+### Partners 資料表欄位 🆕
+- `available_points` - 可用住宿金點數
+- `points_used` - 已使用點數
+- `total_commission_earned` - 累積總佣金
 
 ## 測試與除錯
 
@@ -186,12 +241,14 @@ function updateBooking(params) { /* 更新訂房 */ }
 - **Console 日誌**：詳細的數據流程追蹤
 - **數據診斷**：自動偵測欄位映射問題
 - **錯誤處理**：完整的錯誤提示和修復建議
+- **住宿金功能除錯**：提交數據和更新狀態的詳細日誌 🆕
 
 ### 測試流程
 1. **數據標準化測試**：確認 BookingDataManager 正確處理各種輸入
 2. **API 通訊測試**：檢查數據按正確順序發送
 3. **欄位映射測試**：驗證 Google Sheets 寫入正確位置
 4. **整合測試**：完整的訂房-入住-結算流程
+5. **住宿金折抵測試**：金額驗證、CORS 處理、數據持久性 🆕
 
 ## 安全性考量
 
@@ -199,9 +256,11 @@ function updateBooking(params) { /* 更新訂房 */ }
 - **敏感資料**：銀行帳號只存後5碼
 - **權限控制**：管理後台訪問限制
 - **資料驗證**：前後端雙重驗證
+- **金額驗證**：住宿金折抵嚴格驗證可用餘額 🆕
 
 ### API 安全
 - **CORS 配置**：適當的跨域請求設定
+- **混合通訊**：根據安全需求選擇通訊方式 🆕
 - **錯誤處理**：避免敏感資訊洩漏
 - **輸入驗證**：防止惡意數據注入
 
@@ -209,20 +268,42 @@ function updateBooking(params) { /* 更新訂房 */ }
 
 ### 常見問題排除
 1. **數據錯位**：檢查 BOOKING_FIELDS 定義是否與 Google Sheets 一致
-2. **403 錯誤**：確認使用 fetch() 而非 form.submit()
+2. **CORS 錯誤**：確認使用表單提交而非 fetch() 🆕
 3. **欄位驗證失敗**：檢查必填欄位和數據類型
+4. **住宿金點數問題**：檢查 available_points 和 points_used 欄位 🆕
 
 ### 添加新功能
 1. **前端**：使用 BookingDataManager 處理數據
 2. **後端**：遵循標準化 API 設計模式
-3. **測試**：確保不影響現有數據結構
+3. **CORS 處理**：考慮是否需要表單提交方式 🆕
+4. **測試**：確保不影響現有數據結構
+
+### 住宿金功能維護 🆕
+- **驗證邏輯**：確保金額驗證函數正確運作
+- **UI 更新**：檢查快速選擇按鈕和驗證提示
+- **數據同步**：確認前端更新與後端一致
+- **表單提交**：維護隱藏 iframe 和表單生成邏輯
+
+## 部署資訊
+
+### GitHub Pages 設定
+- **Repository**: `didi1119/forest-gift-v1`
+- **Branch**: `main`
+- **Path**: `/` (根目錄)
+- **URL**: `https://didi1119.github.io/forest-gift-v1/`
+
+### 主要頁面
+- **管理後台**: `/frontend/admin/admin-dashboard-real.html`
+- **手動訂房**: `/frontend/admin/manual-booking.html`
+- **入住確認**: `/frontend/admin/manual-checkin-confirm.html`
 
 ## 聯絡資訊
 
 - **專案性質**：森林住宿推薦系統
 - **開發階段**：持續迭代中
 - **技術支援**：Claude AI 輔助開發
+- **最新功能**：住宿金折抵系統 🆕
 
 ---
 
-*本文件隨專案更新而持續維護，最後更新：2024年*
+*本文件隨專案更新而持續維護，最後更新：2024年8月16日*

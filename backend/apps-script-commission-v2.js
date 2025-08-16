@@ -1275,16 +1275,39 @@ function handleCancelPayout(data, e) {
     const partnerCode = payoutData[1]; // partner_code
     const payoutType = payoutData[2]; // payout_type
     const payoutAmount = parseFloat(payoutData[3]) || 0; // amount
+    const relatedBookingIds = payoutData[4]; // related_booking_ids
     const payoutMethod = payoutData[5]; // payout_method
     const payoutStatus = payoutData[6]; // payout_status
     
     Logger.log('📋 結算記錄詳情:');
     Logger.log('  大使: ' + partnerCode + ', 類型: ' + payoutType + ', 金額: $' + payoutAmount);
     Logger.log('  方法: ' + payoutMethod + ', 狀態: ' + payoutStatus);
+    Logger.log('  相關訂單: ' + relatedBookingIds);
     
     // 2. 刪除結算記錄
     payoutsSheet.deleteRow(payoutRowIndex);
     Logger.log('✅ 結算記錄已刪除: ID ' + payoutId);
+    
+    // 3. 更新相關訂單的佣金狀態（如果有的話）
+    if (relatedBookingIds && relatedBookingIds !== '-' && relatedBookingIds !== '') {
+      const bookingsSheet = spreadsheet.getSheetByName('Bookings');
+      if (bookingsSheet) {
+        const bookingIds = String(relatedBookingIds).split(',').map(id => id.trim());
+        const bookingRange = bookingsSheet.getDataRange();
+        const bookingValues = bookingRange.getValues();
+        
+        for (let bookingId of bookingIds) {
+          for (let i = 1; i < bookingValues.length; i++) {
+            if (String(bookingValues[i][0]) === bookingId) { // ID 在第1列
+              // 將佣金狀態改回 PENDING
+              bookingsSheet.getRange(i + 1, 13).setValue('PENDING'); // commission_status 在第13列
+              Logger.log('📦 訂單 ' + bookingId + ' 佣金狀態已改回 PENDING');
+              break;
+            }
+          }
+        }
+      }
+    }
     
     // 3. 根據結算類型更新大使的佣金（反向操作）
     const partnerRange = partnersSheet.getDataRange();
@@ -1329,11 +1352,23 @@ function handleCancelPayout(data, e) {
           adjustmentMade = true;
         }
       } else {
-        // 普通結算記錄的取消 - 將金額加回待支付佣金
-        const newPendingCommission = currentPendingCommission + payoutAmount;
-        partnersSheet.getRange(partnerRowIndex, 12).setValue(newPendingCommission); // pending_commission
-        Logger.log('💰 結算取消，金額歸還待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission);
-        adjustmentMade = true;
+        // 普通結算記錄的取消 - 應該要減少累積佣金和待支付佣金
+        // 因為這筆佣金原本已經計入，現在要取消
+        if (payoutType === 'ACCOMMODATION' || payoutType === 'CASH') {
+          // 從累積佣金中扣除
+          const newTotalEarned = Math.max(0, currentTotalEarned - payoutAmount);
+          partnersSheet.getRange(partnerRowIndex, 10).setValue(newTotalEarned); // total_commission_earned
+          Logger.log('❌ 取消結算，扣除累積佣金: ' + currentTotalEarned + ' → ' + newTotalEarned);
+          
+          // 如果是待支付狀態，也要從待支付佣金中扣除
+          if (payoutStatus === 'PENDING') {
+            const newPendingCommission = Math.max(0, currentPendingCommission - payoutAmount);
+            partnersSheet.getRange(partnerRowIndex, 12).setValue(newPendingCommission); // pending_commission
+            Logger.log('❌ 取消結算，扣除待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission);
+          }
+          
+          adjustmentMade = true;
+        }
       }
       
       if (adjustmentMade) {

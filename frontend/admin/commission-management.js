@@ -191,7 +191,6 @@ async function saveCommissionChanges(partnerCode) {
                     console.error('重新載入數據失敗:', error);
                 });
             }, 1500);
-        };
         
     } catch (error) {
         console.error('更新佣金失敗:', error);

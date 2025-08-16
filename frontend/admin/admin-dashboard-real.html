@@ -7,9 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         // 抑制 Tailwind CSS 生產環境警告
-        if (typeof tailwind !== 'undefined') {
-            tailwind.config = {
-                mode: 'jit'
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
             }
         }
     </script>

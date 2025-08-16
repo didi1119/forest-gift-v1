@@ -216,27 +216,56 @@ async function cancelPayout(payoutId) {
         // 延時回調處理結果
         setTimeout(() => {
             // 立即更新前端數據
-            const payoutIndex = allData.payouts.findIndex(p => p.id == payoutId);
+            const payoutIndex = allData.payouts.findIndex(p => p.id == payoutId || p.ID == payoutId);
             if (payoutIndex !== -1) {
+                // 獲取相關訂單ID
+                const relatedBookingIds = allData.payouts[payoutIndex].related_booking_ids;
+                
+                // 移除結算記錄
                 allData.payouts.splice(payoutIndex, 1);
                 console.log('✅ 已從前端移除結算記錄');
+                
+                // 更新相關訂單狀態
+                if (relatedBookingIds && relatedBookingIds !== '-') {
+                    const bookingIds = String(relatedBookingIds).split(',').map(id => id.trim());
+                    bookingIds.forEach(bookingId => {
+                        const booking = allData.bookings.find(b => String(b.id) === String(bookingId));
+                        if (booking) {
+                            booking.stay_status = 'PENDING';
+                            booking.commission_status = 'PENDING';
+                            booking.commission_amount = 0;
+                            console.log(`📦 前端更新訂單 ${bookingId}: stay_status → PENDING`);
+                        }
+                    });
+                    
+                    // 如果訂單管理頁面正在顯示，立即更新
+                    if (typeof displayBookings === 'function') {
+                        displayBookings(allData.bookings);
+                    }
+                }
             }
             
-            showSuccessMessage('✅ 結算已取消！相關佣金將重新計算');
+            showSuccessMessage('✅ 結算已取消！相關訂單狀態已重置');
             closeModal('payoutDetailsModal');
             displayPayouts(allData.payouts);
             
-            // 立即重新載入所有數據
-            loadRealData().then(() => {
-                console.log('📊 結算修改後數據重新載入完成');
-                displayPayouts(allData.payouts);
-                // 同時更新大使列表，因為佣金可能已連動調整
-                if (typeof displayPartners === 'function') {
-                    displayPartners(allData.partners);
-                }
-            }).catch(error => {
-                console.error('重新載入數據失敗:', error);
-            });
+            // 延遲重新載入數據，避免與 iframe 衝突
+            setTimeout(() => {
+                loadRealData().then(() => {
+                    console.log('📊 結算取消後數據重新載入完成');
+                    displayPayouts(allData.payouts);
+                    // 同時更新大使列表，因為佣金可能已連動調整
+                    if (typeof displayPartners === 'function') {
+                        displayPartners(allData.partners);
+                    }
+                    // 更新訂單列表
+                    if (typeof displayBookings === 'function') {
+                        displayBookings(allData.bookings);
+                    }
+                }).catch(error => {
+                    console.error('重新載入數據失敗:', error);
+                });
+            }, 2000); // 延遲 2 秒再重新載入
             
             document.body.removeChild(form);
         }, 1000);
@@ -338,7 +367,7 @@ function createEditPayoutModal(payout) {
                         class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
                         取消
                     </button>
-                    <button type="button" onclick="savePayoutChanges('${payout.id}')" 
+                    <button type="button" onclick="savePayoutChanges('${payout.id || payout.ID}')" 
                         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                         儲存變更
                     </button>
@@ -417,17 +446,19 @@ async function savePayoutChanges(payoutId) {
             closeModal('payoutDetailsModal');
             displayPayouts(allData.payouts);
             
-            // 立即重新載入所有數據
-            loadRealData().then(() => {
-                console.log('📊 結算修改後數據重新載入完成');
-                displayPayouts(allData.payouts);
-                // 同時更新大使列表，因為佣金可能已連動調整
-                if (typeof displayPartners === 'function') {
-                    displayPartners(allData.partners);
-                }
-            }).catch(error => {
-                console.error('重新載入數據失敗:', error);
-            });
+            // 延遲重新載入數據，避免與 iframe 衝突
+            setTimeout(() => {
+                loadRealData().then(() => {
+                    console.log('📊 結算修改後數據重新載入完成');
+                    displayPayouts(allData.payouts);
+                    // 同時更新大使列表，因為佣金可能已連動調整
+                    if (typeof displayPartners === 'function') {
+                        displayPartners(allData.partners);
+                    }
+                }).catch(error => {
+                    console.error('重新載入數據失敗:', error);
+                });
+            }, 2000); // 延遲 2 秒再重新載入
             
             document.body.removeChild(form);
         }, 1000);

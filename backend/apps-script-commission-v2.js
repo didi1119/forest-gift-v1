@@ -1128,12 +1128,19 @@ function getSheetData(spreadsheet, sheetName) {
   const values = range.getValues();
   const headers = values[0];
   
-  // 轉換為物件陣列
+  // 轉換為物件陣列，並標準化欄位名稱
   const data = [];
   for (let i = 1; i < values.length; i++) {
     const row = {};
     for (let j = 0; j < headers.length; j++) {
-      row[headers[j]] = values[i][j];
+      // 標準化欄位名稱為小寫
+      const key = String(headers[j]).toLowerCase().replace(/\s+/g, '_');
+      row[key] = values[i][j];
+      
+      // 為了相容性，如果是 ID 欄位，同時保留大寫版本
+      if (key === 'id' && values[i][j]) {
+        row['ID'] = values[i][j];
+      }
     }
     data.push(row);
   }
@@ -1319,7 +1326,7 @@ function handleCancelPayout(data, e) {
     payoutsSheet.deleteRow(payoutRowIndex);
     Logger.log('✅ 結算記錄已刪除: ID ' + payoutId);
     
-    // 3. 更新相關訂單的佣金狀態（如果有的話）
+    // 3. 更新相關訂單的狀態（如果有的話）
     if (relatedBookingIds && relatedBookingIds !== '-' && relatedBookingIds !== '') {
       const bookingsSheet = spreadsheet.getSheetByName('Bookings');
       if (bookingsSheet) {
@@ -1330,9 +1337,19 @@ function handleCancelPayout(data, e) {
         for (let bookingId of bookingIds) {
           for (let i = 1; i < bookingValues.length; i++) {
             if (String(bookingValues[i][0]) === bookingId) { // ID 在第1列
+              // 將住宿狀態改回 PENDING（待確認）
+              bookingsSheet.getRange(i + 1, 11).setValue('PENDING'); // stay_status 在第11列
               // 將佣金狀態改回 PENDING
               bookingsSheet.getRange(i + 1, 13).setValue('PENDING'); // commission_status 在第13列
-              Logger.log('📦 訂單 ' + bookingId + ' 佣金狀態已改回 PENDING');
+              // 清除佣金金額
+              bookingsSheet.getRange(i + 1, 14).setValue(0); // commission_amount 在第14列
+              // 更新時間戳
+              bookingsSheet.getRange(i + 1, 22).setValue(new Date()); // updated_at 在第22列
+              
+              Logger.log('📦 訂單 ' + bookingId + ' 狀態已重置:');
+              Logger.log('  - stay_status → PENDING');
+              Logger.log('  - commission_status → PENDING');
+              Logger.log('  - commission_amount → 0');
               break;
             }
           }

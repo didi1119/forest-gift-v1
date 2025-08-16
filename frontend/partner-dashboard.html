@@ -83,6 +83,9 @@
                                 <span class="level-badge text-white px-3 py-1 rounded-full text-xs font-semibold" id="partnerLevel">
                                     載入中...
                                 </span>
+                                <span id="demoTag" class="hidden bg-amber-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                                    🔍 演示模式
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -319,10 +322,17 @@
         // 檢查登入狀態
         function checkAuth() {
             const partnerCode = sessionStorage.getItem('partnerCode');
+            const isDemoMode = sessionStorage.getItem('demoMode') === 'true';
+            
             if (!partnerCode) {
                 // 未登入，跳轉到登入頁
                 window.location.href = 'partner-login.html';
                 return;
+            }
+            
+            // 如果是演示模式，顯示演示標記
+            if (isDemoMode) {
+                document.getElementById('demoTag').classList.remove('hidden');
             }
             
             // 嘗試從 sessionStorage 載入快取數據
@@ -340,35 +350,57 @@
         // 載入夥伴數據
         async function loadPartnerData() {
             const partnerCode = sessionStorage.getItem('partnerCode');
+            const isDemoMode = sessionStorage.getItem('demoMode') === 'true';
             
             try {
-                // 載入夥伴詳細數據
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        action: 'get_partner_dashboard_data',
-                        partner_code: partnerCode
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    partnerData = result.partner;
-                    allBookings = result.bookings || [];
+                // 如果是演示模式，使用模擬數據
+                if (isDemoMode) {
+                    // 模擬 API 延遲
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     
-                    // 更新快取
-                    sessionStorage.setItem('partnerData', JSON.stringify(partnerData));
+                    partnerData = {
+                        partner_code: 'DEMO_CODE',
+                        name: '演示大使',
+                        level: 'LV2_GUIDE',
+                        total_commission_earned: 5680,
+                        total_commission_paid: 2000
+                    };
+                    
+                    allBookings = generateDemoBookings();
                     
                     // 更新顯示
                     displayAllData();
                     initializeCharts();
                     
                 } else {
-                    throw new Error(result.error || '載入數據失敗');
+                    // 載入夥伴詳細數據
+                    const response = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            action: 'get_partner_dashboard_data',
+                            partner_code: partnerCode
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        partnerData = result.partner;
+                        allBookings = result.bookings || [];
+                        
+                        // 更新快取
+                        sessionStorage.setItem('partnerData', JSON.stringify(partnerData));
+                        
+                        // 更新顯示
+                        displayAllData();
+                        initializeCharts();
+                        
+                    } else {
+                        throw new Error(result.error || '載入數據失敗');
+                    }
                 }
                 
             } catch (error) {
@@ -707,9 +739,49 @@
             loadPartnerData();
         }
         
+        // 生成演示訂房數據
+        function generateDemoBookings() {
+            const today = new Date();
+            const bookings = [];
+            
+            for (let i = 0; i < 8; i++) {
+                const checkinDate = new Date(today);
+                checkinDate.setDate(today.getDate() - (i * 7 + Math.random() * 7));
+                
+                const checkoutDate = new Date(checkinDate);
+                checkoutDate.setDate(checkinDate.getDate() + 2);
+                
+                const statuses = ['COMPLETED', 'COMPLETED', 'COMPLETED', 'CONFIRMED', 'PENDING'];
+                const commissionTypes = ['ACCOMMODATION', 'CASH'];
+                const roomPrices = [3200, 3800, 4200, 2800, 3600];
+                
+                const status = statuses[i % statuses.length];
+                const commissionType = commissionTypes[i % commissionTypes.length];
+                const roomPrice = roomPrices[i % roomPrices.length];
+                
+                let commissionAmount = 0;
+                if (status === 'COMPLETED') {
+                    commissionAmount = commissionType === 'ACCOMMODATION' ? 1200 : 600;
+                }
+                
+                bookings.push({
+                    guest_name: `房客${String.fromCharCode(65 + i)}先生`,
+                    checkin_date: checkinDate.toISOString().split('T')[0],
+                    checkout_date: checkoutDate.toISOString().split('T')[0],
+                    room_price: roomPrice,
+                    stay_status: status,
+                    commission_amount: commissionAmount,
+                    commission_type: commissionType
+                });
+            }
+            
+            return bookings;
+        }
+        
         function logout() {
             sessionStorage.removeItem('partnerCode');
             sessionStorage.removeItem('partnerData');
+            sessionStorage.removeItem('demoMode');
             window.location.href = 'partner-login.html';
         }
         

@@ -1061,7 +1061,7 @@
                         ${accommodationBalance > 0 ? `
                             <button onclick="showPartnerActionsModal('${partner.partner_code}', 'accommodation')" 
                                     class="flex-1 min-w-24 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 px-3 py-2 rounded-lg text-xs font-medium hover:from-blue-100 hover:to-blue-200 transition-all border border-blue-200">
-                                🏨 住宿金 $${accommodationBalance.toLocaleString()}
+                                💎 使用點數 (${accommodationBalance.toLocaleString()})
                             </button>
                         ` : ''}
                         
@@ -1493,7 +1493,7 @@
                 '等級': getLevelText(p.level),
                 '本年進度': p.level_progress,
                 '累積推薦': p.total_successful_referrals,
-                '可用點數': p.available_points || p.total_commission_earned || 0,
+                '可用點數': (parseFloat(p.total_commission_earned) || 0) - (parseFloat(p.total_commission_paid) || 0),
                 '待支付現金': p.pending_cash || p.pending_commission || 0
             }));
             
@@ -1665,7 +1665,14 @@
         }
 
         // 查看夥伴詳情
-        function viewPartnerDetails(partnerCode) {
+        async function viewPartnerDetails(partnerCode) {
+            // 🔄 重新加載最新數據確保顯示正確資訊
+            try {
+                await loadAllData();
+            } catch (error) {
+                console.error('重新載入數據失敗:', error);
+            }
+            
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到夥伴資料');
@@ -1730,11 +1737,11 @@
                             <div class="grid grid-cols-3 gap-4">
                                 <div>
                                     <p class="text-sm text-gray-600">可用點數</p>
-                                    <p class="font-semibold text-blue-600">${(partner.available_points || partner.total_commission_earned || 0).toLocaleString()} 點</p>
+                                    <p class="font-semibold text-blue-600">${((parseFloat(partner.total_commission_earned) || 0) - (parseFloat(partner.total_commission_paid) || 0)).toLocaleString()} 點</p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-600">已使用點數</p>
-                                    <p class="font-semibold text-gray-600">${(partner.total_points_used || 0).toLocaleString()} 點</p>
+                                    <p class="font-semibold text-gray-600">${(parseFloat(partner.total_commission_paid) || 0).toLocaleString()} 點</p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-600">待支付現金</p>
@@ -3792,7 +3799,14 @@
         
         // 使用住宿金折抵
         // 🎯 統一的夥伴操作彈出視窗
-        function showPartnerActionsModal(partnerCode, type) {
+        async function showPartnerActionsModal(partnerCode, type) {
+            // 🔄 重新加載最新數據確保操作使用正確數據
+            try {
+                await loadAllData();
+            } catch (error) {
+                console.error('重新載入數據失敗:', error);
+            }
+            
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到該大使資料');
@@ -3816,7 +3830,7 @@
                 modalContent = `
                     <div class="bg-white rounded-lg max-w-md w-full">
                         <div class="px-6 py-4 border-b flex justify-between items-center bg-blue-50">
-                            <h2 class="text-xl font-bold text-blue-800">🏨 住宿金管理</h2>
+                            <h2 class="text-xl font-bold text-blue-800">💎 點數管理</h2>
                             <button onclick="closeModal('partnerActionsModal')" class="text-gray-500 hover:text-gray-700">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -3838,7 +3852,7 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <button onclick="useAccommodationPoints('${partnerCode}')" 
                                         class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all text-center">
-                                    🏨 使用住宿金
+                                    🏠 折抵住宿
                                 </button>
                                 <button onclick="convertPointsToCash('${partnerCode}')" 
                                         class="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 transition-all text-center">

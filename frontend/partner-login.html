@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知音大使 - 登入</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #F8FAF3 0%, #EEF3E5 100%);
+            color: #5C544B;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+        .brand-accent {
+            color: #2E4B36;
+        }
+        .brand-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE6E1;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        }
+        .forest-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232E4B36' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .login-form input {
+            transition: all 0.3s ease;
+        }
+        .login-form input:focus {
+            border-color: #2E4B36;
+            box-shadow: 0 0 0 3px rgba(46, 75, 54, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #2E4B36 0%, #4B7C4B 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(46, 75, 54, 0.3);
+        }
+        .error-message {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body class="forest-pattern min-h-screen flex items-center justify-center py-12 px-4">
+    <div class="max-w-md w-full">
+        <!-- 登入卡片 -->
+        <div class="brand-card p-8">
+            <!-- 標題 -->
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-3xl">🌲</span>
+                </div>
+                <h1 class="text-2xl font-bold brand-accent mb-2">知音大使入口</h1>
+                <p class="text-stone-600">登入查看您的推薦成果</p>
+            </div>
+
+            <!-- 登入表單 -->
+            <form class="login-form space-y-6" onsubmit="handleLogin(event)">
+                <div>
+                    <label for="partnerCode" class="block text-sm font-medium text-stone-700 mb-2">
+                        大使代碼
+                    </label>
+                    <input 
+                        type="text" 
+                        id="partnerCode" 
+                        name="partnerCode"
+                        placeholder="請輸入您的大使代碼"
+                        class="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-stone-700 mb-2">
+                        手機號碼（後4碼）
+                    </label>
+                    <input 
+                        type="text" 
+                        id="phone" 
+                        name="phone"
+                        placeholder="請輸入手機後4碼"
+                        maxlength="4"
+                        pattern="[0-9]{4}"
+                        class="w-full px-4 py-3 border border-stone-300 rounded-lg focus:outline-none"
+                        required
+                    >
+                    <div class="text-xs text-stone-500 mt-1">
+                        使用註冊時提供的手機號碼後4碼
+                    </div>
+                </div>
+
+                <!-- 錯誤訊息 -->
+                <div id="errorMessage" class="hidden error-message bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"></div>
+
+                <!-- 登入按鈕 -->
+                <button 
+                    type="submit" 
+                    id="loginButton"
+                    class="w-full btn-primary text-white py-3 px-6 rounded-lg font-medium hover:scale-105"
+                >
+                    <span id="loginText">登入查看成果</span>
+                    <span id="loginSpinner" class="hidden">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        驗證中...
+                    </span>
+                </button>
+            </form>
+
+            <!-- 說明區域 -->
+            <div class="mt-8 pt-6 border-t border-stone-200">
+                <div class="text-center space-y-3">
+                    <div class="text-sm text-stone-600">
+                        <strong>首次登入？</strong>請聯繫管理員取得您的大使代碼
+                    </div>
+                    <div class="flex justify-center space-x-4 text-xs text-stone-500">
+                        <a href="index.html" class="hover:text-brand-accent transition-colors">
+                            🏠 回到首頁
+                        </a>
+                        <span>|</span>
+                        <a href="mailto:support@example.com" class="hover:text-brand-accent transition-colors">
+                            📧 聯繫客服
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能說明 -->
+        <div class="mt-6 text-center">
+            <div class="brand-card p-6">
+                <h3 class="font-semibold text-stone-700 mb-3">💎 登入後您可以查看</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm text-stone-600">
+                    <div class="flex items-center">
+                        <span class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-2 text-xs">📊</span>
+                        推薦成果統計
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center mr-2 text-xs">💰</span>
+                        佣金收益記錄
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center mr-2 text-xs">🏆</span>
+                        等級進度追蹤
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center mr-2 text-xs">🔗</span>
+                        專屬推薦連結
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Google Apps Script API URL
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+        
+        // 處理登入
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const partnerCode = document.getElementById('partnerCode').value.trim().toUpperCase();
+            const phone = document.getElementById('phone').value.trim();
+            
+            // 前端驗證
+            if (!partnerCode || !phone) {
+                showError('請填寫所有必填欄位');
+                return;
+            }
+            
+            if (phone.length !== 4 || !/^\d{4}$/.test(phone)) {
+                showError('手機後4碼必須是4位數字');
+                return;
+            }
+            
+            // 顯示載入狀態
+            showLoading(true);
+            hideError();
+            
+            try {
+                // 呼叫後端API驗證
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'verify_partner_login',
+                        partner_code: partnerCode,
+                        phone_last4: phone
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 登入成功，儲存登入狀態並跳轉
+                    sessionStorage.setItem('partnerCode', partnerCode);
+                    sessionStorage.setItem('partnerData', JSON.stringify(result.partner));
+                    
+                    // 顯示成功訊息
+                    showSuccess('登入成功！正在為您載入個人資料...');
+                    
+                    // 跳轉到個人儀表板
+                    setTimeout(() => {
+                        window.location.href = 'partner-dashboard.html';
+                    }, 1500);
+                    
+                } else {
+                    showError(result.error || '大使代碼或手機號碼不正確');
+                }
+                
+            } catch (error) {
+                console.error('登入錯誤:', error);
+                showError('連線失敗，請檢查網路連線後重試');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // 顯示錯誤訊息
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+        
+        // 隱藏錯誤訊息
+        function hideError() {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.classList.add('hidden');
+        }
+        
+        // 顯示成功訊息
+        function showSuccess(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.className = 'error-message bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm';
+        }
+        
+        // 控制載入狀態
+        function showLoading(isLoading) {
+            const button = document.getElementById('loginButton');
+            const text = document.getElementById('loginText');
+            const spinner = document.getElementById('loginSpinner');
+            
+            if (isLoading) {
+                button.disabled = true;
+                button.classList.add('opacity-75');
+                text.classList.add('hidden');
+                spinner.classList.remove('hidden');
+            } else {
+                button.disabled = false;
+                button.classList.remove('opacity-75');
+                text.classList.remove('hidden');
+                spinner.classList.add('hidden');
+            }
+        }
+        
+        // 格式化手機號碼輸入（只允許數字）
+        document.getElementById('phone').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+        
+        // 格式化大使代碼（轉為大寫）
+        document.getElementById('partnerCode').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+        
+        // 檢查是否已登入
+        window.addEventListener('load', function() {
+            const partnerCode = sessionStorage.getItem('partnerCode');
+            if (partnerCode) {
+                // 已登入，直接跳轉到儀表板
+                window.location.href = 'partner-dashboard.html';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知音大使 - 個人儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #F8FAF3 0%, #EEF3E5 100%);
+            color: #5C544B;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+        .brand-accent {
+            color: #2E4B36;
+        }
+        .brand-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE6E1;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #2E4B36 0%, #4B7C4B 100%);
+        }
+        .level-badge {
+            background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
+        }
+        .progress-bar {
+            height: 8px;
+            background-color: #E5E7EB;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981 0%, #34D399 100%);
+            transition: width 0.5s ease;
+        }
+        .commission-badge {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body class="min-h-screen py-6 px-4">
+    <!-- 載入覆蓋層 -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <div class="text-lg font-medium text-stone-700">載入您的成果數據中...</div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto">
+        <!-- 頂部導航 -->
+        <header class="mb-8">
+            <div class="brand-card p-6">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 gradient-bg rounded-full flex items-center justify-center">
+                            <span class="text-white text-xl font-bold" id="userInitial">🌲</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold brand-accent">歡迎回來，<span id="partnerName">知音大使</span></h1>
+                            <div class="flex items-center space-x-3 text-sm text-stone-600">
+                                <span>代碼：<span id="partnerCode" class="font-mono font-semibold">-</span></span>
+                                <span class="level-badge text-white px-3 py-1 rounded-full text-xs font-semibold" id="partnerLevel">
+                                    載入中...
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="refreshData()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            🔄 重新載入
+                        </button>
+                        <button onclick="logout()" class="bg-stone-600 text-white px-4 py-2 rounded-lg hover:bg-stone-700 transition-colors">
+                            🚪 登出
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 核心統計 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- 推薦成功數 -->
+            <div class="brand-card p-6 stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-3xl font-bold text-green-600" id="totalReferrals">-</div>
+                        <div class="text-sm text-stone-600 mt-1">推薦成功</div>
+                        <div class="text-xs text-stone-500">完成入住</div>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <span class="text-2xl">🏆</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 累積佣金 -->
+            <div class="brand-card p-6 stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-3xl font-bold text-blue-600" id="totalCommission">-</div>
+                        <div class="text-sm text-stone-600 mt-1">累積佣金</div>
+                        <div class="text-xs text-stone-500">總收益</div>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span class="text-2xl">💰</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 可用住宿金 -->
+            <div class="brand-card p-6 stat-card commission-badge">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-3xl font-bold text-purple-600" id="availablePoints">-</div>
+                        <div class="text-sm text-stone-600 mt-1">可用住宿金</div>
+                        <div class="text-xs text-stone-500">點數餘額</div>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                        <span class="text-2xl">🎁</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 等級進度 -->
+            <div class="brand-card p-6 stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-3xl font-bold text-amber-600" id="levelProgress">-</div>
+                        <div class="text-sm text-stone-600 mt-1">升級進度</div>
+                        <div class="text-xs text-stone-500" id="nextLevelText">下一等級</div>
+                    </div>
+                    <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
+                        <span class="text-2xl">⭐</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要內容區域 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- 推薦績效圖表 -->
+            <div class="brand-card p-8">
+                <h2 class="font-serif text-xl font-semibold brand-accent mb-6">📈 推薦績效趨勢</h2>
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+                <div class="mt-4 text-center">
+                    <div class="text-sm text-stone-600">
+                        最近 6 個月推薦成果
+                    </div>
+                </div>
+            </div>
+
+            <!-- 佣金分佈 -->
+            <div class="brand-card p-8">
+                <h2 class="font-serif text-xl font-semibold brand-accent mb-6">💎 佣金類型分佈</h2>
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="commissionChart"></canvas>
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-between text-sm text-stone-600 mb-2">
+                        <span class="flex items-center">
+                            <span class="w-3 h-3 bg-green-500 rounded mr-2"></span>
+                            住宿金
+                        </span>
+                        <span id="accommodationTotal">-</span>
+                    </div>
+                    <div class="flex justify-between text-sm text-stone-600">
+                        <span class="flex items-center">
+                            <span class="w-3 h-3 bg-blue-500 rounded mr-2"></span>
+                            現金
+                        </span>
+                        <span id="cashTotal">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 詳細記錄 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- 最近推薦記錄 -->
+            <div class="brand-card p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="font-serif text-xl font-semibold brand-accent">🎯 最近推薦記錄</h2>
+                    <button onclick="exportBookings()" class="text-sm bg-stone-200 text-stone-700 px-3 py-2 rounded-lg hover:bg-stone-300">
+                        📊 匯出記錄
+                    </button>
+                </div>
+                <div id="recentBookings" class="space-y-4">
+                    <div class="text-center py-8 text-stone-500">載入中...</div>
+                </div>
+            </div>
+
+            <!-- 專屬推薦工具 -->
+            <div class="brand-card p-8">
+                <h2 class="font-serif text-xl font-semibold brand-accent mb-6">🔗 我的推薦工具</h2>
+                
+                <!-- 推薦連結 -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-stone-700 mb-2">專屬推薦連結</label>
+                    <div class="flex">
+                        <input 
+                            type="text" 
+                            id="referralLink" 
+                            class="flex-1 px-3 py-2 border border-stone-300 rounded-l-lg bg-stone-50 text-sm" 
+                            readonly
+                            value="載入中..."
+                        >
+                        <button 
+                            onclick="copyReferralLink()" 
+                            class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 text-sm"
+                        >
+                            複製
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 推薦文案 -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-stone-700 mb-2">推薦文案模板</label>
+                    <div class="bg-stone-50 p-4 rounded-lg text-sm">
+                        <div class="text-stone-700 leading-relaxed" id="referralTemplate">
+                            🌲 發現森林中的秘密住宿體驗！<br>
+                            ✨ 透過我的專屬連結預訂，享受獨特的森林療癒之旅<br>
+                            🎁 還有機會獲得專屬森林禮物<br><br>
+                            立即預訂：<span class="text-blue-600">[您的專屬連結]</span>
+                        </div>
+                    </div>
+                    <button onclick="copyTemplate()" class="mt-2 text-xs bg-stone-200 text-stone-700 px-3 py-1 rounded hover:bg-stone-300">
+                        複製文案
+                    </button>
+                </div>
+
+                <!-- 快速分享 -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="shareToLine()" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-600">
+                        📱 LINE 分享
+                    </button>
+                    <button onclick="shareToFacebook()" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600">
+                        📘 Facebook
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 等級說明 -->
+        <div class="mt-8 brand-card p-8">
+            <h2 class="font-serif text-xl font-semibold brand-accent mb-6">🏆 大使等級說明</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">🌱</span>
+                    </div>
+                    <h3 class="font-semibold text-green-700 mb-2">LV1 知音大使</h3>
+                    <div class="text-sm text-stone-600 space-y-1">
+                        <div>每筆：1000住宿金 / 500現金</div>
+                        <div>要求：0-2 筆成功推薦</div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">🌿</span>
+                    </div>
+                    <h3 class="font-semibold text-blue-700 mb-2">LV2 森林嚮導</h3>
+                    <div class="text-sm text-stone-600 space-y-1">
+                        <div>每筆：1200住宿金 / 600現金</div>
+                        <div>要求：3-9 筆成功推薦</div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl">🌳</span>
+                    </div>
+                    <h3 class="font-semibold text-purple-700 mb-2">LV3 秘境守護者</h3>
+                    <div class="text-sm text-stone-600 space-y-1">
+                        <div>每筆：1500住宿金 / 800現金</div>
+                        <div>要求：10+ 筆成功推薦</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Google Apps Script API URL
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+        
+        let partnerData = null;
+        let allBookings = [];
+        let charts = {};
+        
+        // 頁面載入時初始化
+        window.addEventListener('load', function() {
+            checkAuth();
+            loadPartnerData();
+        });
+        
+        // 檢查登入狀態
+        function checkAuth() {
+            const partnerCode = sessionStorage.getItem('partnerCode');
+            if (!partnerCode) {
+                // 未登入，跳轉到登入頁
+                window.location.href = 'partner-login.html';
+                return;
+            }
+            
+            // 嘗試從 sessionStorage 載入快取數據
+            const cachedData = sessionStorage.getItem('partnerData');
+            if (cachedData) {
+                try {
+                    partnerData = JSON.parse(cachedData);
+                    displayBasicInfo();
+                } catch (error) {
+                    console.error('解析快取數據失敗:', error);
+                }
+            }
+        }
+        
+        // 載入夥伴數據
+        async function loadPartnerData() {
+            const partnerCode = sessionStorage.getItem('partnerCode');
+            
+            try {
+                // 載入夥伴詳細數據
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'get_partner_dashboard_data',
+                        partner_code: partnerCode
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    partnerData = result.partner;
+                    allBookings = result.bookings || [];
+                    
+                    // 更新快取
+                    sessionStorage.setItem('partnerData', JSON.stringify(partnerData));
+                    
+                    // 更新顯示
+                    displayAllData();
+                    initializeCharts();
+                    
+                } else {
+                    throw new Error(result.error || '載入數據失敗');
+                }
+                
+            } catch (error) {
+                console.error('載入數據失敗:', error);
+                showError('載入數據失敗，請重試');
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // 顯示基本資訊
+        function displayBasicInfo() {
+            if (!partnerData) return;
+            
+            document.getElementById('partnerName').textContent = partnerData.name || '知音大使';
+            document.getElementById('partnerCode').textContent = partnerData.partner_code || '-';
+            document.getElementById('partnerLevel').textContent = getLevelText(partnerData.level);
+            
+            // 設定使用者縮寫
+            const initial = partnerData.name ? partnerData.name.charAt(0) : '🌲';
+            document.getElementById('userInitial').textContent = initial;
+        }
+        
+        // 顯示所有數據
+        function displayAllData() {
+            displayBasicInfo();
+            updateStatistics();
+            displayRecentBookings();
+            generateReferralLink();
+        }
+        
+        // 更新統計數據
+        function updateStatistics() {
+            if (!partnerData) return;
+            
+            const completedBookings = allBookings.filter(b => b.stay_status === 'COMPLETED').length;
+            const totalCommission = parseFloat(partnerData.total_commission_earned) || 0;
+            const availablePoints = calculateAvailablePoints();
+            const progress = calculateLevelProgress();
+            
+            document.getElementById('totalReferrals').textContent = completedBookings;
+            document.getElementById('totalCommission').textContent = '$' + totalCommission.toLocaleString();
+            document.getElementById('availablePoints').textContent = '$' + availablePoints.toLocaleString();
+            document.getElementById('levelProgress').textContent = progress.current + '/' + progress.target;
+            document.getElementById('nextLevelText').textContent = progress.nextLevel;
+        }
+        
+        // 計算可用住宿金
+        function calculateAvailablePoints() {
+            if (!partnerData) return 0;
+            
+            const totalEarned = parseFloat(partnerData.total_commission_earned) || 0;
+            const totalPaid = parseFloat(partnerData.total_commission_paid) || 0;
+            
+            return Math.max(0, totalEarned - totalPaid);
+        }
+        
+        // 計算等級進度
+        function calculateLevelProgress() {
+            const completedCount = allBookings.filter(b => b.stay_status === 'COMPLETED').length;
+            
+            let current = completedCount;
+            let target = 3;
+            let nextLevel = 'LV2 森林嚮導';
+            
+            if (completedCount >= 10) {
+                current = completedCount;
+                target = '∞';
+                nextLevel = '已達最高等級';
+            } else if (completedCount >= 3) {
+                current = completedCount;
+                target = 10;
+                nextLevel = 'LV3 秘境守護者';
+            }
+            
+            return { current, target, nextLevel };
+        }
+        
+        // 顯示最近訂房記錄
+        function displayRecentBookings() {
+            const container = document.getElementById('recentBookings');
+            
+            if (allBookings.length === 0) {
+                container.innerHTML = '<div class="text-center py-8 text-stone-500">暫無推薦記錄</div>';
+                return;
+            }
+            
+            const recentBookings = allBookings.slice(0, 5);
+            
+            container.innerHTML = recentBookings.map(booking => {
+                const statusClass = getStatusClass(booking.stay_status);
+                const statusText = getStatusText(booking.stay_status);
+                const commissionAmount = parseFloat(booking.commission_amount) || 0;
+                
+                return `
+                    <div class="border border-stone-200 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <div class="font-medium text-stone-800">${booking.guest_name}</div>
+                                <div class="text-sm text-stone-600">${formatDate(booking.checkin_date)} - ${formatDate(booking.checkout_date)}</div>
+                            </div>
+                            <span class="px-2 py-1 rounded text-xs ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-stone-600">
+                                房價：$${(parseFloat(booking.room_price) || 0).toLocaleString()}
+                            </div>
+                            <div class="text-sm font-semibold ${commissionAmount > 0 ? 'text-green-600' : 'text-stone-400'}">
+                                ${commissionAmount > 0 ? `佣金：$${commissionAmount.toLocaleString()}` : '待計算'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // 生成推薦連結
+        function generateReferralLink() {
+            if (!partnerData) return;
+            
+            const partnerCode = partnerData.partner_code;
+            const baseUrl = 'https://didi1119.github.io/forest-gift-v1/invitation.html';
+            const referralLink = `${baseUrl}?ref=${partnerCode}`;
+            
+            document.getElementById('referralLink').value = referralLink;
+            
+            // 更新推薦文案中的連結
+            const template = document.getElementById('referralTemplate');
+            const templateText = template.innerHTML.replace('[您的專屬連結]', referralLink);
+            template.innerHTML = templateText;
+        }
+        
+        // 初始化圖表
+        function initializeCharts() {
+            if (typeof Chart === 'undefined') {
+                console.log('Chart.js 未載入');
+                return;
+            }
+            
+            initPerformanceChart();
+            initCommissionChart();
+        }
+        
+        // 初始化績效圖表
+        function initPerformanceChart() {
+            const ctx = document.getElementById('performanceChart');
+            if (!ctx) return;
+            
+            // 生成過去6個月的數據
+            const months = [];
+            const bookingCounts = [];
+            
+            for (let i = 5; i >= 0; i--) {
+                const date = new Date();
+                date.setMonth(date.getMonth() - i);
+                months.push(date.toLocaleDateString('zh-TW', { month: 'short' }));
+                
+                // 計算該月的訂房數
+                const monthBookings = allBookings.filter(booking => {
+                    const bookingDate = new Date(booking.checkin_date);
+                    return bookingDate.getMonth() === date.getMonth() && 
+                           bookingDate.getFullYear() === date.getFullYear();
+                }).length;
+                
+                bookingCounts.push(monthBookings);
+            }
+            
+            charts.performance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: '推薦數',
+                        data: bookingCounts,
+                        borderColor: '#2E4B36',
+                        backgroundColor: 'rgba(46, 75, 54, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化佣金圖表
+        function initCommissionChart() {
+            const ctx = document.getElementById('commissionChart');
+            if (!ctx) return;
+            
+            // 計算住宿金和現金佣金
+            const accommodationCommission = allBookings
+                .filter(b => b.commission_type === 'ACCOMMODATION' && b.stay_status === 'COMPLETED')
+                .reduce((sum, b) => sum + (parseFloat(b.commission_amount) || 0), 0);
+                
+            const cashCommission = allBookings
+                .filter(b => b.commission_type === 'CASH' && b.stay_status === 'COMPLETED')
+                .reduce((sum, b) => sum + (parseFloat(b.commission_amount) || 0), 0);
+            
+            document.getElementById('accommodationTotal').textContent = '$' + accommodationCommission.toLocaleString();
+            document.getElementById('cashTotal').textContent = '$' + cashCommission.toLocaleString();
+            
+            charts.commission = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['住宿金', '現金'],
+                    datasets: [{
+                        data: [accommodationCommission, cashCommission],
+                        backgroundColor: ['#10B981', '#3B82F6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+        
+        // 工具函數
+        function getLevelText(level) {
+            const levelMap = {
+                'LV1_INSIDER': 'LV1 知音大使',
+                'LV2_GUIDE': 'LV2 森林嚮導',
+                'LV3_GUARDIAN': 'LV3 秘境守護者'
+            };
+            return levelMap[level] || level;
+        }
+        
+        function getStatusClass(status) {
+            const statusMap = {
+                'PENDING': 'bg-yellow-100 text-yellow-800',
+                'CONFIRMED': 'bg-blue-100 text-blue-800',
+                'CHECKED_IN': 'bg-purple-100 text-purple-800',
+                'COMPLETED': 'bg-green-100 text-green-800',
+                'CANCELLED': 'bg-red-100 text-red-800'
+            };
+            return statusMap[status] || 'bg-gray-100 text-gray-800';
+        }
+        
+        function getStatusText(status) {
+            const statusMap = {
+                'PENDING': '待確認',
+                'CONFIRMED': '已確認',
+                'CHECKED_IN': '已入住',
+                'COMPLETED': '已完成',
+                'CANCELLED': '已取消'
+            };
+            return statusMap[status] || status;
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('zh-TW');
+        }
+        
+        // 互動功能
+        function copyReferralLink() {
+            const link = document.getElementById('referralLink');
+            link.select();
+            document.execCommand('copy');
+            showSuccess('推薦連結已複製到剪貼簿！');
+        }
+        
+        function copyTemplate() {
+            const template = document.getElementById('referralTemplate').textContent;
+            navigator.clipboard.writeText(template).then(() => {
+                showSuccess('推薦文案已複製到剪貼簿！');
+            });
+        }
+        
+        function shareToLine() {
+            const link = document.getElementById('referralLink').value;
+            const text = `🌲 發現森林中的秘密住宿體驗！快來透過我的專屬連結預訂：${link}`;
+            const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+            window.open(lineUrl, '_blank');
+        }
+        
+        function shareToFacebook() {
+            const link = document.getElementById('referralLink').value;
+            const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`;
+            window.open(fbUrl, '_blank');
+        }
+        
+        function exportBookings() {
+            if (allBookings.length === 0) {
+                showError('暫無記錄可匯出');
+                return;
+            }
+            
+            const csvData = allBookings.map(booking => ({
+                '入住日期': formatDate(booking.checkin_date),
+                '退房日期': formatDate(booking.checkout_date),
+                '房客姓名': booking.guest_name,
+                '房價': parseFloat(booking.room_price) || 0,
+                '狀態': getStatusText(booking.stay_status),
+                '佣金': parseFloat(booking.commission_amount) || 0,
+                '佣金類型': booking.commission_type === 'ACCOMMODATION' ? '住宿金' : '現金'
+            }));
+            
+            downloadCSV(csvData, `推薦記錄_${partnerData.partner_code}.csv`);
+        }
+        
+        function downloadCSV(data, filename) {
+            const headers = Object.keys(data[0]);
+            const csvContent = [
+                headers.join(','),
+                ...data.map(row => headers.map(header => row[header]).join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+        
+        function refreshData() {
+            showLoading();
+            loadPartnerData();
+        }
+        
+        function logout() {
+            sessionStorage.removeItem('partnerCode');
+            sessionStorage.removeItem('partnerData');
+            window.location.href = 'partner-login.html';
+        }
+        
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+        
+        function showSuccess(message) {
+            alert('✅ ' + message);
+        }
+        
+        function showError(message) {
+            alert('❌ ' + message);
+        }
+    </script>
+</body>
+</html>

@@ -197,6 +197,12 @@ function doPost(e) {
       case 'rebuild_payouts':
         return handleRebuildPayouts(data, e);
         
+      case 'verify_partner_login':
+        return handleVerifyPartnerLogin(data, e);
+      
+      case 'get_partner_dashboard_data':
+        return handleGetPartnerDashboardData(data, e);
+        
       default:
         Logger.log('未知動作: ' + (data.action || 'undefined'));
         return createJsonResponse({
@@ -2555,6 +2561,210 @@ function handleConvertPointsToCash(data, e) {
     return createJsonResponse({
       success: false,
       error: '住宿金轉換現金失敗: ' + error.message
+    });
+  }
+}
+
+// ===== 夥伴登入驗證功能 =====
+
+// 處理夥伴登入驗證
+function handleVerifyPartnerLogin(data, e) {
+  try {
+    Logger.log('🔐 開始處理夥伴登入驗證請求');
+    Logger.log('請求數據: ' + JSON.stringify(data));
+    
+    const partnerCode = data.partner_code;
+    const phoneLast4 = data.phone_last4;
+    
+    if (!partnerCode || !phoneLast4) {
+      return createJsonResponse({
+        success: false,
+        error: '缺少必要參數：大使代碼或手機後4碼'
+      });
+    }
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const partnersSheet = spreadsheet.getSheetByName('Partners');
+    
+    if (!partnersSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到夥伴資料表'
+      });
+    }
+    
+    // 獲取所有夥伴數據
+    const partnerRange = partnersSheet.getDataRange();
+    const partnerValues = partnerRange.getValues();
+    const headers = partnerValues[0];
+    
+    // 查找匹配的夥伴
+    for (let i = 1; i < partnerValues.length; i++) {
+      const partner = partnerValues[i];
+      const dbPartnerCode = partner[1]; // B欄位：partner_code
+      const dbPhone = partner[4]; // E欄位：phone
+      
+      // 檢查大使代碼是否匹配
+      if (dbPartnerCode === partnerCode) {
+        // 檢查手機後4碼是否匹配
+        if (dbPhone && dbPhone.toString().slice(-4) === phoneLast4) {
+          // 驗證成功，返回夥伴基本資料
+          const partnerData = {
+            partner_code: dbPartnerCode,
+            name: partner[2] || '', // C欄位：name
+            email: partner[3] || '', // D欄位：email
+            phone: partner[4] || '', // E欄位：phone
+            level: partner[5] || 'LV1_INSIDER', // F欄位：level
+            commission_preference: partner[6] || 'ACCOMMODATION', // G欄位：commission_preference
+            total_commission_earned: partner[9] || 0, // J欄位：total_commission_earned
+            total_commission_paid: partner[10] || 0, // K欄位：total_commission_paid
+            total_successful_referrals: partner[11] || 0, // L欄位：total_successful_referrals
+            level_progress: partner[12] || 0 // M欄位：level_progress
+          };
+          
+          Logger.log('✅ 夥伴登入驗證成功: ' + partnerCode);
+          return createJsonResponse({
+            success: true,
+            partner: partnerData,
+            message: '登入成功'
+          });
+        } else {
+          Logger.log('❌ 手機後4碼不匹配: ' + partnerCode);
+          return createJsonResponse({
+            success: false,
+            error: '大使代碼或手機號碼不正確'
+          });
+        }
+      }
+    }
+    
+    Logger.log('❌ 找不到大使代碼: ' + partnerCode);
+    return createJsonResponse({
+      success: false,
+      error: '大使代碼或手機號碼不正確'
+    });
+    
+  } catch (error) {
+    Logger.log('夥伴登入驗證錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '登入驗證失敗: ' + error.message
+    });
+  }
+}
+
+// 處理獲取夥伴儀表板數據
+function handleGetPartnerDashboardData(data, e) {
+  try {
+    Logger.log('📊 開始處理夥伴儀表板數據請求');
+    Logger.log('請求數據: ' + JSON.stringify(data));
+    
+    const partnerCode = data.partner_code;
+    
+    if (!partnerCode) {
+      return createJsonResponse({
+        success: false,
+        error: '缺少必要參數：大使代碼'
+      });
+    }
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const partnersSheet = spreadsheet.getSheetByName('Partners');
+    const bookingsSheet = spreadsheet.getSheetByName('Bookings');
+    
+    if (!partnersSheet || !bookingsSheet) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到必要的資料表'
+      });
+    }
+    
+    // 獲取夥伴詳細資料
+    const partnerRange = partnersSheet.getDataRange();
+    const partnerValues = partnerRange.getValues();
+    let partnerData = null;
+    
+    for (let i = 1; i < partnerValues.length; i++) {
+      if (partnerValues[i][1] === partnerCode) { // B欄位：partner_code
+        const partner = partnerValues[i];
+        partnerData = {
+          partner_code: partner[1],
+          name: partner[2] || '',
+          email: partner[3] || '',
+          phone: partner[4] || '',
+          level: partner[5] || 'LV1_INSIDER',
+          commission_preference: partner[6] || 'ACCOMMODATION',
+          bank_name: partner[7] || '',
+          bank_account_last5: partner[8] || '',
+          total_commission_earned: parseFloat(partner[9]) || 0,
+          total_commission_paid: parseFloat(partner[10]) || 0,
+          total_successful_referrals: parseInt(partner[11]) || 0,
+          level_progress: parseInt(partner[12]) || 0,
+          created_at: partner[13] || '',
+          updated_at: partner[14] || ''
+        };
+        break;
+      }
+    }
+    
+    if (!partnerData) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到指定的大使資料'
+      });
+    }
+    
+    // 獲取該夥伴的所有訂房記錄
+    const bookingRange = bookingsSheet.getDataRange();
+    const bookingValues = bookingRange.getValues();
+    const partnerBookings = [];
+    
+    for (let i = 1; i < bookingValues.length; i++) {
+      const booking = bookingValues[i];
+      if (booking[1] === partnerCode) { // B欄位：partner_code
+        partnerBookings.push({
+          id: booking[0],
+          partner_code: booking[1],
+          guest_name: booking[2],
+          guest_phone: booking[3],
+          guest_email: booking[4] || '',
+          bank_account_last5: booking[5] || '',
+          checkin_date: booking[6],
+          checkout_date: booking[7],
+          room_price: parseFloat(booking[8]) || 0,
+          booking_source: booking[9] || '',
+          stay_status: booking[10] || 'PENDING',
+          payment_status: booking[11] || 'PENDING',
+          commission_status: booking[12] || 'PENDING',
+          commission_amount: parseFloat(booking[13]) || 0,
+          commission_type: booking[14] || '',
+          is_first_referral_bonus: booking[15] === 'TRUE' || booking[15] === true,
+          first_referral_bonus_amount: parseFloat(booking[16]) || 0,
+          manually_confirmed_by: booking[17] || '',
+          manually_confirmed_at: booking[18] || '',
+          notes: booking[19] || '',
+          created_at: booking[20] || '',
+          updated_at: booking[21] || ''
+        });
+      }
+    }
+    
+    Logger.log(`✅ 成功獲取夥伴 ${partnerCode} 的儀表板數據`);
+    Logger.log(`- 夥伴資料: ${JSON.stringify(partnerData)}`);
+    Logger.log(`- 訂房記錄數: ${partnerBookings.length}`);
+    
+    return createJsonResponse({
+      success: true,
+      partner: partnerData,
+      bookings: partnerBookings,
+      message: '數據獲取成功'
+    });
+    
+  } catch (error) {
+    Logger.log('獲取夥伴儀表板數據錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '獲取數據失敗: ' + error.message
     });
   }
 }

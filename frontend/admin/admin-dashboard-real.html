@@ -71,6 +71,31 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* 新版聯盟夥伴列表樣式 */
+        .kpi-item {
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 4.5rem;
+        }
+
+        @media (min-width: 1024px) {
+            .kpi-divider:not(:last-child) {
+                border-right: 1px solid #F3F4F6;
+            }
+        }
+        
+        @media (max-width: 1023px) {
+            .kpi-divider {
+                border-bottom: 1px solid #F3F4F6;
+                padding-bottom: 1rem;
+            }
+            .kpi-divider:last-child {
+                border-bottom: none;
+            }
+        }
     </style>
 </head>
 <body class="antialiased min-h-screen py-12">
@@ -972,70 +997,82 @@
             }).join('');
         }
 
-        // 生成夥伴卡片 (簡潔單行風格)
+        /**
+         * 生成單個夥伴的卡片 HTML (V5 - 財務重點版)
+         * @param {object} partner - 從後端獲取的夥伴資料物件
+         * @returns {string} - 返回完整的卡片 HTML 字串
+         */
         function generatePartnerCard(partner) {
+            // --- 資料計算 (保持與現有版本一致) ---
             const levelClass = getLevelClass(partner.level);
             const levelText = getLevelText(partner.level);
-            // ✅ 修復：使用正確的住宿金餘額計算
             const totalEarned = parseFloat(partner.total_commission_earned) || 0;
             const totalPaid = parseFloat(partner.total_commission_paid) || 0;
             const accommodationBalance = totalEarned - totalPaid;
             const pendingCash = parseFloat(partner.pending_commission) || 0;
             const totalClicks = getPartnerClicks(partner.partner_code);
             const completedReferrals = partner.total_successful_referrals || 0;
-            const conversionRate = totalClicks > 0 ? ((completedReferrals / totalClicks) * 100).toFixed(1) : '0.0';
-            
-            // 智能操作按鈕
+
+            // --- 呼叫操作按鈕生成函式 ---
             const smartActions = generateSmartActions(partner);
-            
+
+            // --- HTML 結構 ---
             return `
-                <div class="brand-card hover:shadow-md transition-shadow duration-200" 
-                     data-partner-code="${partner.partner_code}">
-                    <div class="flex items-center justify-between py-4 px-6">
-                        <!-- 左側：夥伴資訊 -->
-                        <div class="flex items-center space-x-4">
-                            <input type="checkbox" class="partner-selector h-4 w-4 text-blue-600 rounded border-gray-300" 
+                <div class="brand-card transition-shadow duration-200 hover:shadow-lg" data-partner-code="${partner.partner_code}">
+                    <div class="p-6 flex flex-col lg:flex-row items-start lg:items-center gap-6">
+                        
+                        <!-- 結構一：左側夥伴基本資訊 -->
+                        <div class="flex items-center gap-4 w-full lg:w-auto lg:flex-1">
+                            <input type="checkbox" class="partner-selector h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 flex-shrink-0" 
                                    onchange="updateSelection()" data-partner-code="${partner.partner_code}">
-                            
-                            <div class="partner-info">
-                                <div class="flex items-center space-x-2">
-                                    <div class="font-semibold text-stone-800">${partner.name || '未設定姓名'}</div>
-                                    <div class="text-sm text-stone-600">${partner.partner_code}</div>
-                                    <div class="text-xs text-stone-500">${partner.email || ''}</div>
+                            <div class="flex-grow">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <h3 class="font-bold text-lg text-stone-800">${partner.name || '未設定姓名'}</h3>
+                                    <span class="text-sm text-stone-500 font-mono">${partner.partner_code}</span>
                                 </div>
                                 <div class="mt-1">
-                                    <span class="px-2 py-1 rounded text-xs ${levelClass}">${levelText}</span>
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium ${levelClass}">${levelText}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 中間：績效指標 (單行顯示) -->
-                        <div class="flex items-center space-x-8 text-center">
-                            <div>
-                                <div class="font-semibold text-stone-800">${partner.level_progress || 0}</div>
-                                <div class="text-xs text-stone-500">/ ${getNextLevelRequirement(partner.level)}</div>
-                                <div class="text-xs text-stone-400">本年進度</div>
+                        <!-- 結構二：中間的數據指標網格 -->
+                        <div class="flex-grow grid grid-cols-2 sm:grid-cols-5 gap-4 text-center w-full lg:w-auto lg:flex-[2]">
+                            
+                            <!-- 2a. 主要財務指標 (最重要，放在最前) -->
+                            <div class="kpi-item col-span-1">
+                                <div class="font-bold text-2xl text-blue-600">${accommodationBalance.toLocaleString()}</div>
+                                <div class="text-xs text-blue-800 font-medium mt-1">可用點數</div>
                             </div>
-                            <div>
-                                <div class="font-semibold text-stone-800">${totalClicks}</div>
-                                <div class="text-xs text-stone-400">點擊數</div>
+                            <div class="kpi-item col-span-1">
+                                ${pendingCash > 0 ? `
+                                    <div class="font-bold text-2xl text-amber-600">
+                                        <span class="text-lg">NT$</span> ${pendingCash.toLocaleString()}
+                                    </div>
+                                    <div class="text-xs text-amber-800 font-medium mt-1">待支付現金</div>
+                                ` : `
+                                     <div class="font-semibold text-xl text-gray-400">NT$ 0</div>
+                                     <div class="text-xs text-gray-400 mt-1">待支付現金</div>
+                                `}
                             </div>
-                            <div>
-                                <div class="font-semibold text-green-600">${completedReferrals}</div>
-                                <div class="text-xs text-stone-400">完成入住</div>
+
+                            <!-- 2b. 次要績效指標 -->
+                            <div class="kpi-item kpi-divider">
+                                <div class="font-semibold text-lg text-stone-700">${partner.level_progress || 0} / <span class="text-base font-normal">${getNextLevelRequirement(partner.level)}</span></div>
+                                <div class="text-xs text-stone-500 mt-1">本年進度</div>
                             </div>
-                            <div>
-                                <div class="font-semibold text-blue-600">${accommodationBalance.toLocaleString()} 點</div>
-                                <div class="text-xs text-stone-400">可用點數</div>
+                            <div class="kpi-item kpi-divider">
+                                <div class="font-semibold text-lg text-stone-700">${totalClicks}</div>
+                                <div class="text-xs text-stone-500 mt-1">點擊數</div>
                             </div>
-                            <div>
-                                <div class="font-semibold text-amber-600">NT$ ${pendingCash.toLocaleString()}</div>
-                                <div class="text-xs text-stone-400">待支付現金</div>
+                            <div class="kpi-item kpi-divider">
+                                <div class="font-semibold text-lg text-green-600">${completedReferrals}</div>
+                                <div class="text-xs text-stone-500 mt-1">完成入住</div>
                             </div>
                         </div>
 
-                        <!-- 右側：操作區 -->
-                        <div class="action-zone">
+                        <!-- 結構三：右側操作區 -->
+                        <div class="w-full lg:w-auto pt-4 lg:pt-0 border-t lg:border-t-0 lg:border-l border-gray-200 lg:pl-6">
                             ${smartActions}
                         </div>
                     </div>
@@ -1044,55 +1081,57 @@
         }
 
 
-        // 🎯 修復後的智能操作按鈕 - 正確使用 Google Sheets 欄位
+        /**
+         * 生成智能操作按鈕 (極簡操作區，並完整保留原有功能)
+         * @param {object} partner - 夥伴資料物件
+         * @returns {string} - 返回操作區的 HTML 字串
+         */
         function generateSmartActions(partner) {
-            // ✅ 使用正確的 Google Sheets 欄位計算住宿金餘額
+            // --- 資料計算 (與原版相同，用於判斷按鈕狀態) ---
             const totalEarned = parseFloat(partner.total_commission_earned) || 0;
             const totalPaid = parseFloat(partner.total_commission_paid) || 0;
-            const accommodationBalance = totalEarned - totalPaid; // 正確的住宿金餘額計算公式
-            
+            const accommodationBalance = totalEarned - totalPaid;
             const pendingCash = parseFloat(partner.pending_commission) || 0;
+            const dropdownId = `actions-dropdown-${partner.partner_code}`;
             
-            // 🎨 統一的操作介面設計
+            // --- 邏輯一：動態生成「使用點數」按鈕 ---
+            // 根據是否有可用點數，決定按鈕是可點擊還是禁用狀態。
+            let usePointsButtonHTML = '';
+            if (accommodationBalance > 0) {
+                // **關鍵**：onclick 事件綁定原有的 `showPartnerActionsModal` 函式
+                usePointsButtonHTML = `
+                    <button onclick="showPartnerActionsModal('${partner.partner_code}', 'accommodation')" class="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all">
+                        使用點數
+                    </button>`;
+            } else {
+                usePointsButtonHTML = `
+                    <button class="w-full sm:w-auto bg-gray-300 text-gray-500 px-4 py-2 rounded-lg text-xs font-bold cursor-not-allowed" disabled>
+                        使用點數
+                    </button>`;
+            }
+
+            // --- 邏輯二：組合主要按鈕和下拉選單 ---
             return `
-                <div class="flex flex-col space-y-2">
-                    <!-- 主要快速操作區 -->
-                    <div class="flex flex-wrap gap-2">
-                        ${accommodationBalance > 0 ? `
-                            <button onclick="showPartnerActionsModal('${partner.partner_code}', 'accommodation')" 
-                                    class="flex-1 min-w-24 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 px-3 py-2 rounded-lg text-xs font-medium hover:from-blue-100 hover:to-blue-200 transition-all border border-blue-200">
-                                💎 使用點數 (${accommodationBalance.toLocaleString()})
-                            </button>
-                        ` : ''}
-                        
-                        ${pendingCash > 0 ? `
-                            <button onclick="showPartnerActionsModal('${partner.partner_code}', 'cash')" 
-                                    class="flex-1 min-w-24 bg-gradient-to-r from-green-50 to-green-100 text-green-700 px-3 py-2 rounded-lg text-xs font-medium hover:from-green-100 hover:to-green-200 transition-all border border-green-200">
-                                💰 現金 $${pendingCash.toLocaleString()}
-                            </button>
-                        ` : ''}
-                        
-                        <button onclick="viewPartnerDetails('${partner.partner_code}')" 
-                                class="bg-gray-50 text-gray-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-100 transition-all border border-gray-200">
-                            📋 詳情
-                        </button>
-                    </div>
+                <div class="flex items-center justify-end gap-2">
+                    ${usePointsButtonHTML}
                     
-                    <!-- 管理操作選單 -->
-                    <div class="relative">
-                        <button onclick="toggleManagementDropdown('${partner.partner_code}')" 
-                                class="w-full bg-gray-50 text-gray-600 px-3 py-2 rounded-lg text-xs font-medium hover:bg-gray-100 transition-all border border-gray-200 flex items-center justify-center">
-                            ⚙️ 管理操作
-                            <svg class="ml-1 w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    <div class="relative flex-shrink-0">
+                        <!-- 「更多操作」按鈕，觸發下拉選單 -->
+                        <button onclick="toggleActionsDropdown('${dropdownId}', event)" class="text-gray-500 hover:text-gray-800 hover:bg-gray-100 p-2 rounded-full transition-all">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                             </svg>
                         </button>
-                        <div id="management-${partner.partner_code}" class="hidden absolute left-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-20 w-full min-w-48">
-                            <button onclick="editPartner('${partner.partner_code}')" class="block w-full text-left px-4 py-3 hover:bg-gray-50 text-xs text-gray-700 border-b">📝 編輯夥伴資料</button>
-                            <button onclick="quickEditCommission('${partner.partner_code}')" class="block w-full text-left px-4 py-3 hover:bg-gray-50 text-xs text-gray-700 border-b">🎯 佣金設定</button>
-                            <button onclick="createPartnerPayout('${partner.partner_code}')" class="block w-full text-left px-4 py-3 hover:bg-gray-50 text-xs text-gray-700 border-b">💳 手動結算</button>
-                            <button onclick="generatePartnerLinks('${partner.partner_code}')" class="block w-full text-left px-4 py-3 hover:bg-gray-50 text-xs text-gray-700 border-b">🔗 生成推薦連結</button>
-                            <button onclick="viewPartnerHistory('${partner.partner_code}')" class="block w-full text-left px-4 py-3 hover:bg-gray-50 text-xs text-gray-700">📈 佣金歷史</button>
+                        
+                        <!-- 下拉選單：這裡的 onclick 都對應原有的函式 -->
+                        <div id="${dropdownId}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
+                            <a href="#" onclick="viewPartnerDetails('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📋 查看詳情</a>
+                            <a href="#" onclick="editPartner('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📝 編輯資料</a>
+                            ${pendingCash > 0 ? `<a href="#" onclick="showPartnerActionsModal('${partner.partner_code}', 'cash')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">💰 處理結算</a>` : ''}
+                            <a href="#" onclick="quickEditCommission('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🎯 佣金設定</a>
+                            <a href="#" onclick="createPartnerPayout('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">💳 手動結算</a>
+                            <a href="#" onclick="generatePartnerLinks('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🔗 產生連結</a>
+                            <a href="#" onclick="viewPartnerHistory('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📈 佣金歷史</a>
                         </div>
                     </div>
                 </div>
@@ -5476,6 +5515,41 @@ ${landingUrl}
                 showErrorMessage('手動結算功能正在維護中，請使用其他結算方式');
             };
         }
+
+        /**
+         * 新版聯盟夥伴列表的下拉選單互動函數
+         */
+        
+        /**
+         * 輔助函式一：切換下拉選單的顯示/隱藏
+         * @param {string} dropdownId - 要操作的下拉選單的 ID
+         * @param {Event} event - 點擊事件，用來阻止事件冒泡
+         */
+        function toggleActionsDropdown(dropdownId, event) {
+            event.stopPropagation(); // 阻止點擊事件向上冒泡，以免立刻被下一步的 document click 關閉
+            const dropdown = document.getElementById(dropdownId);
+            
+            // 先關閉頁面上所有其他的下拉選單
+            document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => {
+                if (d.id !== dropdownId) {
+                    d.classList.add('hidden');
+                }
+            });
+            
+            // 切換當前點擊的選單
+            dropdown.classList.toggle('hidden');
+        }
+
+        /**
+         * 輔助函式二：監聽整個頁面的點擊事件
+         * 說明：當使用者點擊頁面任何非選單區域時，自動關閉所有已開啟的下拉選單。
+         */
+        document.addEventListener('click', function(event) {
+            // 如果點擊的目標不是下拉選單按鈕，就關閉所有選單
+            if (!event.target.closest('button[onclick*="toggleActionsDropdown"]')) {
+                 document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => d.classList.add('hidden'));
+            }
+        });
     </script>
     <script src="payout-functions.js"></script>
     <script src="commission-management.js"></script>

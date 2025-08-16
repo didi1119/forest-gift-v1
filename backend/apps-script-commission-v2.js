@@ -2364,28 +2364,8 @@ function handleDeductAccommodationPoints(data, e) {
       created_at: timestamp.toISOString()
     };
     
-    // 如果是表單提交，返回 HTML 頁面
-    if (e.parameter && Object.keys(e.parameter).length > 0) {
-      return HtmlService.createHtmlOutput(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>點數抵扣成功</title>
-        </head>
-        <body>
-          <h1>✅ 住宿金點數抵扣成功！</h1>
-          <p>夥伴代碼：${partnerCode}</p>
-          <p>抵扣金額：$${deductAmount.toLocaleString()}</p>
-          <p>住宿日期：${usageDate}</p>
-          <p>剩餘餘額：$${(availableBalance - deductAmount).toLocaleString()}</p>
-          <p>說明：${notes}</p>
-        </body>
-        </html>
-      `);
-    } else {
-      return createJsonResponse(result);
-    }
+    // ✅ 修復：統一返回 JSON 回應，避免 HTML 頁面跳出
+    return createJsonResponse(result);
     
   } catch (error) {
     Logger.log('住宿金點數抵扣錯誤: ' + error.toString());

@@ -11,6 +11,9 @@
       "Bash(tail:*)",
       "Bash(cp:*)"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "/Users/kobe/Library"
+    ]
   }
 }

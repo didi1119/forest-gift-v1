@@ -16,6 +16,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Noto Sans TC', sans-serif;
@@ -340,49 +341,192 @@
         <!-- 數據分析標籤內容 -->
         <div id="content-analytics" class="tab-content hidden">
             <div class="space-y-8">
-                <!-- 快速導航區塊 -->
-                <div class="brand-card p-6">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h2 class="font-serif text-xl font-semibold brand-accent mb-2">📊 數據分析中心</h2>
-                            <p class="text-sm text-stone-600">查看詳細的禮物使用分析和大使表現數據</p>
-                        </div>
-                        <div class="flex space-x-3">
-                            <a href="analytics-dashboard.html" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                                📈 詳細分析儀表板
-                            </a>
-                            <a href="resources.html" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                                🌲 資源中心
-                            </a>
-                        </div>
+                
+                <!-- 核心指標概覽 -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="brand-card p-6 text-center">
+                        <div class="text-3xl font-bold text-green-600" id="totalConversionRate">-</div>
+                        <div class="text-sm text-stone-600 mt-1">整體轉換率</div>
+                        <div class="text-xs text-stone-500 mt-1">點擊→入住完成</div>
+                    </div>
+                    <div class="brand-card p-6 text-center">
+                        <div class="text-3xl font-bold text-blue-600" id="avgCommissionPerBooking">-</div>
+                        <div class="text-sm text-stone-600 mt-1">平均佣金</div>
+                        <div class="text-xs text-stone-500 mt-1">每筆完成訂房</div>
+                    </div>
+                    <div class="brand-card p-6 text-center">
+                        <div class="text-3xl font-bold text-purple-600" id="topAmbassadorConversion">-</div>
+                        <div class="text-sm text-stone-600 mt-1">最佳大使轉換率</div>
+                        <div class="text-xs text-stone-500 mt-1" id="topAmbassadorName">-</div>
+                    </div>
+                    <div class="brand-card p-6 text-center">
+                        <div class="text-3xl font-bold text-amber-600" id="mostPopularGift">-</div>
+                        <div class="text-sm text-stone-600 mt-1">最受歡迎禮物</div>
+                        <div class="text-xs text-stone-500 mt-1">禮物點擊統計</div>
                     </div>
                 </div>
-                
-                <!-- 宣傳效果分析 -->
-                <div class="brand-card p-8">
-                    <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">大使宣傳效果分析</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <canvas id="ambassadorPerformanceChart" width="400" height="200"></canvas>
+
+                <!-- 大使表現分析 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- 大使績效排行 -->
+                    <div class="brand-card p-8">
+                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">大使績效排行</h2>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="ambassadorPerformanceChart"></canvas>
                         </div>
-                        <div>
-                            <h3 class="text-lg font-semibold mb-4">TOP 5 表現大使</h3>
-                            <div id="topAmbassadors" class="space-y-3">
-                                <div class="loading-spinner"></div> 載入中...
+                        <div class="mt-4">
+                            <div class="flex justify-between text-sm text-stone-600 mb-2">
+                                <span>排序方式：</span>
+                                <select id="performanceSort" onchange="updateAmbassadorChart()" class="text-xs border rounded px-2 py-1">
+                                    <option value="conversion">轉換率</option>
+                                    <option value="clicks">點擊數</option>
+                                    <option value="commission">佣金總額</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 大使等級分佈 -->
+                    <div class="brand-card p-8">
+                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">大使等級分佈</h2>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="levelDistributionChart"></canvas>
+                        </div>
+                        <div class="mt-4 space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-sm flex items-center">
+                                    <span class="w-3 h-3 bg-green-500 rounded mr-2"></span>
+                                    LV1 知音大使
+                                </span>
+                                <span class="text-sm font-semibold" id="lv1Count">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm flex items-center">
+                                    <span class="w-3 h-3 bg-blue-500 rounded mr-2"></span>
+                                    LV2 森林嚮導
+                                </span>
+                                <span class="text-sm font-semibold" id="lv2Count">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm flex items-center">
+                                    <span class="w-3 h-3 bg-purple-500 rounded mr-2"></span>
+                                    LV3 秘境守護者
+                                </span>
+                                <span class="text-sm font-semibold" id="lv3Count">-</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 禮物偏好統計 -->
+                <!-- 森林禮物點擊分析 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- 禮物點擊統計 -->
+                    <div class="brand-card p-8">
+                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">森林禮物點擊統計</h2>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="giftClickChart"></canvas>
+                        </div>
+                        <div class="mt-4 text-center">
+                            <div class="text-sm text-stone-600">
+                                總點擊次數：<span id="totalGiftClicks" class="font-semibold">-</span>
+                            </div>
+                            <div class="text-xs text-stone-500 mt-1">
+                                來自 index.html 的四個禮物
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 熱門禮物排行 -->
+                    <div class="brand-card p-8">
+                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">熱門禮物排行</h2>
+                        <div id="popularGiftsRanking" class="space-y-3">
+                            <div class="text-center py-8 text-stone-500">
+                                <div class="text-lg font-semibold text-blue-800 mb-2">🚧 開發中</div>
+                                <p class="text-sm text-blue-600 mb-4">此功能將追蹤 index.html 中四個禮物的使用者點擊偏好</p>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div class="bg-blue-50 p-2 rounded">🎵 聲音的風景</div>
+                                    <div class="bg-green-50 p-2 rounded">📖 文字的羅盤</div>
+                                    <div class="bg-purple-50 p-2 rounded">🔮 森林的指引</div>
+                                    <div class="bg-amber-50 p-2 rounded">📚 獨家的故事</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-xs text-stone-600 bg-blue-50 p-3 rounded-lg">
+                            💡 未來功能：分析用戶對不同禮物的偏好，作為內容優化依據
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 轉換漏斗分析 -->
                 <div class="brand-card p-8">
-                    <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">禮物偏好分析</h2>
-                    <div class="bg-blue-50 p-6 rounded-lg text-center">
-                        <div class="text-lg font-semibold text-blue-800 mb-2">📊 完整禮物分析</div>
-                        <p class="text-sm text-blue-600 mb-4">查看詳細的禮物使用頻率、季節性偏好和設計建議</p>
-                        <a href="analytics-dashboard.html" target="_blank" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                            前往詳細分析 →
+                    <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">轉換漏斗分析</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                        <div class="text-center">
+                            <div class="bg-blue-100 rounded-lg p-6 mb-3">
+                                <div class="text-3xl font-bold text-blue-600" id="funnelClicks">-</div>
+                                <div class="text-sm text-blue-700">點擊連結</div>
+                            </div>
+                            <div class="text-xs text-stone-500">100%</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-green-100 rounded-lg p-6 mb-3">
+                                <div class="text-3xl font-bold text-green-600" id="funnelBookings">-</div>
+                                <div class="text-sm text-green-700">完成訂房</div>
+                            </div>
+                            <div class="text-xs text-stone-500" id="bookingConversionRate">-%</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-purple-100 rounded-lg p-6 mb-3">
+                                <div class="text-3xl font-bold text-purple-600" id="funnelCheckedIn">-</div>
+                                <div class="text-sm text-purple-700">實際入住</div>
+                            </div>
+                            <div class="text-xs text-stone-500" id="checkinConversionRate">-%</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-amber-100 rounded-lg p-6 mb-3">
+                                <div class="text-3xl font-bold text-amber-600" id="funnelCompleted">-</div>
+                                <div class="text-sm text-amber-700">完成入住</div>
+                            </div>
+                            <div class="text-xs text-stone-500" id="completionConversionRate">-%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 詳細數據表格 -->
+                <div class="brand-card p-8">
+                    <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">詳細數據分析</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b">
+                                    <th class="text-left py-3 px-4">大使代碼</th>
+                                    <th class="text-center py-3 px-4">等級</th>
+                                    <th class="text-center py-3 px-4">點擊數</th>
+                                    <th class="text-center py-3 px-4">訂房數</th>
+                                    <th class="text-center py-3 px-4">完成數</th>
+                                    <th class="text-center py-3 px-4">轉換率</th>
+                                    <th class="text-center py-3 px-4">累積佣金</th>
+                                    <th class="text-center py-3 px-4">平均客單價</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detailedAnalyticsTable">
+                                <tr>
+                                    <td colspan="8" class="text-center py-8 text-stone-500">載入中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 快速連結 -->
+                <div class="brand-card p-6">
+                    <div class="flex justify-center space-x-4">
+                        <a href="resources.html" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                            🌲 資源中心
                         </a>
+                        <button onclick="exportAnalyticsReport()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                            📊 匯出分析報表
+                        </button>
                     </div>
                 </div>
             </div>
@@ -5760,6 +5904,331 @@ ${landingUrl}
                  document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => d.classList.add('hidden'));
             }
         });
+
+        // ===== 數據分析功能 =====
+        let analyticsCharts = {};
+        
+        // 載入分析數據（使用真實數據）
+        function loadAnalyticsData() {
+            try {
+                if (!allData || !allData.partners) {
+                    console.log('等待真實數據載入...');
+                    return;
+                }
+                
+                updateAnalyticsMetrics();
+                initializeAnalyticsCharts();
+                updateAllAnalyticsCharts();
+                updateAnalyticsDetailedTable();
+                
+            } catch (error) {
+                console.error('載入分析數據失敗:', error);
+            }
+        }
+        
+        // 更新核心指標
+        function updateAnalyticsMetrics() {
+            // 計算整體轉換率（假設點擊數據暫時為0，未來實現）
+            const totalBookings = allData.bookings.length;
+            const completedBookings = allData.bookings.filter(b => b.stay_status === 'COMPLETED').length;
+            const conversionRate = totalBookings > 0 ? ((completedBookings / totalBookings) * 100).toFixed(1) : '0.0';
+            
+            // 計算平均佣金
+            const totalCommission = allData.bookings
+                .filter(b => b.stay_status === 'COMPLETED')
+                .reduce((sum, b) => sum + (parseFloat(b.commission_amount) || 0), 0);
+            const avgCommission = completedBookings > 0 ? Math.round(totalCommission / completedBookings) : 0;
+            
+            // 找出最佳大使
+            const partnerStats = calculateAnalyticsPartnerStats();
+            const topAmbassador = partnerStats.length > 0 ? partnerStats[0] : { conversionRate: 0, name: '-' };
+            
+            // 更新顯示
+            document.getElementById('totalConversionRate').textContent = conversionRate + '%';
+            document.getElementById('avgCommissionPerBooking').textContent = '$' + avgCommission;
+            document.getElementById('topAmbassadorConversion').textContent = topAmbassador.conversionRate.toFixed(1) + '%';
+            document.getElementById('topAmbassadorName').textContent = topAmbassador.name || '-';
+            document.getElementById('mostPopularGift').textContent = '🚧 開發中';
+        }
+
+        // 計算夥伴統計
+        function calculateAnalyticsPartnerStats() {
+            return allData.partners.map(partner => {
+                const partnerBookings = allData.bookings.filter(b => b.partner_code === partner.partner_code);
+                const completedBookings = partnerBookings.filter(b => b.stay_status === 'COMPLETED').length;
+                
+                return {
+                    ...partner,
+                    bookings: partnerBookings.length,
+                    completed: completedBookings,
+                    conversionRate: partnerBookings.length > 0 ? (completedBookings / partnerBookings.length) * 100 : 0,
+                    avgOrderValue: completedBookings > 0 ? 
+                        partnerBookings.filter(b => b.stay_status === 'COMPLETED')
+                                     .reduce((sum, b) => sum + (parseFloat(b.room_price) || 0), 0) / completedBookings : 0
+                };
+            }).sort((a, b) => b.conversionRate - a.conversionRate);
+        }
+
+        // 初始化圖表
+        function initializeAnalyticsCharts() {
+            if (typeof Chart === 'undefined') {
+                console.log('Chart.js 未載入，跳過圖表初始化');
+                return;
+            }
+
+            // 大使績效圖表
+            const ctx1 = document.getElementById('ambassadorPerformanceChart');
+            if (ctx1) {
+                analyticsCharts.ambassadorPerformance = new Chart(ctx1, {
+                    type: 'bar',
+                    data: { labels: [], datasets: [{ data: [], backgroundColor: '#2E4B36' }] },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+
+            // 等級分佈圖表
+            const ctx2 = document.getElementById('levelDistributionChart');
+            if (ctx2) {
+                analyticsCharts.levelDistribution = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['LV1 知音大使', 'LV2 森林嚮導', 'LV3 秘境守護者'],
+                        datasets: [{
+                            data: [],
+                            backgroundColor: ['#10B981', '#3B82F6', '#8B5CF6']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            // 禮物點擊圖表（未來功能）
+            const ctx3 = document.getElementById('giftClickChart');
+            if (ctx3) {
+                analyticsCharts.giftClick = new Chart(ctx3, {
+                    type: 'pie',
+                    data: { 
+                        labels: ['聲音的風景', '文字的羅盤', '森林的指引', '獨家的故事'],
+                        datasets: [{ 
+                            data: [0, 0, 0, 0], 
+                            backgroundColor: ['#2E4B36', '#4B7C4B', '#8B5CF6', '#F59E0B']
+                        }] 
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': 開發中';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // 更新所有分析圖表
+        function updateAllAnalyticsCharts() {
+            updateAnalyticsAmbassadorChart();
+            updateAnalyticsLevelChart();
+            updateAnalyticsFunnelAnalysis();
+        }
+
+        // 更新大使圖表
+        function updateAnalyticsAmbassadorChart() {
+            if (!analyticsCharts.ambassadorPerformance) return;
+            
+            const sortBy = document.getElementById('performanceSort')?.value || 'conversion';
+            const partnerStats = calculateAnalyticsPartnerStats();
+            
+            let sortedStats;
+            switch (sortBy) {
+                case 'conversion':
+                    sortedStats = partnerStats.sort((a, b) => b.conversionRate - a.conversionRate);
+                    break;
+                case 'clicks':
+                    sortedStats = partnerStats.sort((a, b) => b.bookings - a.bookings);
+                    break;
+                case 'commission':
+                    sortedStats = partnerStats.sort((a, b) => (parseFloat(b.total_commission_earned) || 0) - (parseFloat(a.total_commission_earned) || 0));
+                    break;
+                default:
+                    sortedStats = partnerStats;
+            }
+            
+            const top5 = sortedStats.slice(0, 5);
+            
+            analyticsCharts.ambassadorPerformance.data.labels = top5.map(p => p.partner_code);
+            analyticsCharts.ambassadorPerformance.data.datasets[0].data = top5.map(p => {
+                switch (sortBy) {
+                    case 'conversion': return p.conversionRate;
+                    case 'clicks': return p.bookings;
+                    case 'commission': return parseFloat(p.total_commission_earned) || 0;
+                    default: return p.conversionRate;
+                }
+            });
+            analyticsCharts.ambassadorPerformance.update();
+        }
+
+        // 更新等級分佈圖表
+        function updateAnalyticsLevelChart() {
+            if (!analyticsCharts.levelDistribution) return;
+            
+            const levelCounts = {
+                'LV1_INSIDER': allData.partners.filter(p => p.level === 'LV1_INSIDER').length,
+                'LV2_GUIDE': allData.partners.filter(p => p.level === 'LV2_GUIDE').length,
+                'LV3_GUARDIAN': allData.partners.filter(p => p.level === 'LV3_GUARDIAN').length
+            };
+            
+            analyticsCharts.levelDistribution.data.datasets[0].data = [
+                levelCounts.LV1_INSIDER,
+                levelCounts.LV2_GUIDE,
+                levelCounts.LV3_GUARDIAN
+            ];
+            analyticsCharts.levelDistribution.update();
+            
+            // 更新計數顯示
+            const lv1El = document.getElementById('lv1Count');
+            const lv2El = document.getElementById('lv2Count');
+            const lv3El = document.getElementById('lv3Count');
+            
+            if (lv1El) lv1El.textContent = levelCounts.LV1_INSIDER + ' 人';
+            if (lv2El) lv2El.textContent = levelCounts.LV2_GUIDE + ' 人';
+            if (lv3El) lv3El.textContent = levelCounts.LV3_GUARDIAN + ' 人';
+        }
+
+        // 更新漏斗分析
+        function updateAnalyticsFunnelAnalysis() {
+            const totalBookings = allData.bookings.length;
+            const checkedIn = allData.bookings.filter(b => b.stay_status === 'CHECKED_IN' || b.stay_status === 'COMPLETED').length;
+            const completed = allData.bookings.filter(b => b.stay_status === 'COMPLETED').length;
+            
+            const funnelClicksEl = document.getElementById('funnelClicks');
+            const funnelBookingsEl = document.getElementById('funnelBookings');
+            const funnelCheckedInEl = document.getElementById('funnelCheckedIn');
+            const funnelCompletedEl = document.getElementById('funnelCompleted');
+            
+            if (funnelClicksEl) funnelClicksEl.textContent = '開發中';
+            if (funnelBookingsEl) funnelBookingsEl.textContent = totalBookings;
+            if (funnelCheckedInEl) funnelCheckedInEl.textContent = checkedIn;
+            if (funnelCompletedEl) funnelCompletedEl.textContent = completed;
+            
+            // 計算轉換率
+            const checkinRate = totalBookings > 0 ? ((checkedIn / totalBookings) * 100).toFixed(1) : '0.0';
+            const completionRate = checkedIn > 0 ? ((completed / checkedIn) * 100).toFixed(1) : '0.0';
+            
+            const bookingRateEl = document.getElementById('bookingConversionRate');
+            const checkinRateEl = document.getElementById('checkinConversionRate');
+            const completionRateEl = document.getElementById('completionConversionRate');
+            
+            if (bookingRateEl) bookingRateEl.textContent = '開發中';
+            if (checkinRateEl) checkinRateEl.textContent = checkinRate + '%';
+            if (completionRateEl) completionRateEl.textContent = completionRate + '%';
+        }
+
+        // 更新詳細數據表格
+        function updateAnalyticsDetailedTable() {
+            const partnerStats = calculateAnalyticsPartnerStats();
+            const table = document.getElementById('detailedAnalyticsTable');
+            
+            if (!table) return;
+            
+            if (partnerStats.length === 0) {
+                table.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-stone-500">暫無數據</td></tr>';
+                return;
+            }
+            
+            table.innerHTML = partnerStats.map(partner => `
+                <tr class="border-b hover:bg-stone-50">
+                    <td class="py-3 px-4 font-medium">${partner.partner_code}</td>
+                    <td class="py-3 px-4 text-center">
+                        <span class="px-2 py-1 rounded text-xs ${getLevelClass(partner.level)}">
+                            ${getLevelText(partner.level)}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-center text-stone-400">開發中</td>
+                    <td class="py-3 px-4 text-center">${partner.bookings}</td>
+                    <td class="py-3 px-4 text-center font-semibold text-green-600">${partner.completed}</td>
+                    <td class="py-3 px-4 text-center">${partner.conversionRate.toFixed(1)}%</td>
+                    <td class="py-3 px-4 text-center">$${(parseFloat(partner.total_commission_earned) || 0).toLocaleString()}</td>
+                    <td class="py-3 px-4 text-center">$${Math.round(partner.avgOrderValue).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+        
+        // 更新大使圖表（當下拉選單改變時）
+        function updateAmbassadorChart() {
+            updateAnalyticsAmbassadorChart();
+        }
+        
+        // 匯出分析報表
+        function exportAnalyticsReport() {
+            const partnerStats = calculateAnalyticsPartnerStats();
+            const reportData = partnerStats.map(p => ({
+                '大使代碼': p.partner_code,
+                '姓名': p.name || '-',
+                '等級': getLevelText(p.level),
+                '點擊數': '開發中',
+                '訂房數': p.bookings,
+                '完成數': p.completed,
+                '轉換率': p.conversionRate.toFixed(1) + '%',
+                '累積佣金': parseFloat(p.total_commission_earned) || 0,
+                '平均客單價': Math.round(p.avgOrderValue)
+            }));
+            
+            downloadCSV(reportData, '知音計畫分析報表.csv');
+        }
+        
+        function downloadCSV(data, filename) {
+            if (data.length === 0) return;
+            
+            const headers = Object.keys(data[0]);
+            const csvContent = [
+                headers.join(','),
+                ...data.map(row => headers.map(header => row[header]).join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        // 當數據分析標籤被點擊時載入分析數據
+        function showTab(tabName) {
+            // 呼叫原有的 showTab 函數邏輯
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            const targetContent = document.getElementById(`content-${tabName}`);
+            const targetButton = document.getElementById(`tab-${tabName}`);
+            
+            if (targetContent) targetContent.classList.remove('hidden');
+            if (targetButton) targetButton.classList.add('active');
+            
+            // 如果是數據分析標籤，載入分析數據
+            if (tabName === 'analytics') {
+                setTimeout(() => {
+                    loadAnalyticsData();
+                }, 100);
+            }
+        }
     </script>
     <script src="payout-functions.js"></script>
     <script src="commission-management.js"></script>

@@ -1466,7 +1466,8 @@
                             <div class="font-semibold">${payout.partner_code}</div>
                         </td>
                         <td class="py-4 px-4 text-center">
-                            ${payout.payout_type === 'CASH' ? '現金' : '住宿金'}
+                            ${payout.payout_type === 'CASH' ? '現金' : 
+                              payout.payout_type === 'ADJUSTMENT' ? '調整' : '住宿金'}
                         </td>
                         <td class="py-4 px-4 text-center font-semibold">
                             $${(payout.amount || 0).toLocaleString()}
@@ -5449,6 +5450,19 @@ ${landingUrl}
         }
 
         async function saveCommissionEdit(partnerCode) {
+            // 獲取現有夥伴數據
+            const partner = allData.partners.find(p => p.partner_code === partnerCode);
+            if (!partner) {
+                showErrorMessage('找不到夥伴資料');
+                return;
+            }
+            
+            // 記錄原始值
+            const oldTotalEarned = parseFloat(partner.total_commission_earned) || 0;
+            const oldTotalPaid = parseFloat(partner.total_commission_paid) || 0;
+            const oldPendingCash = parseFloat(partner.pending_commission) || 0;
+            
+            // 獲取新值
             const totalEarned = parseFloat(document.getElementById(`edit-total-earned-${partnerCode}`).value) || 0;
             const totalPaid = parseFloat(document.getElementById(`edit-total-paid-${partnerCode}`).value) || 0;
             const pendingCash = parseFloat(document.getElementById(`edit-pending-cash-${partnerCode}`).value) || 0;
@@ -5468,6 +5482,10 @@ ${landingUrl}
                 showErrorMessage('已使用點數不能超過累積佣金');
                 return;
             }
+            
+            // 計算調整金額（新值 - 舊值）
+            const adjustmentAmount = totalEarned - oldTotalEarned;
+            const adjustmentText = adjustmentAmount >= 0 ? `+${adjustmentAmount}` : `${adjustmentAmount}`;
 
             try {
                 // 🎯 創建手動調整記錄到 Payouts 表
@@ -5475,10 +5493,10 @@ ${landingUrl}
                     action: 'create_payout',
                     partner_code: partnerCode,
                     payout_type: 'ADJUSTMENT',
-                    amount: 0, // 手動調整記錄，金額為0
+                    amount: Math.abs(adjustmentAmount), // 記錄調整金額的絕對值
                     payout_method: 'MANUAL_ADJUSTMENT',
                     payout_status: 'COMPLETED',
-                    notes: `👤 管理者手動調整 - ${notes} - ${new Date().toLocaleString()}`
+                    notes: `👤 管理者手動調整 - ${notes} - 累積佣金 ${adjustmentText} - ${new Date().toLocaleString()}`
                 };
 
                 console.log('🚀 準備創建手動調整記錄:', adjustmentData);
@@ -5523,10 +5541,10 @@ ${landingUrl}
                     id: `adj_${Date.now()}`,
                     partner_code: partnerCode,
                     payout_type: 'ADJUSTMENT',
-                    amount: 0,
+                    amount: Math.abs(adjustmentAmount), // 使用實際的調整金額
                     payout_method: 'MANUAL_ADJUSTMENT',
                     payout_status: 'COMPLETED',
-                    notes: adjustmentData.notes,
+                    notes: `手動調整累積佣金 ${adjustmentText}`, // 簡潔的說明
                     created_at: new Date().toISOString()
                 });
 

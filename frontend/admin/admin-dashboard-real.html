@@ -1063,8 +1063,16 @@
                     </button>
                 `);
             } else if (accommodationBalance > 0) {
+                // 住宿金使用按鈕
                 actions.push(`
-                    <button onclick="quickConvertToCash('${partner.partner_code}')" 
+                    <button onclick="useAccommodationPoints('${partner.partner_code}')" 
+                            class="text-blue-600 hover:underline text-xs px-2 py-1 bg-blue-50 rounded">
+                        🏨 使用住宿金
+                    </button>
+                `);
+                // 轉換現金按鈕
+                actions.push(`
+                    <button onclick="convertPointsToCash('${partner.partner_code}')" 
                             class="text-green-600 hover:underline text-xs px-2 py-1 bg-green-50 rounded">
                         💸 轉換現金
                     </button>
@@ -1078,12 +1086,7 @@
                     📋 詳情
                 </button>
             `);
-            actions.push(`
-                <button onclick="manageAccommodationPoints('${partner.partner_code}')" 
-                        class="text-purple-600 hover:underline text-xs px-2 py-1 bg-purple-50 rounded">
-                    🏨 住宿金折抵
-                </button>
-            `);
+            // 移除重複的住宿金按鈕，因為已經在上面大區塊中添加
             
             // 管理選單
             actions.push(`
@@ -3803,6 +3806,168 @@
 
         // ========== 點數轉換功能 ==========
         
+        // 使用住宿金折抵
+        function useAccommodationPoints(partnerCode) {
+            const partner = allData.partners.find(p => p.partner_code === partnerCode);
+            if (!partner) {
+                showErrorMessage('找不到夥伴資料');
+                return;
+            }
+            
+            const availablePoints = partner.available_points || partner.total_commission_earned || 0;
+            if (availablePoints <= 0) {
+                showErrorMessage('該大使目前沒有可用點數');
+                return;
+            }
+
+            // 創建住宿金折抵模態框
+            const modal = document.createElement('div');
+            modal.id = 'usePointsModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg max-w-md w-full">
+                    <div class="px-6 py-4 border-b flex justify-between items-center">
+                        <h2 class="text-xl font-bold text-blue-800">🏨 使用住宿金折抵</h2>
+                        <button onclick="closeModal('usePointsModal')" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form id="usePointsForm" onsubmit="submitUsePoints(event, '${partnerCode}')" class="p-6 space-y-4">
+                        <!-- 點數概覽 -->
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="text-sm text-gray-600">大使：${partner.name || partner.partner_code}</div>
+                            <div class="text-lg font-bold text-blue-700">可用點數：$${availablePoints.toLocaleString()}</div>
+                        </div>
+                        
+                        <!-- 入住日期 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">入住日期 *</label>
+                            <input type="date" id="use_checkin_date" required 
+                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none">
+                        </div>
+                        
+                        <!-- 使用金額 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">折抵金額 *</label>
+                            <input type="number" id="use_amount" required min="100" max="${availablePoints}" 
+                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
+                                placeholder="請輸入折抵金額">
+                            <div class="mt-2 flex gap-2">
+                                <button type="button" onclick="setQuickAmount('use_amount', 1000, ${availablePoints})" 
+                                    class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$1,000</button>
+                                <button type="button" onclick="setQuickAmount('use_amount', 2000, ${availablePoints})" 
+                                    class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$2,000</button>
+                                <button type="button" onclick="setQuickAmount('use_amount', 3000, ${availablePoints})" 
+                                    class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$3,000</button>
+                                <button type="button" onclick="setQuickAmount('use_amount', ${availablePoints}, ${availablePoints})" 
+                                    class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">全部</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 相關訂房 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">相關訂房ID（選填）</label>
+                            <input type="text" id="use_booking_ref" 
+                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
+                                placeholder="輸入相關的訂房編號">
+                        </div>
+                        
+                        <!-- 備註 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">備註</label>
+                            <textarea id="use_notes" rows="2" 
+                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
+                                placeholder="選填"></textarea>
+                        </div>
+                        
+                        <!-- 按鈕 -->
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" onclick="closeModal('usePointsModal')" 
+                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                                取消
+                            </button>
+                            <button type="submit" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                確認折抵
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // 提交住宿金折抵
+        async function submitUsePoints(event, partnerCode) {
+            event.preventDefault();
+            
+            const partner = allData.partners.find(p => p.partner_code === partnerCode);
+            if (!partner) {
+                showErrorMessage('找不到夥伴資料');
+                return;
+            }
+            
+            const amount = parseFloat(document.getElementById('use_amount').value);
+            const checkinDate = document.getElementById('use_checkin_date').value;
+            const bookingRef = document.getElementById('use_booking_ref').value;
+            const notes = document.getElementById('use_notes').value;
+            
+            try {
+                // 準備提交數據
+                const formData = new URLSearchParams();
+                formData.append('action', 'use_accommodation_points');
+                formData.append('partner_code', partnerCode);
+                formData.append('amount', amount);
+                formData.append('checkin_date', checkinDate);
+                formData.append('booking_ref', bookingRef || '');
+                formData.append('notes', notes || `住宿金折抵 - ${new Date().toLocaleDateString()}`);
+                
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                // 立即更新前端數據
+                const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
+                if (partnerIndex !== -1) {
+                    const currentPoints = allData.partners[partnerIndex].available_points || 0;
+                    allData.partners[partnerIndex].available_points = currentPoints - amount;
+                    allData.partners[partnerIndex].points_used = (allData.partners[partnerIndex].points_used || 0) + amount;
+                }
+                
+                showSuccessMessage(`✅ 成功使用 $${amount.toLocaleString()} 住宿金！`);
+                closeModal('usePointsModal');
+                displayPartners(allData.partners);
+                
+                // 背景重新載入數據
+                setTimeout(() => {
+                    loadRealData().then(() => {
+                        displayPartners(allData.partners);
+                    });
+                }, 2000);
+                
+            } catch (error) {
+                console.error('使用住宿金失敗:', error);
+                showErrorMessage('❌ 使用失敗：' + error.message);
+            }
+        }
+
+        // 設定快速金額
+        function setQuickAmount(inputId, amount, max) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = Math.min(amount, max);
+            }
+        }
+
         // 點數轉現金
         function convertPointsToCash(partnerCode) {
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
@@ -4835,30 +5000,209 @@ ${landingUrl}
                     return;
                 }
                 
+                createAccommodationPointsModal(partner);
+            };
+            
+            // 完整的住宿金點數管理模態框
+            window.createAccommodationPointsModal = function(partner) {
                 const availablePoints = partner.available_points || partner.total_commission_earned || 0;
-                if (availablePoints <= 0) {
-                    showErrorMessage('該大使目前沒有可用的住宿金點數');
-                    return;
+                const usedPoints = partner.total_points_used || 0;
+                const totalPoints = availablePoints + usedPoints;
+                
+                const modal = document.createElement('div');
+                modal.id = 'accommodationPointsModal';
+                modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+                
+                modal.innerHTML = `
+                    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+                        <div class="flex justify-between items-start mb-6">
+                            <h3 class="text-xl font-bold">🏨 住宿金點數管理 - ${partner.partner_code}</h3>
+                            <button onclick="closeModal('accommodationPointsModal')" class="text-gray-500 hover:text-gray-700">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- 點數概覽 -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-blue-50 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-blue-600">${totalPoints.toLocaleString()}</div>
+                                <div class="text-sm text-gray-600">總獲得點數</div>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-red-600">${usedPoints.toLocaleString()}</div>
+                                <div class="text-sm text-gray-600">已使用點數</div>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-green-600">${availablePoints.toLocaleString()}</div>
+                                <div class="text-sm text-gray-600">可用點數</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 點數抵扣 -->
+                        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                            <h4 class="font-bold mb-3">💳 點數抵扣</h4>
+                            <form id="pointsDeductionForm" class="space-y-3">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">抵扣金額</label>
+                                        <input type="number" id="deduct_amount" 
+                                            class="w-full p-2 border rounded-md" min="1" max="${availablePoints}" step="1"
+                                            placeholder="輸入要抵扣的點數">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">入住日期 *</label>
+                                        <input type="date" id="checkin_date" 
+                                            class="w-full p-2 border rounded-md" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">訂房記錄ID (選填)</label>
+                                        <input type="text" id="related_booking_id" 
+                                            class="w-full p-2 border rounded-md" placeholder="相關訂房ID">
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">抵扣說明</label>
+                                    <textarea id="deduction_notes" rows="2" class="w-full p-2 border rounded-md"
+                                        placeholder="說明此次抵扣的用途..."></textarea>
+                                </div>
+                                
+                                <!-- 快速金額按鈕 -->
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" onclick="setDeductAmount(1000)" 
+                                        class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                                        $1000
+                                    </button>
+                                    <button type="button" onclick="setDeductAmount(2000)" 
+                                        class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                                        $2000
+                                    </button>
+                                    <button type="button" onclick="setDeductAmount(5000)" 
+                                        class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                                        $5000
+                                    </button>
+                                    <button type="button" onclick="setDeductAmount(${availablePoints})" 
+                                        class="px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">
+                                        全部抵扣
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" onclick="closeModal('accommodationPointsModal')" 
+                                class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                                關閉
+                            </button>
+                            <button type="button" onclick="processPointsDeduction('${partner.partner_code}')" 
+                                class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                💳 執行抵扣
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+            };
+            
+            // 設定抵扣金額
+            window.setDeductAmount = function(amount) {
+                document.getElementById('deduct_amount').value = amount;
+            };
+            
+            // 處理點數抵扣
+            window.processPointsDeduction = async function(partnerCode) {
+                try {
+                    const deductAmount = parseFloat(document.getElementById('deduct_amount').value) || 0;
+                    const checkinDate = document.getElementById('checkin_date').value;
+                    const relatedBookingId = document.getElementById('related_booking_id').value.trim();
+                    const notes = document.getElementById('deduction_notes').value.trim();
+                    
+                    if (deductAmount <= 0) {
+                        showErrorMessage('請輸入有效的抵扣金額');
+                        return;
+                    }
+                    
+                    if (!checkinDate) {
+                        showErrorMessage('請選擇入住日期');
+                        return;
+                    }
+                    
+                    if (!notes) {
+                        showErrorMessage('請填寫抵扣說明');
+                        return;
+                    }
+                    
+                    // 使用 form 提交避免 CORS 問題
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = APPS_SCRIPT_URL;
+                    form.target = 'deduction_iframe';
+                    form.style.display = 'none';
+
+                    const formData = {
+                        action: 'deduct_accommodation_points',
+                        partner_code: partnerCode,
+                        deduct_amount: deductAmount,
+                        checkin_date: checkinDate,
+                        related_booking_id: relatedBookingId,
+                        notes: notes
+                    };
+                    
+                    // 添加表單字段
+                    Object.keys(formData).forEach(key => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = formData[key] || '';
+                        form.appendChild(input);
+                    });
+
+                    document.body.appendChild(form);
+
+                    // 創建隱藏的 iframe
+                    let iframe = document.getElementById('deduction_iframe');
+                    if (!iframe) {
+                        iframe = document.createElement('iframe');
+                        iframe.id = 'deduction_iframe';
+                        iframe.name = 'deduction_iframe';
+                        iframe.style.display = 'none';
+                        document.body.appendChild(iframe);
+                    }
+
+                    // 提交表單
+                    form.submit();
+                    
+                    setTimeout(() => {
+                        // 立即更新前端數據
+                        const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
+                        if (partnerIndex !== -1) {
+                            const partner = allData.partners[partnerIndex];
+                            const currentPoints = partner.available_points || partner.total_commission_earned || 0;
+                            partner.available_points = Math.max(0, currentPoints - deductAmount);
+                            partner.total_points_used = (partner.total_points_used || 0) + deductAmount;
+                        }
+                        
+                        showSuccessMessage(`✅ 成功抵扣 ${deductAmount.toLocaleString()} 住宿金點數！`);
+                        closeModal('accommodationPointsModal');
+                        
+                        // 重新顯示夥伴列表
+                        if (typeof displayPartners === 'function') {
+                            displayPartners(allData.partners);
+                        }
+                        
+                        // 清理表單
+                        if (form && form.parentNode) {
+                            document.body.removeChild(form);
+                        }
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('點數抵扣失敗:', error);
+                    showErrorMessage('❌ 抵扣失敗：' + error.message);
                 }
-                
-                const amount = prompt(`${partner.name || partner.partner_code} 目前有 ${availablePoints.toLocaleString()} 住宿金點數\n\n請輸入要折抵的點數：`, '1000');
-                if (!amount || isNaN(amount) || amount <= 0) return;
-                
-                const deductAmount = parseInt(amount);
-                if (deductAmount > availablePoints) {
-                    showErrorMessage('折抵點數不能超過可用點數');
-                    return;
-                }
-                
-                const notes = prompt('請輸入折抵說明：', '住宿金點數折抵');
-                if (!notes) return;
-                
-                // 立即更新前端數據
-                partner.available_points = Math.max(0, availablePoints - deductAmount);
-                partner.total_points_used = (partner.total_points_used || 0) + deductAmount;
-                
-                showSuccessMessage(`✅ 成功折抵 ${deductAmount.toLocaleString()} 住宿金點數！`);
-                displayPartners(allData.partners);
             };
         }
         

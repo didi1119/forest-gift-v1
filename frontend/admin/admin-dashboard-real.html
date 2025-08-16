@@ -1707,7 +1707,7 @@
         async function viewPartnerDetails(partnerCode) {
             // 🔄 重新加載最新數據確保顯示正確資訊
             try {
-                await loadAllData();
+                await loadRealData();
             } catch (error) {
                 console.error('重新載入數據失敗:', error);
             }
@@ -3841,7 +3841,7 @@
         async function showPartnerActionsModal(partnerCode, type) {
             // 🔄 重新加載最新數據確保操作使用正確數據
             try {
-                await loadAllData();
+                await loadRealData();
             } catch (error) {
                 console.error('重新載入數據失敗:', error);
             }
@@ -3955,7 +3955,7 @@
             
             // 🔄 重新加載最新數據確保數據一致性
             try {
-                await loadAllData();
+                await loadRealData();
             } catch (error) {
                 console.error('重新載入數據失敗:', error);
             }
@@ -4226,7 +4226,7 @@
             
             // 🔄 重新加載最新數據確保數據一致性
             try {
-                await loadAllData();
+                await loadRealData();
             } catch (error) {
                 console.error('重新載入數據失敗:', error);
             }

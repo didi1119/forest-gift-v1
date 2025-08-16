@@ -1541,7 +1541,32 @@
             `).join('');
         }
 
-        // 刷新特定類型的數據
+        // 即時更新當前標籤頁的顯示（不重新載入數據）
+        function updateCurrentTabDisplay() {
+            const activeTab = document.querySelector('.tab-button.active');
+            if (!activeTab) return;
+            
+            const tabName = activeTab.id.replace('tab-', '');
+            console.log(`🔄 更新 ${tabName} 顯示`);
+            
+            switch(tabName) {
+                case 'overview':
+                    updateStats();
+                    displayRecentActivity();
+                    break;
+                case 'bookings':
+                    displayBookings(allData.bookings);
+                    break;
+                case 'partners':
+                    displayPartners(allData.partners);
+                    break;
+                case 'payouts':
+                    displayPayouts(allData.payouts);
+                    break;
+            }
+        }
+
+        // 刷新特定類型的數據（從後端重新載入）
         async function refreshData(dataType) {
             try {
                 console.log(`🔄 刷新 ${dataType} 數據...`);
@@ -4572,47 +4597,15 @@
                 
                 console.log('💰 轉換現金 - 提交數據:', formData);
                 
-                // 使用 fetch API 獲得真正的錯誤信息
-                const params = new URLSearchParams();
-                Object.keys(formData).forEach(key => {
-                    params.append(key, formData[key]);
-                });
-                
+                // 使用 form 提交避免 CORS 問題
                 console.log('📤 正在提交到 Google Apps Script...');
                 
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: params.toString()
-                });
+                submitToBackendViaForm(formData);
                 
-                console.log('📡 收到回應:', response.status, response.statusText);
+                // 給後端時間處理
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
-                }
-                
-                const result = await response.text();
-                console.log('📄 後端回應內容:', result);
-                
-                // 嘗試解析JSON回應
-                let responseData;
-                try {
-                    responseData = JSON.parse(result);
-                    console.log('📊 解析後的回應:', responseData);
-                } catch (parseError) {
-                    console.error('❌ JSON 解析失敗:', parseError);
-                    console.error('原始內容:', result);
-                    throw new Error('後端回應格式不正確: ' + parseError.message);
-                }
-                
-                if (!responseData.success) {
-                    throw new Error(responseData.error || '轉換失敗');
-                }
-                
-                console.log('✅ 轉換現金成功！後端確認:', responseData);
+                console.log('✅ 轉換現金請求已發送（使用 form 提交）');
                 
                 // ✅ 更新前端數據
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
@@ -4638,7 +4631,9 @@
                 
                 showSuccessMessage('✅ 成功轉換 ' + points.toLocaleString() + ' 點為 NT$ ' + cashAmount.toLocaleString() + '！');
                 closeModal('pointsToCashModal');
-                displayPartners(allData.partners);
+                
+                // 即時更新當前顯示
+                updateCurrentTabDisplay();
                 
             } catch (error) {
                 console.error('點數轉換失敗:', error);
@@ -5521,7 +5516,7 @@ ${landingUrl}
 
                 // 添加新的調整記錄到本地 payouts 數據
                 allData.payouts.push({
-                    id: result1.payout_id || `adj_${Date.now()}`,
+                    id: `adj_${Date.now()}`,
                     partner_code: partnerCode,
                     payout_type: 'ADJUSTMENT',
                     amount: 0,
@@ -5533,7 +5528,9 @@ ${landingUrl}
 
                 showSuccessMessage('✅ 佣金資訊已更新，調整記錄已保存');
                 closeModal('partnerModal');
-                displayPartners(allData.partners);
+                
+                // 即時更新當前顯示
+                updateCurrentTabDisplay();
 
             } catch (error) {
                 console.error('❌ 佣金編輯失敗:', error);
@@ -6245,8 +6242,7 @@ ${landingUrl}
                     break;
                 case 'payouts':
                     loadPayoutsData();
-                    // 自動刷新結算數據以獲取最新狀態
-                    refreshData('payouts');
+                    // 不自動刷新，使用本地數據即時更新
                     break;
                 case 'analytics':
                     setTimeout(() => {

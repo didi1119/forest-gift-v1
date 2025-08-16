@@ -199,12 +199,16 @@ const BOOKING_FIELDS = {
 - **症狀**：
   - 轉換現金成功但出現403錯誤：`script.googleusercontent.com/macros/echo Failed to load resource: 403`
   - Console顯示：`✅ 成功轉換 166 點為 NT$ 83！` 但有錯誤
+  - 使用住宿金也有403錯誤但數據有更新
+  - 轉換現金沒有403錯誤（移除loadRealData後）但數據可能沒更新
 - **解決方案**：
-  1. 移除form.submit()後的loadRealData()調用
-  2. 只更新本地數據，避免立即重新請求
-  3. 讓使用者手動刷新或延遲較長時間後再更新
+  1. 移除所有form.submit()後的loadRealData()調用
+  2. 延長setTimeout等待時間到2秒，確保後端有足夠時間處理
+  3. 只更新本地數據，避免立即重新請求
+  4. 添加詳細的console.log調試信息
 - **注意事項**：
-  - 使用住宿金功能正常是因為沒有在成功後立即調用loadRealData()
+  - form.submit()是異步操作，需要足夠的等待時間
+  - 403錯誤來自Google Apps Script的自動重定向響應
   - 批量操作等功能如需重載數據，應使用較長的延遲時間
 
 ### 2024年系統標準化更新 🎯

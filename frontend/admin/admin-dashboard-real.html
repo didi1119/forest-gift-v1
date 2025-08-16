@@ -4142,10 +4142,8 @@
                     closeModal('usePointsModal');
                     displayPartners(allData.partners);
                     
-                    // 重新載入數據確保數據一致性
-                    setTimeout(() => {
-                        loadRealData();
-                    }, 2000);
+                    // 不要立即重新載入數據，避免403錯誤
+                    // 數據已經更新到後端，前端也已更新
                     
                     // 清理表單
                     if (form.parentNode) {
@@ -4360,6 +4358,8 @@
                     notes: notes
                 };
                 
+                console.log('💰 轉換現金 - 提交數據:', formData);
+                
                 // 使用表單提交
                 const form = document.createElement('form');
                 form.method = 'POST';
@@ -4385,9 +4385,11 @@
                     document.body.appendChild(hiddenFrame);
                 }
                 
+                console.log('📤 正在提交表單到 Google Apps Script...');
                 document.body.appendChild(form);
                 form.submit();
                 
+                // 延長等待時間，確保後端有足夠時間處理
                 setTimeout(() => {
                     // ✅ 修復：立即更新前端數據使用正確邏輯
                     const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
@@ -4419,7 +4421,7 @@
                     // form.submit() 的回應會觸發額外的請求
                     
                     document.body.removeChild(form);
-                }, 1000);
+                }, 2000); // 給後端足夠時間處理
                 
             } catch (error) {
                 console.error('點數轉換失敗:', error);

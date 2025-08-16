@@ -226,6 +226,52 @@ const BOOKING_FIELDS = {
   - 本地代碼更新後，及時同步到Google Apps Script
   - 測試新功能前確認後端代碼已部署
 
+### 2024-08-16 Google Sheets欄位錯位問題 🔧
+- **問題**：Payouts表格數據寫入錯位，欄位不匹配
+- **根因**：後端`payoutData`陣列元素數量與Google Sheets欄位數量不匹配
+- **症狀**：
+  - 轉換現金功能正常但數據寫入位置錯誤
+  - Payouts表格有14個欄位但後端只提供10個值
+  - 導致數據寫入到錯誤的欄位中
+- **具體錯位**：
+  ```javascript
+  // 錯誤的陣列（10個元素）
+  [ID, partner_code, payout_type, amount, payout_status, payout_date, booking_ids, notes, created_at, updated_at]
+  
+  // 正確的陣列（14個元素）
+  [ID, partner_code, payout_type, amount, related_booking_ids, payout_method, payout_status, 
+   bank_transfer_date, bank_transfer_reference, accommodation_voucher_code, notes, created_by, created_at, updated_at]
+  ```
+- **解決方案**：
+  1. 檢查Google Sheets實際欄位結構
+  2. 修正`handleConvertPointsToCash`函數中的`payoutData`陣列
+  3. 確保陣列元素數量與表格欄位完全匹配
+  4. 重新部署Google Apps Script後端代碼
+- **預防措施**：
+  - 創建新表格或修改欄位時，同步更新後端代碼
+  - 使用標準化的欄位映射文檔
+  - 測試時檢查數據是否寫入正確位置
+
+### 2024-08-16 form.submit vs fetch API經驗總結 🚀
+- **核心發現**：form.submit()會觸發403錯誤但數據能正常處理，fetch API無錯誤且能獲得詳細回應
+- **技術對比**：
+  ```javascript
+  // form.submit() - 有403錯誤但功能正常
+  form.submit() → 403錯誤 + 數據成功寫入 + 無詳細錯誤信息
+  
+  // fetch API - 無錯誤且有詳細回應  
+  fetch() → 200成功 + 數據成功寫入 + 詳細JSON回應 + 錯誤診斷信息
+  ```
+- **最佳實踐**：
+  1. 新功能統一使用fetch API
+  2. 舊功能逐步遷移到fetch API
+  3. 保留詳細的console.log調試信息
+  4. 檢查後端回應的success字段
+- **調試經驗**：
+  - 403錯誤不一定代表功能失敗，可能只是Google Apps Script的重定向響應
+  - 使用fetch API能獲得真正的後端錯誤信息
+  - console.log是診斷前後端通信問題的最佳工具
+
 ### 2024年系統標準化更新 🎯
 - **問題**：Google Sheets 欄位錯位，顯示 "$MANUAL_ENTRY", "44", "$ACCOMMODATION"
 - **根因**：資料庫缺少 ID 欄位，導致所有欄位左移一位

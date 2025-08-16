@@ -1772,10 +1772,26 @@ function handleCreatePayout(data, e) {
     const amount = parseFloat(data.amount) || 0;
     const notes = data.notes || '';
     
-    if (!partnerCode || amount <= 0) {
+    // 允許 ADJUSTMENT 類型的金額為 0（用於記錄手動調整）
+    // 其他類型的 payout 金額必須大於 0
+    if (!partnerCode) {
       return createJsonResponse({
         success: false,
-        error: '缺少必要參數或金額無效'
+        error: '缺少夥伴代碼'
+      });
+    }
+    
+    if (payoutType !== 'ADJUSTMENT' && amount <= 0) {
+      return createJsonResponse({
+        success: false,
+        error: '金額必須大於 0'
+      });
+    }
+    
+    if (amount < 0) {
+      return createJsonResponse({
+        success: false,
+        error: '金額不能為負數'
       });
     }
     

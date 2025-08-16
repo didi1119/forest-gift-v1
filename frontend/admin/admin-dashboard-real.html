@@ -4360,68 +4360,73 @@
                 
                 console.log('💰 轉換現金 - 提交數據:', formData);
                 
-                // 使用表單提交
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = APPS_SCRIPT_URL;
-                form.target = 'hiddenFrame';
-                form.style.display = 'none';
-                
+                // 使用 fetch API 獲得真正的錯誤信息
+                const params = new URLSearchParams();
                 Object.keys(formData).forEach(key => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = formData[key];
-                    form.appendChild(input);
+                    params.append(key, formData[key]);
                 });
                 
-                // 確保隱藏iframe存在
-                let hiddenFrame = document.getElementById('hiddenFrame');
-                if (!hiddenFrame) {
-                    hiddenFrame = document.createElement('iframe');
-                    hiddenFrame.id = 'hiddenFrame';
-                    hiddenFrame.name = 'hiddenFrame';
-                    hiddenFrame.style.display = 'none';
-                    document.body.appendChild(hiddenFrame);
+                console.log('📤 正在提交到 Google Apps Script...');
+                
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params.toString()
+                });
+                
+                console.log('📡 收到回應:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
                 }
                 
-                console.log('📤 正在提交表單到 Google Apps Script...');
-                document.body.appendChild(form);
-                form.submit();
+                const result = await response.text();
+                console.log('📄 後端回應內容:', result);
                 
-                // 延長等待時間，確保後端有足夠時間處理
-                setTimeout(() => {
-                    // ✅ 修復：立即更新前端數據使用正確邏輯
-                    const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
-                    if (partnerIndex !== -1) {
-                        const partner = allData.partners[partnerIndex];
-                        
-                        // 更新住宿金統計：增加 total_commission_paid
-                        const currentPaid = parseFloat(partner.total_commission_paid) || 0;
-                        partner.total_commission_paid = currentPaid + points;
-                        
-                        // 更新待結算現金：增加 pending_commission
-                        const currentPending = parseFloat(partner.pending_commission) || 0;
-                        partner.pending_commission = currentPending + cashAmount;
-                        
-                        console.log('✅ 轉換現金前端數據更新:', {
-                            partner: partnerCode,
-                            points_used: points,
-                            cash_amount: cashAmount,
-                            total_commission_paid: partner.total_commission_paid,
-                            pending_commission: partner.pending_commission
-                        });
-                    }
+                // 嘗試解析JSON回應
+                let responseData;
+                try {
+                    responseData = JSON.parse(result);
+                    console.log('📊 解析後的回應:', responseData);
+                } catch (parseError) {
+                    console.error('❌ JSON 解析失敗:', parseError);
+                    console.error('原始內容:', result);
+                    throw new Error('後端回應格式不正確: ' + parseError.message);
+                }
+                
+                if (!responseData.success) {
+                    throw new Error(responseData.error || '轉換失敗');
+                }
+                
+                console.log('✅ 轉換現金成功！後端確認:', responseData);
+                
+                // ✅ 更新前端數據
+                const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
+                if (partnerIndex !== -1) {
+                    const partner = allData.partners[partnerIndex];
                     
-                    showSuccessMessage('✅ 成功轉換 ' + points.toLocaleString() + ' 點為 NT$ ' + cashAmount.toLocaleString() + '！');
-                    closeModal('pointsToCashModal');
-                    displayPartners(allData.partners);
+                    // 更新住宿金統計：增加 total_commission_paid
+                    const currentPaid = parseFloat(partner.total_commission_paid) || 0;
+                    partner.total_commission_paid = currentPaid + points;
                     
-                    // 不要在這裡重新載入數據，因為會導致403錯誤
-                    // form.submit() 的回應會觸發額外的請求
+                    // 更新待結算現金：增加 pending_commission
+                    const currentPending = parseFloat(partner.pending_commission) || 0;
+                    partner.pending_commission = currentPending + cashAmount;
                     
-                    document.body.removeChild(form);
-                }, 2000); // 給後端足夠時間處理
+                    console.log('✅ 轉換現金前端數據更新:', {
+                        partner: partnerCode,
+                        points_used: points,
+                        cash_amount: cashAmount,
+                        total_commission_paid: partner.total_commission_paid,
+                        pending_commission: partner.pending_commission
+                    });
+                }
+                
+                showSuccessMessage('✅ 成功轉換 ' + points.toLocaleString() + ' 點為 NT$ ' + cashAmount.toLocaleString() + '！');
+                closeModal('pointsToCashModal');
+                displayPartners(allData.partners);
                 
             } catch (error) {
                 console.error('點數轉換失敗:', error);

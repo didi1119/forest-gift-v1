@@ -2534,14 +2534,18 @@
                 const result = await response.text();
                 console.log('📥 後端回應內容:', result);
                 
-                // 嘗試解析回應
+                // 檢查後端回應是否成功
                 let responseData;
                 try {
                     responseData = JSON.parse(result);
                     console.log('📊 解析後的回應:', responseData);
                 } catch (parseError) {
-                    console.log('⚠️ 回應不是 JSON 格式，但請求可能成功:', result);
+                    console.log('⚠️ 回應不是 JSON 格式，視為成功:', result);
                     responseData = { success: true };
+                }
+                
+                if (responseData.success === false) {
+                    throw new Error(responseData.error || '確認入住失敗');
                 }
                 
                 // 立即更新前端數據
@@ -2558,6 +2562,7 @@
                 if (bookingIndex !== -1) {
                     const oldStatus = allData.bookings[bookingIndex].stay_status;
                     allData.bookings[bookingIndex].stay_status = 'COMPLETED';
+                    allData.bookings[bookingIndex].updated_at = new Date().toISOString();
                     console.log('✅ 已更新訂房狀態:', oldStatus, '→ COMPLETED');
                     
                     if (commissionData) {
@@ -2574,19 +2579,15 @@
                     showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
                 } else {
                     console.error('❌ 找不到對應的訂房記錄');
-                    showSuccessMessage('✅ 確認請求已發送，請重新載入查看結果');
+                    // 如果找不到記錄，表示可能有數據同步問題，此時才重新載入
+                    showSuccessMessage('✅ 確認請求已發送，正在重新載入數據...');
+                    setTimeout(() => {
+                        loadRealData().then(() => {
+                            displayBookings(allData.bookings);
+                            console.log('✅ 數據重載完成');
+                        });
+                    }, 1000);
                 }
-                
-                // 背景重新載入完整數據確保一致性
-                setTimeout(() => {
-                    console.log('🔄 背景載入完整數據...');
-                    loadRealData().then(() => {
-                        displayBookings(allData.bookings);
-                        console.log('✅ 數據重載完成');
-                    }).catch(error => {
-                        console.log('⚠️ 背景數據重載失敗（不影響操作）:', error.message);
-                    });
-                }, 3000);
             } catch (error) {
                 console.error('❌ 更新訂房狀態失敗:', error);
                 
@@ -3060,34 +3061,40 @@
                 const result = await response.text();
                 console.log('📥 編輯訂房 - 後端回應:', result);
                 
-                // 延時處理結果（因為CORS限制無法讀取iframe內容）
-                setTimeout(() => {
-                    // 立即更新前端數據
-                    const updateIndex = typeof bookingIdentifier === 'number' 
-                        ? bookingIdentifier 
-                        : allData.bookings.findIndex(b => b.id == bookingIdentifier);
-                    
-                    if (updateIndex !== -1) {
-                        // 使用標準化後的完整 booking 數據更新本地記錄
-                        allData.bookings[updateIndex] = {
-                            ...allData.bookings[updateIndex],
-                            ...updatedBooking,
-                            updated_at: new Date().toISOString()
-                        };
-                        console.log('✅ 已更新前端訂單數據（使用標準化格式）');
-                    }
-                    
-                    showSuccessMessage('✅ 訂單更新成功！');
-                    closeModal('editBookingModal');
-                    displayBookings(allData.bookings);
-                    
-                    // 編輯操作不需要背景重載，因為前端數據已經同步更新
-                    
-                    // 清理表單
-                    if (form && form.parentNode) {
-                        document.body.removeChild(form);
-                    }
-                }, 1000);
+                // 檢查後端回應是否成功
+                let responseData;
+                try {
+                    responseData = JSON.parse(result);
+                    console.log('📊 解析後的回應:', responseData);
+                } catch (parseError) {
+                    console.log('⚠️ 回應不是 JSON 格式，視為成功:', result);
+                    responseData = { success: true };
+                }
+                
+                if (responseData.success === false) {
+                    throw new Error(responseData.error || '後端更新失敗');
+                }
+                
+                // 立即更新前端數據（不使用 setTimeout）
+                const updateIndex = typeof bookingIdentifier === 'number' 
+                    ? bookingIdentifier 
+                    : allData.bookings.findIndex(b => b.id == bookingIdentifier);
+                
+                if (updateIndex !== -1) {
+                    // 使用標準化後的完整 booking 數據更新本地記錄
+                    allData.bookings[updateIndex] = {
+                        ...allData.bookings[updateIndex],
+                        ...updatedBooking,
+                        updated_at: new Date().toISOString()
+                    };
+                    console.log('✅ 已更新前端訂單數據（使用標準化格式）');
+                } else {
+                    console.error('❌ 找不到要更新的訂單索引');
+                }
+                
+                showSuccessMessage('✅ 訂單更新成功！');
+                closeModal('editBookingModal');
+                displayBookings(allData.bookings);
                 
             } catch (error) {
                 console.error('更新訂單失敗:', error);
@@ -3171,16 +3178,6 @@
                     displayBookings(allData.bookings);
                     showSuccessMessage('✅ 訂單已成功刪除！');
                     closeModal('editBookingModal');
-                    
-                    // 背景重新載入完整數據確保一致性
-                    setTimeout(() => {
-                        loadRealData().then(() => {
-                            displayBookings(allData.bookings);
-                            console.log('✅ 刪除操作完成，數據已重載');
-                        }).catch(error => {
-                            console.log('⚠️ 背景數據重載失敗（不影響刪除操作）:', error.message);
-                        });
-                    }, 2000);
                 } else {
                     console.error('❌ 找不到要刪除的記錄');
                     showSuccessMessage('✅ 刪除請求已發送，請重新載入查看結果');

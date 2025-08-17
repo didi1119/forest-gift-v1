@@ -1006,37 +1006,61 @@
                 if (data.success) {
                     allData = data.data;
                     
-                    // 修正欄位名稱不一致問題（ID → id）
+                    // 修正欄位名稱不一致問題（ID → id），保持欄位順序
                     if (allData.bookings && allData.bookings.length > 0) {
                         allData.bookings = allData.bookings.map(booking => {
-                            // 如果有大寫 ID 欄位，轉換為小寫 id
+                            // 如果有大寫 ID 欄位，需要重建物件以保持欄位順序
                             if (booking.hasOwnProperty('ID') && !booking.hasOwnProperty('id')) {
-                                booking.id = booking.ID;
-                                delete booking.ID;
+                                const newBooking = {};
+                                // 按照原始順序重建物件，但將 ID 改為 id
+                                Object.keys(booking).forEach(key => {
+                                    if (key === 'ID') {
+                                        newBooking['id'] = booking[key];
+                                    } else {
+                                        newBooking[key] = booking[key];
+                                    }
+                                });
+                                return newBooking;
                             }
                             return booking;
                         });
                     }
                     
-                    // 修正 Payouts 的 ID 欄位
+                    // 修正 Payouts 的 ID 欄位，保持欄位順序
                     if (allData.payouts && allData.payouts.length > 0) {
                         allData.payouts = allData.payouts.map(payout => {
-                            // 如果有大寫 ID 欄位，轉換為小寫 id
+                            // 如果有大寫 ID 欄位，需要重建物件以保持欄位順序
                             if (payout.hasOwnProperty('ID') && !payout.hasOwnProperty('id')) {
-                                payout.id = payout.ID;
-                                delete payout.ID;
+                                const newPayout = {};
+                                // 按照原始順序重建物件，但將 ID 改為 id
+                                Object.keys(payout).forEach(key => {
+                                    if (key === 'ID') {
+                                        newPayout['id'] = payout[key];
+                                    } else {
+                                        newPayout[key] = payout[key];
+                                    }
+                                });
+                                return newPayout;
                             }
                             return payout;
                         });
                     }
                     
-                    // 修正 Partners 的 ID 欄位（如果需要）
+                    // 修正 Partners 的 ID 欄位（如果需要），保持欄位順序
                     if (allData.partners && allData.partners.length > 0) {
                         allData.partners = allData.partners.map(partner => {
-                            // 如果有大寫 ID 欄位，轉換為小寫 id
+                            // 如果有大寫 ID 欄位，需要重建物件以保持欄位順序
                             if (partner.hasOwnProperty('ID') && !partner.hasOwnProperty('id')) {
-                                partner.id = partner.ID;
-                                delete partner.ID;
+                                const newPartner = {};
+                                // 按照原始順序重建物件，但將 ID 改為 id
+                                Object.keys(partner).forEach(key => {
+                                    if (key === 'ID') {
+                                        newPartner['id'] = partner[key];
+                                    } else {
+                                        newPartner[key] = partner[key];
+                                    }
+                                });
+                                return newPartner;
                             }
                             return partner;
                         });
@@ -1069,6 +1093,17 @@
                                 console.log(`    索引 ${index}: 實際="${field}" vs 期望="${expectedFields[index]}"`);
                             }
                         });
+                        
+                        // 特別檢查 BOOKING_FIELDS.FIELD_ORDER 的內容
+                        console.log('⚠️ BOOKING_FIELDS.FIELD_ORDER 完整內容:');
+                        BOOKING_FIELDS.FIELD_ORDER.forEach((field, index) => {
+                            console.log(`    [${index}] = "${field}"`);
+                        });
+                        
+                        // 檢查是否有人修改了 FIELD_ORDER
+                        if (BOOKING_FIELDS.FIELD_ORDER[0] !== 'id') {
+                            console.error('❌ 錯誤：FIELD_ORDER[0] 不是 "id"，而是:', BOOKING_FIELDS.FIELD_ORDER[0]);
+                        }
                     }
                     
                     // 檢查 Payouts 數據結構

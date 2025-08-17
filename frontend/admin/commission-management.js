@@ -456,9 +456,9 @@ function manageAccommodationPoints(partnerCode) {
 
 // 創建住宿金點數管理模態框
 function createAccommodationPointsModal(partner) {
-    // 直接使用夥伴資料中的可用點數和已使用點數
-    const availablePoints = partner.available_points || partner.total_commission_earned || 0;
-    const usedPoints = partner.total_points_used || 0;
+    // 使用現有欄位：住宿金 = total_commission_earned, 已使用 = total_commission_paid
+    const availablePoints = partner.total_commission_earned || 0;
+    const usedPoints = partner.total_commission_paid || 0;
     const totalPoints = availablePoints + usedPoints;
     
     const modal = document.createElement('div');
@@ -631,13 +631,13 @@ async function processPointsDeduction(partnerCode) {
             const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
             if (partnerIndex !== -1) {
                 const partner = allData.partners[partnerIndex];
-                // 扣除可用點數
-                const currentPoints = partner.available_points || partner.total_commission_earned || 0;
-                partner.available_points = Math.max(0, currentPoints - deductAmount);
-                partner.total_points_used = (partner.total_points_used || 0) + deductAmount;
+                // 扣除住宿金：減少 total_commission_earned，增加 total_commission_paid
+                const currentPoints = partner.total_commission_earned || 0;
+                partner.total_commission_earned = Math.max(0, currentPoints - deductAmount);
+                partner.total_commission_paid = (partner.total_commission_paid || 0) + deductAmount;
                 
                 console.log(`✅ 已扣除 ${partnerCode} 的 ${deductAmount} 點數`);
-                console.log(`剩餘可用點數: ${partner.available_points}`);
+                console.log(`剩餘可用點數: ${partner.total_commission_earned}`);
             }
             
             showSuccessMessage(`✅ 成功抵扣 ${deductAmount.toLocaleString()} 住宿金點數！`);

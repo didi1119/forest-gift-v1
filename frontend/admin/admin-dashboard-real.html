@@ -5320,7 +5320,8 @@ ${landingUrl}
                 return;
             }
 
-            const accommodationPoints = partner.available_points || partner.total_commission_earned || 0;
+            // 使用現有欄位：住宿金點數 = total_commission_earned
+            const accommodationPoints = partner.total_commission_earned || 0;
             if (accommodationPoints <= 0) {
                 if (!batchMode) showErrorMessage('該大使目前沒有可轉換的住宿金');
                 return;
@@ -5390,9 +5391,10 @@ ${landingUrl}
                     const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                     if (partnerIndex !== -1) {
                         const p = allData.partners[partnerIndex];
-                        p.available_points = 0;
-                        p.pending_cash = (p.pending_cash || 0) + cashAmount;
-                        p.total_points_used = (p.total_points_used || 0) + accommodationPoints;
+                        // 轉換為現金：清空住宿金，增加待支付現金
+                        p.total_commission_earned = 0;  // 清空住宿金
+                        p.pending_commission = (p.pending_commission || 0) + cashAmount;  // 增加待支付現金
+                        p.total_commission_paid = (p.total_commission_paid || 0) + accommodationPoints;  // 記錄已使用
                     }
 
                     if (!batchMode) {
@@ -5420,7 +5422,7 @@ ${landingUrl}
                 return;
             }
 
-            const pendingAmount = partner.pending_cash || partner.pending_commission || 0;
+            const pendingAmount = partner.pending_commission || 0;
             if (pendingAmount <= 0) {
                 if (!batchMode) showErrorMessage('該大使目前沒有待支付現金');
                 return;
@@ -5437,29 +5439,20 @@ ${landingUrl}
             }
 
             try {
-                // 🎯 查找對應的 pending payout 記錄
-                const pendingPayout = allData.payouts.find(p => 
-                    p.partner_code === partnerCode && 
-                    p.payout_status === 'PENDING' && 
-                    p.payout_type === 'CASH' &&
-                    parseFloat(p.amount) === pendingAmount
-                );
-
-                if (!pendingPayout) {
-                    if (!batchMode) showErrorMessage('找不到對應的待結算記錄');
-                    return;
-                }
-
-                // 🎯 調用後端 API 更新結算狀態（使用表單提交避免 CORS）
-                const updateData = {
-                    action: 'update_payout',
-                    payout_id: pendingPayout.id,
+                // 創建新的結算記錄
+                console.log('🎯 創建結算記錄:', { partnerCode, pendingAmount });
+                
+                const submitData = {
+                    action: 'create_payout',
+                    partner_code: partnerCode,
+                    payout_type: 'CASH',
                     amount: pendingAmount,
-                    payout_status: 'PAID',
-                    notes: `👤 管理者手動處理結算 - ${new Date().toLocaleString()}`
+                    payout_method: 'BANK_TRANSFER',
+                    payout_status: 'COMPLETED',
+                    notes: `💳 現金結算 - ${new Date().toLocaleString()}`
                 };
 
-                console.log('🚀 準備更新結算狀態:', updateData);
+                console.log('🚀 準備創建結算記錄:', submitData);
 
                 // 使用表單提交避免 CORS
                 const form = document.createElement('form');
@@ -5468,11 +5461,11 @@ ${landingUrl}
                 form.target = 'hiddenFrame';
                 form.style.display = 'none';
 
-                Object.keys(updateData).forEach(key => {
+                Object.keys(submitData).forEach(key => {
                     const input = document.createElement('input');
                     input.type = 'hidden';
                     input.name = key;
-                    input.value = updateData[key];
+                    input.value = submitData[key];
                     form.appendChild(input);
                 });
 
@@ -5495,15 +5488,10 @@ ${landingUrl}
                 // 🎯 更新本地數據
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                 if (partnerIndex !== -1) {
-                    allData.partners[partnerIndex].pending_cash = 0;
+                    // 清空待支付現金
                     allData.partners[partnerIndex].pending_commission = 0;
-                }
-
-                // 更新 payouts 數據
-                const payoutIndex = allData.payouts.findIndex(p => p.id === pendingPayout.id);
-                if (payoutIndex !== -1) {
-                    allData.payouts[payoutIndex].payout_status = 'PAID';
-                    allData.payouts[payoutIndex].notes = updateData.notes;
+                    // 增加已支付總額
+                    allData.partners[partnerIndex].total_commission_paid = (allData.partners[partnerIndex].total_commission_paid || 0) + pendingAmount;
                 }
 
                 if (!batchMode) {
@@ -5649,7 +5637,7 @@ ${landingUrl}
             }
         }
 
-        // 反轉為住宿金
+        // 改回住宿金
         async function revertToCash(partnerCode) {
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
@@ -5657,7 +5645,7 @@ ${landingUrl}
                 return;
             }
 
-            const pendingCash = partner.pending_cash || partner.pending_commission || 0;
+            const pendingCash = partner.pending_commission || 0;
             if (pendingCash <= 0) {
                 showErrorMessage('該大使目前沒有待支付現金可以轉回');
                 return;
@@ -5676,63 +5664,55 @@ ${landingUrl}
             if (!confirmed) return;
 
             try {
-                // 找到對應的現金結算記錄
-                const cashPayout = allData.payouts.find(p => 
-                    p.partner_code === partnerCode && 
-                    p.payout_status === 'PENDING' && 
-                    p.payout_type === 'CASH'
-                );
+                // 創建新的住宿金結算記錄
+                const submitData = {
+                    action: 'create_payout',
+                    partner_code: partnerCode,
+                    payout_type: 'ACCOMMODATION',
+                    amount: accommodationPoints,
+                    payout_method: 'MANUAL_ADJUSTMENT',
+                    payout_status: 'COMPLETED',
+                    notes: `🔄 現金轉回住宿金：NT$ ${pendingCash} → ${accommodationPoints} 點`
+                };
 
-                if (cashPayout) {
-                    // 使用表單提交更新結算類型
-                    const updateData = {
-                        action: 'update_payout',
-                        payout_id: cashPayout.id,
-                        payout_type: 'ACCOMMODATION',
-                        amount: accommodationPoints,
-                        payout_status: 'COMPLETED',
-                        notes: `🔄 轉回住宿金 - ${new Date().toLocaleString()}`
-                    };
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
 
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = APPS_SCRIPT_URL;
-                    form.target = 'hiddenFrame';
-                    form.style.display = 'none';
+                Object.keys(submitData).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = submitData[key];
+                    form.appendChild(input);
+                });
 
-                    Object.keys(updateData).forEach(key => {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = key;
-                        input.value = updateData[key];
-                        form.appendChild(input);
-                    });
-
-                    // 確保有 iframe
-                    let iframe = document.getElementById('hiddenFrame');
-                    if (!iframe) {
-                        iframe = document.createElement('iframe');
-                        iframe.id = 'hiddenFrame';
-                        iframe.name = 'hiddenFrame';
-                        iframe.style.display = 'none';
-                        document.body.appendChild(iframe);
-                    }
-
-                    document.body.appendChild(form);
-                    form.submit();
-                    
-                    // 等待處理完成
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    document.body.removeChild(form);
+                // 確保有 iframe
+                let iframe = document.getElementById('hiddenFrame');
+                if (!iframe) {
+                    iframe = document.createElement('iframe');
+                    iframe.id = 'hiddenFrame';
+                    iframe.name = 'hiddenFrame';
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
                 }
+
+                document.body.appendChild(form);
+                form.submit();
+                
+                // 等待處理完成
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                document.body.removeChild(form);
 
                 // 更新前端數據
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                 if (partnerIndex !== -1) {
                     const p = allData.partners[partnerIndex];
-                    p.pending_cash = 0;
+                    // 清空待支付現金
                     p.pending_commission = 0;
-                    p.available_points = (p.available_points || 0) + accommodationPoints;
+                    // 增加住宿金點數
                     p.total_commission_earned = (p.total_commission_earned || 0) + accommodationPoints;
                 }
 
@@ -5800,8 +5780,9 @@ ${landingUrl}
             
             // 完整的住宿金點數管理模態框
             window.createAccommodationPointsModal = function(partner) {
-                const availablePoints = partner.available_points || partner.total_commission_earned || 0;
-                const usedPoints = partner.total_points_used || 0;
+                // 使用現有欄位：住宿金 = total_commission_earned, 已使用 = total_commission_paid
+                const availablePoints = partner.total_commission_earned || 0;
+                const usedPoints = partner.total_commission_paid || 0;
                 const totalPoints = availablePoints + usedPoints;
                 
                 const modal = document.createElement('div');
@@ -5975,9 +5956,10 @@ ${landingUrl}
                         const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                         if (partnerIndex !== -1) {
                             const partner = allData.partners[partnerIndex];
-                            const currentPoints = partner.available_points || partner.total_commission_earned || 0;
-                            partner.available_points = Math.max(0, currentPoints - deductAmount);
-                            partner.total_points_used = (partner.total_points_used || 0) + deductAmount;
+                            // 扣除住宿金：減少 total_commission_earned，增加 total_commission_paid
+                            const currentPoints = partner.total_commission_earned || 0;
+                            partner.total_commission_earned = Math.max(0, currentPoints - deductAmount);
+                            partner.total_commission_paid = (partner.total_commission_paid || 0) + deductAmount;
                         }
                         
                         showSuccessMessage(`✅ 成功抵扣 ${deductAmount.toLocaleString()} 住宿金點數！`);

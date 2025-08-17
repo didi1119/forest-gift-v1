@@ -1602,20 +1602,21 @@ function handleUpdatePayout(data, e) {
             } else {
               // 普通結算記錄的修改 - 根據結算類型更新不同欄位
               if (payoutType === 'ACCOMMODATION') {
-                // 住宿金結算 - 更新 available_points (可用點數)
-                const currentAvailablePoints = parseFloat(partnerValues[i][26]) || 0; // available_points 在第27列
-                const newAvailablePoints = Math.max(0, currentAvailablePoints + amountDifference);
-                partnersSheet.getRange(i + 1, 27).setValue(newAvailablePoints); // available_points
-                Logger.log('🏨 修改住宿金結算 - 可用點數: ' + currentAvailablePoints + ' → ' + newAvailablePoints);
+                // 住宿金結算 - 更新 total_commission_earned（用作住宿金點數）
+                // 注意：由於沒有專門的 available_points 欄位，我們使用 total_commission_earned - total_commission_paid 來計算可用點數
+                const currentTotalEarned = parseFloat(partnerValues[i][9]) || 0; // total_commission_earned
+                const newTotalEarned = Math.max(0, currentTotalEarned + amountDifference);
+                partnersSheet.getRange(i + 1, 10).setValue(newTotalEarned); // total_commission_earned (第10列)
+                Logger.log('🏨 修改住宿金結算 - 累積佣金(作為點數): ' + currentTotalEarned + ' → ' + newTotalEarned);
               } else if (payoutType === 'CASH') {
                 // 現金結算 - 更新待支付佣金
                 const newPendingCommission = Math.max(0, currentPendingCommission + amountDifference);
-                partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
+                partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission (第12列)
                 Logger.log('💰 修改現金結算 - 待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission);
               }
             }
             
-            partnersSheet.getRange(i + 1, 25).setValue(timestamp); // updated_at
+            partnersSheet.getRange(i + 1, 20).setValue(timestamp); // updated_at (第20列)
             Logger.log('✅ 大使 ' + partnerCode + ' 佣金已根據結算修改調整');
             break;
           }
@@ -1944,8 +1945,8 @@ function handleCreatePayout(data, e) {
       payoutType, // payout_type
       amount, // amount
       '', // related_booking_ids
-      payoutType === 'CASH' ? 'BANK_TRANSFER' : 'ACCOMMODATION_VOUCHER', // payout_method
-      'PENDING', // payout_status
+      data.payout_method || (payoutType === 'CASH' ? 'BANK_TRANSFER' : 'ACCOMMODATION_VOUCHER'), // payout_method
+      data.payout_status || 'PENDING', // payout_status - 使用傳入的狀態或預設為 PENDING
       '', // bank_transfer_date
       '', // bank_transfer_reference
       '', // accommodation_voucher_code
@@ -1958,19 +1959,65 @@ function handleCreatePayout(data, e) {
     payoutsSheet.appendRow(payoutData);
     Logger.log('✅ 結算記錄已創建');
     
-    // 2. 更新夥伴的待支付佣金（減少金額）
+    // 2. 根據結算類型更新夥伴資料
     const partnerRange = partnersSheet.getDataRange();
     const partnerValues = partnerRange.getValues();
     
     for (let i = 1; i < partnerValues.length; i++) {
       if (partnerValues[i][1] === partnerCode) { // partner_code 在第2列
-        const currentPendingCommission = parseFloat(partnerValues[i][11]) || 0; // pending_commission
-        const newPendingCommission = Math.max(0, currentPendingCommission - amount);
+        const payoutStatus = data.payout_status || 'PENDING';
+        const payoutMethod = data.payout_method || '';
         
-        partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
+        if (payoutType === 'CASH') {
+          // 現金結算
+          if (payoutStatus === 'COMPLETED') {
+            // 已完成的現金結算：減少待支付現金，增加已支付總額
+            const currentPendingCommission = parseFloat(partnerValues[i][11]) || 0; // pending_commission (L欄)
+            const currentTotalPaid = parseFloat(partnerValues[i][10]) || 0; // total_commission_paid (K欄)
+            
+            const newPendingCommission = Math.max(0, currentPendingCommission - amount);
+            const newTotalPaid = currentTotalPaid + amount;
+            
+            partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
+            partnersSheet.getRange(i + 1, 11).setValue(newTotalPaid); // total_commission_paid
+            
+            Logger.log('💰 現金結算完成 - ' + partnerCode);
+            Logger.log('  待支付: $' + currentPendingCommission + ' -> $' + newPendingCommission);
+            Logger.log('  已支付總額: $' + currentTotalPaid + ' -> $' + newTotalPaid);
+          } else {
+            // 待處理的現金結算：暫不更新欄位
+            Logger.log('💰 現金結算待處理 - ' + partnerCode);
+          }
+        } else if (payoutType === 'ACCOMMODATION') {
+          // 住宿金結算
+          if (payoutMethod === 'MANUAL_ADJUSTMENT' && notes.indexOf('現金轉回住宿金') !== -1) {
+            // 現金轉回住宿金：減少待支付現金，增加住宿金點數
+            const currentPendingCommission = parseFloat(partnerValues[i][11]) || 0; // pending_commission (L欄)
+            const currentTotalEarned = parseFloat(partnerValues[i][9]) || 0; // total_commission_earned (J欄)
+            
+            const newPendingCommission = Math.max(0, currentPendingCommission - (amount / 2)); // 住宿金轉現金是50%比例
+            const newTotalEarned = currentTotalEarned + amount;
+            
+            partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
+            partnersSheet.getRange(i + 1, 10).setValue(newTotalEarned); // total_commission_earned
+            
+            Logger.log('🏨 現金轉回住宿金 - ' + partnerCode);
+            Logger.log('  待支付現金: $' + currentPendingCommission + ' -> $' + newPendingCommission);
+            Logger.log('  住宿金點數: ' + currentTotalEarned + ' -> ' + newTotalEarned);
+          } else {
+            // 一般住宿金結算：增加住宿金點數
+            const currentTotalEarned = parseFloat(partnerValues[i][9]) || 0; // total_commission_earned (J欄)
+            const newTotalEarned = currentTotalEarned + amount;
+            
+            partnersSheet.getRange(i + 1, 10).setValue(newTotalEarned); // total_commission_earned
+            
+            Logger.log('🏨 住宿金結算 - ' + partnerCode);
+            Logger.log('  住宿金點數: ' + currentTotalEarned + ' -> ' + newTotalEarned);
+          }
+        }
+        
+        // 更新最後修改時間
         partnersSheet.getRange(i + 1, 25).setValue(timestamp); // updated_at
-        
-        Logger.log('✅ 夥伴 ' + partnerCode + ' 待支付佣金已調整: $' + currentPendingCommission + ' -> $' + newPendingCommission);
         break;
       }
     }

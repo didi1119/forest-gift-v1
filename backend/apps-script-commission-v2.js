@@ -1600,10 +1600,19 @@ function handleUpdatePayout(data, e) {
                 }
               }
             } else {
-              // 普通結算記錄的修改 - 影響待支付佣金
-              const newPendingCommission = Math.max(0, currentPendingCommission + amountDifference);
-              partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
-              Logger.log('💰 修改普通結算 - 待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission);
+              // 普通結算記錄的修改 - 根據結算類型更新不同欄位
+              if (payoutType === 'ACCOMMODATION') {
+                // 住宿金結算 - 更新 available_points (可用點數)
+                const currentAvailablePoints = parseFloat(partnerValues[i][26]) || 0; // available_points 在第27列
+                const newAvailablePoints = Math.max(0, currentAvailablePoints + amountDifference);
+                partnersSheet.getRange(i + 1, 27).setValue(newAvailablePoints); // available_points
+                Logger.log('🏨 修改住宿金結算 - 可用點數: ' + currentAvailablePoints + ' → ' + newAvailablePoints);
+              } else if (payoutType === 'CASH') {
+                // 現金結算 - 更新待支付佣金
+                const newPendingCommission = Math.max(0, currentPendingCommission + amountDifference);
+                partnersSheet.getRange(i + 1, 12).setValue(newPendingCommission); // pending_commission
+                Logger.log('💰 修改現金結算 - 待支付佣金: ' + currentPendingCommission + ' → ' + newPendingCommission);
+              }
             }
             
             partnersSheet.getRange(i + 1, 25).setValue(timestamp); // updated_at

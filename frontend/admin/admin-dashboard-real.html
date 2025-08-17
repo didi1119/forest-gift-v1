@@ -1005,67 +1005,6 @@
                 
                 if (data.success) {
                     allData = data.data;
-                    
-                    // 修正欄位名稱不一致問題（ID → id），保持欄位順序
-                    if (allData.bookings && allData.bookings.length > 0) {
-                        allData.bookings = allData.bookings.map(booking => {
-                            // 如果有大寫 ID 欄位，需要重建物件以保持欄位順序
-                            if (booking.hasOwnProperty('ID') && !booking.hasOwnProperty('id')) {
-                                const newBooking = {};
-                                // 按照原始順序重建物件，但將 ID 改為 id
-                                Object.keys(booking).forEach(key => {
-                                    if (key === 'ID') {
-                                        newBooking['id'] = booking[key];
-                                    } else {
-                                        newBooking[key] = booking[key];
-                                    }
-                                });
-                                return newBooking;
-                            }
-                            return booking;
-                        });
-                    }
-                    
-                    // 修正 Payouts 的 ID 欄位，保持欄位順序
-                    if (allData.payouts && allData.payouts.length > 0) {
-                        allData.payouts = allData.payouts.map(payout => {
-                            // 如果有大寫 ID 欄位，需要重建物件以保持欄位順序
-                            if (payout.hasOwnProperty('ID') && !payout.hasOwnProperty('id')) {
-                                const newPayout = {};
-                                // 按照原始順序重建物件，但將 ID 改為 id
-                                Object.keys(payout).forEach(key => {
-                                    if (key === 'ID') {
-                                        newPayout['id'] = payout[key];
-                                    } else {
-                                        newPayout[key] = payout[key];
-                                    }
-                                });
-                                return newPayout;
-                            }
-                            return payout;
-                        });
-                    }
-                    
-                    // 修正 Partners 的 ID 欄位（如果需要），保持欄位順序
-                    if (allData.partners && allData.partners.length > 0) {
-                        allData.partners = allData.partners.map(partner => {
-                            // 如果有大寫 ID 欄位，需要重建物件以保持欄位順序
-                            if (partner.hasOwnProperty('ID') && !partner.hasOwnProperty('id')) {
-                                const newPartner = {};
-                                // 按照原始順序重建物件，但將 ID 改為 id
-                                Object.keys(partner).forEach(key => {
-                                    if (key === 'ID') {
-                                        newPartner['id'] = partner[key];
-                                    } else {
-                                        newPartner[key] = partner[key];
-                                    }
-                                });
-                                return newPartner;
-                            }
-                            return partner;
-                        });
-                    }
-                    
                     console.log('✅ 載入真實數據成功:');
                     console.log('- Partners:', allData.partners?.length || 0);
                     console.log('- Bookings:', allData.bookings?.length || 0);

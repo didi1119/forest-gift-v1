@@ -4264,11 +4264,43 @@
                             <div class="text-lg font-bold text-blue-700">可用點數：$${availablePoints.toLocaleString()}</div>
                         </div>
                         
-                        <!-- 入住日期 -->
+                        <!-- 房客姓名 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">入住日期 *</label>
-                            <input type="date" id="use_checkin_date" required 
-                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">房客姓名 *</label>
+                            <input type="text" id="use_guest_name" required 
+                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
+                                value="${partner.name || ''}" placeholder="請輸入房客姓名">
+                        </div>
+                        
+                        <!-- 房客電話 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">房客電話 *</label>
+                            <input type="tel" id="use_guest_phone" required 
+                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
+                                value="${partner.phone || ''}" placeholder="請輸入房客電話">
+                        </div>
+                        
+                        <!-- 入住日期 -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">入住日期 *</label>
+                                <input type="date" id="use_checkin_date" required 
+                                    class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">退房日期 *</label>
+                                <input type="date" id="use_checkout_date" required 
+                                    class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                        
+                        <!-- 房價 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">原始房價 *</label>
+                            <input type="number" id="use_room_price" required min="0" step="1" 
+                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
+                                placeholder="請輸入房間原價"
+                                oninput="updateNetPrice()">
                         </div>
                         
                         <!-- 使用金額 -->
@@ -4277,27 +4309,36 @@
                             <input type="number" id="use_amount" required min="1" max="${availablePoints}" step="1" 
                                 class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
                                 placeholder="請輸入折抵金額"
-                                oninput="validateUseAmount(this, ${availablePoints})">
+                                oninput="validateUseAmount(this, ${availablePoints}); updateNetPrice()">
                             <div class="text-xs text-gray-500 mt-1">最大可使用：$${availablePoints.toLocaleString()}</div>
                             <div class="mt-2 flex gap-2">
-                                <button type="button" onclick="setQuickAmount('use_amount', Math.min(1000, ${availablePoints}), ${availablePoints})" 
+                                <button type="button" onclick="setQuickAmount('use_amount', Math.min(1000, ${availablePoints}), ${availablePoints}); updateNetPrice()" 
                                     class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$1,000</button>
-                                <button type="button" onclick="setQuickAmount('use_amount', Math.min(2000, ${availablePoints}), ${availablePoints})" 
+                                <button type="button" onclick="setQuickAmount('use_amount', Math.min(2000, ${availablePoints}), ${availablePoints}); updateNetPrice()" 
                                     class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$2,000</button>
-                                <button type="button" onclick="setQuickAmount('use_amount', Math.min(3000, ${availablePoints}), ${availablePoints})" 
+                                <button type="button" onclick="setQuickAmount('use_amount', Math.min(3000, ${availablePoints}), ${availablePoints}); updateNetPrice()" 
                                     class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$3,000</button>
-                                <button type="button" onclick="setQuickAmount('use_amount', ${availablePoints}, ${availablePoints})" 
+                                <button type="button" onclick="setQuickAmount('use_amount', ${availablePoints}, ${availablePoints}); updateNetPrice()" 
                                     class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">全部</button>
                             </div>
                         </div>
                         
-                        <!-- 相關訂房 -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">相關訂房ID（選填）</label>
-                            <input type="text" id="use_booking_ref" 
-                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
-                                placeholder="輸入相關的訂房編號">
+                        <!-- 實付金額顯示 -->
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">原價：</span>
+                                <span id="display_original_price" class="font-medium">$0</span>
+                            </div>
+                            <div class="flex justify-between items-center text-red-600">
+                                <span class="text-sm">折抵：</span>
+                                <span id="display_discount" class="font-medium">-$0</span>
+                            </div>
+                            <div class="border-t pt-2 mt-2 flex justify-between items-center">
+                                <span class="text-sm font-bold">實付：</span>
+                                <span id="display_net_price" class="text-lg font-bold text-green-600">$0</span>
+                            </div>
                         </div>
+                        
                         
                         <!-- 備註 -->
                         <div>
@@ -4335,8 +4376,11 @@
             }
             
             const amount = parseFloat(document.getElementById('use_amount').value);
+            const guestName = document.getElementById('use_guest_name').value;
+            const guestPhone = document.getElementById('use_guest_phone').value;
             const checkinDate = document.getElementById('use_checkin_date').value;
-            const bookingRef = document.getElementById('use_booking_ref').value;
+            const checkoutDate = document.getElementById('use_checkout_date').value;
+            const roomPrice = parseFloat(document.getElementById('use_room_price').value) || 0;
             const notes = document.getElementById('use_notes').value;
             
             // ✅ 驗證金額 - 使用正確的計算公式
@@ -4353,30 +4397,30 @@
             }
             
             try {
-                console.log('📝 住宿金折抵 - 提交數據:', {
-                    action: 'deduct_accommodation_points',
-                    partner_code: partnerCode,
-                    deduct_amount: amount,
-                    related_booking_id: bookingRef || '',
-                    usage_date: checkinDate,
-                    available_points: availablePoints
-                });
-                
-                // 使用 fetch API 避免 403 錯誤
-                const submitData = {
-                    action: 'deduct_accommodation_points',
-                    partner_code: partnerCode,
-                    deduct_amount: amount,
-                    related_booking_id: bookingRef || '',
-                    usage_date: checkinDate,
-                    notes: notes || `住宿金折抵 $${amount.toLocaleString()} - ${checkinDate || new Date().toLocaleDateString()}`
+                // 創建訂房記錄
+                const bookingData = {
+                    action: 'create_booking',
+                    partner_code: partnerCode,  // 推薦人是自己
+                    guest_name: guestName,
+                    guest_phone: guestPhone,
+                    guest_email: partner.email || '',
+                    checkin_date: checkinDate,
+                    checkout_date: checkoutDate,
+                    room_price: roomPrice,
+                    booking_source: 'SELF_USE',  // 標記為自用
+                    stay_status: 'CONFIRMED',    // 已確認
+                    payment_status: 'PAID',       // 已付款
+                    commission_status: 'NO_COMMISSION',  // 不產生佣金
+                    commission_amount: 0,         // 佣金為0
+                    notes: `住宿金折抵: 原價 $${roomPrice} - 折抵 $${amount} = 實付 $${roomPrice - amount}\n${notes || ''}`
                 };
                 
-                console.log('🏨 使用住宿金 - 提交數據:', submitData);
+                console.log('📝 創建自用訂房記錄:', bookingData);
                 
+                // 先創建訂房記錄
                 const params = new URLSearchParams();
-                Object.keys(submitData).forEach(key => {
-                    params.append(key, submitData[key]);
+                Object.keys(bookingData).forEach(key => {
+                    params.append(key, bookingData[key]);
                 });
                 
                 console.log('📤 正在提交到 Google Apps Script...');
@@ -4396,24 +4440,63 @@
                 }
                 
                 const result = await response.text();
-                console.log('📄 後端回應內容:', result);
+                console.log('📄 訂房創建回應:', result);
                 
-                // 嘗試解析JSON回應
-                let responseData;
+                // 解析訂房創建結果
+                let bookingResponse;
                 try {
-                    responseData = JSON.parse(result);
-                    console.log('📊 解析後的回應:', responseData);
+                    bookingResponse = JSON.parse(result);
+                    console.log('📊 訂房創建結果:', bookingResponse);
                 } catch (parseError) {
                     console.error('❌ JSON 解析失敗:', parseError);
-                    console.error('原始內容:', result);
-                    throw new Error('後端回應格式不正確: ' + parseError.message);
+                    throw new Error('訂房創建回應格式不正確');
                 }
                 
-                if (!responseData.success) {
-                    throw new Error(responseData.error || '使用住宿金失敗');
+                if (!bookingResponse.success) {
+                    throw new Error(bookingResponse.error || '創建訂房失敗');
                 }
                 
-                console.log('✅ 使用住宿金成功！後端確認:', responseData);
+                console.log('✅ 訂房記錄創建成功！');
+                
+                // 接著扣除住宿金點數
+                const deductData = {
+                    action: 'update_partner_commission',
+                    partner_code: partnerCode,
+                    total_commission_earned: totalEarned,  // 保持不變
+                    total_commission_paid: totalPaid + amount,  // 增加已使用金額
+                    pending_commission: partner.pending_commission || 0  // 保持不變
+                };
+                
+                console.log('💰 扣除住宿金點數:', deductData);
+                
+                const deductParams = new URLSearchParams();
+                Object.keys(deductData).forEach(key => {
+                    deductParams.append(key, deductData[key]);
+                });
+                
+                const deductResponse = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: deductParams.toString()
+                });
+                
+                const deductResult = await deductResponse.text();
+                console.log('📄 扣除點數回應:', deductResult);
+                
+                let deductResponseData;
+                try {
+                    deductResponseData = JSON.parse(deductResult);
+                } catch (e) {
+                    console.error('解析扣除回應失敗:', e);
+                }
+                
+                if (deductResponseData && !deductResponseData.success) {
+                    console.error('扣除點數失敗:', deductResponseData.error);
+                }
+                
+                console.log('✅ 住宿金使用完成！');
                 
                 // 更新前端數據
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);

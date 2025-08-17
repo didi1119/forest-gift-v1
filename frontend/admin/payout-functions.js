@@ -94,7 +94,7 @@ function createPayoutDetailsModal(payout) {
                         <tbody>
                             ${relatedBookings.map(booking => `
                                 <tr class="border-b hover:bg-gray-50">
-                                    <td class="py-2 px-3 border font-medium">#${booking.ID}</td>
+                                    <td class="py-2 px-3 border font-medium">#${booking.id}</td>
                                     <td class="py-2 px-3 border">${booking.guest_name}</td>
                                     <td class="py-2 px-3 border">${formatDateDisplay(booking.checkin_date)}</td>
                                     <td class="py-2 px-3 border text-center">$${(booking.room_price || 0).toLocaleString()}</td>
@@ -110,11 +110,11 @@ function createPayoutDetailsModal(payout) {
             <!-- 操作按鈕 -->
             <div class="flex justify-end space-x-3 pt-4 border-t">
                 ${payout.payout_status !== 'COMPLETED' ? `
-                    <button type="button" onclick="editPayout('${payout.id || payout.ID}')" 
+                    <button type="button" onclick="editPayout('${payout.id}')" 
                         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                         ✏️ 修改
                     </button>
-                    <button type="button" onclick="cancelPayout('${payout.id || payout.ID}')" 
+                    <button type="button" onclick="cancelPayout('${payout.id}')" 
                         class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                         🚫 取消結算
                     </button>
@@ -147,8 +147,7 @@ async function cancelPayout(payoutId) {
     
     // 同時檢查 id 和 ID 欄位（Google Sheets 可能用大寫）
     let payout = allData.payouts.find(p => 
-        p.id == payoutId || p.ID == payoutId || 
-        String(p.id) === String(payoutId) || String(p.ID) === String(payoutId)
+        p.id == payoutId || String(p.id) === String(payoutId)
     );
     
     // 如果找不到，嘗試用索引
@@ -163,7 +162,6 @@ async function cancelPayout(payoutId) {
     if (!payout) {
         console.error('找不到 payout，所有 payouts:', allData.payouts.map(p => ({
             id: p.id,
-            ID: p.ID,
             partner_code: p.partner_code
         })));
     }
@@ -216,7 +214,7 @@ async function cancelPayout(payoutId) {
         // 延時回調處理結果
         setTimeout(() => {
             // 立即更新前端數據
-            const payoutIndex = allData.payouts.findIndex(p => p.id == payoutId || p.ID == payoutId);
+            const payoutIndex = allData.payouts.findIndex(p => p.id == payoutId);
             if (payoutIndex !== -1) {
                 // 獲取相關訂單ID
                 const relatedBookingIds = allData.payouts[payoutIndex].related_booking_ids;
@@ -282,8 +280,7 @@ function editPayout(payoutId) {
     
     // 同時檢查 id 和 ID 欄位（Google Sheets 可能用大寫）
     let payout = allData.payouts.find(p => 
-        p.id == payoutId || p.ID == payoutId || 
-        String(p.id) === String(payoutId) || String(p.ID) === String(payoutId)
+        p.id == payoutId || String(p.id) === String(payoutId)
     );
     
     // 如果找不到，嘗試用索引
@@ -298,7 +295,6 @@ function editPayout(payoutId) {
     if (!payout) {
         console.error('找不到 payout，所有 payouts:', allData.payouts.map(p => ({
             id: p.id,
-            ID: p.ID,
             partner_code: p.partner_code
         })));
     }
@@ -367,7 +363,7 @@ function createEditPayoutModal(payout) {
                         class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
                         取消
                     </button>
-                    <button type="button" onclick="savePayoutChanges('${payout.id || payout.ID}')" 
+                    <button type="button" onclick="savePayoutChanges('${payout.id}')" 
                         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                         儲存變更
                     </button>

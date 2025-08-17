@@ -323,7 +323,7 @@
                         </td>
                         <td class="py-4 px-4 text-center">
                             ${canConfirm ? `
-                                <button onclick="showConfirmModal(${booking.ID})" 
+                                <button onclick="showConfirmModal(${booking.id})" 
                                     class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
                                     ✅ 確認完成
                                 </button>
@@ -423,7 +423,7 @@
                 // 準備提交到 Apps Script 的數據
                 const confirmData = {
                     action: 'confirm_checkin_completion',
-                    booking_id: booking.ID,
+                    booking_id: booking.id,
                     partner_code: booking.partner_code,
                     commission_amount: commission.total,
                     commission_type: booking.partner_preference,

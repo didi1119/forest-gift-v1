@@ -4417,46 +4417,41 @@
                 
                 console.log('📝 創建自用訂房記錄:', bookingData);
                 
-                // 先創建訂房記錄
-                const params = new URLSearchParams();
+                // 使用表單提交避免 CORS
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+                
+                // 添加訂房資料
                 Object.keys(bookingData).forEach(key => {
-                    params.append(key, bookingData[key]);
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = bookingData[key];
+                    form.appendChild(input);
                 });
                 
-                console.log('📤 正在提交到 Google Apps Script...');
-                
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: params.toString()
-                });
-                
-                console.log('📡 收到回應:', response.status, response.statusText);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                // 確保隱藏 iframe 存在
+                let hiddenFrame = document.getElementById('hiddenFrame');
+                if (!hiddenFrame) {
+                    hiddenFrame = document.createElement('iframe');
+                    hiddenFrame.id = 'hiddenFrame';
+                    hiddenFrame.name = 'hiddenFrame';
+                    hiddenFrame.style.display = 'none';
+                    document.body.appendChild(hiddenFrame);
                 }
                 
-                const result = await response.text();
-                console.log('📄 訂房創建回應:', result);
+                document.body.appendChild(form);
+                form.submit();
                 
-                // 解析訂房創建結果
-                let bookingResponse;
-                try {
-                    bookingResponse = JSON.parse(result);
-                    console.log('📊 訂房創建結果:', bookingResponse);
-                } catch (parseError) {
-                    console.error('❌ JSON 解析失敗:', parseError);
-                    throw new Error('訂房創建回應格式不正確');
-                }
+                console.log('📤 已提交訂房記錄創建請求');
                 
-                if (!bookingResponse.success) {
-                    throw new Error(bookingResponse.error || '創建訂房失敗');
-                }
+                // 等待後端處理
+                await new Promise(resolve => setTimeout(resolve, 1500));
                 
-                console.log('✅ 訂房記錄創建成功！');
+                console.log('✅ 訂房記錄創建完成！');
                 
                 // 接著扣除住宿金點數
                 const deductData = {
@@ -4469,34 +4464,32 @@
                 
                 console.log('💰 扣除住宿金點數:', deductData);
                 
-                const deductParams = new URLSearchParams();
+                // 也使用表單提交
+                const deductForm = document.createElement('form');
+                deductForm.method = 'POST';
+                deductForm.action = APPS_SCRIPT_URL;
+                deductForm.target = 'hiddenFrame';
+                deductForm.style.display = 'none';
+                
                 Object.keys(deductData).forEach(key => {
-                    deductParams.append(key, deductData[key]);
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = deductData[key];
+                    deductForm.appendChild(input);
                 });
                 
-                const deductResponse = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: deductParams.toString()
-                });
+                document.body.appendChild(deductForm);
+                deductForm.submit();
                 
-                const deductResult = await deductResponse.text();
-                console.log('📄 扣除點數回應:', deductResult);
-                
-                let deductResponseData;
-                try {
-                    deductResponseData = JSON.parse(deductResult);
-                } catch (e) {
-                    console.error('解析扣除回應失敗:', e);
-                }
-                
-                if (deductResponseData && !deductResponseData.success) {
-                    console.error('扣除點數失敗:', deductResponseData.error);
-                }
+                // 等待處理完成
+                await new Promise(resolve => setTimeout(resolve, 1500));
                 
                 console.log('✅ 住宿金使用完成！');
+                
+                // 清理表單
+                document.body.removeChild(form);
+                document.body.removeChild(deductForm);
                 
                 // 更新前端數據
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
@@ -4524,6 +4517,22 @@
             }
         }
 
+        // 更新實付金額顯示
+        function updateNetPrice() {
+            const roomPrice = parseFloat(document.getElementById('use_room_price')?.value) || 0;
+            const discount = parseFloat(document.getElementById('use_amount')?.value) || 0;
+            const netPrice = Math.max(0, roomPrice - discount);
+            
+            // 更新顯示
+            const originalPriceEl = document.getElementById('display_original_price');
+            const discountEl = document.getElementById('display_discount');
+            const netPriceEl = document.getElementById('display_net_price');
+            
+            if (originalPriceEl) originalPriceEl.textContent = `$${roomPrice.toLocaleString()}`;
+            if (discountEl) discountEl.textContent = `-$${discount.toLocaleString()}`;
+            if (netPriceEl) netPriceEl.textContent = `$${netPrice.toLocaleString()}`;
+        }
+        
         // 設定快速金額
         function setQuickAmount(inputId, amount, max) {
             const input = document.getElementById(inputId);

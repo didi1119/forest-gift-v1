@@ -21,7 +21,7 @@ function createPayoutDetailsModal(payout) {
     modal.innerHTML = `
         <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-6">
-                <h3 class="text-2xl font-bold">💰 結算詳情</h3>
+                <h3 class="text-2xl font-bold">結算詳情</h3>
                 <button onclick="closeModal('payoutDetailsModal')" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -31,7 +31,7 @@ function createPayoutDetailsModal(payout) {
             
             <!-- 基本信息 -->
             <div class="bg-gray-50 p-4 rounded-lg mb-6">
-                <h4 class="font-bold mb-3">📋 基本信息</h4>
+                <h4 class="font-bold mb-3">基本信息</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                         <span class="text-gray-600">結算ID：</span>
@@ -79,7 +79,7 @@ function createPayoutDetailsModal(payout) {
             <!-- 相關訂房 -->
             ${relatedBookings.length > 0 ? `
             <div class="mb-6">
-                <h4 class="font-bold mb-3">🏨 相關訂房記錄</h4>
+                <h4 class="font-bold mb-3">相關訂房記錄</h4>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm border">
                         <thead class="bg-gray-50">
@@ -112,11 +112,11 @@ function createPayoutDetailsModal(payout) {
                 ${payout.payout_status !== 'COMPLETED' ? `
                     <button type="button" onclick="editPayout('${payout.id}')" 
                         class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                        ✏️ 修改
+                        修改
                     </button>
                     <button type="button" onclick="cancelPayout('${payout.id}')" 
                         class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                        🚫 取消結算
+                        取消結算
                     </button>
                 ` : ''}
                 <button type="button" onclick="closeModal('payoutDetailsModal')" 
@@ -143,7 +143,7 @@ function getPaymentMethodText(method) {
 
 // 取消結算
 async function cancelPayout(payoutId) {
-    console.log('🔍 嘗試取消結算 ID:', payoutId);
+    console.log('嘗試取消結算 ID:', payoutId);
     
     // 同時檢查 id 和 ID 欄位（Google Sheets 可能用大寫）
     let payout = allData.payouts.find(p => 
@@ -167,12 +167,12 @@ async function cancelPayout(payoutId) {
     }
     
     if (!payout) {
-        console.error('❌ 找不到結算記錄，ID:', payoutId);
+        console.error('找不到結算記錄，ID:', payoutId);
         alert('找不到結算記錄。請重新載入數據後再試。');
         return;
     }
     
-    const confirmMessage = `⚠️ 確定要取消以下結算嗎？\n\n大使：${payout.partner_code}\n金額：$${(payout.amount || 0).toLocaleString()}\n類型：${payout.payout_type === 'CASH' ? '現金' : '住宿金'}\n\n取消後該筆佣金將重新計算`;
+    const confirmMessage = `確定要取消以下結算嗎？\n\n大使：${payout.partner_code}\n金額：$${(payout.amount || 0).toLocaleString()}\n類型：${payout.payout_type === 'CASH' ? '現金' : '住宿金'}\n\n取消後該筆佣金將重新計算`;
     
     if (!confirm(confirmMessage)) {
         return;
@@ -221,7 +221,7 @@ async function cancelPayout(payoutId) {
                 
                 // 移除結算記錄
                 allData.payouts.splice(payoutIndex, 1);
-                console.log('✅ 已從前端移除結算記錄');
+                console.log('已從前端移除結算記錄');
                 
                 // 更新相關訂單狀態
                 if (relatedBookingIds && relatedBookingIds !== '-') {
@@ -232,7 +232,7 @@ async function cancelPayout(payoutId) {
                             booking.stay_status = 'PENDING';
                             booking.commission_status = 'PENDING';
                             booking.commission_amount = 0;
-                            console.log(`📦 前端更新訂單 ${bookingId}: stay_status → PENDING`);
+                            console.log(`前端更新訂單 ${bookingId}: stay_status → PENDING`);
                         }
                     });
                     
@@ -243,14 +243,14 @@ async function cancelPayout(payoutId) {
                 }
             }
             
-            showSuccessMessage('✅ 結算已取消！相關訂單狀態已重置');
+            showSuccessMessage('結算已取消！相關訂單狀態已重置');
             closeModal('payoutDetailsModal');
             displayPayouts(allData.payouts);
             
             // 延遲重新載入數據，避免與 iframe 衝突
             setTimeout(() => {
                 loadRealData().then(() => {
-                    console.log('📊 結算取消後數據重新載入完成');
+                    console.log('結算取消後數據重新載入完成');
                     displayPayouts(allData.payouts);
                     // 同時更新大使列表，因為佣金可能已連動調整
                     if (typeof displayPartners === 'function') {
@@ -270,13 +270,13 @@ async function cancelPayout(payoutId) {
         
     } catch (error) {
         console.error('取消結算失敗:', error);
-        alert('❌ 取消結算失敗：' + error.message);
+        alert('取消結算失敗：' + error.message);
     }
 }
 
 // 修改結算
 function editPayout(payoutId) {
-    console.log('🔍 嘗試編輯結算 ID:', payoutId);
+    console.log('嘗試編輯結算 ID:', payoutId);
     
     // 同時檢查 id 和 ID 欄位（Google Sheets 可能用大寫）
     let payout = allData.payouts.find(p => 
@@ -300,7 +300,7 @@ function editPayout(payoutId) {
     }
     
     if (!payout) {
-        console.error('❌ 找不到結算記錄，ID:', payoutId);
+        console.error('找不到結算記錄，ID:', payoutId);
         alert('找不到結算記錄。請重新載入數據後再試。');
         return;
     }
@@ -434,10 +434,10 @@ async function savePayoutChanges(payoutId) {
                     notes: formData.notes,
                     updated_at: new Date().toISOString()
                 };
-                console.log('✅ 已更新前端結算數據');
+                console.log('已更新前端結算數據');
             }
             
-            showSuccessMessage('✅ 結算記錄修改成功！');
+            showSuccessMessage('結算記錄修改成功！');
             closeModal('editPayoutModal');
             closeModal('payoutDetailsModal');
             displayPayouts(allData.payouts);
@@ -445,7 +445,7 @@ async function savePayoutChanges(payoutId) {
             // 延遲重新載入數據，避免與 iframe 衝突
             setTimeout(() => {
                 loadRealData().then(() => {
-                    console.log('📊 結算修改後數據重新載入完成');
+                    console.log('結算修改後數據重新載入完成');
                     displayPayouts(allData.payouts);
                     // 同時更新大使列表，因為佣金可能已連動調整
                     if (typeof displayPartners === 'function') {
@@ -461,7 +461,7 @@ async function savePayoutChanges(payoutId) {
         
     } catch (error) {
         console.error('修改結算失敗:', error);
-        alert('❌ 修改結算失敗：' + error.message);
+        alert('修改結算失敗：' + error.message);
     }
 }
 
@@ -506,7 +506,7 @@ function createPayoutReportModal() {
     modal.innerHTML = `
         <div class="bg-white rounded-lg p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-6">
-                <h3 class="text-2xl font-bold">📊 結算報表</h3>
+                <h3 class="text-2xl font-bold">結算報表</h3>
                 <button onclick="closeModal('payoutReportModal')" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -536,7 +536,7 @@ function createPayoutReportModal() {
             
             <!-- 金額統計 -->
             <div class="bg-gray-50 p-4 rounded-lg mb-6">
-                <h4 class="font-bold mb-2">💰 金額統計</h4>
+                <h4 class="font-bold mb-2">金額統計</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                         <span class="text-gray-600">已付款金額：</span>
@@ -551,7 +551,7 @@ function createPayoutReportModal() {
             
             <!-- 大使別統計 -->
             <div class="mb-6">
-                <h4 class="font-bold mb-3">👥 大使別統計</h4>
+                <h4 class="font-bold mb-3">大使別統計</h4>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm border">
                         <thead class="bg-gray-50">
@@ -582,7 +582,7 @@ function createPayoutReportModal() {
             <div class="flex justify-end space-x-3 pt-4 border-t">
                 <button type="button" onclick="exportPayoutReport()" 
                     class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                    📄 匯出報表
+                    匯出報表
                 </button>
                 <button type="button" onclick="closeModal('payoutReportModal')" 
                     class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
@@ -618,7 +618,7 @@ function exportPayoutReport() {
     link.download = `結算報表_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     
-    showSuccessMessage('✅ 結算報表已匯出！');
+    showSuccessMessage('結算報表已匯出！');
 }
 
 // 格式化日期顯示

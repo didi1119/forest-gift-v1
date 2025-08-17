@@ -175,19 +175,19 @@
         <!-- 導航標籤 -->
         <div class="flex space-x-6 mb-8">
             <button onclick="showTab('overview')" id="tab-overview" class="tab-button active">
-                📊 概覽儀表
+                概覽儀表
             </button>
             <button onclick="showTab('bookings')" id="tab-bookings" class="tab-button">
-                📋 訂單管理
+                訂單管理
             </button>
             <button onclick="showTab('payouts')" id="tab-payouts" class="tab-button">
-                💰 結算管理
+                結算管理
             </button>
             <button onclick="showTab('analytics')" id="tab-analytics" class="tab-button">
-                📈 數據分析
+                數據分析
             </button>
             <button onclick="showTab('linkgen')" id="tab-linkgen" class="tab-button">
-                🔗 連結生成器
+                連結生成器
             </button>
         </div>
 
@@ -312,7 +312,7 @@
                             🔧 診斷結算問題
                         </button>
                         <button onclick="generatePayoutReport()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
-                            📊 生成結算報表
+                            生成結算報表
                         </button>
                     </div>
                 </div>
@@ -529,7 +529,7 @@
                             🌲 資源中心
                         </a>
                         <button onclick="exportAnalyticsReport()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                            📊 匯出分析報表
+                            匯出分析報表
                         </button>
                     </div>
                 </div>
@@ -540,7 +540,7 @@
         <div id="content-linkgen" class="tab-content hidden">
             <div class="brand-card p-8">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="font-serif text-2xl font-semibold brand-accent">🔗 知音大使專屬連結生成器</h2>
+                    <h2 class="font-serif text-2xl font-semibold brand-accent">知音大使專屬連結生成器</h2>
                     <div class="flex space-x-3">
                         <button onclick="loadPartnersForLinkGen()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
                             🔄 重新載入夥伴
@@ -594,7 +594,7 @@
                     
                     <!-- 銀行帳戶資訊 -->
                     <div class="bg-white p-4 rounded-lg mb-6">
-                        <h4 class="font-semibold text-stone-800 mb-4">💰 匯款帳戶資訊</h4>
+                        <h4 class="font-semibold text-stone-800 mb-4">匯款帳戶資訊</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-stone-700 mb-2">銀行名稱</label>
@@ -625,7 +625,7 @@
                     
                     <div class="flex space-x-3">
                         <button onclick="generatePartnerLinks()" class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
-                            🔗 生成專屬連結
+                            生成專屬連結
                         </button>
                         
                         <button onclick="savePartnerToSheets()" class="flex-1 bg-green-800 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-900 transition duration-300">
@@ -643,7 +643,7 @@
                             <label class="block text-sm font-medium text-stone-700 mb-2">主頁連結</label>
                             <div class="bg-gray-100 p-3 rounded font-mono text-sm break-all" id="linkgen_landingLink"></div>
                             <button onclick="copyLinkText('linkgen_landingLink')" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                📋 複製連結
+                                複製連結
                             </button>
                         </div>
                         
@@ -651,7 +651,7 @@
                             <label class="block text-sm font-medium text-stone-700 mb-2">LINE 官方帳號連結</label>
                             <div class="bg-gray-100 p-3 rounded font-mono text-sm break-all" id="linkgen_couponLink"></div>
                             <button onclick="copyLinkText('linkgen_couponLink')" class="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                                📋 複製連結
+                                複製連結
                             </button>
                         </div>
                         
@@ -659,7 +659,7 @@
                             <h4 class="font-semibold text-amber-800 mb-2">📱 分享範本</h4>
                             <div class="text-sm text-amber-700 whitespace-pre-wrap" id="linkgen_shareTemplate"></div>
                             <button onclick="copyLinkText('linkgen_shareTemplate')" class="mt-3 px-3 py-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700">
-                                📋 複製範本
+                                複製範本
                             </button>
                         </div>
                     </div>
@@ -1001,7 +1001,7 @@
                     throw new Error('回應格式不正確: ' + parseError.message);
                 }
                 
-                console.log('📊 解析後的數據:', data);
+                console.log('解析後的數據:', data);
                 
                 if (data.success) {
                     allData = data.data;
@@ -1020,7 +1020,7 @@
                         console.log('  實際欄位順序:', actualFields);
                         
                         // 特別檢查每個欄位的值
-                        console.log('  📊 每個欄位的詳細資訊:');
+                        console.log('  每個欄位的詳細資訊:');
                         actualFields.forEach((field, index) => {
                             const value = firstBooking[field];
                             const valueType = typeof value;
@@ -1077,7 +1077,7 @@
                     
                     // 檢查 Payouts 數據結構
                     if (allData.payouts && allData.payouts.length > 0) {
-                        console.log('📊 Payouts 數據結構檢查:');
+                        console.log('Payouts 數據結構檢查:');
                         allData.payouts.forEach((payout, index) => {
                             console.log(`  Payout ${index}:`, {
                                 id: payout.id,
@@ -1323,8 +1323,8 @@
                         
                         <!-- 簡化的下拉選單：只保留必要功能 -->
                         <div id="${dropdownId}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
-                            <a href="#" onclick="viewPartnerDetails('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📋 查看詳情</a>
-                            ${pendingCash > 0 ? `<a href="#" onclick="showPartnerActionsModal('${partner.partner_code}', 'cash')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">💰 處理結算</a>` : ''}
+                            <a href="#" onclick="viewPartnerDetails('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">查看詳情</a>
+                            ${pendingCash > 0 ? `<a href="#" onclick="showPartnerActionsModal('${partner.partner_code}', 'cash')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">處理結算</a>` : ''}
                         </div>
                     </div>
                 </div>
@@ -1397,7 +1397,7 @@
             
             // 檢查數據完整性（基於標準化後的數據）
             if (normalizedBookings.length > 0) {
-                console.log('📊 第一筆標準化後數據:', normalizedBookings[0]);
+                console.log('第一筆標準化後數據:', normalizedBookings[0]);
             }
 
             table.innerHTML = normalizedBookings.map((booking, index) => {
@@ -1549,7 +1549,7 @@
             table.innerHTML = payouts.map((payout, index) => {
                 // 使用 payout.id 或 index 作為備用
                 const payoutIdentifier = payout.id || index;
-                console.log(`📋 Payout ${index}:`, {
+                console.log(`Payout ${index}:`, {
                     id: payout.id,
                     identifier: payoutIdentifier,
                     partner_code: payout.partner_code,
@@ -1571,9 +1571,10 @@
                             <div class="font-semibold">${payout.partner_code}</div>
                         </td>
                         <td class="py-4 px-4 text-center">
-                            ${payout.payout_type === 'CASH' ? '💵 現金' : 
-                              payout.payout_type === 'ADJUSTMENT' ? '⚙️ 調整' : 
-                              payout.payout_type === 'POINTS_USAGE' ? '🎫 點數折抵' : '🏨 住宿金'}
+                            ${payout.payout_type === 'CASH' ? '現金' : 
+                              payout.payout_type === 'ADJUSTMENT' ? '調整' : 
+                              payout.payout_type === 'POINTS_USAGE' ? '點數折抵' :
+                              payout.payout_type === 'POINTS_REFUND' ? '點數返還' : '住宿金'}
                         </td>
                         <td class="py-4 px-4 text-center font-semibold">
                             ${payout.amount < 0 ? '-' : ''}$${Math.abs(payout.amount || 0).toLocaleString()}
@@ -2190,7 +2191,7 @@
                         </div>
                         
                         <div class="border-t pt-4">
-                            <h4 class="font-semibold mb-2">💰 匯款帳戶資訊</h4>
+                            <h4 class="font-semibold mb-2">匯款帳戶資訊</h4>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <p class="text-sm text-gray-600">銀行名稱</p>
@@ -2216,7 +2217,7 @@
                         </div>
 
                         <div class="border-t pt-4">
-                            <h4 class="font-semibold mb-3">📋 推薦訂單記錄</h4>
+                            <h4 class="font-semibold mb-3">推薦訂單記錄</h4>
                             ${bookings.length > 0 ? `
                                 <div class="max-h-60 overflow-y-auto">
                                     <table class="w-full text-sm">
@@ -2390,7 +2391,7 @@
                         </div>
                         
                         <div class="col-span-2 border-t pt-4 mt-4">
-                            <h4 class="font-semibold mb-3">💰 匯款帳戶資訊</h4>
+                            <h4 class="font-semibold mb-3">匯款帳戶資訊</h4>
                         </div>
                         
                         <div>
@@ -2471,7 +2472,7 @@
         // 查看結算詳情
         function viewPayoutDetails(payoutId) {
             console.log('🔍 查找結算記錄 ID:', payoutId);
-            console.log('📋 所有 payouts 數據:', allData.payouts);
+            console.log('所有 payouts 數據:', allData.payouts);
             
             if (!allData.payouts || allData.payouts.length === 0) {
                 showErrorMessage('系統中無任何結算記錄');
@@ -2590,7 +2591,7 @@
                         </div>
                         
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                            <h4 class="font-bold mb-2">📋 修復步驟：</h4>
+                            <h4 class="font-bold mb-2">修復步驟：</h4>
                             <ol class="list-decimal list-inside space-y-2 text-sm">
                                 <li>打開您的 Google Sheets：<br>
                                     <a href="https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit" target="_blank" class="text-blue-600 underline">點擊這裡打開</a>
@@ -2641,7 +2642,7 @@
                         
                         <div class="flex justify-end space-x-3 pt-4">
                             <button onclick="copyHeadersToClipboard()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                                📋 複製標題到剪貼板
+                                複製標題到剪貼板
                             </button>
                             <button onclick="closeModal('manualFixModal')" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
                                 關閉
@@ -2713,7 +2714,7 @@
             }
             
             console.log('🔍 開始確認入住流程，訂房索引:', bookingIndex);
-            console.log('📋 訂房資料:', booking);
+            console.log('訂房資料:', booking);
 
             const partner = booking.partner_code ? allData.partners.find(p => p.partner_code === booking.partner_code) : null;
             if (!partner) {
@@ -2827,7 +2828,7 @@
                         allData.bookings[bookingIndex].commission_amount = commissionData.commission_amount;
                         allData.bookings[bookingIndex].commission_type = commissionData.commission_type;
                         allData.bookings[bookingIndex].commission_status = 'CALCULATED';
-                        console.log('💰 已更新佣金資訊:', commissionData);
+                        console.log('已更新佣金資訊:', commissionData);
                     }
                     
                     // 立即刷新顯示
@@ -3112,7 +3113,7 @@
 
                         <!-- 狀態設定 -->
                         <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="font-semibold mb-3 text-gray-800">📊 訂單狀態</h4>
+                            <h4 class="font-semibold mb-3 text-gray-800">訂單狀態</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">入住狀態</label>
@@ -3282,7 +3283,7 @@
                 };
 
                 console.log('📝 編輯訂房 - 原始更新資料:', rawUpdateData);
-                console.log('📋 編輯訂房 - 現有訂房資料:', existingBooking);
+                console.log('編輯訂房 - 現有訂房資料:', existingBooking);
 
                 // 使用 BookingDataManager 更新 booking 數據
                 const updatedBooking = BookingDataManager.updateBooking(existingBooking, rawUpdateData);
@@ -3297,7 +3298,7 @@
 
                 // 準備提交到後端的數據（包含 action 和識別符）
                 // 修復：由於資料庫 ID 欄位可能為空，使用複合查找方式
-                console.log('📋 編輯訂房 - 原始訂房資料 ID:', existingBooking.id);
+                console.log('編輯訂房 - 原始訂房資料 ID:', existingBooking.id);
                 
                 const submitData = {
                     action: 'update_booking',
@@ -3557,7 +3558,7 @@
 
                             <!-- 狀態設定 -->
                             <div class="bg-gray-50 p-6 rounded-lg">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4">📊 初始狀態</h3>
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">初始狀態</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">入住狀態</label>
@@ -3961,7 +3962,7 @@
             
             // 5. 預設情況
             return {
-                text: '📊 一般結算',
+                text: '一般結算',
                 class: 'bg-gray-100 text-gray-800',
                 detail: notes || '常規結算記錄'
             };
@@ -3993,7 +3994,7 @@
                     </div>
                     
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                        <h4 class="font-bold text-blue-800 mb-3">📋 正確的 Bookings 工作表欄位順序</h4>
+                        <h4 class="font-bold text-blue-800 mb-3">正確的 Bookings 工作表欄位順序</h4>
                         <div class="bg-white p-4 rounded border">
                             <p class="text-sm font-mono mb-2">以下是 Bookings 工作表應該包含的所有欄位（第一列標題）：</p>
                             <div class="bg-gray-100 p-3 rounded text-xs font-mono">
@@ -4057,7 +4058,7 @@
                         </button>
                         <a href="https://docs.google.com/spreadsheets" target="_blank" 
                             class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                            📊 前往 Google Sheets
+                            前往 Google Sheets
                         </a>
                     </div>
                 </div>
@@ -4092,7 +4093,7 @@
                 diagnosticResults.push(`✅ allData.payouts 是陣列，長度: ${allData.payouts.length}`);
                 
                 if (allData.payouts.length > 0) {
-                    diagnosticResults.push('📊 Payouts 結構分析:');
+                    diagnosticResults.push('Payouts 結構分析:');
                     allData.payouts.forEach((payout, index) => {
                         diagnosticResults.push(`  ${index}: ID=${payout.id || 'undefined'}, partner=${payout.partner_code}, amount=${payout.amount}, status=${payout.payout_status}`);
                     });
@@ -4218,7 +4219,7 @@
                 modalContent = `
                     <div class="bg-white rounded-lg max-w-md w-full">
                         <div class="px-6 py-4 border-b flex justify-between items-center bg-green-50">
-                            <h2 class="text-xl font-bold text-green-800">💰 現金管理</h2>
+                            <h2 class="text-xl font-bold text-green-800">現金管理</h2>
                             <button onclick="closeModal('partnerActionsModal')" class="text-gray-500 hover:text-gray-700">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -4238,7 +4239,7 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <button onclick="processPayout('${partnerCode}')" 
                                         class="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 transition-all text-center">
-                                    💰 執行結算
+                                    執行結算
                                 </button>
                                 <button onclick="revertToCash('${partnerCode}')" 
                                         class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all text-center">
@@ -4661,7 +4662,7 @@
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
                     <div class="flex justify-between items-start mb-6">
-                        <h3 class="text-xl font-bold">💰 點數轉換現金 - ${partner.partner_code}</h3>
+                        <h3 class="text-xl font-bold">點數轉換現金 - ${partner.partner_code}</h3>
                         <button onclick="closeModal('pointsToCashModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -4729,7 +4730,7 @@
                             </button>
                             <button type="button" onclick="submitPointsToCash('${partner.partner_code}')" 
                                 class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                                💰 確認轉換
+                                確認轉換
                             </button>
                         </div>
                     </form>
@@ -4802,7 +4803,7 @@
                     notes: notes
                 };
                 
-                console.log('💰 轉換現金 - 提交數據:', formData);
+                console.log('轉換現金 - 提交數據:', formData);
                 
                 // 使用 form 提交避免 CORS 問題
                 console.log('📤 正在提交到 Google Apps Script...');
@@ -5266,7 +5267,7 @@ ${landingUrl}
                 });
                 
                 diagnosisContent = `
-                    <h4 class="font-bold mb-3">📋 欄位映射分析：</h4>
+                    <h4 class="font-bold mb-3">欄位映射分析：</h4>
                     <div class="bg-gray-50 p-3 rounded text-xs max-h-60 overflow-y-auto mb-4">
                         <div class="font-bold text-blue-600 mb-2">實際欄位數量: ${fieldCount} | 期望欄位數量: ${expectedFields.length}</div>
                         <div class="grid gap-1">
@@ -5342,7 +5343,7 @@ ${landingUrl}
                     <div class="flex justify-end space-x-3 mt-6">
                         <button onclick="window.open('https://sheets.google.com', '_blank')" 
                             class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-                            📊 打開 Google Sheets
+                            打開 Google Sheets
                         </button>
                         <button onclick="window.open('https://script.google.com', '_blank')" 
                             class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
@@ -5469,7 +5470,7 @@ ${landingUrl}
             
             if (!batchMode) {
                 // 單一操作顯示確認對話框
-                const confirmed = confirm(`💰 轉換確認 - ${partner.name || partner.partner_code}
+                const confirmed = confirm(`轉換確認 - ${partner.name || partner.partner_code}
 
 住宿金：${accommodationPoints.toLocaleString()} 點
     ↓

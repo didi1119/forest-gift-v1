@@ -23,7 +23,7 @@ function createQuickCommissionEditModal(partner) {
     modal.innerHTML = `
         <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
             <div class="flex justify-between items-start mb-6">
-                <h3 class="text-xl font-bold">💰 快速編輯佣金 - ${partner.partner_code}</h3>
+                <h3 class="text-xl font-bold">快速編輯佣金 - ${partner.partner_code}</h3>
                 <button onclick="closeModal('quickCommissionEditModal')" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -33,7 +33,7 @@ function createQuickCommissionEditModal(partner) {
             
             <!-- 當前狀態 -->
             <div class="bg-gray-50 p-4 rounded-lg mb-6">
-                <h4 class="font-bold mb-2">📊 當前狀態</h4>
+                <h4 class="font-bold mb-2">當前狀態</h4>
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <span class="text-gray-600">累積佣金：</span>
@@ -65,7 +65,7 @@ function createQuickCommissionEditModal(partner) {
                 
                 <!-- 快速操作 -->
                 <div class="bg-blue-50 p-4 rounded-lg">
-                    <h4 class="font-bold mb-2">⚡ 快速操作</h4>
+                    <h4 class="font-bold mb-2">快速操作</h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         <button type="button" onclick="adjustCommission(500)" 
                             class="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">
@@ -99,7 +99,7 @@ function createQuickCommissionEditModal(partner) {
                     </button>
                     <button type="button" onclick="saveCommissionChanges('${partner.partner_code}')" 
                         class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                        💾 儲存變更
+                        儲存變更
                     </button>
                 </div>
             </form>
@@ -146,7 +146,7 @@ async function saveCommissionChanges(partnerCode) {
             }
         });
         
-        console.log('📤 佣金管理 - 發送數據:', formData);
+        console.log('佣金管理 - 發送數據:', formData);
         
         const response = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
@@ -156,14 +156,14 @@ async function saveCommissionChanges(partnerCode) {
             body: params.toString()
         });
         
-        console.log('📡 佣金管理 - 收到回應:', response.status, response.statusText);
+        console.log('佣金管理 - 收到回應:', response.status, response.statusText);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
         
         const result = await response.text();
-        console.log('📥 佣金管理 - 後端回應:', result);
+        console.log('佣金管理 - 後端回應:', result);
         
         // 延時處理結果
         setTimeout(() => {
@@ -175,13 +175,13 @@ async function saveCommissionChanges(partnerCode) {
                     allData.partners[partnerIndex].updated_at = new Date().toISOString();
                 }
                 
-                showSuccessMessage('✅ 佣金資料已更新！結算記錄已創建！');
+                showSuccessMessage('佣金資料已更新！結算記錄已創建！');
                 closeModal('quickCommissionEditModal');
                 displayPartners(allData.partners);
                 
                 // 立即重新載入所有數據，包括 payouts
                 loadRealData().then(() => {
-                    console.log('📊 數據重新載入完成，Payouts 記錄數：', allData.payouts.length);
+                    console.log('數據重新載入完成，Payouts 記錄數：', allData.payouts.length);
                     displayPartners(allData.partners);
                     // 如果當前在結算管理頁面，也重新顯示 payouts
                     if (typeof displayPayouts === 'function') {
@@ -194,7 +194,7 @@ async function saveCommissionChanges(partnerCode) {
         
     } catch (error) {
         console.error('更新佣金失敗:', error);
-        showErrorMessage('❌ 更新失敗：' + error.message);
+        showErrorMessage('更新失敗：' + error.message);
     }
 }
 
@@ -225,7 +225,7 @@ function createMixedPayoutModal(partner) {
     modal.innerHTML = `
         <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
             <div class="flex justify-between items-start mb-6">
-                <h3 class="text-xl font-bold">💳 創建結算 - ${partner.partner_code}</h3>
+                <h3 class="text-xl font-bold">創建結算 - ${partner.partner_code}</h3>
                 <button onclick="closeModal('mixedPayoutModal')" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -235,7 +235,7 @@ function createMixedPayoutModal(partner) {
             
             <!-- 待支付金額 -->
             <div class="bg-amber-50 p-4 rounded-lg mb-6">
-                <h4 class="font-bold mb-2">💰 待支付金額</h4>
+                <h4 class="font-bold mb-2">待支付金額</h4>
                 <div class="text-2xl font-bold text-amber-600">$${pendingAmount.toLocaleString()}</div>
                 <div class="text-sm text-gray-600">大使偏好：${partner.commission_preference === 'CASH' ? '現金' : '住宿金'}</div>
             </div>
@@ -244,13 +244,13 @@ function createMixedPayoutModal(partner) {
             <form id="mixedPayoutForm" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">💵 現金金額</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">現金金額</label>
                         <input type="number" id="cash_amount" value="0" 
                             class="w-full p-2 border rounded-md" min="0" max="${pendingAmount}" step="1"
                             onchange="updateAccommodationAmount()">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">🏨 住宿金金額</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">住宿金金額</label>
                         <input type="number" id="accommodation_amount" value="${pendingAmount}" 
                             class="w-full p-2 border rounded-md" min="0" max="${pendingAmount}" step="1"
                             onchange="updateCashAmount()">
@@ -263,7 +263,7 @@ function createMixedPayoutModal(partner) {
                 
                 <!-- 快速分配按鈕 -->
                 <div class="bg-blue-50 p-4 rounded-lg">
-                    <h4 class="font-bold mb-2">⚡ 快速分配</h4>
+                    <h4 class="font-bold mb-2">快速分配</h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         <button type="button" onclick="setPayoutSplit(${pendingAmount}, 0)" 
                             class="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">
@@ -297,7 +297,7 @@ function createMixedPayoutModal(partner) {
                     </button>
                     <button type="button" onclick="submitMixedPayout('${partner.partner_code}')" 
                         class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                        💳 創建結算
+                        創建結算
                     </button>
                 </div>
             </form>
@@ -374,7 +374,7 @@ async function submitMixedPayout(partnerCode) {
             await createSinglePayout(partnerCode, 'ACCOMMODATION', accommodationAmount, notes + ' (住宿金部分)');
         }
         
-        showSuccessMessage('✅ 混合結算已創建！');
+        showSuccessMessage('混合結算已創建！');
         closeModal('mixedPayoutModal');
         
         // 重新載入數據
@@ -389,7 +389,7 @@ async function submitMixedPayout(partnerCode) {
         
     } catch (error) {
         console.error('創建混合結算失敗:', error);
-        showErrorMessage('❌ 創建結算失敗：' + error.message);
+        showErrorMessage('創建結算失敗：' + error.message);
     }
 }
 
@@ -417,7 +417,7 @@ async function createSinglePayout(partnerCode, payoutType, amount, notes) {
             }
         });
         
-        console.log('📤 創建結算 - 發送數據:', formData);
+        console.log('創建結算 - 發送數據:', formData);
         
         const response = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
@@ -427,14 +427,14 @@ async function createSinglePayout(partnerCode, payoutType, amount, notes) {
             body: params.toString()
         });
         
-        console.log('📡 創建結算 - 收到回應:', response.status, response.statusText);
+        console.log('創建結算 - 收到回應:', response.status, response.statusText);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
         
         const result = await response.text();
-        console.log('📥 創建結算 - 後端回應:', result);
+        console.log('創建結算 - 後端回應:', result);
         
         return result;
         
@@ -468,7 +468,7 @@ function createAccommodationPointsModal(partner) {
     modal.innerHTML = `
         <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
             <div class="flex justify-between items-start mb-6">
-                <h3 class="text-xl font-bold">🏨 住宿金點數管理 - ${partner.partner_code}</h3>
+                <h3 class="text-xl font-bold">住宿金點數管理 - ${partner.partner_code}</h3>
                 <button onclick="closeModal('accommodationPointsModal')" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -494,7 +494,7 @@ function createAccommodationPointsModal(partner) {
             
             <!-- 點數抵扣 -->
             <div class="bg-gray-50 p-4 rounded-lg mb-6">
-                <h4 class="font-bold mb-3">💳 點數抵扣</h4>
+                <h4 class="font-bold mb-3">點數抵扣</h4>
                 <form id="pointsDeductionForm" class="space-y-3">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -540,7 +540,7 @@ function createAccommodationPointsModal(partner) {
             
             <!-- 使用記錄 -->
             <div class="mb-6">
-                <h4 class="font-bold mb-3">📋 最近使用記錄</h4>
+                <h4 class="font-bold mb-3">最近使用記錄</h4>
                 <div class="max-h-40 overflow-y-auto border rounded">
                     <div class="p-3 text-center text-gray-500 text-sm">
                         尚未有使用記錄
@@ -555,7 +555,7 @@ function createAccommodationPointsModal(partner) {
                 </button>
                 <button type="button" onclick="processPointsDeduction('${partner.partner_code}')" 
                     class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                    💳 執行抵扣
+                    執行抵扣
                 </button>
             </div>
         </div>
@@ -607,7 +607,7 @@ async function processPointsDeduction(partnerCode) {
             }
         });
         
-        console.log('📤 點數抵扣 - 發送數據:', formData);
+        console.log('點數抵扣 - 發送數據:', formData);
         
         const response = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
@@ -617,14 +617,14 @@ async function processPointsDeduction(partnerCode) {
             body: params.toString()
         });
         
-        console.log('📡 點數抵扣 - 收到回應:', response.status, response.statusText);
+        console.log('點數抵扣 - 收到回應:', response.status, response.statusText);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
         
         const result = await response.text();
-        console.log('📥 點數抵扣 - 後端回應:', result);
+        console.log('點數抵扣 - 後端回應:', result);
         
         setTimeout(() => {
             // 立即更新前端數據
@@ -636,11 +636,11 @@ async function processPointsDeduction(partnerCode) {
                 partner.total_commission_earned = Math.max(0, currentPoints - deductAmount);
                 partner.total_commission_paid = (partner.total_commission_paid || 0) + deductAmount;
                 
-                console.log(`✅ 已扣除 ${partnerCode} 的 ${deductAmount} 點數`);
+                console.log(`已扣除 ${partnerCode} 的 ${deductAmount} 點數`);
                 console.log(`剩餘可用點數: ${partner.total_commission_earned}`);
             }
             
-            showSuccessMessage(`✅ 成功抵扣 ${deductAmount.toLocaleString()} 住宿金點數！`);
+            showSuccessMessage(`成功抵扣 ${deductAmount.toLocaleString()} 住宿金點數！`);
             closeModal('accommodationPointsModal');
             
             // 重新顯示夥伴列表以反映更新
@@ -651,13 +651,13 @@ async function processPointsDeduction(partnerCode) {
             // 背景重新載入數據確保一致性
             setTimeout(() => {
                 loadRealData().catch(error => {
-                    console.log('⚠️ 背景數據重載失敗（不影響操作）:', error.message);
+                    console.log('背景數據重載失敗（不影響操作）:', error.message);
                 });
             }, 2000);
         }, 1000);
         
     } catch (error) {
         console.error('點數抵扣失敗:', error);
-        showErrorMessage('❌ 抵扣失敗：' + error.message);
+        showErrorMessage('抵扣失敗：' + error.message);
     }
 }

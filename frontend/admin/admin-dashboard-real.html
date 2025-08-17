@@ -1450,8 +1450,19 @@
                                     </div>
                                     <div class="font-bold text-green-600 text-lg">
                                         ${(() => {
-                                            const match = booking.notes.match(/實付\s*\$?([0-9,]+)/);
-                                            return match ? `NT$ ${match[1]}` : 'NT$ 0';
+                                            // 改進正則表達式以匹配 "實付 NT$xxx" 格式
+                                            const match = booking.notes.match(/實付\s*(?:NT\$|NT\s*\$|\$)?[\s]*([0-9,]+)/);
+                                            if (match) {
+                                                return `NT$ ${match[1]}`;
+                                            }
+                                            // 如果沒有匹配到，嘗試從折抵金額計算
+                                            const discountMatch = booking.notes.match(/折抵\s*(?:NT\$|NT\s*\$|\$)?[\s]*([0-9,]+)/);
+                                            if (discountMatch) {
+                                                const discount = parseFloat(discountMatch[1].replace(/,/g, ''));
+                                                const netPrice = (booking.room_price || 0) - discount;
+                                                return `NT$ ${Math.max(0, netPrice).toLocaleString()}`;
+                                            }
+                                            return 'NT$ 0';
                                         })()}
                                     </div>
                                 </div>

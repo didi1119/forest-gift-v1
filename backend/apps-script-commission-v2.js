@@ -1,5 +1,5 @@
 // ===== Apps Script 佣金管理系統 v2.0 =====
-// 支援：手動訂房登記、入住確認、佣金計算、等級晉升
+// 支援：手動訂房登記、入住確認、佣金計算、等級晉升、資料同步管理
 
 const SHEETS_ID = '1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4';
 const GITHUB_PAGES_URL = 'https://didi1119.github.io/forest-gift-v1/index.html';
@@ -1001,8 +1001,107 @@ function handleUpdateBooking(data, e) {
     bookingsSheet.getRange(bookingRowIndex, 20).setValue(data.notes || ''); // notes - T列
     bookingsSheet.getRange(bookingRowIndex, 22).setValue(timestamp); // updated_at - V列
     
-    // 取得實際的 booking ID (如果有的話)
+    // 3. 檢查是否為 SELF_USE 類型，需要同步更新相關記錄
     const actualBookingId = bookingData[0] || 'N/A';
+    const bookingSource = bookingData[9];  // booking_source
+    const oldPartnerCode = bookingData[1];  // 原本的 partner_code
+    const oldNotes = bookingData[19];  // 原本的 notes
+    
+    if (bookingSource === 'SELF_USE') {
+      Logger.log('🔄 同步更新 SELF_USE 訂單相關記錄');
+      
+      // 3.1 解析新舊折抵金額
+      let oldDiscountAmount = 0;
+      let newDiscountAmount = 0;
+      const oldRoomPrice = parseFloat(bookingData[8]) || 0;
+      const newRoomPrice = parseFloat(data.room_price) || 0;
+      
+      // 從舊 notes 解析折抵金額
+      const oldDiscountMatch = oldNotes.match(/折抵\s*(?:NT\$|NT\s*\$|\$)?[\s]*([0-9,]+)/);
+      if (oldDiscountMatch) {
+        oldDiscountAmount = parseFloat(oldDiscountMatch[1].replace(/,/g, ''));
+      }
+      
+      // 從新 notes 解析折抵金額（如果有）
+      if (data.notes) {
+        const newDiscountMatch = data.notes.match(/折抵\s*(?:NT\$|NT\s*\$|\$)?[\s]*([0-9,]+)/);
+        if (newDiscountMatch) {
+          newDiscountAmount = parseFloat(newDiscountMatch[1].replace(/,/g, ''));
+        } else {
+          // 如果沒有找到，保持原本的折抵金額
+          newDiscountAmount = oldDiscountAmount;
+        }
+      } else {
+        newDiscountAmount = oldDiscountAmount;
+      }
+      
+      // 3.2 如果折抵金額有變化，更新夥伴點數
+      if (oldDiscountAmount !== newDiscountAmount && oldPartnerCode) {
+        const pointsDifference = newDiscountAmount - oldDiscountAmount;
+        Logger.log('💳 折抵金額變化: ' + oldDiscountAmount + ' → ' + newDiscountAmount + ', 差額: ' + pointsDifference);
+        
+        const partnersSheet = spreadsheet.getSheetByName('Partners');
+        if (partnersSheet) {
+          const partnerRange = partnersSheet.getDataRange();
+          const partnerValues = partnerRange.getValues();
+          
+          for (let i = 1; i < partnerValues.length; i++) {
+            if (partnerValues[i][1] === oldPartnerCode) {
+              const currentPaid = parseFloat(partnersSheet.getRange(i + 1, 11).getValue()) || 0;
+              const newPaid = Math.max(0, currentPaid + pointsDifference);
+              partnersSheet.getRange(i + 1, 11).setValue(newPaid);
+              partnersSheet.getRange(i + 1, 25).setValue(timestamp);
+              Logger.log('✅ 更新夥伴點數: ' + oldPartnerCode + ', 差額: ' + pointsDifference);
+              break;
+            }
+          }
+        }
+        
+        // 3.3 更新 Accommodation_Usage 記錄
+        const usageSheet = spreadsheet.getSheetByName('Accommodation_Usage');
+        if (usageSheet) {
+          const usageRange = usageSheet.getDataRange();
+          const usageValues = usageRange.getValues();
+          
+          for (let i = 1; i < usageValues.length; i++) {
+            if (String(usageValues[i][3]) === String(actualBookingId)) {  // related_booking_id
+              usageSheet.getRange(i + 1, 3).setValue(newDiscountAmount);  // deduct_amount
+              usageSheet.getRange(i + 1, 7).setValue(`原價 NT$${newRoomPrice}，折抵 NT$${newDiscountAmount}，實付 NT$${newRoomPrice - newDiscountAmount}`);  // notes
+              usageSheet.getRange(i + 1, 10).setValue(timestamp);  // updated_at
+              Logger.log('✅ 更新 Accommodation_Usage 記錄');
+              break;
+            }
+          }
+        }
+        
+        // 3.4 更新 Payouts 記錄
+        const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+        if (payoutsSheet) {
+          const payoutRange = payoutsSheet.getDataRange();
+          const payoutValues = payoutRange.getValues();
+          
+          for (let i = 1; i < payoutValues.length; i++) {
+            if (String(payoutValues[i][4]) === String(actualBookingId)) {  // related_booking_ids
+              payoutsSheet.getRange(i + 1, 4).setValue(newDiscountAmount);  // amount
+              payoutsSheet.getRange(i + 1, 11).setValue(`折抵訂房 ${actualBookingId} [已更新]`);  // notes
+              payoutsSheet.getRange(i + 1, 14).setValue(timestamp);  // updated_at
+              Logger.log('✅ 更新 Payouts 記錄');
+              break;
+            }
+          }
+        }
+      }
+      
+      // 3.5 更新 notes 以反映新的金額
+      if (newRoomPrice !== oldRoomPrice || newDiscountAmount !== oldDiscountAmount) {
+        const newNetPrice = newRoomPrice - newDiscountAmount;
+        const updatedNotes = `住宿金折抵 NT$${newDiscountAmount}，實付 NT$${newNetPrice}`;
+        bookingsSheet.getRange(bookingRowIndex, 20).setValue(updatedNotes);
+        Logger.log('✅ 更新訂單 notes: ' + updatedNotes);
+      }
+    }
+    
+    // 4. 取得實際的 booking ID (如果有的話)
     Logger.log('訂房更新處理完成: 行號 ' + bookingRowIndex + ', ID ' + actualBookingId);
     
     const result = {
@@ -1111,7 +1210,81 @@ function handleDeleteBooking(data, e) {
       });
     }
     
-    // 2. 刪除訂房記錄（刪除整行）
+    // 2. 檢查是否為 SELF_USE 類型，需要返還點數
+    const bookingId = bookingData[0];  // id
+    const partnerCode = bookingData[1];  // partner_code
+    const bookingSource = bookingData[9];  // booking_source
+    const notes = bookingData[19];  // notes
+    
+    Logger.log('🔍 檢查訂單類型: ' + bookingSource);
+    
+    if (bookingSource === 'SELF_USE') {
+      Logger.log('💳 這是自用訂單，需要返還點數');
+      
+      // 2.1 從 notes 中解析折抵金額
+      let refundAmount = 0;
+      const discountMatch = notes.match(/折抵\s*(?:NT\$|NT\s*\$|\$)?[\s]*([0-9,]+)/);
+      if (discountMatch) {
+        refundAmount = parseFloat(discountMatch[1].replace(/,/g, ''));
+      }
+      
+      if (refundAmount > 0 && partnerCode) {
+        Logger.log('💰 需要返還點數: ' + refundAmount + ' 給夥伴: ' + partnerCode);
+        
+        // 2.2 更新 Partners 表格，返還點數
+        const partnersSheet = spreadsheet.getSheetByName('Partners');
+        if (partnersSheet) {
+          const partnerRange = partnersSheet.getDataRange();
+          const partnerValues = partnerRange.getValues();
+          
+          for (let i = 1; i < partnerValues.length; i++) {
+            if (partnerValues[i][1] === partnerCode) {  // partner_code 在第2欄
+              const currentPaid = parseFloat(partnersSheet.getRange(i + 1, 11).getValue()) || 0;  // total_commission_paid
+              const newPaid = Math.max(0, currentPaid - refundAmount);
+              partnersSheet.getRange(i + 1, 11).setValue(newPaid);
+              partnersSheet.getRange(i + 1, 25).setValue(new Date());  // updated_at
+              Logger.log('✅ 已返還點數給夥伴 ' + partnerCode + '，減少已使用點數: ' + refundAmount);
+              break;
+            }
+          }
+        }
+        
+        // 2.3 刪除相關的 Accommodation_Usage 記錄
+        const usageSheet = spreadsheet.getSheetByName('Accommodation_Usage');
+        if (usageSheet) {
+          const usageRange = usageSheet.getDataRange();
+          const usageValues = usageRange.getValues();
+          
+          for (let i = usageValues.length - 1; i >= 1; i--) {  // 從後往前刪除
+            if (usageValues[i][3] === bookingId) {  // related_booking_id
+              usageSheet.deleteRow(i + 1);
+              Logger.log('✅ 已刪除相關的 Accommodation_Usage 記錄');
+              break;
+            }
+          }
+        }
+        
+        // 2.4 更新相關的 Payout 記錄狀態
+        const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+        if (payoutsSheet) {
+          const payoutRange = payoutsSheet.getDataRange();
+          const payoutValues = payoutRange.getValues();
+          
+          for (let i = 1; i < payoutValues.length; i++) {
+            if (String(payoutValues[i][4]) === String(bookingId)) {  // related_booking_ids
+              // 標記為已取消
+              payoutsSheet.getRange(i + 1, 7).setValue('CANCELLED');  // payout_status
+              payoutsSheet.getRange(i + 1, 11).setValue(payoutsSheet.getRange(i + 1, 11).getValue() + ' [訂單已取消，點數已返還]');  // notes
+              payoutsSheet.getRange(i + 1, 14).setValue(new Date());  // updated_at
+              Logger.log('✅ 已更新相關的 Payout 記錄狀態為 CANCELLED');
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    // 3. 刪除訂房記錄（刪除整行）
     Logger.log('🗑️ 準備刪除第 ' + bookingRowIndex + ' 行的記錄');
     Logger.log('被刪除的記錄: ' + JSON.stringify(bookingData));
     
@@ -3297,12 +3470,11 @@ function handleUseAccommodationPoints(data, e) {
     let usageSheet = spreadsheet.getSheetByName('Accommodation_Usage');
     if (!usageSheet) {
       usageSheet = spreadsheet.insertSheet('Accommodation_Usage');
-      // 設定標題列
+      // 設定標題列（使用正確的欄位）
       const headers = [
-        'id', 'partner_code', 'guest_name', 'guest_phone', 
-        'checkin_date', 'checkout_date', 'original_price', 
-        'discount_amount', 'net_price', 'booking_id', 
-        'payout_id', 'notes', 'created_at', 'updated_at'
+        'id', 'partner_code', 'deduct_amount', 'related_booking_id', 
+        'usage_date', 'usage_type', 'notes', 'created_by', 
+        'created_at', 'updated_at'
       ];
       usageSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
       usageSheet.getRange(1, 1, 1, headers.length).setBackground('#4A5568').setFontColor('#FFFFFF').setFontWeight('bold');
@@ -3398,21 +3570,17 @@ function handleUseAccommodationPoints(data, e) {
     payoutsSheet.appendRow(payoutData);
     Logger.log('✅ 創建 Payout 記錄: ' + payoutId);
     
-    // 3. 創建 Accommodation_Usage 記錄
+    // 3. 創建 Accommodation_Usage 記錄（使用正確的欄位）
     const usageId = generateNextId(usageSheet, 'USE');
     const usageData = [
       usageId,                                // id
       partnerCode,                            // partner_code
-      data.guest_name || partner.name,        // guest_name
-      data.guest_phone || partner.phone,      // guest_phone
-      data.checkin_date,                      // checkin_date
-      data.checkout_date,                     // checkout_date
-      originalPrice,                          // original_price
-      discountAmount,                         // discount_amount
-      netPrice,                               // net_price
-      bookingId,                              // booking_id
-      payoutId,                               // payout_id
-      data.notes || '',                       // notes
+      discountAmount,                         // deduct_amount
+      bookingId,                              // related_booking_id
+      timestamp,                              // usage_date
+      'ACCOMMODATION_REDEMPTION',             // usage_type
+      `原價 NT$${originalPrice}，折抵 NT$${discountAmount}，實付 NT$${netPrice}`, // notes
+      'system',                               // created_by
       timestamp,                              // created_at
       timestamp                               // updated_at
     ];

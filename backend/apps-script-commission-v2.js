@@ -1128,12 +1128,35 @@ function getSheetData(spreadsheet, sheetName) {
   const values = range.getValues();
   const headers = values[0];
   
-  // 轉換為物件陣列，保持原始欄位名稱以維持相容性
+  // 特別處理 Bookings 表格的重複 ID 欄位問題
+  let processedHeaders = headers;
+  let skipColumns = [];
+  
+  if (sheetName === 'Bookings') {
+    // 檢查是否同時有 'id' 和 'ID'
+    const hasLowerId = headers.includes('id');
+    const hasUpperId = headers.includes('ID');
+    
+    if (hasLowerId && hasUpperId) {
+      Logger.log('警告：Bookings 表格同時有 id 和 ID 欄位，將忽略大寫 ID');
+      // 找出大寫 ID 的位置並標記要跳過
+      headers.forEach((header, index) => {
+        if (header === 'ID') {
+          skipColumns.push(index);
+        }
+      });
+    }
+  }
+  
+  // 轉換為物件陣列
   const data = [];
   for (let i = 1; i < values.length; i++) {
     const row = {};
     for (let j = 0; j < headers.length; j++) {
-      // 直接使用原始欄位名稱，不做標準化
+      // 跳過標記要忽略的欄位
+      if (skipColumns.includes(j)) {
+        continue;
+      }
       row[headers[j]] = values[i][j];
     }
     data.push(row);

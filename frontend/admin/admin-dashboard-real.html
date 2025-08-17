@@ -1005,19 +1005,6 @@
                 
                 if (data.success) {
                     allData = data.data;
-                    
-                    // 修復重複 ID 欄位問題（如果同時有 id 和 ID）
-                    if (allData.bookings && allData.bookings.length > 0) {
-                        allData.bookings = allData.bookings.map(booking => {
-                            // 如果同時有 id 和 ID，移除大寫的 ID
-                            if (booking.hasOwnProperty('id') && booking.hasOwnProperty('ID')) {
-                                console.warn('⚠️ 發現重複的 ID 欄位，移除大寫 ID');
-                                delete booking.ID;
-                            }
-                            return booking;
-                        });
-                    }
-                    
                     console.log('✅ 載入真實數據成功:');
                     console.log('- Partners:', allData.partners?.length || 0);
                     console.log('- Bookings:', allData.bookings?.length || 0);

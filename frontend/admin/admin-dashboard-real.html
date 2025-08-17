@@ -676,7 +676,7 @@
         const BOOKING_FIELDS = {
             // 欄位順序必須與 Google Sheets 完全一致
             FIELD_ORDER: [
-                'id',                           // A列 - 唯一識別符（自動生成）
+                'ID',                           // A列 - 唯一識別符（自動生成）
                 'partner_code',                 // B列 - 推薦大使代碼
                 'guest_name',                   // C列 - 房客姓名
                 'guest_phone',                  // D列 - 房客電話  
@@ -2703,7 +2703,7 @@
                 // 立即更新前端數據
                 console.log('🔄 確認入住完成，更新前端數據...', booking.guest_name, booking.guest_phone);
                 
-                // 由於 booking.id 為空，使用 guest_name + guest_phone 來找到對應記錄
+                // 由於 booking.ID 為空，使用 guest_name + guest_phone 來找到對應記錄
                 const bookingIndex = allData.bookings.findIndex(b => 
                     b.guest_name === booking.guest_name && 
                     String(b.guest_phone) === String(booking.guest_phone) &&
@@ -2922,7 +2922,7 @@
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-6">
-                        <h3 class="text-2xl font-bold">編輯訂單 #${booking.id || (bookingIndex + 1)}</h3>
+                        <h3 class="text-2xl font-bold">編輯訂單 #${booking.ID || (bookingIndex + 1)}</h3>
                         <button onclick="closeModal('editBookingModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -3058,8 +3058,8 @@
             const form = modal.querySelector('#editBookingForm');
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
-                // 使用 booking.id 或 bookingIndex 作為標識符
-                const bookingIdentifier = booking.id || bookingIndex;
+                // 使用 booking.ID 或 bookingIndex 作為標識符
+                const bookingIdentifier = booking.ID || bookingIndex;
                 saveBookingChanges(bookingIdentifier);
             });
 
@@ -3306,7 +3306,7 @@
                 // 使用 form 提交方式避免 CORS 問題
                 const deleteData = {
                     action: 'delete_booking',
-                    booking_id: booking.id || '',
+                    booking_id: booking.ID || '',
                     guest_name: booking.guest_name,
                     guest_phone: booking.guest_phone,
                     checkin_date: formatDateForBackend(booking.checkin_date)

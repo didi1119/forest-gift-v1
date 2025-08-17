@@ -1128,19 +1128,13 @@ function getSheetData(spreadsheet, sheetName) {
   const values = range.getValues();
   const headers = values[0];
   
-  // 轉換為物件陣列，並標準化欄位名稱
+  // 轉換為物件陣列，保持原始欄位名稱以維持相容性
   const data = [];
   for (let i = 1; i < values.length; i++) {
     const row = {};
     for (let j = 0; j < headers.length; j++) {
-      // 標準化欄位名稱為小寫
-      const key = String(headers[j]).toLowerCase().replace(/\s+/g, '_');
-      row[key] = values[i][j];
-      
-      // 為了相容性，如果是 ID 欄位，同時保留大寫版本
-      if (key === 'id' && values[i][j]) {
-        row['ID'] = values[i][j];
-      }
+      // 直接使用原始欄位名稱，不做標準化
+      row[headers[j]] = values[i][j];
     }
     data.push(row);
   }

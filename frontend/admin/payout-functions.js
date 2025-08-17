@@ -94,7 +94,7 @@ function createPayoutDetailsModal(payout) {
                         <tbody>
                             ${relatedBookings.map(booking => `
                                 <tr class="border-b hover:bg-gray-50">
-                                    <td class="py-2 px-3 border font-medium">#${booking.id}</td>
+                                    <td class="py-2 px-3 border font-medium">#${booking.ID}</td>
                                     <td class="py-2 px-3 border">${booking.guest_name}</td>
                                     <td class="py-2 px-3 border">${formatDateDisplay(booking.checkin_date)}</td>
                                     <td class="py-2 px-3 border text-center">$${(booking.room_price || 0).toLocaleString()}</td>

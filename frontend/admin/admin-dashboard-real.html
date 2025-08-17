@@ -1018,6 +1018,36 @@
                         const actualFields = Object.keys(firstBooking);
                         console.log('  實際欄位數量:', actualFields.length);
                         console.log('  實際欄位順序:', actualFields);
+                        
+                        // 特別檢查每個欄位的值
+                        console.log('  📊 每個欄位的詳細資訊:');
+                        actualFields.forEach((field, index) => {
+                            const value = firstBooking[field];
+                            const valueType = typeof value;
+                            const valueStr = value === null ? 'null' : 
+                                           value === undefined ? 'undefined' :
+                                           value === '' ? '(空字串)' :
+                                           String(value).substring(0, 30);
+                            console.log(`    [${index}] "${field}" = ${valueStr} (${valueType})`);
+                        });
+                        
+                        // 檢查是否有重複的 id/ID
+                        const hasLowerId = actualFields.includes('id');
+                        const hasUpperId = actualFields.includes('ID');
+                        if (hasLowerId && hasUpperId) {
+                            console.error('  ❌ 同時存在 id 和 ID 欄位！');
+                            console.log('    id 位置:', actualFields.indexOf('id'));
+                            console.log('    ID 位置:', actualFields.indexOf('ID'));
+                        }
+                        
+                        // 檢查第一個欄位
+                        if (actualFields[0] !== 'id') {
+                            console.error('  ❌ 第一個欄位不是 "id"，而是:', actualFields[0]);
+                            if (actualFields[0] === 'ID') {
+                                console.warn('    是大寫 ID！需要檢查 Google Sheets 或後端處理');
+                            }
+                        }
+                        
                         console.log('  第一筆資料範例:', firstBooking);
                         
                         // 比對期望的欄位

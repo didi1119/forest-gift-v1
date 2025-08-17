@@ -55,35 +55,62 @@ function doGet(e) {
       // 從 Partners 表查詢大使的專屬優惠券 URL
       redirectUrl = getPartnerCouponUrl(subid) || DEFAULT_LINE_COUPON_URL;
     } else {
-      redirectUrl = GITHUB_PAGES_URL + (subid ? `?subid=${encodeURIComponent(subid)}` : '');
+      // 傳遞完整的 URL 參數
+      if (e.queryString) {
+        // 使用完整的 queryString 保留所有參數（包括 utm_source, utm_medium 等）
+        redirectUrl = GITHUB_PAGES_URL + '?' + e.queryString;
+      } else if (subid) {
+        // 備用方案：只有 subid
+        redirectUrl = GITHUB_PAGES_URL + `?subid=${encodeURIComponent(subid)}`;
+      } else {
+        redirectUrl = GITHUB_PAGES_URL;
+      }
     }
 
-    const html = `<!DOCTYPE html>
+    // 創建極簡的跳轉頁面，使用 window.top.location.replace 確保乾淨跳轉
+    const htmlOutput = HtmlService.createHtmlOutput(`<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0;url=${htmlEscape(redirectUrl)}">
-    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正在跳轉...</title>
   </head>
   <body>
-    <script>location.replace(${JSON.stringify(redirectUrl)});</script>
+    <script>
+      // 使用 window.top.location.replace 確保移除 Google 橫幅
+      window.top.location.replace(${JSON.stringify(redirectUrl)});
+    </script>
   </body>
-</html>`;
-
-    return HtmlService.createHtmlOutput(html);
+</html>`);
+    
+    // 設定頁面屬性
+    htmlOutput
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .setSandboxMode(HtmlService.SandboxMode.IFRAME);
+    
+    return htmlOutput;
 
   } catch (err) {
     Logger.log('doGet 錯誤: ' + err.toString());
-    return HtmlService.createHtmlOutput(`<!DOCTYPE html>
+    const errorOutput = HtmlService.createHtmlOutput(`<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0;url=${GITHUB_PAGES_URL}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正在跳轉...</title>
   </head>
   <body>
-    <script>location.replace('${GITHUB_PAGES_URL}');</script>
+    <script>
+      window.top.location.replace('${GITHUB_PAGES_URL}');
+    </script>
   </body>
 </html>`);
+    
+    errorOutput
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+      .setSandboxMode(HtmlService.SandboxMode.IFRAME);
+    
+    return errorOutput;
   }
 }
 
@@ -202,6 +229,9 @@ function doPost(e) {
       
       case 'get_partner_dashboard_data':
         return handleGetPartnerDashboardData(data, e);
+      
+      case 'use_accommodation_points':
+        return handleUseAccommodationPoints(data, e);
         
       default:
         Logger.log('未知動作: ' + (data.action || 'undefined'));
@@ -298,6 +328,7 @@ function handleCreatePartner(data, e) {
         <html>
         <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>儲存成功</title>
         </head>
         <body>
@@ -459,6 +490,7 @@ function handleCreateBooking(data, e) {
         <html>
         <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>訂房登記成功</title>
         </head>
         <body>
@@ -730,6 +762,7 @@ function handleConfirmCheckinCompletion(data, e) {
         <html>
         <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>入住確認完成</title>
         </head>
         <body>
@@ -890,6 +923,7 @@ function handleUpdateBooking(data, e) {
         <html>
         <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>更新成功</title>
         </head>
         <body>
@@ -1002,6 +1036,7 @@ function handleDeleteBooking(data, e) {
         <html>
         <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>刪除成功</title>
         </head>
         <body>
@@ -1465,6 +1500,7 @@ function handleCancelPayout(data, e) {
         <html>
         <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>取消結算成功</title>
         </head>
         <body>
@@ -1640,6 +1676,7 @@ function handleUpdatePayout(data, e) {
         <html>
         <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>更新結算成功</title>
         </head>
         <body>
@@ -1865,6 +1902,7 @@ function handleUpdatePartnerCommission(data, e) {
         <html>
         <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>佣金更新成功</title>
         </head>
         <body>
@@ -2038,6 +2076,7 @@ function handleCreatePayout(data, e) {
         <html>
         <head>
           <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>結算創建成功</title>
         </head>
         <body>
@@ -3142,5 +3181,209 @@ function testCommissionSystem() {
     Logger.log('測試建立訂房結果: ' + result.getContent());
   } catch (error) {
     Logger.log('測試建立訂房失敗: ' + error.toString());
+  }
+}
+
+// ===== 處理使用住宿金折抵 =====
+function handleUseAccommodationPoints(data, e) {
+  try {
+    Logger.log('🏨 開始處理住宿金折抵請求');
+    Logger.log('請求數據: ' + JSON.stringify(data));
+    
+    const spreadsheet = SpreadsheetApp.openById(SHEETS_ID);
+    const partnersSheet = spreadsheet.getSheetByName('Partners');
+    const bookingsSheet = spreadsheet.getSheetByName('Bookings');
+    const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+    
+    // 取得或創建 Accommodation_Usage 工作表
+    let usageSheet = spreadsheet.getSheetByName('Accommodation_Usage');
+    if (!usageSheet) {
+      usageSheet = spreadsheet.insertSheet('Accommodation_Usage');
+      // 設定標題列
+      const headers = [
+        'id', 'partner_code', 'guest_name', 'guest_phone', 
+        'checkin_date', 'checkout_date', 'original_price', 
+        'discount_amount', 'net_price', 'booking_id', 
+        'payout_id', 'notes', 'created_at', 'updated_at'
+      ];
+      usageSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      usageSheet.getRange(1, 1, 1, headers.length).setBackground('#4A5568').setFontColor('#FFFFFF').setFontWeight('bold');
+    }
+    
+    // 驗證必要參數
+    const partnerCode = data.partner_code;
+    const discountAmount = parseFloat(data.amount) || 0;
+    const originalPrice = parseFloat(data.room_price) || 0;
+    const netPrice = originalPrice - discountAmount;
+    
+    if (!partnerCode || discountAmount <= 0) {
+      return createJsonResponse({
+        success: false,
+        error: '無效的折抵參數'
+      });
+    }
+    
+    // 查找夥伴資料
+    const partnerData = getSheetData(spreadsheet, 'Partners');
+    const partner = partnerData.find(p => p.partner_code === partnerCode);
+    
+    if (!partner) {
+      return createJsonResponse({
+        success: false,
+        error: '找不到指定的夥伴'
+      });
+    }
+    
+    // 檢查可用點數
+    const availablePoints = parseFloat(partner.total_commission_earned) || 0;
+    const usedPoints = parseFloat(partner.total_commission_paid) || 0;
+    const actualAvailable = availablePoints - usedPoints;
+    
+    if (discountAmount > actualAvailable) {
+      return createJsonResponse({
+        success: false,
+        error: `點數不足，可用點數：${actualAvailable}`
+      });
+    }
+    
+    const timestamp = new Date();
+    
+    // 1. 創建訂房記錄（標記為 SELF_USE 類型）
+    const bookingId = generateNextId(bookingsSheet, 'BK');
+    const bookingData = [
+      bookingId,                              // id
+      partnerCode,                             // partner_code (自己使用)
+      data.guest_name || partner.name,        // guest_name
+      data.guest_phone || partner.phone,      // guest_phone
+      data.guest_email || partner.email,      // guest_email
+      '',                                      // bank_account_last5
+      data.checkin_date,                      // checkin_date
+      data.checkout_date,                     // checkout_date
+      originalPrice,                          // room_price (原價)
+      'SELF_USE',                             // booking_source (標記為自用)
+      'PENDING',                              // stay_status
+      'PAID',                                 // payment_status (已使用點數支付)
+      'NO_COMMISSION',                        // commission_status (不產生佣金)
+      0,                                      // commission_amount (無佣金)
+      'NONE',                                 // commission_type
+      false,                                  // is_first_referral_bonus
+      0,                                      // first_referral_bonus_amount
+      'system',                               // manually_confirmed_by
+      timestamp,                              // manually_confirmed_at
+      `住宿金折抵 NT$${discountAmount}，實付 NT$${netPrice}`, // notes
+      timestamp,                              // created_at
+      timestamp                               // updated_at
+    ];
+    
+    bookingsSheet.appendRow(bookingData);
+    Logger.log('✅ 創建訂房記錄: ' + bookingId);
+    
+    // 2. 創建 Payout 記錄（記錄點數流動）
+    const payoutId = generateNextId(payoutsSheet, 'PAY');
+    const payoutData = [
+      payoutId,                               // id
+      partnerCode,                             // partner_code
+      'POINTS_USAGE',                         // payout_type (點數使用)
+      discountAmount,                         // amount
+      bookingId,                              // related_booking_ids
+      'ACCOMMODATION_REDEMPTION',              // payout_method (住宿金兌換)
+      'COMPLETED',                            // payout_status
+      timestamp,                              // bank_transfer_date
+      '',                                     // bank_transfer_reference
+      '',                                     // accommodation_voucher_code
+      `折抵訂房 ${bookingId}`,                // notes
+      'system',                               // created_by
+      timestamp,                              // created_at
+      timestamp                               // updated_at
+    ];
+    
+    payoutsSheet.appendRow(payoutData);
+    Logger.log('✅ 創建 Payout 記錄: ' + payoutId);
+    
+    // 3. 創建 Accommodation_Usage 記錄
+    const usageId = generateNextId(usageSheet, 'USE');
+    const usageData = [
+      usageId,                                // id
+      partnerCode,                            // partner_code
+      data.guest_name || partner.name,        // guest_name
+      data.guest_phone || partner.phone,      // guest_phone
+      data.checkin_date,                      // checkin_date
+      data.checkout_date,                     // checkout_date
+      originalPrice,                          // original_price
+      discountAmount,                         // discount_amount
+      netPrice,                               // net_price
+      bookingId,                              // booking_id
+      payoutId,                               // payout_id
+      data.notes || '',                       // notes
+      timestamp,                              // created_at
+      timestamp                               // updated_at
+    ];
+    
+    usageSheet.appendRow(usageData);
+    Logger.log('✅ 創建 Usage 記錄: ' + usageId);
+    
+    // 4. 更新夥伴的點數餘額
+    const partnerRange = partnersSheet.getDataRange();
+    const partnerValues = partnerRange.getValues();
+    let partnerRowIndex = -1;
+    
+    for (let i = 1; i < partnerValues.length; i++) {
+      if (partnerValues[i][1] === partnerCode) {
+        partnerRowIndex = i + 1;
+        break;
+      }
+    }
+    
+    if (partnerRowIndex > 0) {
+      // 更新 total_commission_paid (已使用點數)
+      const currentUsed = parseFloat(partnersSheet.getRange(partnerRowIndex, 11).getValue()) || 0;
+      partnersSheet.getRange(partnerRowIndex, 11).setValue(currentUsed + discountAmount);
+      
+      // 更新 updated_at
+      partnersSheet.getRange(partnerRowIndex, 25).setValue(timestamp);
+      
+      Logger.log(`✅ 更新夥伴 ${partnerCode} 點數: 已使用 +${discountAmount}`);
+    }
+    
+    // 返回成功訊息
+    if (e && e.parameter) {
+      return HtmlService.createHtmlOutput(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>住宿金折抵成功</title>
+        </head>
+        <body>
+          <h1>✅ 住宿金折抵成功！</h1>
+          <p>折抵金額：NT$ ${discountAmount.toLocaleString()}</p>
+          <p>訂房編號：${bookingId}</p>
+          <p>原價：NT$ ${originalPrice.toLocaleString()}</p>
+          <p>實付：NT$ ${netPrice.toLocaleString()}</p>
+        </body>
+        </html>
+      `);
+    } else {
+      return createJsonResponse({
+        success: true,
+        message: '住宿金折抵成功',
+        data: {
+          booking_id: bookingId,
+          payout_id: payoutId,
+          usage_id: usageId,
+          original_price: originalPrice,
+          discount_amount: discountAmount,
+          net_price: netPrice
+        }
+      });
+    }
+    
+  } catch (error) {
+    Logger.log('住宿金折抵錯誤: ' + error.toString());
+    return createJsonResponse({
+      success: false,
+      error: '住宿金折抵失敗: ' + error.message
+    });
   }
 }

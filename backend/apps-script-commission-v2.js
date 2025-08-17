@@ -67,18 +67,85 @@ function doGet(e) {
       }
     }
 
-    // 創建極簡的跳轉頁面，使用 window.top.location.replace 確保乾淨跳轉
+    // 創建跳轉頁面，使用多種方法確保跳轉成功
     const htmlOutput = HtmlService.createHtmlOutput(`<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>正在跳轉...</title>
+    <title>正在跳轉到森林知音計畫...</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      .container {
+        text-align: center;
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      }
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+      .loader {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: bold;
+        padding: 10px 20px;
+        border: 2px solid #667eea;
+        border-radius: 5px;
+        display: inline-block;
+        margin-top: 20px;
+        transition: all 0.3s;
+      }
+      a:hover {
+        background: #667eea;
+        color: white;
+      }
+    </style>
   </head>
   <body>
+    <div class="container">
+      <h1>🌲 森林知音計畫</h1>
+      <div class="loader"></div>
+      <p>正在為您跳轉到專屬推薦頁面...</p>
+      <p><small>如果沒有自動跳轉，請點擊下方按鈕</small></p>
+      <a href="${redirectUrl}" id="redirectLink">立即前往 →</a>
+    </div>
     <script>
-      // 使用 window.top.location.replace 確保移除 Google 橫幅
-      window.top.location.replace(${JSON.stringify(redirectUrl)});
+      // 方法1：使用 window.location.href（最相容）
+      setTimeout(function() {
+        window.location.href = ${JSON.stringify(redirectUrl)};
+      }, 1000);
+      
+      // 方法2：自動點擊連結（備用）
+      setTimeout(function() {
+        var link = document.getElementById('redirectLink');
+        if (link) {
+          link.click();
+        }
+      }, 2000);
     </script>
   </body>
 </html>`);
@@ -97,11 +164,42 @@ function doGet(e) {
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>正在跳轉...</title>
+    <title>跳轉到森林知音計畫</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background: #f0f0f0;
+      }
+      .container {
+        text-align: center;
+        padding: 40px;
+      }
+      a {
+        color: white;
+        background: #667eea;
+        text-decoration: none;
+        padding: 15px 30px;
+        border-radius: 5px;
+        display: inline-block;
+        font-size: 18px;
+      }
+    </style>
   </head>
   <body>
+    <div class="container">
+      <h1>🌲 森林知音計畫</h1>
+      <p>點擊下方按鈕前往推薦頁面</p>
+      <a href="${GITHUB_PAGES_URL}">前往推薦頁面 →</a>
+    </div>
     <script>
-      window.top.location.replace('${GITHUB_PAGES_URL}');
+      setTimeout(function() {
+        window.location.href = '${GITHUB_PAGES_URL}';
+      }, 1500);
     </script>
   </body>
 </html>`);

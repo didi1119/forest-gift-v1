@@ -51,6 +51,8 @@
 ### 2. 訂房管理系統 (Bookings) 🎯
 **標準化資料結構 (22 個欄位)：**
 
+⚠️ **重要提醒**：Google Sheets 實際欄位名稱可能是 `ID`（大寫）或 `id`（小寫），前端會自動處理統一為小寫 `id`。
+
 | 欄位 | 說明 | 類型 | 必填 |
 |------|------|------|------|
 | id | 唯一識別符 | String | 自動生成 |
@@ -376,6 +378,48 @@ const BOOKING_FIELDS = {
 - **手動訂房**: `/frontend/admin/manual-booking.html`
 - **入住確認**: `/frontend/admin/manual-checkin-confirm.html`
 
+## Google Sheets 資料表結構 📊
+
+### Partners 表格欄位（共 25 欄）
+```
+id, partner_code, name, email, phone, level, level_progress,
+total_successful_referrals, commission_preference, total_commission_earned,
+total_commission_paid, pending_commission, coupon_code, coupon_url,
+landing_link, coupon_link, short_landing_link, short_coupon_link,
+bank_name, bank_code, bank_branch, bank_account_name, bank_account_number,
+created_at, updated_at
+```
+
+### Bookings 表格欄位（共 22 欄）
+```
+id, partner_code, guest_name, guest_phone, guest_email, bank_account_last5,
+checkin_date, checkout_date, room_price, booking_source, stay_status,
+payment_status, commission_status, commission_amount, commission_type,
+is_first_referral_bonus, first_referral_bonus_amount, manually_confirmed_by,
+manually_confirmed_at, notes, created_at, updated_at
+```
+
+### Payouts 表格欄位（共 14 欄）
+```
+id, partner_code, payout_type, amount, related_booking_ids,
+payout_method, payout_status, bank_transfer_date, bank_transfer_reference,
+accommodation_voucher_code, notes, created_by, created_at, updated_at
+```
+
+### ⚠️ ID 欄位統一化議題
+
+**現況**：
+- Google Sheets 可能使用 `ID`（大寫）或 `id`（小寫）
+- 前端程式碼期望統一使用小寫 `id`
+
+**解決方案**：
+1. **前端自動修正**：loadRealData() 函數會自動將大寫 `ID` 轉換為小寫 `id`
+2. **建議統一**：將 Google Sheets 所有表格的第一欄統一改為小寫 `id`
+
+**修正程式碼位置**：
+- `frontend/admin/admin-dashboard-real.html` 第 1009-1043 行
+- 自動偵測並轉換 `ID` → `id`
+
 ## 聯絡資訊
 
 - **專案性質**：森林住宿推薦系統
@@ -385,6 +429,6 @@ const BOOKING_FIELDS = {
 
 ---
 
-*本文件隨專案更新而持續維護，最後更新：2024年8月16日*
+*本文件隨專案更新而持續維護，最後更新：2024年12月*
 - 紀錄表單結構還有業務邏輯
 - 。Google Apps Script 在 GitHub Pages 上確實會被 CORS 政策阻擋，我需要改回使用 form 提交方式。

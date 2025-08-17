@@ -1048,6 +1048,29 @@
                     console.log('- Payouts:', allData.payouts?.length || 0);
                     console.log('- Clicks:', allData.clicks?.length || 0);
                     
+                    // 詳細診斷 Bookings 資料結構
+                    if (allData.bookings && allData.bookings.length > 0) {
+                        console.log('🔍 Bookings 資料結構診斷:');
+                        const firstBooking = allData.bookings[0];
+                        const actualFields = Object.keys(firstBooking);
+                        console.log('  實際欄位數量:', actualFields.length);
+                        console.log('  實際欄位順序:', actualFields);
+                        console.log('  第一筆資料範例:', firstBooking);
+                        
+                        // 比對期望的欄位
+                        const expectedFields = BOOKING_FIELDS.FIELD_ORDER;
+                        console.log('  期望欄位數量:', expectedFields.length);
+                        console.log('  期望欄位順序:', expectedFields);
+                        
+                        // 顯示差異
+                        console.log('  欄位差異分析:');
+                        actualFields.forEach((field, index) => {
+                            if (field !== expectedFields[index]) {
+                                console.log(`    索引 ${index}: 實際="${field}" vs 期望="${expectedFields[index]}"`);
+                            }
+                        });
+                    }
+                    
                     // 檢查 Payouts 數據結構
                     if (allData.payouts && allData.payouts.length > 0) {
                         console.log('📊 Payouts 數據結構檢查:');

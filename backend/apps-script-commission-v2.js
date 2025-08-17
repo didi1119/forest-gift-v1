@@ -2,7 +2,7 @@
 // 支援：手動訂房登記、入住確認、佣金計算、等級晉升
 
 const SHEETS_ID = '1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4';
-const GITHUB_PAGES_URL = 'https://didi1119.github.io/forest-gift-v1';
+const GITHUB_PAGES_URL = 'https://didi1119.github.io/forest-gift-v1/index.html';
 const DEFAULT_LINE_COUPON_URL = 'https://lin.ee/q38pqot';
 
 // 佣金等級對照表

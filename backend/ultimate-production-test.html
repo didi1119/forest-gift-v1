@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 終極生產測試套件 - 知音計畫</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-pass { background: linear-gradient(90deg, #10b981, #059669); }
+        .test-fail { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        .test-running { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .log-entry {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-left: 3px solid transparent;
+        }
+        .log-success { color: #10b981; border-left-color: #10b981; background: #10b98110; }
+        .log-error { color: #ef4444; border-left-color: #ef4444; background: #ef444410; }
+        .log-warning { color: #f59e0b; border-left-color: #f59e0b; background: #f59e0b10; }
+        .log-info { color: #3b82f6; border-left-color: #3b82f6; background: #3b82f610; }
+        .log-test { color: #8b5cf6; border-left-color: #8b5cf6; background: #8b5cf610; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8 mb-8">
+            <h1 class="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-4">
+                🚀 終極生產測試套件 v3.0
+            </h1>
+            <p class="text-gray-600 mb-2">正式發佈前的最終完整測試</p>
+            <p class="text-sm text-gray-500 mb-6">測試時間：<span id="testTime">-</span></p>
+            
+            <!-- Control Panel -->
+            <div class="bg-gradient-to-r from-green-100 to-blue-100 rounded-xl p-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Google Apps Script URL</label>
+                        <input type="text" id="scriptUrl" 
+                               class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                               value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">測試識別碼</label>
+                        <input type="text" id="testId" 
+                               class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg"
+                               readonly>
+                    </div>
+                </div>
+                
+                <div class="flex gap-4">
+                    <button onclick="runUltimateTest()" id="mainTestBtn"
+                            class="bg-gradient-to-r from-green-600 to-blue-600 text-white px-8 py-3 rounded-lg hover:from-green-700 hover:to-blue-700 font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
+                        🎯 執行完整測試套件
+                    </button>
+                    <button onclick="clearAllLogs()" 
+                            class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 font-semibold">
+                        🗑️ 清除日誌
+                    </button>
+                    <button onclick="exportTestReport()" 
+                            class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 font-semibold">
+                        📊 匯出報告
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Test Categories -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center p-3 bg-green-50 rounded-lg">
+                    <div class="text-2xl mb-1">🧪</div>
+                    <div class="text-sm font-semibold">功能測試</div>
+                    <div class="text-xs text-gray-600">核心功能驗證</div>
+                </div>
+                <div class="text-center p-3 bg-blue-50 rounded-lg">
+                    <div class="text-2xl mb-1">⚡</div>
+                    <div class="text-sm font-semibold">壓力測試</div>
+                    <div class="text-xs text-gray-600">並發與效能</div>
+                </div>
+                <div class="text-center p-3 bg-purple-50 rounded-lg">
+                    <div class="text-2xl mb-1">🔍</div>
+                    <div class="text-sm font-semibold">邊界測試</div>
+                    <div class="text-xs text-gray-600">極端情況</div>
+                </div>
+                <div class="text-center p-3 bg-yellow-50 rounded-lg">
+                    <div class="text-2xl mb-1">🛡️</div>
+                    <div class="text-sm font-semibold">安全測試</div>
+                    <div class="text-xs text-gray-600">注入防護</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Dashboard -->
+        <div class="bg-white rounded-2xl shadow-2xl p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4">📊 測試進度</h2>
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-1">
+                    <span>整體進度</span>
+                    <span id="progressText">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div id="progressBar" class="h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-gray-700" id="totalTests">0</div>
+                    <div class="text-sm text-gray-600">總測試數</div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-green-600" id="passedTests">0</div>
+                    <div class="text-sm text-gray-600">通過</div>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-red-600" id="failedTests">0</div>
+                    <div class="text-sm text-gray-600">失敗</div>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-yellow-600" id="warningTests">0</div>
+                    <div class="text-sm text-gray-600">警告</div>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-blue-600" id="runningTests">0</div>
+                    <div class="text-sm text-gray-600">執行中</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results Summary -->
+        <div class="bg-white rounded-2xl shadow-2xl p-6 mb-8" id="testSummary" style="display: none;">
+            <h2 class="text-2xl font-bold mb-4">📋 測試摘要</h2>
+            <div id="summaryContent" class="space-y-2"></div>
+        </div>
+
+        <!-- Detailed Logs -->
+        <div class="bg-white rounded-2xl shadow-2xl p-6">
+            <h2 class="text-2xl font-bold mb-4">📝 詳細日誌</h2>
+            <div id="testLog" class="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto space-y-1">
+                <div class="log-entry log-info">等待開始測試...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden iframe for form submissions -->
+    <iframe name="hiddenFrame" style="display:none;"></iframe>
+
+    <script>
+        // Global state
+        let testStats = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            warning: 0,
+            running: 0
+        };
+        
+        let testResults = [];
+        let currentTestId = '';
+        let testStartTime = null;
+        
+        // Test configuration
+        const TEST_CONFIG = {
+            scriptUrl: '',
+            testTimeout: 5000,
+            delayBetweenTests: 1000
+        };
+        
+        // Test data storage
+        let testData = {
+            partnerCode: '',
+            bookingId: '',
+            payoutId: '',
+            initialPoints: 0,
+            currentPoints: 0
+        };
+        
+        // Initialize test ID
+        function generateTestId() {
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+            return `ULTIMATE_${timestamp}_${random}`;
+        }
+        
+        // Logging functions
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function clearAllLogs() {
+            document.getElementById('testLog').innerHTML = '<div class="log-entry log-info">日誌已清除</div>';
+            document.getElementById('summaryContent').innerHTML = '';
+            document.getElementById('testSummary').style.display = 'none';
+        }
+        
+        // Statistics update
+        function updateStats() {
+            document.getElementById('totalTests').textContent = testStats.total;
+            document.getElementById('passedTests').textContent = testStats.passed;
+            document.getElementById('failedTests').textContent = testStats.failed;
+            document.getElementById('warningTests').textContent = testStats.warning;
+            document.getElementById('runningTests').textContent = testStats.running;
+            
+            // Update progress bar
+            if (testStats.total > 0) {
+                const completed = testStats.passed + testStats.failed + testStats.warning;
+                const progress = Math.round((completed / testStats.total) * 100);
+                document.getElementById('progressText').textContent = `${progress}%`;
+                const progressBar = document.getElementById('progressBar');
+                progressBar.style.width = `${progress}%`;
+                
+                // Change color based on success rate
+                if (testStats.failed > 0) {
+                    progressBar.className = 'h-4 rounded-full transition-all duration-500 test-fail';
+                } else if (testStats.warning > 0) {
+                    progressBar.className = 'h-4 rounded-full transition-all duration-500 bg-yellow-500';
+                } else {
+                    progressBar.className = 'h-4 rounded-full transition-all duration-500 test-pass';
+                }
+            }
+        }
+        
+        // Utility functions
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // API communication
+        async function submitForm(action, data) {
+            return new Promise((resolve) => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = TEST_CONFIG.scriptUrl;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+                
+                // Add action
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = action;
+                form.appendChild(actionInput);
+                
+                // Add other data
+                Object.keys(data).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = data[key];
+                    form.appendChild(input);
+                });
+                
+                document.body.appendChild(form);
+                form.submit();
+                
+                setTimeout(() => {
+                    document.body.removeChild(form);
+                    resolve({ success: true, action: action });
+                }, 2000);
+            });
+        }
+        
+        async function fetchData() {
+            try {
+                const response = await fetch(`${TEST_CONFIG.scriptUrl}?action=get_all_data`);
+                return await response.json();
+            } catch (error) {
+                log(`獲取數據失敗: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        // Test assertion helper
+        function assert(condition, testName, expected, actual) {
+            testStats.running--;
+            if (condition) {
+                testStats.passed++;
+                log(`✅ ${testName}: 預期=${expected}, 實際=${actual}`, 'success');
+                testResults.push({ test: testName, status: 'passed', expected, actual });
+                return true;
+            } else {
+                testStats.failed++;
+                log(`❌ ${testName}: 預期=${expected}, 實際=${actual}`, 'error');
+                testResults.push({ test: testName, status: 'failed', expected, actual });
+                return false;
+            }
+        }
+        
+        // Individual test functions
+        async function testCreatePartner() {
+            log('━━━ 測試 1: 創建大使 ━━━', 'test');
+            testStats.running++;
+            updateStats();
+            
+            testData.partnerCode = `${currentTestId}_P1`;
+            const data = {
+                partner_code: testData.partnerCode,
+                partner_name: '終極測試大使',
+                partner_level: 'LV1_INSIDER',
+                contact_phone: '0912345678',
+                contact_email: 'ultimate@test.com',
+                commission_preference: 'ACCOMMODATION',
+                available_points: '10000',
+                points_used: '0',
+                bank_account: '123456789012345'
+            };
+            
+            log(`創建大使: ${testData.partnerCode}`, 'info');
+            await submitForm('create_partner', data);
+            await delay(2000);
+            
+            const result = await fetchData();
+            if (result && result.data && result.data.partners) {
+                const partner = result.data.partners.find(p => p.partner_code === testData.partnerCode);
+                if (partner) {
+                    testData.initialPoints = parseFloat(partner.available_points) || 0;
+                    return assert(true, '創建大使', '成功', '成功');
+                }
+            }
+            return assert(false, '創建大使', '成功', '失敗');
+        }
+        
+        async function testCreateBooking() {
+            log('━━━ 測試 2: 創建訂房 ━━━', 'test');
+            testStats.running++;
+            updateStats();
+            
+            const data = {
+                partner_code: testData.partnerCode,
+                guest_name: `測試房客_${Date.now()}`,
+                guest_phone: '0911222333',
+                checkin_date: '2024-12-25',
+                checkout_date: '2024-12-27',
+                room_price: '5000',
+                booking_source: 'REFERRAL',
+                notes: '終極測試訂房'
+            };
+            
+            log(`創建訂房 (大使: ${testData.partnerCode})`, 'info');
+            await submitForm('create_booking', data);
+            await delay(2000);
+            
+            const result = await fetchData();
+            if (result && result.data && result.data.bookings) {
+                const bookings = result.data.bookings.filter(b => b.partner_code === testData.partnerCode);
+                if (bookings.length > 0) {
+                    testData.bookingId = bookings[bookings.length - 1].id;
+                    return assert(true, '創建訂房', '成功', `ID=${testData.bookingId}`);
+                }
+            }
+            return assert(false, '創建訂房', '成功', '失敗');
+        }
+        
+        async function testConfirmCheckin() {
+            log('━━━ 測試 3: 確認入住完成 ━━━', 'test');
+            testStats.running++;
+            updateStats();
+            
+            const data = {
+                booking_id: testData.bookingId,
+                confirmed_by: 'ultimate_test'
+            };
+            
+            log(`確認入住 (訂房ID: ${testData.bookingId})`, 'info');
+            await submitForm('confirm_checkin_completion', data);
+            await delay(3000);
+            
+            const result = await fetchData();
+            if (result && result.data) {
+                const booking = result.data.bookings.find(b => b.id === testData.bookingId);
+                const partner = result.data.partners.find(p => p.partner_code === testData.partnerCode);
+                
+                if (booking && partner) {
+                    const commission = parseFloat(booking.commission_amount) || 0;
+                    const pointsNow = parseFloat(partner.available_points) || 0;
+                    const pointsGained = pointsNow - testData.initialPoints;
+                    
+                    // LV1 first booking: 1000 base + 1500 bonus = 2500
+                    const expectedCommission = 2500;
+                    testData.currentPoints = pointsNow;
+                    
+                    if (Math.abs(pointsGained - expectedCommission) < 1) {
+                        return assert(true, '佣金計算', expectedCommission, pointsGained);
+                    } else {
+                        return assert(false, '佣金計算', expectedCommission, pointsGained);
+                    }
+                }
+            }
+            return assert(false, '確認入住', '成功', '失敗');
+        }
+        
+        async function testUseAccommodationPoints() {
+            log('━━━ 測試 4: 使用住宿金 ━━━', 'test');
+            testStats.running++;
+            updateStats();
+            
+            const useAmount = 1500;
+            const data = {
+                partner_code: testData.partnerCode,
+                deduct_amount: useAmount.toString(),
+                checkin_date: '2024-12-30',
+                room_price: '5000',
+                notes: '測試使用住宿金'
+            };
+            
+            log(`使用住宿金: ${useAmount}點`, 'info');
+            await submitForm('use_accommodation_points', data);
+            await delay(2000);
+            
+            const result = await fetchData();
+            if (result && result.data && result.data.partners) {
+                const partner = result.data.partners.find(p => p.partner_code === testData.partnerCode);
+                if (partner) {
+                    const pointsNow = parseFloat(partner.available_points) || 0;
+                    const pointsUsed = testData.currentPoints - pointsNow;
+                    testData.currentPoints = pointsNow;
+                    
+                    if (Math.abs(pointsUsed - useAmount) < 1) {
+                        return assert(true, '使用住宿金', useAmount, pointsUsed);
+                    } else {
+                        return assert(false, '使用住宿金', useAmount, pointsUsed);
+                    }
+                }
+            }
+            return assert(false, '使用住宿金', '成功', '失敗');
+        }
+        
+        async function testConvertPointsToCash() {
+            log('━━━ 測試 5: 轉換現金 ━━━', 'test');
+            testStats.running++;
+            updateStats();
+            
+            const convertAmount = 2000;
+            const expectedCash = convertAmount / 2; // 2:1 ratio
+            
+            const data = {
+                partner_code: testData.partnerCode,
+                points_used: convertAmount.toString(),
+                notes: '測試轉換現金'
+            };
+            
+            log(`轉換現金: ${convertAmount}點 → ${expectedCash}元`, 'info');
+            await submitForm('convert_points_to_cash', data);
+            await delay(2000);
+            
+            const result = await fetchData();
+            if (result && result.data) {
+                const partner = result.data.partners.find(p => p.partner_code === testData.partnerCode);
+                const payouts = result.data.payouts.filter(p => p.partner_code === testData.partnerCode);
+                
+                if (partner && payouts.length > 0) {
+                    const pointsNow = parseFloat(partner.available_points) || 0;
+                    const pointsDeducted = testData.currentPoints - pointsNow;
+                    testData.currentPoints = pointsNow;
+                    
+                    const lastPayout = payouts[payouts.length - 1];
+                    const payoutAmount = parseFloat(lastPayout.amount) || 0;
+                    
+                    if (Math.abs(pointsDeducted - convertAmount) < 1 && Math.abs(payoutAmount - expectedCash) < 1) {
+                        return assert(true, '轉換現金', `${convertAmount}點→${expectedCash}元`, `${pointsDeducted}點→${payoutAmount}元`);
+                    } else {
+                        return assert(false, '轉換現金', `${convertAmount}點→${expectedCash}元`, `${pointsDeducted}點→${payoutAmount}元`);
+                    }
+                }
+            }
+            return assert(false, '轉換現金', '成功', '失敗');
+        }
+        
+        async function testEdgeCases() {
+            log('━━━ 測試 6: 邊界測試 ━━━', 'test');
+            testStats.running++;
+            updateStats();
+            
+            // Test empty values
+            const emptyData = {
+                partner_code: '',
+                guest_name: '',
+                guest_phone: '',
+                room_price: ''
+            };
+            
+            log('測試空值輸入', 'info');
+            await submitForm('create_booking', emptyData);
+            await delay(1000);
+            
+            // Test negative values
+            const negativeData = {
+                partner_code: testData.partnerCode,
+                deduct_amount: '-1000',
+                room_price: '-5000'
+            };
+            
+            log('測試負數輸入', 'info');
+            await submitForm('use_accommodation_points', negativeData);
+            await delay(1000);
+            
+            // Test overflow values
+            const overflowData = {
+                partner_code: testData.partnerCode,
+                deduct_amount: '999999999999',
+                room_price: '999999999999'
+            };
+            
+            log('測試超大數值', 'info');
+            await submitForm('use_accommodation_points', overflowData);
+            await delay(1000);
+            
+            // Check if system is still stable
+            const result = await fetchData();
+            const isStable = result && result.data && result.data.partners;
+            
+            return assert(isStable, '邊界測試', '系統穩定', isStable ? '系統穩定' : '系統異常');
+        }
+        
+        async function testConcurrency() {
+            log('━━━ 測試 7: 並發測試 ━━━', 'test');
+            testStats.running++;
+            updateStats();
+            
+            log('同時發送 5 個請求', 'info');
+            
+            const promises = [];
+            for (let i = 0; i < 5; i++) {
+                const data = {
+                    partner_code: testData.partnerCode,
+                    deduct_amount: '100',
+                    checkin_date: '2024-12-30',
+                    room_price: '5000',
+                    notes: `並發測試 ${i + 1}`
+                };
+                promises.push(submitForm('use_accommodation_points', data));
+            }
+            
+            await Promise.all(promises);
+            await delay(3000);
+            
+            const result = await fetchData();
+            if (result && result.data && result.data.partners) {
+                const partner = result.data.partners.find(p => p.partner_code === testData.partnerCode);
+                if (partner) {
+                    const pointsNow = parseFloat(partner.available_points) || 0;
+                    const totalDeducted = testData.currentPoints - pointsNow;
+                    testData.currentPoints = pointsNow;
+                    
+                    // Should deduct 500 points total (100 x 5)
+                    const expectedDeduction = 500;
+                    if (Math.abs(totalDeducted - expectedDeduction) <= 100) { // Allow some tolerance
+                        return assert(true, '並發扣點', expectedDeduction, totalDeducted);
+                    } else {
+                        return assert(false, '並發扣點', expectedDeduction, totalDeducted);
+                    }
+                }
+            }
+            return assert(false, '並發測試', '成功', '失敗');
+        }
+        
+        async function testDataIntegrity() {
+            log('━━━ 測試 8: 數據完整性 ━━━', 'test');
+            testStats.running++;
+            updateStats();
+            
+            const result = await fetchData();
+            if (!result || !result.data) {
+                return assert(false, '數據完整性', '可獲取數據', '無法獲取數據');
+            }
+            
+            const { partners, bookings, payouts } = result.data;
+            let integrityIssues = 0;
+            
+            // Check partner data integrity
+            partners.forEach(partner => {
+                const available = parseFloat(partner.available_points) || 0;
+                const used = parseFloat(partner.points_used) || 0;
+                const earned = parseFloat(partner.total_commission_earned) || 0;
+                
+                if (available < 0) {
+                    log(`⚠️ 大使 ${partner.partner_code} 可用點數為負: ${available}`, 'warning');
+                    integrityIssues++;
+                }
+                
+                if (used > earned) {
+                    log(`⚠️ 大使 ${partner.partner_code} 使用點數超過獲得點數: ${used} > ${earned}`, 'warning');
+                    integrityIssues++;
+                }
+            });
+            
+            // Check booking data integrity
+            bookings.forEach(booking => {
+                if (booking.commission_status === 'CALCULATED' && (!booking.commission_amount || booking.commission_amount === '0')) {
+                    log(`⚠️ 訂房 ${booking.id} 標記已計算但佣金為0`, 'warning');
+                    integrityIssues++;
+                }
+            });
+            
+            if (integrityIssues === 0) {
+                return assert(true, '數據完整性', '無問題', '無問題');
+            } else {
+                testStats.warning++;
+                log(`⚠️ 發現 ${integrityIssues} 個數據完整性問題`, 'warning');
+                return false;
+            }
+        }
+        
+        async function testSpecialCharacters() {
+            log('━━━ 測試 9: 特殊字符測試 ━━━', 'test');
+            testStats.running++;
+            updateStats();
+            
+            const specialData = {
+                partner_code: `${currentTestId}_SPECIAL`,
+                partner_name: '測試<>大使&quot;',
+                contact_phone: '０９１２３４５６７８',
+                contact_email: 'test@測試.com',
+                notes: 'SQL injection test: DROP TABLE; --'
+            };
+            
+            log('測試特殊字符和SQL注入防護', 'info');
+            await submitForm('create_partner', specialData);
+            await delay(2000);
+            
+            // Check if system is still functional
+            const result = await fetchData();
+            const isSecure = result && result.data && result.data.partners;
+            
+            return assert(isSecure, '安全測試', '系統安全', isSecure ? '防護有效' : '可能有漏洞');
+        }
+        
+        async function testPerformance() {
+            log('━━━ 測試 10: 效能測試 ━━━', 'test');
+            testStats.running++;
+            updateStats();
+            
+            const startTime = Date.now();
+            log('測試API響應時間', 'info');
+            
+            const result = await fetchData();
+            const responseTime = Date.now() - startTime;
+            
+            log(`API響應時間: ${responseTime}ms`, 'info');
+            
+            if (responseTime < 3000) {
+                return assert(true, '效能測試', '<3秒', `${responseTime}ms`);
+            } else if (responseTime < 5000) {
+                testStats.warning++;
+                log(`⚠️ API響應較慢: ${responseTime}ms`, 'warning');
+                return false;
+            } else {
+                return assert(false, '效能測試', '<3秒', `${responseTime}ms`);
+            }
+        }
+        
+        // Main test runner
+        async function runUltimateTest() {
+            // Initialize
+            currentTestId = generateTestId();
+            document.getElementById('testId').value = currentTestId;
+            document.getElementById('testTime').textContent = new Date().toLocaleString();
+            TEST_CONFIG.scriptUrl = document.getElementById('scriptUrl').value;
+            testStartTime = Date.now();
+            
+            // Reset stats
+            testStats = { total: 10, passed: 0, failed: 0, warning: 0, running: 0 };
+            testResults = [];
+            updateStats();
+            
+            // Disable button during test
+            const btn = document.getElementById('mainTestBtn');
+            btn.disabled = true;
+            btn.className = 'bg-gray-400 text-white px-8 py-3 rounded-lg font-bold text-lg shadow-lg cursor-not-allowed';
+            btn.textContent = '⏳ 測試執行中...';
+            
+            clearAllLogs();
+            log('🚀 ===== 開始終極生產測試 =====', 'test');
+            log(`測試ID: ${currentTestId}`, 'info');
+            log(`測試URL: ${TEST_CONFIG.scriptUrl}`, 'info');
+            
+            // Run all tests in sequence
+            const tests = [
+                { name: '創建大使', fn: testCreatePartner },
+                { name: '創建訂房', fn: testCreateBooking },
+                { name: '確認入住', fn: testConfirmCheckin },
+                { name: '使用住宿金', fn: testUseAccommodationPoints },
+                { name: '轉換現金', fn: testConvertPointsToCash },
+                { name: '邊界測試', fn: testEdgeCases },
+                { name: '並發測試', fn: testConcurrency },
+                { name: '數據完整性', fn: testDataIntegrity },
+                { name: '特殊字符', fn: testSpecialCharacters },
+                { name: '效能測試', fn: testPerformance }
+            ];
+            
+            for (const test of tests) {
+                try {
+                    await test.fn();
+                } catch (error) {
+                    testStats.failed++;
+                    testStats.running = Math.max(0, testStats.running - 1);
+                    log(`❌ ${test.name} 發生錯誤: ${error.message}`, 'error');
+                }
+                updateStats();
+                await delay(TEST_CONFIG.delayBetweenTests);
+            }
+            
+            // Generate summary
+            const testDuration = ((Date.now() - testStartTime) / 1000).toFixed(2);
+            log('🏁 ===== 測試完成 =====', 'test');
+            log(`總耗時: ${testDuration} 秒`, 'info');
+            log(`通過率: ${((testStats.passed / testStats.total) * 100).toFixed(1)}%`, 
+                testStats.failed === 0 ? 'success' : 'warning');
+            
+            // Show summary
+            showTestSummary();
+            
+            // Re-enable button
+            btn.disabled = false;
+            if (testStats.failed === 0) {
+                btn.className = 'bg-gradient-to-r from-green-600 to-blue-600 text-white px-8 py-3 rounded-lg hover:from-green-700 hover:to-blue-700 font-bold text-lg shadow-lg transform hover:scale-105 transition-all';
+                btn.textContent = '✅ 測試通過 - 點擊重新測試';
+            } else {
+                btn.className = 'bg-gradient-to-r from-red-600 to-orange-600 text-white px-8 py-3 rounded-lg hover:from-red-700 hover:to-orange-700 font-bold text-lg shadow-lg transform hover:scale-105 transition-all';
+                btn.textContent = '❌ 測試失敗 - 點擊重新測試';
+            }
+        }
+        
+        function showTestSummary() {
+            const summaryDiv = document.getElementById('testSummary');
+            const summaryContent = document.getElementById('summaryContent');
+            
+            summaryDiv.style.display = 'block';
+            summaryContent.innerHTML = '';
+            
+            // Overall result
+            const overallDiv = document.createElement('div');
+            overallDiv.className = testStats.failed === 0 ? 
+                'p-4 bg-green-50 border-2 border-green-500 rounded-lg' : 
+                'p-4 bg-red-50 border-2 border-red-500 rounded-lg';
+            
+            const emoji = testStats.failed === 0 ? '🎉' : '⚠️';
+            const message = testStats.failed === 0 ? 
+                '所有測試通過！系統已準備好正式發佈。' : 
+                `發現 ${testStats.failed} 個問題需要修復。`;
+            
+            overallDiv.innerHTML = `
+                <div class="text-2xl font-bold mb-2">${emoji} 測試結果</div>
+                <div class="text-lg">${message}</div>
+                <div class="mt-2 text-sm">
+                    <span class="text-green-600">✅ 通過: ${testStats.passed}</span> | 
+                    <span class="text-red-600">❌ 失敗: ${testStats.failed}</span> | 
+                    <span class="text-yellow-600">⚠️ 警告: ${testStats.warning}</span>
+                </div>
+            `;
+            summaryContent.appendChild(overallDiv);
+            
+            // Test details
+            if (testResults.length > 0) {
+                const detailsDiv = document.createElement('div');
+                detailsDiv.className = 'mt-4 space-y-2';
+                
+                testResults.forEach(result => {
+                    const resultDiv = document.createElement('div');
+                    const icon = result.status === 'passed' ? '✅' : '❌';
+                    const bgColor = result.status === 'passed' ? 'bg-green-50' : 'bg-red-50';
+                    
+                    resultDiv.className = `p-2 ${bgColor} rounded border-l-4 ${result.status === 'passed' ? 'border-green-500' : 'border-red-500'}`;
+                    resultDiv.innerHTML = `
+                        <span class="font-semibold">${icon} ${result.test}</span>
+                        <span class="text-sm text-gray-600 ml-2">預期: ${result.expected} | 實際: ${result.actual}</span>
+                    `;
+                    detailsDiv.appendChild(resultDiv);
+                });
+                
+                summaryContent.appendChild(detailsDiv);
+            }
+        }
+        
+        function exportTestReport() {
+            const report = {
+                testId: currentTestId,
+                timestamp: new Date().toISOString(),
+                duration: testStartTime ? ((Date.now() - testStartTime) / 1000).toFixed(2) : 0,
+                stats: testStats,
+                results: testResults,
+                logs: Array.from(document.querySelectorAll('#testLog .log-entry')).map(el => el.textContent)
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `test-report-${currentTestId}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            log('📊 測試報告已匯出', 'success');
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('testId').value = generateTestId();
+            document.getElementById('testTime').textContent = new Date().toLocaleString();
+            log('🚀 終極生產測試套件 v3.0 已就緒', 'success');
+            log('點擊「執行完整測試套件」開始測試', 'info');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌪️ 混沌工程測試 - 知音計畫破壞性測試</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .chaos-log { font-family: 'Courier New', monospace; font-size: 10px; }
+        .bug-found { background: #fee; border-left: 4px solid #f00; padding-left: 8px; }
+        .edge-case { background: #ffc; border-left: 4px solid #fa0; padding-left: 8px; }
+        .success { background: #efe; border-left: 4px solid #0a0; padding-left: 8px; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .testing { animation: pulse 1s infinite; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto p-4 max-w-7xl">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-red-600 to-orange-600 rounded-lg shadow-2xl p-6 mb-6">
+            <h1 class="text-4xl font-bold mb-2">🌪️ 混沌工程測試系統</h1>
+            <p class="text-xl">用最瘋狂的方式找出所有潛在bug</p>
+            <div class="mt-4 flex gap-4 text-sm">
+                <div class="bg-black/30 rounded px-3 py-1">版本: CHAOS v1.0</div>
+                <div class="bg-black/30 rounded px-3 py-1">模式: 破壞性測試</div>
+                <div class="bg-black/30 rounded px-3 py-1" id="testTime">-</div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="bg-gray-800 rounded-lg shadow-xl p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-yellow-400">⚠️ 測試控制面板</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Google Apps Script URL</label>
+                    <input type="text" id="scriptUrl" 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                           value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">測試種子（用於重現）</label>
+                    <input type="text" id="testSeed" 
+                           class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white"
+                           value="" placeholder="留空則隨機">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button onclick="runChaosTest()" 
+                        class="bg-red-600 hover:bg-red-700 px-4 py-3 rounded font-bold shadow-lg transform hover:scale-105 transition">
+                    ☠️ 混沌測試
+                </button>
+                <button onclick="runEdgeCaseHunter()" 
+                        class="bg-orange-600 hover:bg-orange-700 px-4 py-3 rounded font-bold shadow-lg">
+                    🎯 邊界獵手
+                </button>
+                <button onclick="runConcurrencyTest()" 
+                        class="bg-yellow-600 hover:bg-yellow-700 px-4 py-3 rounded font-bold shadow-lg">
+                    ⚡ 並發測試
+                </button>
+                <button onclick="runFuzzTest()" 
+                        class="bg-purple-600 hover:bg-purple-700 px-4 py-3 rounded font-bold shadow-lg">
+                    🎲 模糊測試
+                </button>
+                <button onclick="runDataConsistencyTest()" 
+                        class="bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded font-bold shadow-lg">
+                    🔍 一致性測試
+                </button>
+                <button onclick="runRegressionTest()" 
+                        class="bg-green-600 hover:bg-green-700 px-4 py-3 rounded font-bold shadow-lg">
+                    🔄 回歸測試
+                </button>
+                <button onclick="runExtremeScenarios()" 
+                        class="bg-indigo-600 hover:bg-indigo-700 px-4 py-3 rounded font-bold shadow-lg">
+                    💥 極限情境
+                </button>
+                <button onclick="stopAllTests()" 
+                        class="bg-gray-600 hover:bg-gray-700 px-4 py-3 rounded font-bold shadow-lg">
+                    ⏹️ 停止
+                </button>
+            </div>
+        </div>
+
+        <!-- Bug Hunter Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3 text-red-400">🐛 發現的Bug</h3>
+                <div class="text-4xl font-bold text-red-500" id="bugCount">0</div>
+                <div id="bugList" class="mt-3 space-y-2 text-sm max-h-40 overflow-y-auto"></div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3 text-yellow-400">⚠️ 邊界問題</h3>
+                <div class="text-4xl font-bold text-yellow-500" id="edgeCount">0</div>
+                <div id="edgeList" class="mt-3 space-y-2 text-sm max-h-40 overflow-y-auto"></div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-lg font-bold mb-3 text-green-400">✅ 測試統計</h3>
+                <div class="space-y-2 text-sm">
+                    <div>總測試: <span id="totalTests" class="font-bold">0</span></div>
+                    <div>成功: <span id="passTests" class="font-bold text-green-400">0</span></div>
+                    <div>失敗: <span id="failTests" class="font-bold text-red-400">0</span></div>
+                    <div>耗時: <span id="testDuration" class="font-bold">0s</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Progress -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-bold mb-3 text-blue-400">🔬 測試進度</h3>
+            <div id="testProgress" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Dynamic test items will be added here -->
+            </div>
+        </div>
+
+        <!-- Chaos Log -->
+        <div class="bg-gray-800 rounded-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-purple-400">📜 混沌日誌</h3>
+                <button onclick="clearLog()" class="text-sm bg-gray-700 px-3 py-1 rounded hover:bg-gray-600">清除</button>
+            </div>
+            <div id="chaosLog" class="bg-black rounded p-4 h-96 overflow-y-auto chaos-log space-y-1">
+                <div class="text-green-400">CHAOS ENGINE v1.0 INITIALIZED</div>
+                <div class="text-yellow-400">READY TO BREAK THINGS...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden iframe -->
+    <iframe name="hiddenFrame" style="display:none;"></iframe>
+
+    <script>
+        // Global state
+        let chaosState = {
+            running: false,
+            seed: null,
+            startTime: null,
+            bugs: [],
+            edges: [],
+            stats: { total: 0, pass: 0, fail: 0 },
+            testData: new Map()
+        };
+
+        // Random generator with seed
+        class Random {
+            constructor(seed) {
+                this.seed = seed || Date.now();
+                this.current = this.seed;
+            }
+            
+            next() {
+                this.current = (this.current * 9301 + 49297) % 233280;
+                return this.current / 233280;
+            }
+            
+            int(min, max) {
+                return Math.floor(this.next() * (max - min + 1)) + min;
+            }
+            
+            choice(array) {
+                return array[this.int(0, array.length - 1)];
+            }
+            
+            string(length) {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                let result = '';
+                for (let i = 0; i < length; i++) {
+                    result += chars[this.int(0, chars.length - 1)];
+                }
+                return result;
+            }
+        }
+
+        // Logging
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('chaosLog');
+            const entry = document.createElement('div');
+            const time = new Date().toLocaleTimeString();
+            
+            let color = 'text-gray-400';
+            let prefix = '[INFO]';
+            
+            switch(type) {
+                case 'bug':
+                    color = 'text-red-500 font-bold';
+                    prefix = '[BUG!]';
+                    entry.className = 'bug-found';
+                    chaosState.bugs.push({ time, message });
+                    document.getElementById('bugCount').textContent = chaosState.bugs.length;
+                    addBugToList(message);
+                    break;
+                case 'edge':
+                    color = 'text-yellow-500';
+                    prefix = '[EDGE]';
+                    entry.className = 'edge-case';
+                    chaosState.edges.push({ time, message });
+                    document.getElementById('edgeCount').textContent = chaosState.edges.length;
+                    addEdgeToList(message);
+                    break;
+                case 'pass':
+                    color = 'text-green-400';
+                    prefix = '[PASS]';
+                    entry.className = 'success';
+                    chaosState.stats.pass++;
+                    break;
+                case 'fail':
+                    color = 'text-red-400';
+                    prefix = '[FAIL]';
+                    chaosState.stats.fail++;
+                    break;
+                case 'chaos':
+                    color = 'text-purple-400';
+                    prefix = '[CHAOS]';
+                    break;
+                case 'test':
+                    color = 'text-blue-400';
+                    prefix = '[TEST]';
+                    break;
+            }
+            
+            entry.innerHTML = `<span class="${color}">${time} ${prefix} ${message}</span>`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            chaosState.stats.total++;
+            updateStats();
+        }
+
+        function addBugToList(message) {
+            const list = document.getElementById('bugList');
+            const item = document.createElement('div');
+            item.className = 'text-red-400 text-xs';
+            item.textContent = '• ' + message.substring(0, 50) + (message.length > 50 ? '...' : '');
+            list.appendChild(item);
+        }
+
+        function addEdgeToList(message) {
+            const list = document.getElementById('edgeList');
+            const item = document.createElement('div');
+            item.className = 'text-yellow-400 text-xs';
+            item.textContent = '• ' + message.substring(0, 50) + (message.length > 50 ? '...' : '');
+            list.appendChild(item);
+        }
+
+        function updateStats() {
+            document.getElementById('totalTests').textContent = chaosState.stats.total;
+            document.getElementById('passTests').textContent = chaosState.stats.pass;
+            document.getElementById('failTests').textContent = chaosState.stats.fail;
+            
+            if (chaosState.startTime) {
+                const duration = ((Date.now() - chaosState.startTime) / 1000).toFixed(1);
+                document.getElementById('testDuration').textContent = duration + 's';
+            }
+        }
+
+        // API helpers
+        async function callAPI(action, data) {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            
+            try {
+                const params = new URLSearchParams({ action, ...data });
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+                return await response.json();
+            } catch (error) {
+                return await submitForm(scriptUrl, { action, ...data });
+            }
+        }
+
+        async function submitForm(scriptUrl, data) {
+            return new Promise((resolve) => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = scriptUrl;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+                
+                Object.keys(data).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = data[key];
+                    form.appendChild(input);
+                });
+                
+                document.body.appendChild(form);
+                form.submit();
+                
+                setTimeout(() => {
+                    document.body.removeChild(form);
+                    resolve({ success: true });
+                }, 2000);
+            });
+        }
+
+        async function getData() {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            try {
+                const response = await fetch(`${scriptUrl}?action=get_all_data`);
+                return await response.json();
+            } catch {
+                return null;
+            }
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Test scenarios
+        async function runChaosTest() {
+            log('INITIATING CHAOS TEST...', 'chaos');
+            chaosState.startTime = Date.now();
+            const rng = new Random(chaosState.seed);
+            
+            // Scenario 1: Rapid partner creation
+            log('Testing rapid partner creation...', 'test');
+            const partners = [];
+            for (let i = 0; i < 5; i++) {
+                const code = `CHAOS_${Date.now()}_${i}`;
+                const result = await callAPI('create_partner', {
+                    partner_code: code,
+                    partner_name: rng.string(10),
+                    partner_level: rng.choice(['LV1_INSIDER', 'LV2_GUIDE', 'LV3_GUARDIAN']),
+                    contact_phone: '09' + rng.int(10000000, 99999999),
+                    contact_email: rng.string(8) + '@chaos.test',
+                    commission_preference: rng.choice(['ACCOMMODATION', 'CASH']),
+                    available_points: rng.int(0, 50000),
+                    points_used: rng.int(0, 10000),
+                    successful_referrals: rng.int(0, 20),
+                    bank_account: rng.string(16)
+                });
+                
+                if (result.success) {
+                    partners.push(code);
+                    log(`Created partner ${code}`, 'pass');
+                } else {
+                    log(`Failed to create partner: ${result.error}`, 'fail');
+                }
+                
+                await delay(100); // Small delay
+            }
+            
+            // Scenario 2: Create bookings with edge cases
+            log('Testing edge case bookings...', 'test');
+            for (const partnerCode of partners.slice(0, 3)) {
+                // Test with extreme dates
+                await callAPI('create_booking', {
+                    partner_code: partnerCode,
+                    guest_name: '',  // Empty name
+                    guest_phone: '',  // Empty phone
+                    checkin_date: '2099-12-31',  // Far future
+                    checkout_date: '2099-12-30',  // Checkout before checkin!
+                    room_price: -1000,  // Negative price!
+                    booking_source: 'CHAOS'
+                });
+                
+                // Test with SQL injection attempt
+                await callAPI('create_booking', {
+                    partner_code: partnerCode + "'; DROP TABLE Bookings; --",
+                    guest_name: "'; DELETE FROM Partners; --",
+                    guest_phone: '0911111111',
+                    checkin_date: '2024-12-25',
+                    checkout_date: '2024-12-27',
+                    room_price: 5000,
+                    booking_source: 'REFERRAL'
+                });
+                
+                // Test with huge numbers
+                await callAPI('create_booking', {
+                    partner_code: partnerCode,
+                    guest_name: 'Test',
+                    guest_phone: '0911111111',
+                    checkin_date: '2024-12-25',
+                    checkout_date: '2024-12-27',
+                    room_price: 999999999999,  // Huge price
+                    booking_source: 'REFERRAL'
+                });
+            }
+            
+            // Scenario 3: Concurrent operations
+            log('Testing concurrent operations...', 'test');
+            const partner = partners[0];
+            if (partner) {
+                const promises = [];
+                
+                // Try to use points simultaneously
+                for (let i = 0; i < 10; i++) {
+                    promises.push(callAPI('use_accommodation_points', {
+                        partner_code: partner,
+                        deduct_amount: 1000,
+                        checkin_date: '2024-12-30',
+                        room_price: 5000
+                    }));
+                }
+                
+                const results = await Promise.all(promises);
+                const successes = results.filter(r => r.success).length;
+                
+                if (successes > 5) {
+                    log(`POTENTIAL BUG: ${successes}/10 concurrent point deductions succeeded`, 'bug');
+                } else {
+                    log(`Concurrent protection working: only ${successes}/10 succeeded`, 'pass');
+                }
+            }
+            
+            // Scenario 4: Data consistency check
+            log('Testing data consistency...', 'test');
+            const data = await getData();
+            if (data && data.data) {
+                // Check for negative values
+                if (data.data.partners) {
+                    for (const partner of data.data.partners) {
+                        if (partner.available_points < 0) {
+                            log(`BUG: Partner ${partner.partner_code} has negative points: ${partner.available_points}`, 'bug');
+                        }
+                        if (partner.pending_commission < 0) {
+                            log(`BUG: Partner ${partner.partner_code} has negative pending commission: ${partner.pending_commission}`, 'bug');
+                        }
+                    }
+                }
+                
+                // Check for orphaned bookings
+                if (data.data.bookings && data.data.partners) {
+                    const partnerCodes = new Set(data.data.partners.map(p => p.partner_code));
+                    for (const booking of data.data.bookings) {
+                        if (booking.partner_code && !partnerCodes.has(booking.partner_code)) {
+                            log(`EDGE: Orphaned booking ${booking.id} with non-existent partner ${booking.partner_code}`, 'edge');
+                        }
+                    }
+                }
+            }
+            
+            log('CHAOS TEST COMPLETE', 'chaos');
+        }
+
+        async function runEdgeCaseHunter() {
+            log('HUNTING FOR EDGE CASES...', 'test');
+            
+            const testCases = [
+                // Unicode and special characters
+                { name: '🔥💰🎯', phone: '０９１２３４５６７８', email: 'test@🔥.com' },
+                // Very long strings
+                { name: 'A'.repeat(1000), phone: '0911111111', email: 'test@test.com' },
+                // HTML/Script injection
+                { name: '<script>alert("XSS")</script>', phone: '0911111111', email: 'test@test.com' },
+                // Zero and boundary values
+                { points: 0, commission: 0, referrals: 0 },
+                { points: 1, commission: 1, referrals: 1 },
+                { points: 2147483647, commission: 2147483647, referrals: 2147483647 },  // Max int
+                // Floating point edge cases
+                { points: 0.1, commission: 0.01, amount: 0.001 },
+                { points: 1.999999999, commission: 2.000000001 }
+            ];
+            
+            for (const testCase of testCases) {
+                log(`Testing edge case: ${JSON.stringify(testCase)}`, 'test');
+                
+                if (testCase.name) {
+                    // Test partner creation
+                    const result = await callAPI('create_partner', {
+                        partner_code: `EDGE_${Date.now()}`,
+                        partner_name: testCase.name,
+                        contact_phone: testCase.phone || '0911111111',
+                        contact_email: testCase.email || 'test@test.com',
+                        partner_level: 'LV1_INSIDER',
+                        commission_preference: 'ACCOMMODATION',
+                        available_points: 0,
+                        bank_account: '1234567890'
+                    });
+                    
+                    if (!result.success) {
+                        log(`Edge case rejected: ${result.error}`, 'edge');
+                    } else {
+                        log(`Edge case accepted - potential issue`, 'edge');
+                    }
+                }
+                
+                if (testCase.points !== undefined) {
+                    // Test with edge values
+                    const partner = `EDGE_POINTS_${Date.now()}`;
+                    await callAPI('create_partner', {
+                        partner_code: partner,
+                        partner_name: 'Edge Test',
+                        contact_phone: '0911111111',
+                        contact_email: 'edge@test.com',
+                        partner_level: 'LV1_INSIDER',
+                        commission_preference: 'ACCOMMODATION',
+                        available_points: testCase.points,
+                        points_used: testCase.commission || 0,
+                        successful_referrals: testCase.referrals || 0,
+                        bank_account: '1234567890'
+                    });
+                    
+                    // Try to use edge amount
+                    if (testCase.amount) {
+                        const useResult = await callAPI('use_accommodation_points', {
+                            partner_code: partner,
+                            deduct_amount: testCase.amount,
+                            checkin_date: '2024-12-30',
+                            room_price: 5000
+                        });
+                        
+                        if (useResult.success && testCase.amount < 1) {
+                            log(`EDGE: System accepts fractional point usage: ${testCase.amount}`, 'edge');
+                        }
+                    }
+                }
+            }
+            
+            log('EDGE CASE HUNT COMPLETE', 'test');
+        }
+
+        async function runConcurrencyTest() {
+            log('TESTING CONCURRENCY...', 'test');
+            
+            // Create test partner with specific points
+            const partnerCode = `CONCURRENT_${Date.now()}`;
+            await callAPI('create_partner', {
+                partner_code: partnerCode,
+                partner_name: 'Concurrency Test',
+                contact_phone: '0911111111',
+                contact_email: 'concurrent@test.com',
+                partner_level: 'LV1_INSIDER',
+                commission_preference: 'ACCOMMODATION',
+                available_points: 10000,
+                bank_account: '1234567890'
+            });
+            
+            // Test 1: Multiple simultaneous point deductions
+            log('Testing race condition on point deduction...', 'test');
+            const deductPromises = [];
+            for (let i = 0; i < 20; i++) {
+                deductPromises.push(callAPI('use_accommodation_points', {
+                    partner_code: partnerCode,
+                    deduct_amount: 1000,
+                    checkin_date: '2024-12-30',
+                    room_price: 5000,
+                    notes: `Concurrent test ${i}`
+                }));
+            }
+            
+            const deductResults = await Promise.all(deductPromises);
+            const successCount = deductResults.filter(r => r.success).length;
+            
+            // Should only allow 10 successful deductions (10000 points / 1000 each)
+            if (successCount > 10) {
+                log(`BUG: Race condition detected! ${successCount} deductions succeeded with only 10000 points`, 'bug');
+            } else if (successCount === 10) {
+                log(`Perfect concurrency control: exactly 10 deductions succeeded`, 'pass');
+            } else {
+                log(`Conservative concurrency: ${successCount} deductions succeeded`, 'pass');
+            }
+            
+            // Test 2: Simultaneous booking confirmations
+            log('Testing simultaneous booking confirmations...', 'test');
+            const bookingPromises = [];
+            for (let i = 0; i < 5; i++) {
+                bookingPromises.push(callAPI('create_booking', {
+                    partner_code: partnerCode,
+                    guest_name: `Guest ${i}`,
+                    guest_phone: `091111111${i}`,
+                    checkin_date: '2024-12-25',
+                    checkout_date: '2024-12-27',
+                    room_price: 5000,
+                    booking_source: 'REFERRAL'
+                }));
+            }
+            
+            await Promise.all(bookingPromises);
+            await delay(2000);
+            
+            // Get bookings and confirm them simultaneously
+            const data = await getData();
+            if (data && data.data && data.data.bookings) {
+                const bookings = data.data.bookings.filter(b => b.partner_code === partnerCode);
+                const confirmPromises = bookings.map(b => 
+                    callAPI('confirm_checkin_completion', {
+                        booking_id: b.id,
+                        confirmed_by: 'concurrent_test'
+                    })
+                );
+                
+                await Promise.all(confirmPromises);
+                
+                // Check final partner state
+                const finalData = await getData();
+                if (finalData && finalData.data && finalData.data.partners) {
+                    const partner = finalData.data.partners.find(p => p.partner_code === partnerCode);
+                    if (partner) {
+                        log(`Final partner state after concurrent confirmations:`, 'info');
+                        log(`  Points: ${partner.available_points}`, 'info');
+                        log(`  Referrals: ${partner.successful_referrals}`, 'info');
+                        
+                        // Check for consistency
+                        const expectedReferrals = bookings.length;
+                        if (partner.successful_referrals != expectedReferrals) {
+                            log(`EDGE: Referral count mismatch. Expected ${expectedReferrals}, got ${partner.successful_referrals}`, 'edge');
+                        }
+                    }
+                }
+            }
+            
+            log('CONCURRENCY TEST COMPLETE', 'test');
+        }
+
+        async function runFuzzTest() {
+            log('INITIATING FUZZ TESTING...', 'chaos');
+            const rng = new Random();
+            
+            // Generate random inputs
+            for (let i = 0; i < 20; i++) {
+                const randomAction = rng.choice([
+                    'create_partner',
+                    'create_booking',
+                    'confirm_checkin_completion',
+                    'use_accommodation_points',
+                    'convert_points_to_cash'
+                ]);
+                
+                const randomData = {};
+                
+                // Generate random field values
+                const fields = ['partner_code', 'guest_name', 'amount', 'points', 'deduct_amount'];
+                for (const field of fields) {
+                    const valueType = rng.int(0, 5);
+                    switch(valueType) {
+                        case 0: randomData[field] = null; break;
+                        case 1: randomData[field] = undefined; break;
+                        case 2: randomData[field] = ''; break;
+                        case 3: randomData[field] = rng.string(rng.int(0, 100)); break;
+                        case 4: randomData[field] = rng.int(-1000000, 1000000); break;
+                        case 5: randomData[field] = { nested: 'object' }; break;
+                    }
+                }
+                
+                log(`Fuzzing ${randomAction} with random data...`, 'test');
+                
+                try {
+                    const result = await callAPI(randomAction, randomData);
+                    if (result.success) {
+                        log(`EDGE: Random input accepted by ${randomAction}`, 'edge');
+                    }
+                } catch (error) {
+                    log(`System correctly rejected fuzz input`, 'pass');
+                }
+                
+                await delay(100);
+            }
+            
+            log('FUZZ TESTING COMPLETE', 'chaos');
+        }
+
+        async function runDataConsistencyTest() {
+            log('CHECKING DATA CONSISTENCY...', 'test');
+            
+            const data = await getData();
+            if (!data || !data.data) {
+                log('Cannot get data for consistency check', 'fail');
+                return;
+            }
+            
+            const { partners, bookings, payouts } = data.data;
+            
+            // Check 1: Partner points consistency
+            log('Checking partner points consistency...', 'test');
+            if (partners) {
+                for (const partner of partners) {
+                    const available = parseFloat(partner.available_points) || 0;
+                    const used = parseFloat(partner.points_used) || 0;
+                    const earned = parseFloat(partner.total_commission_earned) || 0;
+                    
+                    if (available < 0) {
+                        log(`BUG: Partner ${partner.partner_code} has negative available points: ${available}`, 'bug');
+                    }
+                    
+                    if (used < 0) {
+                        log(`BUG: Partner ${partner.partner_code} has negative used points: ${used}`, 'bug');
+                    }
+                    
+                    // Check if points + used makes sense with earned
+                    if (partner.commission_preference === 'ACCOMMODATION') {
+                        const totalPoints = available + used;
+                        if (Math.abs(totalPoints - earned) > earned * 0.1) {  // Allow 10% discrepancy
+                            log(`EDGE: Partner ${partner.partner_code} points inconsistency. Total: ${totalPoints}, Earned: ${earned}`, 'edge');
+                        }
+                    }
+                }
+            }
+            
+            // Check 2: Booking commission consistency
+            log('Checking booking commission consistency...', 'test');
+            if (bookings && partners) {
+                const partnerCommissions = new Map();
+                
+                for (const booking of bookings) {
+                    if (booking.commission_status === 'CALCULATED' && booking.commission_amount > 0) {
+                        const current = partnerCommissions.get(booking.partner_code) || 0;
+                        partnerCommissions.set(booking.partner_code, current + parseFloat(booking.commission_amount));
+                    }
+                }
+                
+                for (const [partnerCode, totalCommission] of partnerCommissions) {
+                    const partner = partners.find(p => p.partner_code === partnerCode);
+                    if (partner) {
+                        const partnerTotal = parseFloat(partner.total_commission_earned) || 0;
+                        if (Math.abs(partnerTotal - totalCommission) > 1) {
+                            log(`EDGE: Commission mismatch for ${partnerCode}. Bookings total: ${totalCommission}, Partner total: ${partnerTotal}`, 'edge');
+                        }
+                    }
+                }
+            }
+            
+            // Check 3: Payout consistency
+            log('Checking payout consistency...', 'test');
+            if (payouts && partners) {
+                const partnerPayouts = new Map();
+                
+                for (const payout of payouts) {
+                    if (payout.payout_status === 'COMPLETED') {
+                        const current = partnerPayouts.get(payout.partner_code) || 0;
+                        partnerPayouts.set(payout.partner_code, current + parseFloat(payout.amount));
+                    }
+                }
+                
+                for (const [partnerCode, totalPayout] of partnerPayouts) {
+                    const partner = partners.find(p => p.partner_code === partnerCode);
+                    if (partner) {
+                        const partnerPaid = parseFloat(partner.total_commission_paid) || 0;
+                        if (Math.abs(partnerPaid - totalPayout) > 1) {
+                            log(`EDGE: Payout mismatch for ${partnerCode}. Payouts total: ${totalPayout}, Partner paid: ${partnerPaid}`, 'edge');
+                        }
+                    }
+                }
+            }
+            
+            log('DATA CONSISTENCY CHECK COMPLETE', 'test');
+        }
+
+        async function runRegressionTest() {
+            log('RUNNING REGRESSION TESTS...', 'test');
+            
+            // Test known fixed issues
+            const regressionTests = [
+                {
+                    name: 'Negative points prevention',
+                    test: async () => {
+                        const partner = `REGRESS_${Date.now()}`;
+                        await callAPI('create_partner', {
+                            partner_code: partner,
+                            partner_name: 'Regression Test',
+                            contact_phone: '0911111111',
+                            contact_email: 'regress@test.com',
+                            partner_level: 'LV1_INSIDER',
+                            commission_preference: 'ACCOMMODATION',
+                            available_points: 100,
+                            bank_account: '1234567890'
+                        });
+                        
+                        const result = await callAPI('use_accommodation_points', {
+                            partner_code: partner,
+                            deduct_amount: 1000,
+                            checkin_date: '2024-12-30',
+                            room_price: 5000
+                        });
+                        
+                        return !result.success;
+                    }
+                },
+                {
+                    name: 'First referral bonus calculation',
+                    test: async () => {
+                        const partner = `REGRESS_BONUS_${Date.now()}`;
+                        await callAPI('create_partner', {
+                            partner_code: partner,
+                            partner_name: 'Bonus Test',
+                            contact_phone: '0911111111',
+                            contact_email: 'bonus@test.com',
+                            partner_level: 'LV1_INSIDER',
+                            commission_preference: 'ACCOMMODATION',
+                            available_points: 0,
+                            successful_referrals: 0,
+                            bank_account: '1234567890'
+                        });
+                        
+                        await callAPI('create_booking', {
+                            partner_code: partner,
+                            guest_name: 'Test Guest',
+                            guest_phone: '0911111111',
+                            checkin_date: '2024-12-25',
+                            checkout_date: '2024-12-27',
+                            room_price: 5000,
+                            booking_source: 'REFERRAL'
+                        });
+                        
+                        await delay(2000);
+                        
+                        const data = await getData();
+                        const booking = data.data.bookings.find(b => b.partner_code === partner);
+                        if (booking) {
+                            await callAPI('confirm_checkin_completion', {
+                                booking_id: booking.id,
+                                confirmed_by: 'regression_test'
+                            });
+                            
+                            await delay(2000);
+                            
+                            const finalData = await getData();
+                            const finalPartner = finalData.data.partners.find(p => p.partner_code === partner);
+                            
+                            // Should have 2500 points (1000 base + 1500 bonus)
+                            return finalPartner && finalPartner.available_points === 2500;
+                        }
+                        
+                        return false;
+                    }
+                },
+                {
+                    name: 'Points to cash conversion rate',
+                    test: async () => {
+                        const partner = `REGRESS_CONVERT_${Date.now()}`;
+                        await callAPI('create_partner', {
+                            partner_code: partner,
+                            partner_name: 'Convert Test',
+                            contact_phone: '0911111111',
+                            contact_email: 'convert@test.com',
+                            partner_level: 'LV1_INSIDER',
+                            commission_preference: 'ACCOMMODATION',
+                            available_points: 2000,
+                            bank_account: '1234567890'
+                        });
+                        
+                        await callAPI('convert_points_to_cash', {
+                            partner_code: partner,
+                            points_used: 2000,
+                            notes: 'Regression test'
+                        });
+                        
+                        await delay(2000);
+                        
+                        const data = await getData();
+                        const finalPartner = data.data.partners.find(p => p.partner_code === partner);
+                        
+                        // Should have 1000 pending cash (50% rate)
+                        return finalPartner && finalPartner.pending_commission === 1000;
+                    }
+                }
+            ];
+            
+            for (const test of regressionTests) {
+                log(`Testing: ${test.name}`, 'test');
+                try {
+                    const passed = await test.test();
+                    if (passed) {
+                        log(`✓ ${test.name} PASSED`, 'pass');
+                    } else {
+                        log(`✗ ${test.name} FAILED - REGRESSION DETECTED`, 'bug');
+                    }
+                } catch (error) {
+                    log(`✗ ${test.name} ERROR: ${error.message}`, 'fail');
+                }
+            }
+            
+            log('REGRESSION TEST COMPLETE', 'test');
+        }
+
+        async function runExtremeScenarios() {
+            log('TESTING EXTREME SCENARIOS...', 'chaos');
+            
+            // Scenario 1: Partner with max everything
+            log('Creating maxed out partner...', 'test');
+            const maxPartner = `EXTREME_MAX_${Date.now()}`;
+            await callAPI('create_partner', {
+                partner_code: maxPartner,
+                partner_name: 'Max Everything',
+                contact_phone: '0999999999',
+                contact_email: 'max@extreme.com',
+                partner_level: 'LV3_GUARDIAN',
+                commission_preference: 'ACCOMMODATION',
+                available_points: 999999999,
+                points_used: 999999999,
+                successful_referrals: 999999,
+                yearly_referrals: 999999,
+                total_commission_earned: 999999999,
+                bank_account: '9999999999999999'
+            });
+            
+            // Try to add more points
+            const result = await callAPI('use_accommodation_points', {
+                partner_code: maxPartner,
+                deduct_amount: 999999999,
+                checkin_date: '2024-12-30',
+                room_price: 999999999
+            });
+            
+            if (result.success) {
+                log('System handled max values', 'pass');
+            }
+            
+            // Scenario 2: Booking chain reaction
+            log('Testing booking chain reaction...', 'test');
+            const chainPartner = `EXTREME_CHAIN_${Date.now()}`;
+            await callAPI('create_partner', {
+                partner_code: chainPartner,
+                partner_name: 'Chain Test',
+                contact_phone: '0911111111',
+                contact_email: 'chain@extreme.com',
+                partner_level: 'LV1_INSIDER',
+                commission_preference: 'ACCOMMODATION',
+                available_points: 10000,
+                bank_account: '1234567890'
+            });
+            
+            // Create 50 bookings rapidly
+            const bookingIds = [];
+            for (let i = 0; i < 50; i++) {
+                const result = await callAPI('create_booking', {
+                    partner_code: chainPartner,
+                    guest_name: `Chain Guest ${i}`,
+                    guest_phone: `0911${String(i).padStart(6, '0')}`,
+                    checkin_date: '2024-12-25',
+                    checkout_date: '2024-12-27',
+                    room_price: 1000 + i,
+                    booking_source: 'REFERRAL'
+                });
+                
+                if (result.success && result.booking_id) {
+                    bookingIds.push(result.booking_id);
+                }
+                
+                // No delay - rapid fire
+            }
+            
+            log(`Created ${bookingIds.length} bookings in chain`, 'info');
+            
+            // Confirm them all at once
+            const confirmPromises = bookingIds.map(id => 
+                callAPI('confirm_checkin_completion', {
+                    booking_id: id,
+                    confirmed_by: 'chain_test'
+                })
+            );
+            
+            await Promise.all(confirmPromises);
+            
+            // Check final state
+            const data = await getData();
+            if (data && data.data && data.data.partners) {
+                const partner = data.data.partners.find(p => p.partner_code === chainPartner);
+                if (partner) {
+                    log(`Chain reaction result:`, 'info');
+                    log(`  Final points: ${partner.available_points}`, 'info');
+                    log(`  Successful referrals: ${partner.successful_referrals}`, 'info');
+                    log(`  Level: ${partner.partner_level || partner.level}`, 'info');
+                    
+                    // Check if level upgraded correctly
+                    if (partner.successful_referrals >= 10 && partner.partner_level !== 'LV3_GUARDIAN') {
+                        log(`BUG: Partner should be LV3 with ${partner.successful_referrals} referrals`, 'bug');
+                    }
+                }
+            }
+            
+            // Scenario 3: Time travel test
+            log('Testing time travel (past/future dates)...', 'test');
+            const timePartner = `EXTREME_TIME_${Date.now()}`;
+            await callAPI('create_partner', {
+                partner_code: timePartner,
+                partner_name: 'Time Traveler',
+                contact_phone: '0911111111',
+                contact_email: 'time@extreme.com',
+                partner_level: 'LV1_INSIDER',
+                commission_preference: 'ACCOMMODATION',
+                available_points: 5000,
+                bank_account: '1234567890'
+            });
+            
+            // Booking in the past
+            await callAPI('create_booking', {
+                partner_code: timePartner,
+                guest_name: 'Past Guest',
+                guest_phone: '0911111111',
+                checkin_date: '1970-01-01',
+                checkout_date: '1970-01-02',
+                room_price: 5000,
+                booking_source: 'REFERRAL'
+            });
+            
+            // Booking in far future
+            await callAPI('create_booking', {
+                partner_code: timePartner,
+                guest_name: 'Future Guest',
+                guest_phone: '0911111111',
+                checkin_date: '2999-12-31',
+                checkout_date: '3000-01-01',
+                room_price: 5000,
+                booking_source: 'REFERRAL'
+            });
+            
+            log('EXTREME SCENARIOS COMPLETE', 'chaos');
+        }
+
+        function stopAllTests() {
+            chaosState.running = false;
+            log('ALL TESTS STOPPED', 'info');
+        }
+
+        function clearLog() {
+            document.getElementById('chaosLog').innerHTML = '';
+            chaosState = {
+                running: false,
+                seed: null,
+                startTime: null,
+                bugs: [],
+                edges: [],
+                stats: { total: 0, pass: 0, fail: 0 },
+                testData: new Map()
+            };
+            document.getElementById('bugCount').textContent = '0';
+            document.getElementById('edgeCount').textContent = '0';
+            document.getElementById('bugList').innerHTML = '';
+            document.getElementById('edgeList').innerHTML = '';
+            updateStats();
+        }
+
+        // Time update
+        setInterval(() => {
+            document.getElementById('testTime').textContent = new Date().toLocaleTimeString();
+        }, 1000);
+
+        // Initialize
+        log('CHAOS ENGINE READY', 'chaos');
+        log('WARNING: This tool will attempt to break your system', 'chaos');
+        log('Use with caution in production environments', 'chaos');
+    </script>
+</body>
+</html>

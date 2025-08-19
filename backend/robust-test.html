@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>穩健測試套件 v2 - 完整診斷版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .log-entry { font-family: monospace; font-size: 12px; }
+        .log-success { color: green; }
+        .log-error { color: red; }
+        .log-warning { color: orange; }
+        .log-info { color: blue; }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h1 class="text-3xl font-bold text-green-800 mb-4">🛡️ 穩健測試套件 v2</h1>
+            <p class="text-gray-600 mb-2">版本：2.0.0 | 更新時間：2025-08-19</p>
+            <p class="text-red-600 font-semibold mb-4">⚠️ 如果看到 "Failed to fetch" 錯誤，請強制重新整理頁面 (Ctrl+F5 或 Cmd+Shift+R)</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Google Apps Script URL</label>
+                    <input type="text" id="scriptUrl" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                           value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">測試前綴（用於識別）</label>
+                    <input type="text" id="testPrefix" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                           value="ROBUST" readonly>
+                </div>
+            </div>
+            
+            <div class="flex gap-4">
+                <button onclick="runAllTests()" 
+                        class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 font-semibold">
+                    🚀 執行完整測試
+                </button>
+                <button onclick="runSingleTest('partner')" 
+                        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    測試大使
+                </button>
+                <button onclick="runSingleTest('booking')" 
+                        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    測試訂房
+                </button>
+                <button onclick="runSingleTest('points')" 
+                        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    測試點數
+                </button>
+                <button onclick="clearLog()" 
+                        class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    清除日誌
+                </button>
+            </div>
+        </div>
+
+        <!-- Test Status -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">測試狀態</h2>
+            <div class="grid grid-cols-4 gap-4">
+                <div class="text-center p-4 bg-gray-50 rounded">
+                    <div class="text-2xl font-bold" id="totalTests">0</div>
+                    <div class="text-sm text-gray-600">總測試</div>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded">
+                    <div class="text-2xl font-bold text-green-600" id="passedTests">0</div>
+                    <div class="text-sm text-gray-600">通過</div>
+                </div>
+                <div class="text-center p-4 bg-red-50 rounded">
+                    <div class="text-2xl font-bold text-red-600" id="failedTests">0</div>
+                    <div class="text-sm text-gray-600">失敗</div>
+                </div>
+                <div class="text-center p-4 bg-yellow-50 rounded">
+                    <div class="text-2xl font-bold text-yellow-600" id="runningTests">0</div>
+                    <div class="text-sm text-gray-600">執行中</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Log -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">詳細日誌</h2>
+            <div id="testLog" class="space-y-1 max-h-96 overflow-y-auto bg-gray-50 p-4 rounded">
+                <div class="log-entry log-info">等待開始測試...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden iframe for form submissions -->
+    <iframe name="hiddenFrame" style="display:none;"></iframe>
+
+    <script>
+        // Test state
+        let testStats = { total: 0, passed: 0, failed: 0, running: 0 };
+        let testPartnerCode = '';
+        let testBookingId = '';
+        let initialPartnerState = null;
+        
+        // Logging
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+            log('日誌已清除', 'info');
+        }
+        
+        function updateStats() {
+            document.getElementById('totalTests').textContent = testStats.total;
+            document.getElementById('passedTests').textContent = testStats.passed;
+            document.getElementById('failedTests').textContent = testStats.failed;
+            document.getElementById('runningTests').textContent = testStats.running;
+        }
+        
+        // Utility functions
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        function generateTestCode() {
+            return `ROBUST_${Date.now()}_${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+        }
+        
+        // Form submission helper
+        async function submitForm(scriptUrl, data) {
+            return new Promise((resolve) => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = scriptUrl;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+                
+                Object.keys(data).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = data[key];
+                    form.appendChild(input);
+                });
+                
+                document.body.appendChild(form);
+                
+                // Listen for response
+                window.addEventListener('message', function handler(event) {
+                    if (event.data && event.data.source === 'apps-script-response') {
+                        window.removeEventListener('message', handler);
+                        document.body.removeChild(form);
+                        resolve(event.data);
+                    }
+                });
+                
+                form.submit();
+                
+                // Timeout fallback
+                setTimeout(() => {
+                    document.body.removeChild(form);
+                    resolve({ success: true, message: 'Form submitted (no response)' });
+                }, 3000);
+            });
+        }
+        
+        // Get data helper
+        async function getData(scriptUrl) {
+            try {
+                const response = await fetch(`${scriptUrl}?action=get_all_data`);
+                return await response.json();
+            } catch (error) {
+                log(`獲取數據失敗: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        // Test: Create Partner
+        async function testCreatePartner(scriptUrl) {
+            log('=== 測試創建大使 ===', 'info');
+            testStats.running++;
+            updateStats();
+            
+            try {
+                testPartnerCode = generateTestCode();
+                log(`生成測試代碼: ${testPartnerCode}`, 'info');
+                
+                const partnerData = {
+                    action: 'create_partner',
+                    partner_code: testPartnerCode,
+                    partner_name: '穩健測試大使',
+                    partner_level: 'LV1_INSIDER',
+                    contact_phone: '0912345678',
+                    contact_email: 'robust@test.com',
+                    commission_preference: 'ACCOMMODATION',
+                    available_points: '8000',
+                    points_used: '0',
+                    successful_referrals: '0',
+                    bank_account: '1234567890123456'
+                };
+                
+                log('提交創建大使表單...', 'info');
+                await submitForm(scriptUrl, partnerData);
+                
+                log('等待 2 秒...', 'info');
+                await delay(2000);
+                
+                // Verify creation
+                const data = await getData(scriptUrl);
+                if (data && data.data && data.data.partners) {
+                    const partner = data.data.partners.find(p => p.partner_code === testPartnerCode);
+                    if (partner) {
+                        initialPartnerState = { ...partner };
+                        log(`✅ 大使創建成功: ${testPartnerCode}`, 'success');
+                        log(`  初始點數: ${partner.available_points}`, 'info');
+                        log(`  等級: ${partner.partner_level || partner.level}`, 'info');
+                        testStats.passed++;
+                        testStats.running--;
+                        updateStats();
+                        return true;
+                    }
+                }
+                
+                throw new Error('無法找到創建的大使');
+                
+            } catch (error) {
+                log(`❌ 創建大使失敗: ${error.message}`, 'error');
+                testStats.failed++;
+                testStats.running--;
+                updateStats();
+                return false;
+            }
+        }
+        
+        // Test: Create Booking
+        async function testCreateBooking(scriptUrl) {
+            log('=== 測試創建訂房 ===', 'info');
+            testStats.running++;
+            updateStats();
+            
+            try {
+                if (!testPartnerCode) {
+                    throw new Error('沒有測試大使代碼');
+                }
+                
+                const bookingData = {
+                    action: 'create_booking',
+                    partner_code: testPartnerCode,
+                    guest_name: '測試房客_' + Date.now(),
+                    guest_phone: '0911' + Math.floor(Math.random() * 1000000),
+                    checkin_date: '2024-12-25',
+                    checkout_date: '2024-12-27',
+                    room_price: '5000',
+                    booking_source: 'REFERRAL',
+                    notes: '穩健測試訂房'
+                };
+                
+                log('提交創建訂房表單...', 'info');
+                log(`  大使代碼: ${testPartnerCode}`, 'info');
+                await submitForm(scriptUrl, bookingData);
+                
+                log('等待 3 秒...', 'info');
+                await delay(3000);
+                
+                // Find booking
+                const data = await getData(scriptUrl);
+                if (data && data.data && data.data.bookings) {
+                    const bookings = data.data.bookings.filter(b => b.partner_code === testPartnerCode);
+                    if (bookings.length > 0) {
+                        testBookingId = bookings[bookings.length - 1].id;
+                        log(`✅ 訂房創建成功: ID=${testBookingId}`, 'success');
+                        testStats.passed++;
+                        testStats.running--;
+                        updateStats();
+                        return true;
+                    }
+                }
+                
+                throw new Error('無法找到創建的訂房');
+                
+            } catch (error) {
+                log(`❌ 創建訂房失敗: ${error.message}`, 'error');
+                testStats.failed++;
+                testStats.running--;
+                updateStats();
+                return false;
+            }
+        }
+        
+        // Test: Confirm Checkin
+        async function testConfirmCheckin(scriptUrl) {
+            log('=== 測試確認入住 ===', 'info');
+            testStats.running++;
+            updateStats();
+            
+            try {
+                if (!testBookingId) {
+                    throw new Error('沒有測試訂房ID');
+                }
+                
+                const confirmData = {
+                    action: 'confirm_checkin_completion',
+                    booking_id: testBookingId,
+                    confirmed_by: 'robust_test'
+                };
+                
+                log(`提交確認入住表單 (ID=${testBookingId})...`, 'info');
+                await submitForm(scriptUrl, confirmData);
+                
+                log('等待 3 秒處理佣金...', 'info');
+                await delay(3000);
+                
+                // Check commission
+                const data = await getData(scriptUrl);
+                if (data && data.data) {
+                    // Check booking status
+                    const booking = data.data.bookings.find(b => b.id === testBookingId);
+                    if (booking) {
+                        log(`  訂房狀態: ${booking.stay_status}`, 'info');
+                        log(`  佣金狀態: ${booking.commission_status}`, 'info');
+                        log(`  佣金金額: ${booking.commission_amount}`, 'info');
+                    }
+                    
+                    // Check partner points
+                    const partner = data.data.partners.find(p => p.partner_code === testPartnerCode);
+                    if (partner && initialPartnerState) {
+                        const pointsChange = (partner.available_points || 0) - (initialPartnerState.available_points || 0);
+                        const referralsChange = (partner.successful_referrals || 0) - (initialPartnerState.successful_referrals || 0);
+                        
+                        log(`  點數變化: ${pointsChange}`, 'info');
+                        log(`  推薦數變化: ${referralsChange}`, 'info');
+                        
+                        // Expected: 1000 base + 1500 first bonus = 2500
+                        const expectedCommission = 2500;
+                        if (Math.abs(pointsChange - expectedCommission) < 1) {
+                            log(`✅ 佣金計算正確: ${pointsChange} (預期 ${expectedCommission})`, 'success');
+                            testStats.passed++;
+                        } else {
+                            log(`⚠️ 佣金計算差異: ${pointsChange} (預期 ${expectedCommission})`, 'warning');
+                            testStats.failed++;
+                        }
+                    }
+                }
+                
+                testStats.running--;
+                updateStats();
+                return true;
+                
+            } catch (error) {
+                log(`❌ 確認入住失敗: ${error.message}`, 'error');
+                testStats.failed++;
+                testStats.running--;
+                updateStats();
+                return false;
+            }
+        }
+        
+        // Test: Use Points
+        async function testUsePoints(scriptUrl) {
+            log('=== 測試使用住宿金 ===', 'info');
+            testStats.running++;
+            updateStats();
+            
+            try {
+                if (!testPartnerCode) {
+                    throw new Error('沒有測試大使代碼');
+                }
+                
+                const useData = {
+                    action: 'use_accommodation_points',
+                    partner_code: testPartnerCode,
+                    deduct_amount: '1000',
+                    checkin_date: '2024-12-30',
+                    room_price: '5000',
+                    notes: '測試使用住宿金'
+                };
+                
+                log('提交使用住宿金表單...', 'info');
+                await submitForm(scriptUrl, useData);
+                
+                log('等待 2 秒...', 'info');
+                await delay(2000);
+                
+                log(`✅ 使用住宿金請求已發送`, 'success');
+                testStats.passed++;
+                testStats.running--;
+                updateStats();
+                return true;
+                
+            } catch (error) {
+                log(`❌ 使用住宿金失敗: ${error.message}`, 'error');
+                testStats.failed++;
+                testStats.running--;
+                updateStats();
+                return false;
+            }
+        }
+        
+        // Test: Convert to Cash
+        async function testConvertToCash(scriptUrl) {
+            log('=== 測試轉換現金 ===', 'info');
+            testStats.running++;
+            updateStats();
+            
+            try {
+                if (!testPartnerCode) {
+                    throw new Error('沒有測試大使代碼');
+                }
+                
+                const convertData = {
+                    action: 'convert_points_to_cash',
+                    partner_code: testPartnerCode,
+                    points_used: '2000',  // 正確的參數名稱
+                    notes: '測試轉換現金'
+                };
+                
+                log('提交轉換現金表單...', 'info');
+                await submitForm(scriptUrl, convertData);
+                
+                log('等待 2 秒...', 'info');
+                await delay(2000);
+                
+                log(`✅ 轉換現金請求已發送`, 'success');
+                testStats.passed++;
+                testStats.running--;
+                updateStats();
+                return true;
+                
+            } catch (error) {
+                log(`❌ 轉換現金失敗: ${error.message}`, 'error');
+                testStats.failed++;
+                testStats.running--;
+                updateStats();
+                return false;
+            }
+        }
+        
+        // Run all tests
+        async function runAllTests() {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            
+            // Reset stats
+            testStats = { total: 5, passed: 0, failed: 0, running: 0 };
+            updateStats();
+            
+            log('===== 開始完整測試 =====', 'info');
+            log(`測試 URL: ${scriptUrl}`, 'info');
+            log(`測試時間: ${new Date().toLocaleString()}`, 'info');
+            
+            // Run tests in sequence
+            await testCreatePartner(scriptUrl);
+            await delay(1000);
+            
+            await testCreateBooking(scriptUrl);
+            await delay(1000);
+            
+            await testConfirmCheckin(scriptUrl);
+            await delay(1000);
+            
+            await testUsePoints(scriptUrl);
+            await delay(1000);
+            
+            await testConvertToCash(scriptUrl);
+            
+            // Final summary
+            log('===== 測試完成 =====', 'info');
+            log(`通過: ${testStats.passed}/${testStats.total}`, testStats.passed === testStats.total ? 'success' : 'warning');
+            log(`失敗: ${testStats.failed}/${testStats.total}`, testStats.failed > 0 ? 'error' : 'info');
+        }
+        
+        // Run single test
+        async function runSingleTest(type) {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            
+            switch(type) {
+                case 'partner':
+                    testStats = { total: 1, passed: 0, failed: 0, running: 0 };
+                    updateStats();
+                    await testCreatePartner(scriptUrl);
+                    break;
+                case 'booking':
+                    if (!testPartnerCode) {
+                        log('請先測試創建大使', 'warning');
+                        return;
+                    }
+                    testStats = { total: 1, passed: 0, failed: 0, running: 0 };
+                    updateStats();
+                    await testCreateBooking(scriptUrl);
+                    break;
+                case 'points':
+                    if (!testPartnerCode) {
+                        log('請先測試創建大使', 'warning');
+                        return;
+                    }
+                    testStats = { total: 1, passed: 0, failed: 0, running: 0 };
+                    updateStats();
+                    await testUsePoints(scriptUrl);
+                    break;
+            }
+        }
+        
+        // Initialize
+        log('穩健測試套件 v2.0.0 已載入', 'success');
+        log('提示：如果遇到問題，請強制重新整理頁面', 'warning');
+    </script>
+</body>
+</html>

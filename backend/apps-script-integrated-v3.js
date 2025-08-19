@@ -1603,10 +1603,10 @@ function handleConvertPointsToCash(data) {
     createRecord('Payouts', {
       partner_code: partnerCode,
       payout_type: 'CASH_CONVERSION',
-      amount: finalCashAmount,
+      amount: cashAmount,  // 修正變數名稱
       payout_method: 'POINTS_CONVERSION',
       payout_status: 'PENDING',
-      notes: data.notes || `點數轉現金：${convertAmount} 點 → NT$ ${finalCashAmount} (${exchangeRate*2}:1)`,
+      notes: data.notes || `點數轉現金：${convertAmount} 點 → NT$ ${cashAmount} (2:1)`,  // 修正變數名稱
       created_by: 'system'
     });
     
@@ -1614,10 +1614,10 @@ function handleConvertPointsToCash(data) {
     
     return createJsonResponse({
       success: true,
-      message: `成功轉換 ${convertAmount} 點為 NT$ ${finalCashAmount}`,
+      message: `成功轉換 ${convertAmount} 點為 NT$ ${cashAmount}`,  // 修正變數名稱
       data: {
         points_converted: convertAmount,
-        cash_amount: finalCashAmount
+        cash_amount: cashAmount  // 修正變數名稱
       }
     });
     

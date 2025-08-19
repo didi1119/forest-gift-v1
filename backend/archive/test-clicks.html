@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>點擊追蹤測試</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">點擊追蹤功能測試</h1>
+        
+        <!-- 配置區 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">測試配置</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Google Apps Script URL
+                    </label>
+                    <input type="text" id="scriptUrl" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                           placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"
+                           value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        測試夥伴代碼
+                    </label>
+                    <input type="text" id="partnerCode" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                           placeholder="TEST001"
+                           value="TEST001">
+                </div>
+            </div>
+        </div>
+
+        <!-- 測試連結 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">測試連結</h2>
+            <div class="space-y-4">
+                <!-- 主頁連結 -->
+                <div class="border rounded p-4">
+                    <h3 class="font-semibold mb-2">主頁連結</h3>
+                    <div class="mb-2">
+                        <a id="landingLink" href="#" target="_blank" 
+                           class="text-blue-600 hover:underline break-all"></a>
+                    </div>
+                    <button onclick="testClick('landing')" 
+                            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        測試點擊 (landing)
+                    </button>
+                </div>
+
+                <!-- 優惠券連結 -->
+                <div class="border rounded p-4">
+                    <h3 class="font-semibold mb-2">優惠券連結</h3>
+                    <div class="mb-2">
+                        <a id="couponLink" href="#" target="_blank" 
+                           class="text-green-600 hover:underline break-all"></a>
+                    </div>
+                    <button onclick="testClick('coupon')" 
+                            class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        測試點擊 (coupon)
+                    </button>
+                </div>
+
+                <!-- 含 UTM 參數的連結 -->
+                <div class="border rounded p-4">
+                    <h3 class="font-semibold mb-2">含 UTM 參數的連結</h3>
+                    <div class="mb-2">
+                        <a id="utmLink" href="#" target="_blank" 
+                           class="text-purple-600 hover:underline break-all"></a>
+                    </div>
+                    <button onclick="testClick('landing', true)" 
+                            class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                        測試點擊 (含 UTM)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 點擊統計 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">點擊統計</h2>
+            <button onclick="getClickStats()" 
+                    class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 mb-4">
+                獲取點擊統計
+            </button>
+            <div id="statsResult" class="space-y-4">
+                <p class="text-gray-500">點擊上方按鈕獲取統計數據</p>
+            </div>
+        </div>
+
+        <!-- 測試結果 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">測試結果</h2>
+            <div id="results" class="space-y-2">
+                <p class="text-gray-500">測試結果將顯示在這裡</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 生成測試連結
+        function generateLinks() {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            if (!scriptUrl || !partnerCode) {
+                alert('請填寫所有必要欄位');
+                return;
+            }
+            
+            // 主頁連結
+            const landingUrl = `${scriptUrl}?pid=${partnerCode}&dest=landing`;
+            document.getElementById('landingLink').href = landingUrl;
+            document.getElementById('landingLink').textContent = landingUrl;
+            
+            // 優惠券連結
+            const couponUrl = `${scriptUrl}?pid=${partnerCode}&dest=coupon&target=${encodeURIComponent('https://lin.ee/q38pqot')}`;
+            document.getElementById('couponLink').href = couponUrl;
+            document.getElementById('couponLink').textContent = couponUrl;
+            
+            // UTM 連結
+            const utmUrl = `${scriptUrl}?pid=${partnerCode}&dest=landing&utm_source=facebook&utm_medium=social&utm_campaign=winter2024`;
+            document.getElementById('utmLink').href = utmUrl;
+            document.getElementById('utmLink').textContent = utmUrl;
+        }
+        
+        // 測試點擊
+        function testClick(destination, withUtm = false) {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            let url = `${scriptUrl}?pid=${partnerCode}&dest=${destination}`;
+            
+            if (destination === 'coupon') {
+                url += `&target=${encodeURIComponent('https://lin.ee/q38pqot')}`;
+            }
+            
+            if (withUtm) {
+                url += '&utm_source=facebook&utm_medium=social&utm_campaign=winter2024';
+            }
+            
+            // 開啟新視窗
+            window.open(url, '_blank');
+            
+            // 記錄測試
+            addResult(`✅ 已發送點擊測試: ${destination}${withUtm ? ' (含UTM)' : ''}`);
+            
+            // 3秒後自動獲取統計
+            setTimeout(() => {
+                getClickStats();
+            }, 3000);
+        }
+        
+        // 獲取點擊統計
+        async function getClickStats() {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            try {
+                addResult('📊 正在獲取點擊統計...');
+                
+                // 獲取全部統計
+                const allStatsUrl = `${scriptUrl}?action=get_click_stats`;
+                const allResponse = await fetch(allStatsUrl);
+                const allData = await allResponse.json();
+                
+                // 獲取特定夥伴統計
+                const partnerStatsUrl = `${scriptUrl}?action=get_click_stats&partner_code=${partnerCode}`;
+                const partnerResponse = await fetch(partnerStatsUrl);
+                const partnerData = await partnerResponse.json();
+                
+                // 顯示統計結果
+                displayStats(allData, partnerData);
+                
+                addResult('✅ 成功獲取點擊統計');
+                
+            } catch (error) {
+                addResult(`❌ 獲取統計失敗: ${error.message}`);
+                console.error('獲取統計錯誤:', error);
+            }
+        }
+        
+        // 顯示統計數據
+        function displayStats(allData, partnerData) {
+            const statsDiv = document.getElementById('statsResult');
+            
+            if (!allData.success) {
+                statsDiv.innerHTML = `<p class="text-red-600">獲取全部統計失敗: ${allData.error || '未知錯誤'}</p>`;
+                return;
+            }
+            
+            const stats = allData.data;
+            const partnerStats = partnerData.success ? partnerData.data : null;
+            
+            let html = `
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- 總體統計 -->
+                    <div class="border rounded p-4">
+                        <h3 class="font-semibold mb-2">總體統計</h3>
+                        <p>總點擊數: <span class="font-bold">${stats.total_clicks}</span></p>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-600">目的地分布:</p>
+                            ${Object.entries(stats.destination_stats || {}).map(([dest, count]) => 
+                                `<p class="text-sm ml-2">• ${dest}: ${count}</p>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- 特定夥伴統計 -->
+                    <div class="border rounded p-4">
+                        <h3 class="font-semibold mb-2">夥伴統計 (${document.getElementById('partnerCode').value})</h3>
+                        ${partnerStats ? `
+                            <p>夥伴點擊數: <span class="font-bold">${partnerStats.total_clicks}</span></p>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-600">目的地分布:</p>
+                                ${Object.entries(partnerStats.stats.destinations || {}).map(([dest, count]) => 
+                                    `<p class="text-sm ml-2">• ${dest}: ${count}</p>`
+                                ).join('')}
+                            </div>
+                        ` : '<p class="text-gray-500">無數據</p>'}
+                    </div>
+                </div>
+                
+                <!-- UTM 統計 -->
+                ${stats.utm_stats && Object.keys(stats.utm_stats.sources || {}).length > 0 ? `
+                    <div class="border rounded p-4 mt-4">
+                        <h3 class="font-semibold mb-2">UTM 參數統計</h3>
+                        <div class="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <p class="font-medium">來源 (source):</p>
+                                ${Object.entries(stats.utm_stats.sources || {}).map(([source, count]) => 
+                                    `<p class="ml-2">• ${source}: ${count}</p>`
+                                ).join('')}
+                            </div>
+                            <div>
+                                <p class="font-medium">媒介 (medium):</p>
+                                ${Object.entries(stats.utm_stats.mediums || {}).map(([medium, count]) => 
+                                    `<p class="ml-2">• ${medium}: ${count}</p>`
+                                ).join('')}
+                            </div>
+                            <div>
+                                <p class="font-medium">活動 (campaign):</p>
+                                ${Object.entries(stats.utm_stats.campaigns || {}).map(([campaign, count]) => 
+                                    `<p class="ml-2">• ${campaign}: ${count}</p>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <!-- 最近的點擊 -->
+                ${stats.recent_clicks && stats.recent_clicks.length > 0 ? `
+                    <div class="border rounded p-4 mt-4">
+                        <h3 class="font-semibold mb-2">最近的點擊</h3>
+                        <div class="overflow-x-auto">
+                            <table class="text-sm w-full">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="text-left p-2">時間</th>
+                                        <th class="text-left p-2">夥伴</th>
+                                        <th class="text-left p-2">目的地</th>
+                                        <th class="text-left p-2">UTM</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${stats.recent_clicks.slice(0, 5).map(click => `
+                                        <tr class="border-b">
+                                            <td class="p-2">${new Date(click.click_time).toLocaleString('zh-TW')}</td>
+                                            <td class="p-2">${click.partner_code || '-'}</td>
+                                            <td class="p-2">${click.destination || '-'}</td>
+                                            <td class="p-2 text-xs">
+                                                ${click.utm_source ? `src:${click.utm_source}` : ''}
+                                                ${click.utm_medium ? ` med:${click.utm_medium}` : ''}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+            
+            statsDiv.innerHTML = html;
+        }
+        
+        // 添加測試結果
+        function addResult(message) {
+            const resultsDiv = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString('zh-TW');
+            const resultItem = `<div class="text-sm"><span class="text-gray-500">[${timestamp}]</span> ${message}</div>`;
+            
+            if (resultsDiv.innerHTML.includes('測試結果將顯示在這裡')) {
+                resultsDiv.innerHTML = resultItem;
+            } else {
+                resultsDiv.innerHTML = resultItem + resultsDiv.innerHTML;
+            }
+        }
+        
+        // 頁面載入時生成連結
+        window.onload = function() {
+            generateLinks();
+        };
+    </script>
+</body>
+</html>

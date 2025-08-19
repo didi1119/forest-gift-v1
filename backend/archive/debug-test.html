@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>佣金系統問題診斷</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4">佣金系統問題診斷工具</h1>
+        <p class="text-red-600 mb-8">這個工具會幫助找出為什麼點數和佣金沒有正確更新</p>
+        
+        <!-- 配置 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">診斷配置</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Google Apps Script URL
+                    </label>
+                    <input type="text" id="scriptUrl" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                           value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+                </div>
+            </div>
+        </div>
+
+        <!-- 診斷測試 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">診斷測試</h2>
+            <div class="space-y-3">
+                <button onclick="testStep1()" 
+                        class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        步驟 1: 創建有初始點數的大使
+                </button>
+                
+                <button onclick="testStep2()" 
+                        class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        步驟 2: 驗證大使資料是否正確儲存
+                </button>
+                
+                <button onclick="testStep3()" 
+                        class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                        步驟 3: 創建訂房並確認
+                </button>
+                
+                <button onclick="testStep4()" 
+                        class="w-full bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                        步驟 4: 檢查佣金計算
+                </button>
+                
+                <button onclick="testStep5()" 
+                        class="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                        步驟 5: 測試點數使用
+                </button>
+                
+                <button onclick="runAllDiagnostics()" 
+                        class="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                        執行完整診斷
+                </button>
+            </div>
+        </div>
+
+        <!-- 診斷結果 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">診斷結果</h2>
+            <div id="results" class="space-y-2 font-mono text-sm">
+                <p class="text-gray-500">診斷結果將顯示在這裡...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TEST_PARTNER_CODE = 'DEBUG_' + Date.now();
+        const TEST_GUEST_NAME = 'DEBUG_GUEST_' + Date.now();
+        
+        // 步驟 1: 創建有初始點數的大使
+        async function testStep1() {
+            addResult('=== 步驟 1: 創建大使 ===', 'header');
+            
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            
+            // 方法 1: 使用 fetch API
+            try {
+                const params = new URLSearchParams({
+                    action: 'create_partner',
+                    partner_code: TEST_PARTNER_CODE,
+                    partner_name: '診斷測試大使',
+                    contact_phone: '0999888777',
+                    contact_email: 'debug@test.com',
+                    bank_account: '99998888777766',
+                    commission_preference: 'ACCOMMODATION',
+                    available_points: '8888',  // 明確的測試數字
+                    notes: '診斷測試 - 初始點數應為8888'
+                });
+                
+                addResult(`發送資料: available_points=8888`, 'info');
+                
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params.toString()
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addResult(`✅ 創建成功，代碼: ${TEST_PARTNER_CODE}`, 'success');
+                    if (result.data) {
+                        addResult(`回傳的 available_points: ${result.data.available_points}`, 'info');
+                    }
+                } else {
+                    addResult(`❌ 創建失敗: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`❌ API 錯誤: ${error.message}`, 'error');
+            }
+        }
+        
+        // 步驟 2: 驗證大使資料
+        async function testStep2() {
+            addResult('=== 步驟 2: 驗證大使資料 ===', 'header');
+            
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            
+            try {
+                const response = await fetch(`${scriptUrl}?action=get_all_data`);
+                const data = await response.json();
+                
+                if (data.success && data.data.partners) {
+                    const partner = data.data.partners.find(p => p.partner_code === TEST_PARTNER_CODE);
+                    
+                    if (partner) {
+                        addResult('找到大使資料:', 'info');
+                        addResult(`• partner_code: ${partner.partner_code}`, 'data');
+                        addResult(`• partner_level: ${partner.partner_level}`, 'data');
+                        addResult(`• available_points: ${partner.available_points} ${partner.available_points === 8888 ? '✅' : '❌ 應該是8888'}`, partner.available_points === 8888 ? 'success' : 'error');
+                        addResult(`• points_used: ${partner.points_used}`, 'data');
+                        addResult(`• total_commission_earned: ${partner.total_commission_earned}`, 'data');
+                        addResult(`• pending_commission: ${partner.pending_commission}`, 'data');
+                        
+                        if (partner.available_points !== 8888) {
+                            addResult(`⚠️ 問題: 初始點數沒有正確儲存！`, 'error');
+                        }
+                    } else {
+                        addResult(`❌ 找不到大使: ${TEST_PARTNER_CODE}`, 'error');
+                        addResult('可能原因: 資料沒有寫入 Google Sheets', 'warning');
+                    }
+                } else {
+                    addResult('❌ 無法獲取資料', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ 查詢失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 步驟 3: 創建訂房並確認
+        async function testStep3() {
+            addResult('=== 步驟 3: 創建訂房並確認入住 ===', 'header');
+            
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            
+            // 創建訂房
+            try {
+                const bookingParams = new URLSearchParams({
+                    action: 'create_booking',
+                    partner_code: TEST_PARTNER_CODE,
+                    guest_name: TEST_GUEST_NAME,
+                    guest_phone: '0911222333',
+                    checkin_date: '2024-12-25',
+                    checkout_date: '2024-12-27',
+                    room_price: '10000'
+                });
+                
+                addResult('創建訂房...', 'info');
+                
+                const bookingResponse = await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: bookingParams.toString()
+                });
+                
+                const bookingResult = await bookingResponse.json();
+                
+                if (bookingResult.success) {
+                    addResult(`✅ 訂房創建成功`, 'success');
+                    
+                    // 確認入住
+                    setTimeout(async () => {
+                        const confirmParams = new URLSearchParams({
+                            action: 'confirm_checkin_completion',
+                            guest_name: TEST_GUEST_NAME,
+                            guest_phone: '0911222333',
+                            checkin_date: '2024-12-25'
+                        });
+                        
+                        addResult('確認入住完成...', 'info');
+                        
+                        const confirmResponse = await fetch(scriptUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: confirmParams.toString()
+                        });
+                        
+                        const confirmResult = await confirmResponse.json();
+                        
+                        if (confirmResult.success) {
+                            addResult(`✅ 入住確認成功`, 'success');
+                            if (confirmResult.commission) {
+                                addResult(`計算的佣金: ${confirmResult.commission}`, 'info');
+                            }
+                        } else {
+                            addResult(`❌ 入住確認失敗: ${confirmResult.error}`, 'error');
+                        }
+                    }, 2000);
+                } else {
+                    addResult(`❌ 訂房創建失敗: ${bookingResult.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`❌ 操作失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 步驟 4: 檢查佣金計算
+        async function testStep4() {
+            addResult('=== 步驟 4: 檢查佣金計算 ===', 'header');
+            
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            
+            try {
+                const response = await fetch(`${scriptUrl}?action=get_all_data`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 檢查大使資料
+                    if (data.data.partners) {
+                        const partner = data.data.partners.find(p => p.partner_code === TEST_PARTNER_CODE);
+                        if (partner) {
+                            addResult('大使佣金狀態:', 'info');
+                            addResult(`• 可用點數: ${partner.available_points} (應該 > 8888)`, partner.available_points > 8888 ? 'success' : 'error');
+                            addResult(`• 累積佣金: ${partner.total_commission_earned} (應該 > 0)`, partner.total_commission_earned > 0 ? 'success' : 'error');
+                            addResult(`• 成功推薦: ${partner.successful_referrals}`, 'data');
+                        }
+                    }
+                    
+                    // 檢查訂房資料
+                    if (data.data.bookings) {
+                        const booking = data.data.bookings.find(b => b.guest_name === TEST_GUEST_NAME);
+                        if (booking) {
+                            addResult('訂房佣金狀態:', 'info');
+                            addResult(`• commission_status: ${booking.commission_status}`, 'data');
+                            addResult(`• commission_amount: ${booking.commission_amount}`, 'data');
+                            addResult(`• commission_type: ${booking.commission_type}`, 'data');
+                            addResult(`• stay_status: ${booking.stay_status}`, 'data');
+                            
+                            if (booking.commission_amount === 0 || !booking.commission_amount) {
+                                addResult('⚠️ 問題: 佣金沒有被計算！', 'error');
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                addResult(`❌ 檢查失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 步驟 5: 測試點數使用
+        async function testStep5() {
+            addResult('=== 步驟 5: 測試點數使用 ===', 'header');
+            
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            
+            try {
+                const params = new URLSearchParams({
+                    action: 'use_accommodation_points',
+                    partner_code: TEST_PARTNER_CODE,
+                    deduct_amount: '500',
+                    checkin_date: '2024-12-30',
+                    room_price: '2000',
+                    notes: '診斷測試 - 使用500點'
+                });
+                
+                addResult('嘗試使用500點...', 'info');
+                
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params.toString()
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addResult(`✅ 成功使用500點`, 'success');
+                    
+                    // 再次檢查點數
+                    setTimeout(async () => {
+                        const checkResponse = await fetch(`${scriptUrl}?action=get_all_data`);
+                        const checkData = await checkResponse.json();
+                        
+                        if (checkData.success && checkData.data.partners) {
+                            const partner = checkData.data.partners.find(p => p.partner_code === TEST_PARTNER_CODE);
+                            if (partner) {
+                                addResult(`使用後的點數: ${partner.available_points}`, 'info');
+                                addResult(`已使用點數: ${partner.points_used}`, 'info');
+                            }
+                        }
+                    }, 1000);
+                } else {
+                    addResult(`❌ 使用失敗: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`❌ 操作失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 執行完整診斷
+        async function runAllDiagnostics() {
+            addResult('🔍 開始完整診斷...', 'header');
+            
+            await testStep1();
+            await delay(3000);
+            
+            await testStep2();
+            await delay(2000);
+            
+            await testStep3();
+            await delay(5000);
+            
+            await testStep4();
+            await delay(2000);
+            
+            await testStep5();
+            await delay(3000);
+            
+            await testStep2(); // 最後再檢查一次
+            
+            addResult('✅ 診斷完成', 'header');
+        }
+        
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString('zh-TW');
+            
+            const colors = {
+                success: 'text-green-600 font-bold',
+                error: 'text-red-600 font-bold',
+                warning: 'text-yellow-600',
+                info: 'text-blue-600',
+                data: 'text-gray-700 ml-4',
+                header: 'text-purple-600 font-bold text-base mt-4'
+            };
+            
+            const resultItem = `<div class="${colors[type]}">
+                ${type !== 'header' && type !== 'data' ? `<span class="text-gray-500">[${timestamp}]</span>` : ''} ${message}
+            </div>`;
+            
+            if (resultsDiv.innerHTML.includes('診斷結果將顯示在這裡')) {
+                resultsDiv.innerHTML = resultItem;
+            } else {
+                resultsDiv.innerHTML += resultItem;
+            }
+            
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>

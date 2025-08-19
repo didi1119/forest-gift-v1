@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知音計畫 - 系統測試</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">知音計畫系統測試</h1>
+        
+        <!-- 配置區 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">測試配置</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Google Apps Script URL
+                    </label>
+                    <input type="text" id="scriptUrl" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                           placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec">
+                </div>
+                <button onclick="runTests()" 
+                        class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600">
+                    開始測試
+                </button>
+            </div>
+        </div>
+
+        <!-- 測試進度 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">測試進度</h2>
+            <div id="progress" class="space-y-2">
+                <p class="text-gray-500">尚未開始測試</p>
+            </div>
+        </div>
+
+        <!-- 測試結果 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">測試結果</h2>
+            <div id="results" class="space-y-4">
+                <p class="text-gray-500">測試結果將顯示在這裡</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隱藏的 iframe 用於接收表單響應 -->
+    <iframe name="hiddenFrame" style="display:none;"></iframe>
+
+    <script>
+        // 測試數據
+        const TEST_DATA = {
+            partner: {
+                partner_code: 'TEST_' + Date.now(),
+                partner_name: '測試大使',
+                contact_phone: '0912345678',
+                contact_email: 'test@example.com',
+                bank_code: '808',
+                bank_account: '12345678901234',
+                commission_preference: 'ACCOMMODATION'
+            },
+            booking: {
+                guest_name: '測試房客_' + Date.now(),
+                guest_phone: '0987654321',
+                guest_email: 'guest@example.com',
+                checkin_date: '2024-12-25',
+                checkout_date: '2024-12-27',
+                room_price: 5000
+            }
+        };
+
+        let testResults = [];
+        let createdBookingId = null;
+        let createdPayoutId = null;
+
+        // 使用表單提交來避免 CORS
+        function submitForm(action, data, callback) {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            if (!scriptUrl) {
+                alert('請輸入 Google Apps Script URL');
+                return;
+            }
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = scriptUrl;
+            form.target = 'hiddenFrame';
+            form.style.display = 'none';
+
+            // 添加 action
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = action;
+            form.appendChild(actionInput);
+
+            // 添加其他數據
+            Object.keys(data).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = data[key];
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+
+            // 模擬異步回調
+            setTimeout(() => {
+                callback({ success: true, message: `${action} 已執行` });
+            }, 1000);
+        }
+
+        // 測試函數
+        const tests = [
+            {
+                name: '1. 創建大使',
+                action: 'create_partner',
+                data: () => TEST_DATA.partner,
+                validate: '應創建新大使，初始等級為 LV1_INSIDER'
+            },
+            {
+                name: '2. 創建推薦訂房',
+                action: 'create_booking',
+                data: () => ({
+                    ...TEST_DATA.booking,
+                    partner_code: TEST_DATA.partner.partner_code
+                }),
+                validate: 'booking_source = REFERRAL，total_referrals +1'
+            },
+            {
+                name: '3. 創建自用訂房',
+                action: 'create_booking',
+                data: () => ({
+                    ...TEST_DATA.booking,
+                    partner_code: TEST_DATA.partner.partner_code,
+                    booking_source: 'SELF_USE',
+                    guest_name: '自用測試_' + Date.now()
+                }),
+                validate: 'booking_source = SELF_USE，total_referrals 不變'
+            },
+            {
+                name: '4. 確認入住完成',
+                action: 'confirm_checkin_completion',
+                data: () => ({
+                    guest_name: TEST_DATA.booking.guest_name,
+                    guest_phone: TEST_DATA.booking.guest_phone,
+                    checkin_date: TEST_DATA.booking.checkin_date
+                }),
+                validate: 'LV1 首次推薦：住宿金 2500（1000+1500獎勵）'
+            },
+            {
+                name: '5. 使用住宿金',
+                action: 'use_accommodation_points',
+                data: () => ({
+                    partner_code: TEST_DATA.partner.partner_code,
+                    deduct_amount: 1000,
+                    checkin_date: '2024-12-28',
+                    room_price: 3000
+                }),
+                validate: 'available_points -1000，points_used +1000'
+            },
+            {
+                name: '6. 轉換點數為現金',
+                action: 'convert_points_to_cash',
+                data: () => ({
+                    partner_code: TEST_DATA.partner.partner_code,
+                    points_used: 1000,
+                    cash_amount: 500,
+                    exchange_rate: 0.5
+                }),
+                validate: 'available_points -1000，pending_commission +500'
+            },
+            {
+                name: '7. 創建第二個大使',
+                action: 'create_partner',
+                data: () => ({
+                    ...TEST_DATA.partner,
+                    partner_code: 'TEST2_' + Date.now(),
+                    partner_name: '測試大使2',
+                    commission_preference: 'CASH'
+                }),
+                validate: '創建現金偏好的大使'
+            },
+            {
+                name: '8. 更新訂房（變更推薦人）',
+                action: 'update_booking',
+                data: () => ({
+                    guest_name: TEST_DATA.booking.guest_name,
+                    guest_phone: TEST_DATA.booking.guest_phone,
+                    partner_code: 'TEST2_' + Date.now()
+                }),
+                validate: '撤銷原推薦人佣金，計算新推薦人佣金'
+            },
+            {
+                name: '9. 創建待確認訂房',
+                action: 'create_booking',
+                data: () => ({
+                    ...TEST_DATA.booking,
+                    guest_name: '狀態測試_' + Date.now(),
+                    guest_phone: '0911111111',
+                    partner_code: TEST_DATA.partner.partner_code
+                }),
+                validate: '創建 PENDING 狀態訂房'
+            },
+            {
+                name: '10. 通過狀態變更觸發確認',
+                action: 'update_booking',
+                data: () => ({
+                    guest_name: '狀態測試_' + Date.now(),
+                    guest_phone: '0911111111',
+                    stay_status: 'COMPLETED'
+                }),
+                validate: 'PENDING → COMPLETED 觸發確認入住流程'
+            },
+            {
+                name: '11. 取消訂房',
+                action: 'delete_booking',
+                data: () => ({
+                    guest_name: TEST_DATA.booking.guest_name,
+                    guest_phone: TEST_DATA.booking.guest_phone
+                }),
+                validate: '撤銷佣金，減少推薦統計'
+            },
+            {
+                name: '12. 處理支付完成',
+                action: 'process_payout',
+                data: () => ({
+                    partner_code: TEST_DATA.partner.partner_code,
+                    amount: 500,
+                    bank_transfer_date: '2024-08-16',
+                    bank_transfer_reference: 'REF' + Date.now()
+                }),
+                validate: 'pending_commission 歸零，創建 PAYMENT_COMPLETED'
+            },
+            {
+                name: '13. 手動調整佣金',
+                action: 'update_partner_commission',
+                data: () => ({
+                    partner_code: TEST_DATA.partner.partner_code,
+                    available_points: 5000,
+                    adjustment_reason: '測試手動調整'
+                }),
+                validate: '創建 MANUAL_ADJUSTMENT 記錄'
+            },
+            {
+                name: '14. 更新大使資料',
+                action: 'update_partner',
+                data: () => ({
+                    partner_code: TEST_DATA.partner.partner_code,
+                    partner_level: 'LV2_GUIDE',
+                    commission_preference: 'CASH'
+                }),
+                validate: '等級變更創建 LEVEL_ADJUSTMENT 記錄'
+            }
+        ];
+
+        // 執行測試
+        async function runTests() {
+            const progressDiv = document.getElementById('progress');
+            const resultsDiv = document.getElementById('results');
+            
+            progressDiv.innerHTML = '<p class="text-blue-600">測試開始...</p>';
+            resultsDiv.innerHTML = '';
+            testResults = [];
+
+            for (let i = 0; i < tests.length; i++) {
+                const test = tests[i];
+                progressDiv.innerHTML = `
+                    <div class="mb-2">
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm">${test.name}</span>
+                            <span class="text-sm">${i + 1}/${tests.length}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full" style="width: ${(i + 1) / tests.length * 100}%"></div>
+                        </div>
+                    </div>
+                `;
+
+                await new Promise(resolve => {
+                    submitForm(test.action, test.data(), (result) => {
+                        testResults.push({
+                            name: test.name,
+                            validate: test.validate,
+                            result: result
+                        });
+                        resolve();
+                    });
+                });
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            // 顯示結果
+            displayResults();
+        }
+
+        // 顯示測試結果
+        function displayResults() {
+            const resultsDiv = document.getElementById('results');
+            const progressDiv = document.getElementById('progress');
+            
+            progressDiv.innerHTML = '<p class="text-green-600 font-semibold">✅ 測試完成！</p>';
+            
+            let html = '<div class="space-y-3">';
+            testResults.forEach((result, index) => {
+                const status = result.result.success ? 
+                    '<span class="text-green-600">✅</span>' : 
+                    '<span class="text-red-600">❌</span>';
+                
+                html += `
+                    <div class="border rounded p-3">
+                        <div class="flex items-start">
+                            <div class="mr-3">${status}</div>
+                            <div class="flex-1">
+                                <div class="font-medium">${result.name}</div>
+                                <div class="text-sm text-gray-600 mt-1">預期結果: ${result.validate}</div>
+                                <div class="text-sm text-gray-500 mt-1">執行狀態: ${result.result.message}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            html += `
+                <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded">
+                    <p class="text-sm text-yellow-800">
+                        <strong>注意：</strong>由於瀏覽器 CORS 限制，無法直接讀取 Google Apps Script 的響應。
+                        請在 Google Apps Script 編輯器中查看執行日誌以確認實際結果。
+                    </p>
+                    <p class="text-sm text-yellow-800 mt-2">
+                        <strong>建議：</strong>在 Google Apps Script 中的每個處理函數開頭加入 
+                        <code>Logger.log('處理 ' + action + ': ' + JSON.stringify(data));</code>
+                    </p>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

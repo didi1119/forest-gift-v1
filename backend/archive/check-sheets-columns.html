@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>檢查 Google Sheets 欄位</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4">Google Sheets 欄位檢查工具</h1>
+        <p class="text-red-600 mb-8">這個工具會顯示 Google Sheets 中實際的欄位名稱</p>
+        
+        <!-- 配置 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">配置</h2>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Google Apps Script URL
+                </label>
+                <input type="text" id="scriptUrl" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                       value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+            </div>
+        </div>
+
+        <!-- 檢查按鈕 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <button onclick="checkSheets()" 
+                    class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                檢查 Google Sheets 欄位結構
+            </button>
+        </div>
+
+        <!-- 結果 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">檢查結果</h2>
+            <div id="results" class="space-y-4">
+                <p class="text-gray-500">結果將顯示在這裡...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function checkSheets() {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            const resultsDiv = document.getElementById('results');
+            
+            resultsDiv.innerHTML = '<p class="text-blue-600">正在檢查...</p>';
+            
+            try {
+                // 獲取所有資料
+                const response = await fetch(`${scriptUrl}?action=get_all_data`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    resultsDiv.innerHTML = '<p class="text-red-600">無法獲取資料</p>';
+                    return;
+                }
+                
+                let html = '';
+                
+                // 檢查 Partners 表
+                if (data.data.partners && data.data.partners.length > 0) {
+                    const partner = data.data.partners[0];
+                    const partnerKeys = Object.keys(partner);
+                    
+                    html += `
+                        <div class="border rounded-lg p-4 mb-4">
+                            <h3 class="font-bold text-lg mb-2 text-green-600">Partners 表欄位（${partnerKeys.length} 個）</h3>
+                            <div class="grid grid-cols-3 gap-2 text-sm">
+                    `;
+                    
+                    const expectedFields = [
+                        'partner_code', 'partner_name', 'partner_level', 'contact_phone',
+                        'contact_email', 'bank_code', 'bank_account', 'commission_preference',
+                        'total_referrals', 'successful_referrals', 'yearly_referrals',
+                        'total_commission_earned', 'total_commission_paid', 'available_points',
+                        'points_used', 'pending_commission', 'join_date', 'is_active',
+                        'line_coupon_url', 'notes', 'created_at', 'updated_at'
+                    ];
+                    
+                    // 顯示實際欄位
+                    partnerKeys.forEach(key => {
+                        const isExpected = expectedFields.includes(key);
+                        const value = partner[key];
+                        const displayValue = value === undefined ? 'undefined' : 
+                                           value === null ? 'null' : 
+                                           value === '' ? '(空字串)' : 
+                                           typeof value === 'object' ? JSON.stringify(value) : value;
+                        
+                        html += `
+                            <div class="${isExpected ? 'text-green-600' : 'text-yellow-600'}">
+                                <span class="font-mono">${key}</span>
+                                <span class="text-xs text-gray-500 ml-1">${displayValue}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    // 檢查缺少的欄位
+                    const missingFields = expectedFields.filter(f => !partnerKeys.includes(f));
+                    if (missingFields.length > 0) {
+                        html += `
+                            </div>
+                            <div class="mt-4 p-3 bg-red-50 rounded">
+                                <p class="text-red-600 font-semibold">❌ 缺少的欄位：</p>
+                                <p class="text-red-500 text-sm">${missingFields.join(', ')}</p>
+                            </div>
+                        `;
+                    } else {
+                        html += '</div>';
+                    }
+                    
+                    // 檢查特定問題欄位
+                    html += `
+                        <div class="mt-4 p-3 bg-yellow-50 rounded">
+                            <p class="font-semibold">關鍵欄位檢查：</p>
+                            <ul class="text-sm mt-2 space-y-1">
+                                <li>partner_level: ${partner.partner_level === undefined ? '❌ undefined' : '✅ ' + partner.partner_level}</li>
+                                <li>available_points: ${partner.available_points === undefined ? '❌ undefined' : '✅ ' + partner.available_points}</li>
+                                <li>points_used: ${partner.points_used === undefined ? '❌ undefined' : '✅ ' + partner.points_used}</li>
+                                <li>level (替代): ${partner.level === undefined ? '❌ 不存在' : '✅ ' + partner.level}</li>
+                            </ul>
+                        </div>
+                    `;
+                    
+                    html += '</div>';
+                    
+                    // 找特定的測試大使
+                    const debugPartner = data.data.partners.find(p => 
+                        p.partner_code && p.partner_code.startsWith('DEBUG_')
+                    );
+                    
+                    if (debugPartner) {
+                        html += `
+                            <div class="border rounded-lg p-4 mb-4 bg-blue-50">
+                                <h3 class="font-bold text-lg mb-2 text-blue-600">找到測試大使資料</h3>
+                                <pre class="text-xs overflow-x-auto">${JSON.stringify(debugPartner, null, 2)}</pre>
+                            </div>
+                        `;
+                    }
+                }
+                
+                // 檢查 Bookings 表
+                if (data.data.bookings && data.data.bookings.length > 0) {
+                    const booking = data.data.bookings[0];
+                    const bookingKeys = Object.keys(booking);
+                    
+                    html += `
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-bold text-lg mb-2 text-blue-600">Bookings 表欄位（${bookingKeys.length} 個）</h3>
+                            <div class="grid grid-cols-3 gap-2 text-sm">
+                    `;
+                    
+                    bookingKeys.forEach(key => {
+                        html += `<div class="font-mono">${key}</div>`;
+                    });
+                    
+                    html += '</div></div>';
+                }
+                
+                resultsDiv.innerHTML = html || '<p class="text-red-600">沒有找到資料</p>';
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<p class="text-red-600">錯誤: ${error.message}</p>`;
+            }
+        }
+        
+        // 頁面載入時自動檢查
+        window.onload = function() {
+            checkSheets();
+        };
+    </script>
+</body>
+</html>

@@ -69,6 +69,12 @@
                 </div>
                 
                 <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">手機號碼</label>
+                    <input type="tel" id="partnerPhone" placeholder="0912345678" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    <p class="text-xs text-stone-500 mt-1">用於聯絡大使</p>
+                </div>
+                
+                <div>
                     <label class="block text-sm font-medium text-stone-700 mb-2">Email</label>
                     <input type="email" id="partnerEmail" placeholder="partner@example.com" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
                 </div>
@@ -172,7 +178,12 @@
                 </div>
                 
                 <div id="saveStatus" class="bg-gray-50 p-4 rounded-lg hidden">
-                    <p class="text-gray-700">⏳ 尚未儲存到系統</p>
+                    <div class="flex items-center justify-between">
+                        <p id="saveStatusText" class="text-gray-700">⏳ 尚未儲存到系統</p>
+                        <button onclick="saveToBackend()" id="saveBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            儲存大使資料
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -284,12 +295,14 @@ ${shortLandingUrl}
                 
                 // 保存生成的資料（包含原始連結、短網址和銀行帳戶資訊）
                 generatedData = {
-                    action: 'create_partner',
                     partner_code: partnerCode,
-                    name: partnerName,
+                    partner_name: partnerName,
                     email: partnerEmail,
+                    contact_email: partnerEmail,
+                    contact_phone: document.getElementById('partnerPhone') ? document.getElementById('partnerPhone').value.trim() : '',
                     coupon_code: couponCode,
                     coupon_url: couponUrl,
+                    line_coupon_url: couponUrl,  // 保存到後端的欄位
                     landing_link: landingUrl,
                     coupon_link: trackedCouponUrl,
                     short_landing_link: shortLandingUrl,
@@ -298,7 +311,8 @@ ${shortLandingUrl}
                     bank_code: document.getElementById('bankCode').value.trim(),
                     bank_branch: document.getElementById('bankBranch').value.trim(),
                     bank_account_name: document.getElementById('bankAccountName').value.trim(),
-                    bank_account_number: document.getElementById('bankAccountNumber').value.trim()
+                    bank_account_number: document.getElementById('bankAccountNumber').value.trim(),
+                    commission_preference: 'ACCOMMODATION'  // 預設偏好
                 };
                 
                 // 顯示結果（短網址）
@@ -363,6 +377,60 @@ ${landingUrl}
             button.disabled = true;
             
             try {
+                // 準備完整的 Partner 資料
+                const fullPartnerData = {
+                    action: 'create_partner',
+                    // 基本資料
+                    partner_code: generatedData.partner_code,
+                    partner_name: generatedData.partner_name,
+                    name: generatedData.partner_name,  // 兼容欄位
+                    email: generatedData.email || generatedData.contact_email || '',
+                    contact_email: generatedData.email || generatedData.contact_email || '',
+                    phone: generatedData.contact_phone || '',
+                    contact_phone: generatedData.contact_phone || '',
+                    
+                    // 等級資料（初始值）
+                    partner_level: 'LV1_INSIDER',  // 明確設定初始等級
+                    level: 'LV1_INSIDER',  // 兼容欄位
+                    level_progress: 0,
+                    total_referrals: 0,
+                    total_successful_referrals: 0,
+                    successful_referrals: 0,
+                    yearly_referrals: 0,
+                    
+                    // 佣金資料（初始值）
+                    commission_preference: generatedData.commission_preference || 'ACCOMMODATION',
+                    total_commission_earned: 0,
+                    total_commission_paid: 0,
+                    pending_commission: 0,
+                    available_points: 0,
+                    points_used: 0,
+                    
+                    // 優惠券資料
+                    coupon_code: generatedData.coupon_code || '',
+                    coupon_url: generatedData.coupon_url || '',
+                    line_coupon_url: generatedData.coupon_url || '',  // 重要：LINE 優惠券連結
+                    
+                    // 連結資料
+                    landing_link: generatedData.landing_link || '',
+                    coupon_link: generatedData.coupon_link || '',
+                    short_landing_link: generatedData.short_landing_link || '',
+                    short_coupon_link: generatedData.short_coupon_link || '',
+                    
+                    // 銀行資料
+                    bank_name: generatedData.bank_name || '',
+                    bank_code: generatedData.bank_code || '',
+                    bank_branch: generatedData.bank_branch || '',
+                    bank_account_name: generatedData.bank_account_name || '',
+                    bank_account_number: generatedData.bank_account_number || '',
+                    bank_account: generatedData.bank_account_number || '',  // 兼容欄位
+                    
+                    // 其他
+                    is_active: true,
+                    join_date: new Date().toISOString(),
+                    notes: `創建於連結生成器 ${new Date().toLocaleDateString('zh-TW')}`
+                };
+                
                 // 建立隱藏表單
                 const form = document.createElement('form');
                 form.method = 'POST';
@@ -371,7 +439,7 @@ ${landingUrl}
                 form.style.display = 'none';
                 
                 // 添加所有數據作為隱藏輸入
-                for (const [key, value] of Object.entries(generatedData)) {
+                for (const [key, value] of Object.entries(fullPartnerData)) {
                     const input = document.createElement('input');
                     input.type = 'hidden';
                     input.name = key;
@@ -501,6 +569,68 @@ ${landingUrl}
                     }
                 }, 300);
             }, 3000);
+        }
+        
+        async function saveToBackend() {
+            if (!generatedData) {
+                showToast('❌ 請先生成連結');
+                return;
+            }
+            
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '儲存中...';
+            saveBtn.disabled = true;
+            
+            try {
+                // 準備要儲存的資料
+                const saveData = {
+                    action: 'create_partner',
+                    partner_code: generatedData.partner_code,
+                    partner_name: generatedData.partner_name,
+                    contact_phone: generatedData.contact_phone || '待補充',
+                    contact_email: generatedData.contact_email || generatedData.email || '',
+                    bank_code: generatedData.bank_code || '',
+                    bank_account: generatedData.bank_account_number || '',
+                    line_coupon_url: generatedData.coupon_url || '',  // 重要：儲存優惠券連結
+                    commission_preference: 'ACCOMMODATION',
+                    notes: `生成於 ${new Date().toLocaleDateString()}\n優惠券代碼: ${generatedData.coupon_code || ''}\n短網址: ${generatedData.short_landing_link || ''}`
+                };
+                
+                // 使用表單提交
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+                
+                Object.keys(saveData).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = saveData[key];
+                    form.appendChild(input);
+                });
+                
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+                
+                // 等待一下讓請求發送
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // 更新狀態
+                document.getElementById('saveStatusText').innerHTML = '✅ 已儲存到系統';
+                saveBtn.textContent = '已儲存';
+                saveBtn.disabled = true;
+                showToast('✅ 大使資料已儲存到系統');
+                
+            } catch (error) {
+                console.error('儲存失敗:', error);
+                showToast('❌ 儲存失敗，請稍後再試');
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }
         }
         
         // 自動生成夥伴代碼建議

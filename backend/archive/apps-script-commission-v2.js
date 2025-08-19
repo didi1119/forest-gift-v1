@@ -1035,7 +1035,7 @@ function handleUpdateBooking(data, e) {
         newDiscountAmount = oldDiscountAmount;
       }
       
-      // 3.2 如果折抵金額有變化，更新夥伴點數
+      // 3.2 如果折抵金額有變化，更新夥伴點數並創建調整記錄
       if (oldDiscountAmount !== newDiscountAmount && oldPartnerCode) {
         const pointsDifference = newDiscountAmount - oldDiscountAmount;
         Logger.log('💳 折抵金額變化: ' + oldDiscountAmount + ' → ' + newDiscountAmount + ', 差額: ' + pointsDifference);
@@ -1055,6 +1055,32 @@ function handleUpdateBooking(data, e) {
               break;
             }
           }
+        }
+        
+        // 創建點數調整的 Payout 記錄
+        const payoutsSheet = spreadsheet.getSheetByName('Payouts');
+        if (payoutsSheet && pointsDifference !== 0) {
+          const adjustmentPayoutId = generateNextId(payoutsSheet, 'PAY');
+          const adjustmentType = pointsDifference > 0 ? 'POINTS_ADJUSTMENT_DEBIT' : 'POINTS_ADJUSTMENT_CREDIT';
+          const adjustmentPayoutData = [
+            adjustmentPayoutId,                         // id
+            oldPartnerCode,                              // partner_code
+            adjustmentType,                             // payout_type
+            pointsDifference,                           // amount (正數=使用更多，負數=返還)
+            actualBookingId,                            // related_booking_ids
+            'ACCOMMODATION_ADJUSTMENT',                  // payout_method
+            'COMPLETED',                                // payout_status
+            timestamp,                                  // bank_transfer_date
+            '',                                         // bank_transfer_reference
+            '',                                         // accommodation_voucher_code
+            `訂單 ${actualBookingId} 折抵金額調整：${oldDiscountAmount} → ${newDiscountAmount}`, // notes
+            'system',                                   // created_by
+            timestamp,                                  // created_at
+            timestamp                                   // updated_at
+          ];
+          
+          payoutsSheet.appendRow(adjustmentPayoutData);
+          Logger.log('✅ 創建點數調整 Payout 記錄: ' + adjustmentPayoutId);
         }
         
         // 3.3 更新 Accommodation_Usage 記錄
@@ -1256,7 +1282,7 @@ function handleDeleteBooking(data, e) {
           const usageValues = usageRange.getValues();
           
           for (let i = usageValues.length - 1; i >= 1; i--) {  // 從後往前刪除
-            if (usageValues[i][3] === bookingId) {  // related_booking_id
+            if (String(usageValues[i][3]) === String(bookingId)) {  // related_booking_id
               usageSheet.deleteRow(i + 1);
               Logger.log('✅ 已刪除相關的 Accommodation_Usage 記錄');
               break;
@@ -1264,22 +1290,46 @@ function handleDeleteBooking(data, e) {
           }
         }
         
-        // 2.4 更新相關的 Payout 記錄狀態
+        // 2.4 更新原始 Payout 記錄狀態，並創建返還記錄
         const payoutsSheet = spreadsheet.getSheetByName('Payouts');
         if (payoutsSheet) {
           const payoutRange = payoutsSheet.getDataRange();
           const payoutValues = payoutRange.getValues();
           
+          // 先標記原始記錄為已取消
           for (let i = 1; i < payoutValues.length; i++) {
             if (String(payoutValues[i][4]) === String(bookingId)) {  // related_booking_ids
               // 標記為已取消
               payoutsSheet.getRange(i + 1, 7).setValue('CANCELLED');  // payout_status
-              payoutsSheet.getRange(i + 1, 11).setValue(payoutsSheet.getRange(i + 1, 11).getValue() + ' [訂單已取消，點數已返還]');  // notes
+              payoutsSheet.getRange(i + 1, 11).setValue(payoutsSheet.getRange(i + 1, 11).getValue() + ' [訂單已取消]');  // notes
               payoutsSheet.getRange(i + 1, 14).setValue(new Date());  // updated_at
-              Logger.log('✅ 已更新相關的 Payout 記錄狀態為 CANCELLED');
+              Logger.log('✅ 已更新原始 Payout 記錄狀態為 CANCELLED');
               break;
             }
           }
+          
+          // 創建新的返還記錄
+          const refundPayoutId = generateNextId(payoutsSheet, 'PAY');
+          const timestamp = new Date();
+          const refundPayoutData = [
+            refundPayoutId,                             // id
+            partnerCode,                                 // partner_code
+            'POINTS_REFUND',                            // payout_type (點數返還)
+            -refundAmount,                              // amount (負數表示返還)
+            bookingId,                                  // related_booking_ids
+            'ACCOMMODATION_REFUND',                      // payout_method (住宿金返還)
+            'COMPLETED',                                // payout_status
+            timestamp,                                  // bank_transfer_date
+            '',                                         // bank_transfer_reference
+            '',                                         // accommodation_voucher_code
+            `取消訂單 ${bookingId}，返還住宿金 NT$${refundAmount}`, // notes
+            'system',                                   // created_by
+            timestamp,                                  // created_at
+            timestamp                                   // updated_at
+          ];
+          
+          payoutsSheet.appendRow(refundPayoutData);
+          Logger.log('✅ 創建點數返還 Payout 記錄: ' + refundPayoutId);
         }
       }
     }

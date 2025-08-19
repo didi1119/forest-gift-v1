@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>連結生成器測試</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">連結生成器功能測試</h1>
+        
+        <!-- 測試說明 -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold text-blue-800 mb-2">測試步驟</h2>
+            <ol class="list-decimal list-inside space-y-2 text-blue-700">
+                <li>開啟連結生成器頁面</li>
+                <li>填寫測試資料並生成連結</li>
+                <li>點擊「儲存到 Google Sheets」</li>
+                <li>點擊下方「檢查 Partner 資料」驗證</li>
+            </ol>
+        </div>
+
+        <!-- 配置區 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">測試配置</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Google Apps Script URL
+                    </label>
+                    <input type="text" id="scriptUrl" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                           value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        測試夥伴代碼
+                    </label>
+                    <input type="text" id="partnerCode" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                           placeholder="輸入剛在連結生成器創建的代碼"
+                           value="">
+                </div>
+            </div>
+        </div>
+
+        <!-- 測試按鈕 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">驗證功能</h2>
+            <div class="space-y-3">
+                <button onclick="openLinkGenerator()" 
+                        class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    1. 開啟連結生成器頁面
+                </button>
+                
+                <button onclick="checkPartnerData()" 
+                        class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    2. 檢查 Partner 資料
+                </button>
+                
+                <button onclick="verifyAllFields()" 
+                        class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    3. 驗證所有欄位
+                </button>
+            </div>
+        </div>
+
+        <!-- 結果顯示 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">檢查結果</h2>
+            <div id="results" class="space-y-4">
+                <p class="text-gray-500">測試結果將顯示在這裡...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 開啟連結生成器
+        function openLinkGenerator() {
+            window.open('../frontend/admin/link-generator-form.html', '_blank');
+            addResult('✅ 已開啟連結生成器頁面，請填寫資料並儲存', 'info');
+        }
+
+        // 檢查 Partner 資料
+        async function checkPartnerData() {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            if (!partnerCode) {
+                addResult('❌ 請輸入夥伴代碼', 'error');
+                return;
+            }
+            
+            try {
+                addResult('🔍 正在查詢 Partner 資料...', 'info');
+                
+                const response = await fetch(`${scriptUrl}?action=get_all_data`);
+                const data = await response.json();
+                
+                if (data.success && data.data.partners) {
+                    const partner = data.data.partners.find(p => p.partner_code === partnerCode);
+                    
+                    if (partner) {
+                        displayPartnerData(partner);
+                    } else {
+                        addResult(`❌ 找不到夥伴代碼: ${partnerCode}`, 'error');
+                    }
+                } else {
+                    addResult('❌ 無法獲取資料', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ 查詢失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // 顯示 Partner 資料
+        function displayPartnerData(partner) {
+            const resultsDiv = document.getElementById('results');
+            
+            const requiredFields = [
+                'partner_code', 'partner_name', 'partner_level',
+                'contact_phone', 'contact_email',
+                'commission_preference', 'total_commission_earned',
+                'available_points', 'line_coupon_url',
+                'short_landing_link', 'short_coupon_link'
+            ];
+            
+            let html = `
+                <div class="border rounded-lg p-4">
+                    <h3 class="font-semibold text-lg mb-3">Partner 資料檢查</h3>
+                    
+                    <!-- 基本資料 -->
+                    <div class="mb-4">
+                        <h4 class="font-medium text-gray-700 mb-2">基本資料</h4>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>代碼: <span class="font-mono ${partner.partner_code ? 'text-green-600' : 'text-red-600'}">${partner.partner_code || '❌ 缺少'}</span></div>
+                            <div>姓名: <span class="font-mono ${partner.partner_name ? 'text-green-600' : 'text-red-600'}">${partner.partner_name || '❌ 缺少'}</span></div>
+                            <div>等級: <span class="font-mono ${partner.partner_level === 'LV1_INSIDER' ? 'text-green-600' : 'text-yellow-600'}">${partner.partner_level || '❌ 缺少'}</span></div>
+                            <div>手機: <span class="font-mono ${partner.contact_phone ? 'text-green-600' : 'text-yellow-600'}">${partner.contact_phone || '⚠️ 缺少'}</span></div>
+                            <div>Email: <span class="font-mono ${partner.contact_email ? 'text-green-600' : 'text-yellow-600'}">${partner.contact_email || '⚠️ 缺少'}</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 佣金資料 -->
+                    <div class="mb-4">
+                        <h4 class="font-medium text-gray-700 mb-2">佣金資料</h4>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>偏好: <span class="font-mono text-green-600">${partner.commission_preference || 'ACCOMMODATION'}</span></div>
+                            <div>累積佣金: <span class="font-mono">NT$ ${partner.total_commission_earned || 0}</span></div>
+                            <div>可用點數: <span class="font-mono">${partner.available_points || 0}</span></div>
+                            <div>待支付: <span class="font-mono">NT$ ${partner.pending_commission || 0}</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 連結資料 -->
+                    <div class="mb-4">
+                        <h4 class="font-medium text-gray-700 mb-2">連結資料</h4>
+                        <div class="space-y-1 text-sm">
+                            <div>優惠券URL: <span class="font-mono ${partner.line_coupon_url ? 'text-green-600' : 'text-red-600'}">${partner.line_coupon_url ? '✅ 有' : '❌ 缺少'}</span></div>
+                            <div>短網址(主頁): <span class="font-mono ${partner.short_landing_link ? 'text-green-600' : 'text-red-600'}">${partner.short_landing_link ? '✅ 有' : '❌ 缺少'}</span></div>
+                            <div>短網址(優惠): <span class="font-mono ${partner.short_coupon_link ? 'text-green-600' : 'text-red-600'}">${partner.short_coupon_link ? '✅ 有' : '❌ 缺少'}</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 銀行資料 -->
+                    <div class="mb-4">
+                        <h4 class="font-medium text-gray-700 mb-2">銀行資料</h4>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>銀行代碼: <span class="font-mono">${partner.bank_code || '未填'}</span></div>
+                            <div>帳號: <span class="font-mono">${partner.bank_account ? '已填寫' : '未填'}</span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 統計資料 -->
+                    <div>
+                        <h4 class="font-medium text-gray-700 mb-2">統計資料</h4>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>總推薦: ${partner.total_referrals || 0}</div>
+                            <div>成功推薦: ${partner.successful_referrals || 0}</div>
+                            <div>年度推薦: ${partner.yearly_referrals || 0}</div>
+                            <div>等級進度: ${partner.level_progress || 0}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+            
+            // 檢查是否所有必要欄位都存在
+            const missingFields = requiredFields.filter(field => !partner[field]);
+            if (missingFields.length > 0) {
+                addResult(`⚠️ 缺少欄位: ${missingFields.join(', ')}`, 'warning');
+            } else {
+                addResult('✅ 所有必要欄位都已正確儲存！', 'success');
+            }
+            
+            // 特別檢查初始等級
+            if (partner.partner_level === 'LV1_INSIDER') {
+                addResult('✅ 初始等級正確設定為 LV1_INSIDER', 'success');
+            } else {
+                addResult(`⚠️ 等級不是 LV1_INSIDER: ${partner.partner_level}`, 'warning');
+            }
+        }
+
+        // 驗證所有欄位
+        async function verifyAllFields() {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            if (!partnerCode) {
+                addResult('❌ 請輸入夥伴代碼', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${scriptUrl}?action=get_all_data`);
+                const data = await response.json();
+                
+                if (data.success && data.data.partners) {
+                    const partner = data.data.partners.find(p => p.partner_code === partnerCode);
+                    
+                    if (partner) {
+                        // 完整欄位列表
+                        const expectedFields = {
+                            // 基本資料
+                            'partner_code': '夥伴代碼',
+                            'partner_name': '夥伴姓名',
+                            'partner_level': '等級（應為 LV1_INSIDER）',
+                            
+                            // 聯絡資料
+                            'contact_phone': '手機號碼',
+                            'contact_email': 'Email',
+                            
+                            // 佣金資料
+                            'commission_preference': '佣金偏好',
+                            'total_commission_earned': '累積佣金',
+                            'total_commission_paid': '已支付佣金',
+                            'pending_commission': '待支付佣金',
+                            'available_points': '可用點數',
+                            'points_used': '已使用點數',
+                            
+                            // 推薦統計
+                            'total_referrals': '總推薦數',
+                            'successful_referrals': '成功推薦數',
+                            'yearly_referrals': '年度推薦數',
+                            'level_progress': '等級進度',
+                            
+                            // 連結資料
+                            'line_coupon_url': 'LINE 優惠券 URL',
+                            'coupon_code': '優惠券代碼',
+                            'short_landing_link': '短網址（主頁）',
+                            'short_coupon_link': '短網址（優惠券）',
+                            
+                            // 銀行資料
+                            'bank_code': '銀行代碼',
+                            'bank_account': '銀行帳號',
+                            
+                            // 其他
+                            'is_active': '啟用狀態',
+                            'join_date': '加入日期'
+                        };
+                        
+                        let allFieldsOk = true;
+                        let fieldReport = '<div class="space-y-1">';
+                        
+                        for (const [field, description] of Object.entries(expectedFields)) {
+                            const value = partner[field];
+                            const hasValue = value !== undefined && value !== null && value !== '';
+                            
+                            if (!hasValue) {
+                                allFieldsOk = false;
+                                fieldReport += `<div class="text-red-600">❌ ${description}: 缺少</div>`;
+                            } else {
+                                fieldReport += `<div class="text-green-600">✅ ${description}: ${value}</div>`;
+                            }
+                        }
+                        
+                        fieldReport += '</div>';
+                        
+                        const resultsDiv = document.getElementById('results');
+                        resultsDiv.innerHTML = `
+                            <div class="border rounded-lg p-4">
+                                <h3 class="font-semibold text-lg mb-3">完整欄位驗證</h3>
+                                ${fieldReport}
+                            </div>
+                        `;
+                        
+                        if (allFieldsOk) {
+                            addResult('🎉 完美！所有欄位都已正確儲存', 'success');
+                        } else {
+                            addResult('⚠️ 部分欄位缺失，請檢查上方詳細報告', 'warning');
+                        }
+                        
+                    } else {
+                        addResult(`❌ 找不到夥伴: ${partnerCode}`, 'error');
+                    }
+                }
+            } catch (error) {
+                addResult(`❌ 驗證失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // 添加結果訊息
+        function addResult(message, type = 'info') {
+            const colors = {
+                success: 'text-green-600',
+                error: 'text-red-600',
+                warning: 'text-yellow-600',
+                info: 'text-blue-600'
+            };
+            
+            const timestamp = new Date().toLocaleTimeString('zh-TW');
+            const resultItem = `<div class="${colors[type]}">
+                <span class="text-gray-500">[${timestamp}]</span> ${message}
+            </div>`;
+            
+            const resultsDiv = document.getElementById('results');
+            if (resultsDiv.innerHTML.includes('測試結果將顯示在這裡')) {
+                resultsDiv.innerHTML = resultItem;
+            } else {
+                resultsDiv.innerHTML = resultItem + resultsDiv.innerHTML;
+            }
+        }
+    </script>
+</body>
+</html>

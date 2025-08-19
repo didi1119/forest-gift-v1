@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>佣金系統真實測試（Fetch API）</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4">佣金系統真實測試</h1>
+        <p class="text-red-600 mb-8">⚠️ 此測試會實際呼叫 API 並顯示真實回應</p>
+        
+        <!-- 配置區 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">測試配置</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Google Apps Script URL
+                    </label>
+                    <input type="text" id="scriptUrl" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                           value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        測試夥伴代碼
+                    </label>
+                    <input type="text" id="partnerCode" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                           value="TEST_REAL_001">
+                </div>
+            </div>
+        </div>
+
+        <!-- 測試案例 -->
+        <div class="grid grid-cols-2 gap-6 mb-6">
+            <!-- 左側：基本測試 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">基本功能測試</h2>
+                <div class="space-y-3">
+                    <button onclick="testCreatePartner()" 
+                            class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        1. 創建測試大使（5000初始點數）
+                    </button>
+                    
+                    <button onclick="testGetPartnerInfo()" 
+                            class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        2. 查詢大使資料
+                    </button>
+                    
+                    <button onclick="testCreateAndConfirmBooking()" 
+                            class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                        3. 創建訂房並確認入住
+                    </button>
+                    
+                    <button onclick="testUsePoints()" 
+                            class="w-full bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                        4. 使用住宿金點數
+                    </button>
+                    
+                    <button onclick="testConvertPointsToCash()" 
+                            class="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                        5. 轉換點數為現金（50%）
+                    </button>
+                </div>
+            </div>
+
+            <!-- 右側：進階測試 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">進階測試</h2>
+                <div class="space-y-3">
+                    <button onclick="testPointsInsufficient()" 
+                            class="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                        測試點數不足
+                    </button>
+                    
+                    <button onclick="testCancelPayout()" 
+                            class="w-full bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600">
+                        測試取消結算
+                    </button>
+                    
+                    <button onclick="testDeleteBooking()" 
+                            class="w-full bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                        測試刪除訂房
+                    </button>
+                    
+                    <button onclick="clearTestData()" 
+                            class="w-full bg-red-700 text-white px-4 py-2 rounded hover:bg-red-800">
+                        清理測試資料
+                    </button>
+                    
+                    <button onclick="runFullTest()" 
+                            class="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                        執行完整測試流程
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 測試結果 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">測試結果</h2>
+            <div id="results" class="space-y-2 font-mono text-sm max-h-96 overflow-y-auto">
+                <p class="text-gray-500">測試結果將顯示在這裡...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testBookingId = null;
+        let testGuestName = null;
+        let testPayoutId = null;
+
+        // 使用 Fetch API 發送請求
+        async function callAPI(action, data) {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            
+            try {
+                const params = new URLSearchParams({
+                    action: action,
+                    ...data
+                });
+                
+                addResult(`📤 發送請求: ${action}`, 'info');
+                
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: params.toString()
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addResult(`✅ ${action} 成功: ${result.message || 'OK'}`, 'success');
+                    if (result.data) {
+                        console.log('Response data:', result.data);
+                    }
+                } else {
+                    addResult(`❌ ${action} 失敗: ${result.error || '未知錯誤'}`, 'error');
+                }
+                
+                return result;
+                
+            } catch (error) {
+                addResult(`❌ API 錯誤: ${error.message}`, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        // 1. 創建測試大使
+        async function testCreatePartner() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            const result = await callAPI('create_partner', {
+                partner_code: partnerCode,
+                partner_name: '真實測試大使',
+                contact_phone: '0912345678',
+                contact_email: 'test@example.com',
+                bank_code: '808',
+                bank_account: '12345678901234',
+                commission_preference: 'ACCOMMODATION',
+                available_points: 5000,  // 初始點數
+                notes: '測試用大使，初始點數5000'
+            });
+            
+            if (result.success) {
+                addResult(`大使創建成功，代碼: ${partnerCode}`, 'success');
+            }
+        }
+
+        // 2. 查詢大使資料
+        async function testGetPartnerInfo() {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            try {
+                const response = await fetch(`${scriptUrl}?action=get_all_data`);
+                const data = await response.json();
+                
+                if (data.success && data.data.partners) {
+                    const partner = data.data.partners.find(p => p.partner_code === partnerCode);
+                    
+                    if (partner) {
+                        addResult(`
+📊 大使狀態:
+• 代碼: ${partner.partner_code}
+• 等級: ${partner.partner_level || 'LV1_INSIDER'}
+• 可用點數: ${partner.available_points || 0}
+• 已使用點數: ${partner.points_used || 0}
+• 待支付現金: ${partner.pending_commission || 0}
+• 累積佣金: ${partner.total_commission_earned || 0}
+• 成功推薦: ${partner.successful_referrals || 0}
+                        `, 'info');
+                    } else {
+                        addResult(`找不到大使: ${partnerCode}`, 'error');
+                    }
+                } else {
+                    addResult('無法獲取資料', 'error');
+                }
+            } catch (error) {
+                addResult(`查詢失敗: ${error.message}`, 'error');
+            }
+        }
+
+        // 3. 創建訂房並確認入住
+        async function testCreateAndConfirmBooking() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            testGuestName = `測試房客_${Date.now()}`;
+            
+            // 創建訂房
+            const bookingResult = await callAPI('create_booking', {
+                partner_code: partnerCode,
+                guest_name: testGuestName,
+                guest_phone: '0987654321',
+                guest_email: 'guest@test.com',
+                checkin_date: '2024-12-25',
+                checkout_date: '2024-12-27',
+                room_price: 5000
+            });
+            
+            if (bookingResult.success && bookingResult.booking_id) {
+                testBookingId = bookingResult.booking_id;
+                addResult(`訂房創建成功，ID: ${testBookingId}`, 'success');
+                
+                // 等待後確認入住
+                setTimeout(async () => {
+                    const confirmResult = await callAPI('confirm_checkin_completion', {
+                        guest_name: testGuestName,
+                        guest_phone: '0987654321',
+                        checkin_date: '2024-12-25'
+                    });
+                    
+                    if (confirmResult.success) {
+                        addResult(`入住確認成功，應獲得佣金`, 'success');
+                        // 查詢更新後的狀態
+                        setTimeout(() => testGetPartnerInfo(), 1000);
+                    }
+                }, 2000);
+            }
+        }
+
+        // 4. 使用住宿金點數
+        async function testUsePoints() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            const result = await callAPI('use_accommodation_points', {
+                partner_code: partnerCode,
+                deduct_amount: 1000,
+                checkin_date: '2024-12-28',
+                room_price: 3000,
+                notes: '測試使用1000點'
+            });
+            
+            if (result.success) {
+                addResult(`成功使用1000點，訂房ID: ${result.booking_id}`, 'success');
+                setTimeout(() => testGetPartnerInfo(), 1000);
+            }
+        }
+
+        // 5. 轉換點數為現金
+        async function testConvertPointsToCash() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            const pointsToConvert = 2000;
+            const cashAmount = pointsToConvert * 0.5;
+            
+            const result = await callAPI('convert_points_to_cash', {
+                partner_code: partnerCode,
+                points_used: pointsToConvert,
+                cash_amount: cashAmount,
+                exchange_rate: 0.5
+            });
+            
+            if (result.success) {
+                addResult(`成功轉換${pointsToConvert}點為NT$${cashAmount}`, 'success');
+                setTimeout(() => testGetPartnerInfo(), 1000);
+            }
+        }
+
+        // 測試點數不足
+        async function testPointsInsufficient() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            const result = await callAPI('use_accommodation_points', {
+                partner_code: partnerCode,
+                deduct_amount: 100000,  // 超額
+                checkin_date: '2024-12-30',
+                room_price: 100000
+            });
+            
+            if (!result.success) {
+                addResult(`✅ 正確拒絕超額使用: ${result.error}`, 'warning');
+            } else {
+                addResult(`❌ 錯誤：不應允許超額使用`, 'error');
+            }
+        }
+
+        // 測試取消結算
+        async function testCancelPayout() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            // 先創建結算
+            const createResult = await callAPI('create_payout', {
+                partner_code: partnerCode,
+                payout_type: 'ACCOMMODATION',
+                amount: 500,
+                payout_method: 'OTHER',
+                notes: '測試結算（將被取消）'
+            });
+            
+            if (createResult.success && createResult.payout_id) {
+                testPayoutId = createResult.payout_id;
+                addResult(`創建測試結算，ID: ${testPayoutId}`, 'info');
+                
+                // 取消結算
+                setTimeout(async () => {
+                    const cancelResult = await callAPI('cancel_payout', {
+                        payout_id: testPayoutId
+                    });
+                    
+                    if (cancelResult.success) {
+                        addResult(`成功取消結算 #${testPayoutId}`, 'success');
+                        setTimeout(() => testGetPartnerInfo(), 1000);
+                    }
+                }, 2000);
+            }
+        }
+
+        // 測試刪除訂房
+        async function testDeleteBooking() {
+            if (!testGuestName) {
+                addResult('請先執行"創建訂房並確認入住"', 'error');
+                return;
+            }
+            
+            const result = await callAPI('delete_booking', {
+                guest_name: testGuestName,
+                guest_phone: '0987654321'
+            });
+            
+            if (result.success) {
+                addResult(`成功刪除訂房，應撤銷相關佣金`, 'success');
+                setTimeout(() => testGetPartnerInfo(), 1000);
+            }
+        }
+
+        // 清理測試資料
+        async function clearTestData() {
+            addResult('⚠️ 清理功能需要手動在 Google Sheets 中執行', 'warning');
+        }
+
+        // 執行完整測試
+        async function runFullTest() {
+            addResult('🚀 開始完整測試流程...', 'info');
+            
+            await testCreatePartner();
+            await delay(2000);
+            
+            await testGetPartnerInfo();
+            await delay(2000);
+            
+            await testCreateAndConfirmBooking();
+            await delay(5000);
+            
+            await testUsePoints();
+            await delay(2000);
+            
+            await testConvertPointsToCash();
+            await delay(2000);
+            
+            await testPointsInsufficient();
+            await delay(2000);
+            
+            await testGetPartnerInfo();
+            
+            addResult('✅ 完整測試流程結束', 'success');
+        }
+
+        // 延遲函數
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 添加結果
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString('zh-TW');
+            const colors = {
+                success: 'text-green-600',
+                error: 'text-red-600',
+                warning: 'text-yellow-600',
+                info: 'text-blue-600'
+            };
+            
+            const resultItem = `<div class="${colors[type]}">
+                <span class="text-gray-500">[${timestamp}]</span> ${message.replace(/\n/g, '<br>')}
+            </div>`;
+            
+            if (resultsDiv.innerHTML.includes('測試結果將顯示在這裡')) {
+                resultsDiv.innerHTML = resultItem;
+            } else {
+                resultsDiv.innerHTML = resultItem + resultsDiv.innerHTML;
+            }
+            
+            // 保持捲動在最新訊息
+            resultsDiv.scrollTop = 0;
+        }
+    </script>
+</body>
+</html>

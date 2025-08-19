@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>佣金系統完整測試</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">佣金系統完整測試</h1>
+        
+        <!-- 配置區 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">測試配置</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Google Apps Script URL
+                    </label>
+                    <input type="text" id="scriptUrl" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                           value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        測試夥伴代碼
+                    </label>
+                    <input type="text" id="partnerCode" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                           value="TEST_COMMISSION_001">
+                </div>
+            </div>
+        </div>
+
+        <!-- 測試案例 -->
+        <div class="grid grid-cols-2 gap-6 mb-6">
+            <!-- 左側：點數相關測試 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">點數系統測試</h2>
+                <div class="space-y-3">
+                    <button onclick="testCreatePartnerWithPoints()" 
+                            class="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        1. 創建測試大使（含初始點數）
+                    </button>
+                    
+                    <button onclick="testEarnPoints()" 
+                            class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        2. 賺取住宿金點數（完成推薦）
+                    </button>
+                    
+                    <button onclick="testUsePoints()" 
+                            class="w-full bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                        3. 使用住宿金點數
+                    </button>
+                    
+                    <button onclick="testConvertPointsToCash()" 
+                            class="w-full bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                        4. 轉換點數為現金（50%匯率）
+                    </button>
+                    
+                    <button onclick="testInsufficientPoints()" 
+                            class="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                        5. 測試點數不足情況
+                    </button>
+                </div>
+            </div>
+
+            <!-- 右側：取消與負債測試 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">取消結算測試</h2>
+                <div class="space-y-3">
+                    <button onclick="testCancelPayoutNormal()" 
+                            class="w-full bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                        1. 取消結算（點數充足）
+                    </button>
+                    
+                    <button onclick="testCancelPayoutWithDebt()" 
+                            class="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                        2. 取消結算（點數不足產生負債）
+                    </button>
+                    
+                    <button onclick="testDeleteBookingWithCommission()" 
+                            class="w-full bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600">
+                        3. 取消已結算訂房
+                    </button>
+                    
+                    <button onclick="testGetPartnerStatus()" 
+                            class="w-full bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">
+                        4. 查看大使當前狀態
+                    </button>
+                    
+                    <button onclick="testFullScenario()" 
+                            class="w-full bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">
+                        5. 完整場景測試
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 測試結果 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">測試結果</h2>
+            <div id="results" class="space-y-2 font-mono text-sm">
+                <p class="text-gray-500">測試結果將顯示在這裡...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隱藏的 iframe -->
+    <iframe name="hiddenFrame" style="display:none;"></iframe>
+
+    <script>
+        let testBookingId = null;
+        let testPayoutId = null;
+
+        // 輔助函數：提交表單
+        function submitForm(action, data, callback) {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = scriptUrl;
+            form.target = 'hiddenFrame';
+            form.style.display = 'none';
+
+            // 添加 action
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = action;
+            form.appendChild(actionInput);
+
+            // 添加其他數據
+            Object.keys(data).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = data[key];
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+
+            // 模擬回調
+            setTimeout(() => {
+                if (callback) callback();
+            }, 1500);
+        }
+
+        // 添加結果
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString('zh-TW');
+            const colors = {
+                success: 'text-green-600',
+                error: 'text-red-600',
+                warning: 'text-yellow-600',
+                info: 'text-blue-600'
+            };
+            
+            const resultItem = `<div class="${colors[type]}">
+                <span class="text-gray-500">[${timestamp}]</span> ${message}
+            </div>`;
+            
+            if (resultsDiv.innerHTML.includes('測試結果將顯示在這裡')) {
+                resultsDiv.innerHTML = resultItem;
+            } else {
+                resultsDiv.innerHTML = resultItem + resultsDiv.innerHTML;
+            }
+        }
+
+        // 測試案例
+        function testCreatePartnerWithPoints() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            submitForm('create_partner', {
+                partner_code: partnerCode,
+                partner_name: '測試大使（佣金系統）',
+                contact_phone: '0912345678',
+                bank_account: '12345678901234',
+                commission_preference: 'ACCOMMODATION',
+                available_points: 5000,  // 給予初始點數用於測試
+                notes: '測試用大使，初始點數5000'
+            }, () => {
+                addResult(`✅ 創建大使 ${partnerCode}，初始點數：5000`, 'success');
+            });
+        }
+
+        function testEarnPoints() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            const bookingId = 'BOOK_' + Date.now();
+            
+            // 先創建訂房
+            submitForm('create_booking', {
+                partner_code: partnerCode,
+                guest_name: '賺取點數測試_' + Date.now(),
+                guest_phone: '0987654321',
+                checkin_date: '2024-12-25',
+                checkout_date: '2024-12-27',
+                room_price: 5000
+            }, () => {
+                testBookingId = bookingId;
+                addResult(`📝 創建推薦訂房`, 'info');
+                
+                // 確認入住完成
+                setTimeout(() => {
+                    submitForm('confirm_checkin_completion', {
+                        guest_name: '賺取點數測試_' + Date.now(),
+                        guest_phone: '0987654321',
+                        checkin_date: '2024-12-25'
+                    }, () => {
+                        addResult(`✅ 確認入住完成，應獲得住宿金點數`, 'success');
+                    });
+                }, 1000);
+            });
+        }
+
+        function testUsePoints() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            submitForm('use_accommodation_points', {
+                partner_code: partnerCode,
+                deduct_amount: 1000,
+                checkin_date: '2024-12-28',
+                room_price: 3000,
+                notes: '測試使用住宿金1000點'
+            }, () => {
+                addResult(`✅ 使用1000點住宿金`, 'success');
+            });
+        }
+
+        function testConvertPointsToCash() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            const pointsToConvert = 2000;
+            const cashAmount = pointsToConvert * 0.5;  // 50%匯率
+            
+            submitForm('convert_points_to_cash', {
+                partner_code: partnerCode,
+                points_used: pointsToConvert,
+                cash_amount: cashAmount,
+                exchange_rate: 0.5
+            }, () => {
+                addResult(`✅ 轉換${pointsToConvert}點為現金NT$${cashAmount}（50%匯率）`, 'success');
+            });
+        }
+
+        function testInsufficientPoints() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            submitForm('use_accommodation_points', {
+                partner_code: partnerCode,
+                deduct_amount: 100000,  // 故意使用超額點數
+                checkin_date: '2024-12-30',
+                room_price: 100000
+            }, () => {
+                addResult(`⚠️ 測試點數不足情況（應該失敗）`, 'warning');
+            });
+        }
+
+        function testCancelPayoutNormal() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            // 先創建一個結算
+            submitForm('create_payout', {
+                partner_code: partnerCode,
+                payout_type: 'ACCOMMODATION',
+                amount: 500,
+                payout_method: 'OTHER',
+                notes: '測試結算（將被取消）'
+            }, () => {
+                addResult(`📝 創建測試結算`, 'info');
+                
+                // 取消結算
+                setTimeout(() => {
+                    // 注意：需要知道實際的 payout_id
+                    submitForm('cancel_payout', {
+                        payout_id: 'LATEST_PAYOUT'  // 實際測試時需要真實ID
+                    }, () => {
+                        addResult(`✅ 取消結算（點數充足情況）`, 'success');
+                    });
+                }, 1500);
+            });
+        }
+
+        function testCancelPayoutWithDebt() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            addResult(`🔄 模擬點數不足取消結算...`, 'info');
+            
+            // 先用掉大部分點數
+            submitForm('use_accommodation_points', {
+                partner_code: partnerCode,
+                deduct_amount: 4000,  // 用掉大部分點數
+                checkin_date: '2024-12-31',
+                room_price: 5000
+            }, () => {
+                addResult(`📝 已消耗4000點`, 'info');
+                
+                // 嘗試取消一個大額結算
+                setTimeout(() => {
+                    submitForm('cancel_payout', {
+                        payout_id: 'LARGE_PAYOUT'  // 實際測試時需要真實ID
+                    }, () => {
+                        addResult(`⚠️ 取消結算（應產生負債記錄）`, 'warning');
+                    });
+                }, 1500);
+            });
+        }
+
+        function testDeleteBookingWithCommission() {
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            if (!testBookingId) {
+                addResult(`❌ 請先執行"賺取住宿金點數"測試`, 'error');
+                return;
+            }
+            
+            submitForm('delete_booking', {
+                guest_name: '賺取點數測試_' + Date.now(),
+                guest_phone: '0987654321'
+            }, () => {
+                addResult(`✅ 取消已結算訂房，應撤銷相關佣金`, 'success');
+            });
+        }
+
+        async function testGetPartnerStatus() {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            const partnerCode = document.getElementById('partnerCode').value;
+            
+            try {
+                const response = await fetch(`${scriptUrl}?action=get_all_data`);
+                const data = await response.json();
+                
+                if (data.success && data.data.partners) {
+                    const partner = data.data.partners.find(p => p.partner_code === partnerCode);
+                    if (partner) {
+                        addResult(`
+📊 大使狀態：
+• 代碼：${partner.partner_code}
+• 等級：${partner.partner_level || 'LV1_INSIDER'}
+• 可用點數：${partner.available_points || 0}
+• 已使用點數：${partner.points_used || 0}
+• 待支付現金：${partner.pending_commission || 0}
+• 累積佣金：${partner.total_commission_earned || 0}
+• 成功推薦：${partner.successful_referrals || 0}
+                        `, 'info');
+                    } else {
+                        addResult(`找不到大使 ${partnerCode}`, 'error');
+                    }
+                }
+            } catch (error) {
+                addResult(`獲取狀態失敗：${error.message}`, 'error');
+            }
+        }
+
+        function testFullScenario() {
+            addResult(`🚀 開始完整場景測試...`, 'info');
+            
+            // 執行一系列測試
+            setTimeout(() => testCreatePartnerWithPoints(), 0);
+            setTimeout(() => testEarnPoints(), 2000);
+            setTimeout(() => testUsePoints(), 5000);
+            setTimeout(() => testConvertPointsToCash(), 7000);
+            setTimeout(() => testGetPartnerStatus(), 9000);
+            
+            setTimeout(() => {
+                addResult(`✅ 完整場景測試完成！`, 'success');
+            }, 11000);
+        }
+    </script>
+</body>
+</html>

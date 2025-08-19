@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快速測試 - 驗證欄位修復</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4">快速測試 - 驗證欄位修復</h1>
+        <p class="text-green-600 mb-8">✅ Google Sheets 已添加所有必要欄位，現在測試功能是否正常</p>
+        
+        <!-- 配置 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Google Apps Script URL
+                </label>
+                <input type="text" id="scriptUrl" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                       value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+            </div>
+        </div>
+
+        <!-- 測試按鈕 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <button onclick="runQuickTest()" 
+                    class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-lg font-semibold">
+                🚀 執行快速測試
+            </button>
+        </div>
+
+        <!-- 結果 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">測試結果</h2>
+            <div id="results" class="space-y-2">
+                <p class="text-gray-500">點擊上方按鈕開始測試...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TEST_CODE = 'QUICK_TEST_' + Date.now();
+        
+        async function runQuickTest() {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            
+            try {
+                // 步驟 1: 創建有 9999 點的測試大使
+                addResult('📝 步驟 1: 創建測試大使（9999點）...', 'info');
+                
+                const createParams = new URLSearchParams({
+                    action: 'create_partner',
+                    partner_code: TEST_CODE,
+                    partner_name: '快速測試大使',
+                    contact_phone: '0999123456',
+                    contact_email: 'quicktest@example.com',
+                    bank_account: '9999888877776666',
+                    commission_preference: 'ACCOMMODATION',
+                    available_points: '9999',
+                    notes: '快速測試 - 初始點數應為9999'
+                });
+                
+                const createResponse = await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: createParams.toString()
+                });
+                
+                const createResult = await createResponse.json();
+                
+                if (createResult.success) {
+                    addResult('✅ 大使創建成功', 'success');
+                    
+                    // 步驟 2: 查詢並驗證點數
+                    addResult('📝 步驟 2: 查詢大使資料...', 'info');
+                    await delay(2000);
+                    
+                    const dataResponse = await fetch(`${scriptUrl}?action=get_all_data`);
+                    const allData = await dataResponse.json();
+                    
+                    if (allData.success && allData.data.partners) {
+                        const partner = allData.data.partners.find(p => p.partner_code === TEST_CODE);
+                        
+                        if (partner) {
+                            addResult('✅ 找到大使資料', 'success');
+                            
+                            // 檢查關鍵欄位
+                            const checks = [
+                                { field: 'available_points', expected: 9999, actual: partner.available_points },
+                                { field: 'partner_level 或 level', expected: 'LV1_INSIDER', actual: partner.partner_level || partner.level },
+                                { field: 'points_used', expected: 0, actual: partner.points_used },
+                                { field: 'commission_preference', expected: 'ACCOMMODATION', actual: partner.commission_preference }
+                            ];
+                            
+                            let allPassed = true;
+                            checks.forEach(check => {
+                                if (check.actual === check.expected) {
+                                    addResult(`✅ ${check.field}: ${check.actual}`, 'success');
+                                } else {
+                                    addResult(`❌ ${check.field}: ${check.actual} (預期: ${check.expected})`, 'error');
+                                    allPassed = false;
+                                }
+                            });
+                            
+                            if (allPassed) {
+                                // 步驟 3: 測試使用點數
+                                addResult('📝 步驟 3: 測試使用 1000 點...', 'info');
+                                
+                                const useParams = new URLSearchParams({
+                                    action: 'use_accommodation_points',
+                                    partner_code: TEST_CODE,
+                                    deduct_amount: '1000',
+                                    checkin_date: '2024-12-30',
+                                    room_price: '5000'
+                                });
+                                
+                                const useResponse = await fetch(scriptUrl, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                    body: useParams.toString()
+                                });
+                                
+                                const useResult = await useResponse.json();
+                                
+                                if (useResult.success) {
+                                    addResult('✅ 成功使用 1000 點', 'success');
+                                    
+                                    // 再次查詢確認點數變化
+                                    await delay(2000);
+                                    const finalResponse = await fetch(`${scriptUrl}?action=get_all_data`);
+                                    const finalData = await finalResponse.json();
+                                    
+                                    if (finalData.success && finalData.data.partners) {
+                                        const finalPartner = finalData.data.partners.find(p => p.partner_code === TEST_CODE);
+                                        if (finalPartner) {
+                                            addResult(`最終點數狀態:`, 'info');
+                                            addResult(`• 可用點數: ${finalPartner.available_points} (應該是 8999)`, 
+                                                      finalPartner.available_points === 8999 ? 'success' : 'error');
+                                            addResult(`• 已使用點數: ${finalPartner.points_used} (應該是 1000)`, 
+                                                      finalPartner.points_used === 1000 ? 'success' : 'error');
+                                        }
+                                    }
+                                } else {
+                                    addResult(`❌ 使用點數失敗: ${useResult.error}`, 'error');
+                                }
+                            }
+                            
+                            // 顯示完整資料
+                            addResult('\n📊 完整大使資料:', 'info');
+                            const importantFields = ['partner_code', 'available_points', 'points_used', 
+                                                    'partner_level', 'level', 'total_commission_earned'];
+                            importantFields.forEach(field => {
+                                if (partner[field] !== undefined) {
+                                    addResult(`• ${field}: ${partner[field]}`, 'data');
+                                }
+                            });
+                            
+                        } else {
+                            addResult('❌ 找不到大使資料', 'error');
+                        }
+                    }
+                } else {
+                    addResult(`❌ 創建失敗: ${createResult.error}`, 'error');
+                }
+                
+                addResult('\n🎉 測試完成！', 'header');
+                
+            } catch (error) {
+                addResult(`❌ 錯誤: ${error.message}`, 'error');
+            }
+        }
+        
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const colors = {
+                success: 'text-green-600 font-semibold',
+                error: 'text-red-600 font-semibold',
+                warning: 'text-yellow-600',
+                info: 'text-blue-600',
+                data: 'text-gray-700 ml-4',
+                header: 'text-purple-600 font-bold text-lg'
+            };
+            
+            resultsDiv.innerHTML += `<div class="${colors[type]}">${message}</div>`;
+        }
+    </script>
+</body>
+</html>

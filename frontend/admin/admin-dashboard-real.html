@@ -1004,7 +1004,14 @@
                 console.log('解析後的數據:', data);
                 
                 if (data.success) {
-                    allData = data.data;
+                    // 合併數據而不是覆蓋，確保所有陣列都存在
+                    allData = {
+                        partners: data.data.partners || [],
+                        bookings: data.data.bookings || [],
+                        payouts: data.data.payouts || [],
+                        clicks: data.data.clicks || [],
+                        accommodation_usage: data.data.accommodation_usage || []
+                    };
                     console.log('✅ 載入真實數據成功:');
                     console.log('- Partners:', allData.partners?.length || 0);
                     console.log('- Bookings:', allData.bookings?.length || 0);
@@ -1200,9 +1207,10 @@
             // --- 資料計算 (保持與現有版本一致) ---
             const levelClass = getLevelClass(partner.level);
             const levelText = getLevelText(partner.level);
-            const totalEarned = parseFloat(partner.total_commission_earned) || 0;
-            const totalPaid = parseFloat(partner.total_commission_paid) || 0;
-            const accommodationBalance = totalEarned - totalPaid;
+            // 使用正確的欄位
+            const availablePoints = parseFloat(partner.available_points) || 0;
+            const pointsUsed = parseFloat(partner.points_used) || 0;
+            const accommodationBalance = availablePoints;  // available_points 已經是可用餘額
             const pendingCash = parseFloat(partner.pending_commission) || 0;
             const totalClicks = getPartnerClicks(partner.partner_code);
             const completedReferrals = partner.total_successful_referrals || 0;
@@ -1713,8 +1721,18 @@
                 iframe.name = 'hiddenFrame';
                 iframe.id = 'hiddenFrame';
                 iframe.style.display = 'none';
+                // 添加錯誤處理來忽略 403 錯誤
+                iframe.onerror = function() {
+                    // 忽略 iframe 載入錯誤（預期的 403 重定向）
+                    return true;
+                };
                 document.body.appendChild(iframe);
             }
+            
+            // 設定 iframe 載入處理器來忽略錯誤
+            iframe.onload = function() {
+                // 忽略載入事件，避免觸發錯誤
+            };
             
             // 創建表單
             const form = document.createElement('form');
@@ -1773,6 +1791,9 @@
         }
 
         function getPartnerClicks(partnerCode) {
+            if (!allData.clicks || !Array.isArray(allData.clicks)) {
+                return 0;
+            }
             return allData.clicks.filter(click => click.partner_code === partnerCode).length;
         }
 
@@ -1860,7 +1881,7 @@
                 '等級': getLevelText(p.level),
                 '本年進度': p.level_progress,
                 '累積推薦': p.total_successful_referrals,
-                '可用點數': (parseFloat(p.total_commission_earned) || 0) - (parseFloat(p.total_commission_paid) || 0),
+                '可用點數': parseFloat(p.available_points) || 0,
                 '待支付現金': p.pending_cash || p.pending_commission || 0
             }));
             
@@ -4490,7 +4511,7 @@
                     checkin_date: checkinDate,
                     checkout_date: checkoutDate,
                     room_price: roomPrice,
-                    amount: amount,  // 折抵金額
+                    deduct_amount: amount,  // 後端期望的參數名稱是 deduct_amount
                     notes: notes || ''
                 };
                 
@@ -4519,16 +4540,26 @@
                     hiddenFrame.id = 'hiddenFrame';
                     hiddenFrame.name = 'hiddenFrame';
                     hiddenFrame.style.display = 'none';
+                    // 添加錯誤處理來忽略 403 錯誤
+                    hiddenFrame.onerror = function() {
+                        // 忽略 iframe 載入錯誤（預期的 403 重定向）
+                        return true;
+                    };
                     document.body.appendChild(hiddenFrame);
                 }
+                
+                // 設定 iframe 載入處理器來忽略錯誤
+                hiddenFrame.onload = function() {
+                    // 忽略載入事件，避免觸發錯誤
+                };
                 
                 document.body.appendChild(form);
                 form.submit();
                 
                 console.log('📤 已提交住宿金折抵請求');
                 
-                // 等待後端處理
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // 等待後端處理（稍微延長時間確保處理完成）
+                await new Promise(resolve => setTimeout(resolve, 2500));
                 
                 // 立即更新前端數據（後端已處理所有邏輯）
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);

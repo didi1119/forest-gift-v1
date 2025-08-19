@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>終極壓力測試系統 - 知音計畫</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-section { transition: all 0.3s ease; }
+        .test-pass { background: linear-gradient(to right, #d4edda, #fff); }
+        .test-fail { background: linear-gradient(to right, #f8d7da, #fff); }
+        .test-running { background: linear-gradient(to right, #fff3cd, #fff); }
+        .log-entry { font-family: 'Courier New', monospace; font-size: 11px; }
+        .assertion-pass { color: #28a745; font-weight: bold; }
+        .assertion-fail { color: #dc3545; font-weight: bold; }
+        .assertion-warn { color: #ffc107; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4 max-w-7xl">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg shadow-xl p-6 mb-6">
+            <h1 class="text-3xl font-bold mb-2">🔥 終極壓力測試系統</h1>
+            <p class="text-lg">完整驗證知音計畫所有功能的正確性</p>
+            <div class="mt-4 grid grid-cols-3 gap-4 text-sm">
+                <div class="bg-white/20 rounded p-2">
+                    <span class="font-semibold">版本:</span> 3.0.0
+                </div>
+                <div class="bg-white/20 rounded p-2">
+                    <span class="font-semibold">模式:</span> 深度驗證
+                </div>
+                <div class="bg-white/20 rounded p-2">
+                    <span class="font-semibold">時間:</span> <span id="currentTime">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">⚙️ 測試配置</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Google Apps Script URL</label>
+                    <input type="text" id="scriptUrl" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                           value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">測試強度</label>
+                    <select id="testIntensity" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <option value="normal">標準測試</option>
+                        <option value="stress">壓力測試（多筆資料）</option>
+                        <option value="extreme">極限測試（邊界條件）</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4 flex gap-4">
+                <button onclick="startUltimateTest()" 
+                        class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-green-700 font-bold shadow-lg">
+                    🚀 開始終極測試
+                </button>
+                <button onclick="runScenarioTest()" 
+                        class="bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 font-semibold">
+                    📋 情境測試
+                </button>
+                <button onclick="clearAll()" 
+                        class="bg-gray-500 text-white px-4 py-3 rounded-lg hover:bg-gray-600">
+                    🗑️ 清除
+                </button>
+                <button onclick="exportReport()" 
+                        class="bg-purple-500 text-white px-4 py-3 rounded-lg hover:bg-purple-600">
+                    📊 匯出報告
+                </button>
+            </div>
+        </div>
+
+        <!-- Real-time Stats -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">📊 即時統計</h2>
+            <div class="grid grid-cols-5 gap-4">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-gray-700" id="totalAssertions">0</div>
+                    <div class="text-sm text-gray-500">總斷言</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600" id="passedAssertions">0</div>
+                    <div class="text-sm text-gray-500">通過</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-red-600" id="failedAssertions">0</div>
+                    <div class="text-sm text-gray-500">失敗</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-yellow-600" id="warningAssertions">0</div>
+                    <div class="text-sm text-gray-500">警告</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600" id="successRate">0%</div>
+                    <div class="text-sm text-gray-500">成功率</div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <div class="bg-gray-200 rounded-full h-4 overflow-hidden">
+                    <div id="progressBar" class="bg-gradient-to-r from-green-400 to-blue-500 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Suites -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Core Functions -->
+            <div class="bg-white rounded-lg shadow-lg p-6 test-section" id="coreSection">
+                <h3 class="text-lg font-bold mb-4">🏗️ 核心功能測試</h3>
+                <div id="coreTests" class="space-y-2">
+                    <div class="p-2 bg-gray-50 rounded text-sm">等待測試...</div>
+                </div>
+            </div>
+
+            <!-- Commission Logic -->
+            <div class="bg-white rounded-lg shadow-lg p-6 test-section" id="commissionSection">
+                <h3 class="text-lg font-bold mb-4">💰 佣金邏輯測試</h3>
+                <div id="commissionTests" class="space-y-2">
+                    <div class="p-2 bg-gray-50 rounded text-sm">等待測試...</div>
+                </div>
+            </div>
+
+            <!-- Edge Cases -->
+            <div class="bg-white rounded-lg shadow-lg p-6 test-section" id="edgeSection">
+                <h3 class="text-lg font-bold mb-4">⚠️ 邊界條件測試</h3>
+                <div id="edgeTests" class="space-y-2">
+                    <div class="p-2 bg-gray-50 rounded text-sm">等待測試...</div>
+                </div>
+            </div>
+
+            <!-- Scenarios -->
+            <div class="bg-white rounded-lg shadow-lg p-6 test-section" id="scenarioSection">
+                <h3 class="text-lg font-bold mb-4">🎭 業務情境測試</h3>
+                <div id="scenarioTests" class="space-y-2">
+                    <div class="p-2 bg-gray-50 rounded text-sm">等待測試...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Log -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">📝 詳細測試日誌</h2>
+                <div class="flex gap-2">
+                    <button onclick="filterLog('all')" class="px-3 py-1 bg-gray-200 rounded text-sm hover:bg-gray-300">全部</button>
+                    <button onclick="filterLog('pass')" class="px-3 py-1 bg-green-200 rounded text-sm hover:bg-green-300">通過</button>
+                    <button onclick="filterLog('fail')" class="px-3 py-1 bg-red-200 rounded text-sm hover:bg-red-300">失敗</button>
+                    <button onclick="filterLog('warn')" class="px-3 py-1 bg-yellow-200 rounded text-sm hover:bg-yellow-300">警告</button>
+                </div>
+            </div>
+            <div id="testLog" class="bg-gray-50 rounded p-4 h-96 overflow-y-auto space-y-1">
+                <div class="log-entry">系統就緒，等待開始測試...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden iframe for form submissions -->
+    <iframe name="hiddenFrame" style="display:none;"></iframe>
+
+    <script>
+        // Global state
+        let testState = {
+            assertions: { total: 0, passed: 0, failed: 0, warnings: 0 },
+            currentTest: null,
+            testData: {},
+            startTime: null,
+            endTime: null,
+            results: []
+        };
+
+        // Test data storage
+        let testEntities = {
+            partners: [],
+            bookings: [],
+            payouts: []
+        };
+
+        // Utility functions
+        function updateTime() {
+            document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function generateId() {
+            return `TEST_${Date.now()}_${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+        }
+
+        // Logging system
+        function log(message, type = 'info', details = null) {
+            const logDiv = document.getElementById('testLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            const timestamp = new Date().toLocaleTimeString();
+            let symbol = '📝';
+            let className = '';
+            
+            switch(type) {
+                case 'pass':
+                    symbol = '✅';
+                    className = 'assertion-pass';
+                    break;
+                case 'fail':
+                    symbol = '❌';
+                    className = 'assertion-fail';
+                    break;
+                case 'warn':
+                    symbol = '⚠️';
+                    className = 'assertion-warn';
+                    break;
+                case 'info':
+                    symbol = 'ℹ️';
+                    break;
+                case 'test':
+                    symbol = '🧪';
+                    break;
+            }
+            
+            entry.innerHTML = `<span class="${className}">[${timestamp}] ${symbol} ${message}</span>`;
+            
+            if (details) {
+                const detailDiv = document.createElement('div');
+                detailDiv.className = 'ml-8 text-gray-600 text-xs';
+                detailDiv.textContent = JSON.stringify(details, null, 2);
+                entry.appendChild(detailDiv);
+            }
+            
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            // Store result
+            testState.results.push({ time: timestamp, type, message, details });
+        }
+
+        // Assertion system
+        function assert(condition, message, expected = null, actual = null) {
+            testState.assertions.total++;
+            
+            if (condition) {
+                testState.assertions.passed++;
+                log(`PASS: ${message}`, 'pass');
+            } else {
+                testState.assertions.failed++;
+                log(`FAIL: ${message}`, 'fail', { expected, actual });
+            }
+            
+            updateStats();
+            return condition;
+        }
+
+        function assertAlmostEqual(actual, expected, tolerance, message) {
+            const diff = Math.abs(actual - expected);
+            return assert(diff <= tolerance, `${message} (差異: ${diff})`, expected, actual);
+        }
+
+        function warn(message, details = null) {
+            testState.assertions.warnings++;
+            log(`WARN: ${message}`, 'warn', details);
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('totalAssertions').textContent = testState.assertions.total;
+            document.getElementById('passedAssertions').textContent = testState.assertions.passed;
+            document.getElementById('failedAssertions').textContent = testState.assertions.failed;
+            document.getElementById('warningAssertions').textContent = testState.assertions.warnings;
+            
+            const rate = testState.assertions.total > 0 
+                ? Math.round((testState.assertions.passed / testState.assertions.total) * 100) 
+                : 0;
+            document.getElementById('successRate').textContent = rate + '%';
+            document.getElementById('progressBar').style.width = rate + '%';
+        }
+
+        // API interaction
+        async function callAPI(action, data) {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            
+            try {
+                const params = new URLSearchParams({ action, ...data });
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+                
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                // If fetch fails, try form submission
+                return await submitForm(scriptUrl, { action, ...data });
+            }
+        }
+
+        async function submitForm(scriptUrl, data) {
+            return new Promise((resolve) => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = scriptUrl;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+                
+                Object.keys(data).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = data[key];
+                    form.appendChild(input);
+                });
+                
+                document.body.appendChild(form);
+                form.submit();
+                
+                setTimeout(() => {
+                    document.body.removeChild(form);
+                    resolve({ success: true, message: 'Form submitted' });
+                }, 2000);
+            });
+        }
+
+        async function getData() {
+            const scriptUrl = document.getElementById('scriptUrl').value;
+            try {
+                const response = await fetch(`${scriptUrl}?action=get_all_data`);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                log('無法獲取數據: ' + error.message, 'fail');
+                return null;
+            }
+        }
+
+        // Core test functions
+        async function testCreatePartner() {
+            log('=== 測試創建大使 ===', 'test');
+            
+            const partnerCode = generateId();
+            const initialPoints = 10000;
+            
+            await callAPI('create_partner', {
+                partner_code: partnerCode,
+                partner_name: '壓力測試大使',
+                partner_level: 'LV1_INSIDER',
+                contact_phone: '0912345678',
+                contact_email: 'stress@test.com',
+                commission_preference: 'ACCOMMODATION',
+                available_points: initialPoints,
+                points_used: 0,
+                successful_referrals: 0,
+                bank_account: '1234567890'
+            });
+            
+            await delay(2000);
+            
+            const data = await getData();
+            if (data && data.data && data.data.partners) {
+                const partner = data.data.partners.find(p => p.partner_code === partnerCode);
+                
+                if (assert(partner != null, '大使應該存在')) {
+                    assert(partner.partner_level === 'LV1_INSIDER' || partner.level === 'LV1_INSIDER', '等級應為 LV1_INSIDER');
+                    assert(parseFloat(partner.available_points) === initialPoints, `初始點數應為 ${initialPoints}`, initialPoints, partner.available_points);
+                    assert(parseFloat(partner.points_used) === 0, '已使用點數應為 0', 0, partner.points_used);
+                    assert(parseFloat(partner.successful_referrals) === 0, '成功推薦數應為 0', 0, partner.successful_referrals);
+                    
+                    testEntities.partners.push(partner);
+                    return partner;
+                }
+            }
+            
+            return null;
+        }
+
+        async function testCreateBooking(partnerCode) {
+            log('=== 測試創建訂房 ===', 'test');
+            
+            const bookingData = {
+                partner_code: partnerCode,
+                guest_name: '測試房客_' + Date.now(),
+                guest_phone: '0911' + Math.floor(Math.random() * 1000000),
+                checkin_date: '2024-12-25',
+                checkout_date: '2024-12-27',
+                room_price: 5000,
+                booking_source: 'REFERRAL'
+            };
+            
+            await callAPI('create_booking', bookingData);
+            await delay(3000);
+            
+            const data = await getData();
+            if (data && data.data && data.data.bookings) {
+                const bookings = data.data.bookings.filter(b => b.partner_code === partnerCode);
+                const booking = bookings[bookings.length - 1];
+                
+                if (assert(booking != null, '訂房應該存在')) {
+                    assert(booking.stay_status === 'PENDING', '狀態應為 PENDING', 'PENDING', booking.stay_status);
+                    assert(booking.commission_status === 'PENDING', '佣金狀態應為 PENDING', 'PENDING', booking.commission_status);
+                    assert(parseFloat(booking.room_price) === 5000, '房價應為 5000', 5000, booking.room_price);
+                    
+                    testEntities.bookings.push(booking);
+                    return booking;
+                }
+            }
+            
+            return null;
+        }
+
+        async function testConfirmCheckin(bookingId, partnerCode) {
+            log('=== 測試確認入住 ===', 'test');
+            
+            // Get initial partner state
+            let initialData = await getData();
+            let initialPartner = null;
+            if (initialData && initialData.data && initialData.data.partners) {
+                initialPartner = initialData.data.partners.find(p => p.partner_code === partnerCode);
+            }
+            
+            const initialPoints = initialPartner ? parseFloat(initialPartner.available_points) : 0;
+            const initialReferrals = initialPartner ? parseFloat(initialPartner.successful_referrals) : 0;
+            
+            log(`初始狀態: 點數=${initialPoints}, 推薦數=${initialReferrals}`, 'info');
+            
+            // Confirm checkin
+            await callAPI('confirm_checkin_completion', {
+                booking_id: bookingId,
+                confirmed_by: 'stress_test'
+            });
+            
+            await delay(4000); // 給更多時間處理
+            
+            // Get updated data
+            const data = await getData();
+            if (data && data.data) {
+                // Check booking
+                const booking = data.data.bookings.find(b => b.id === bookingId);
+                if (booking) {
+                    assert(booking.stay_status === 'COMPLETED', '住宿狀態應為 COMPLETED', 'COMPLETED', booking.stay_status);
+                    assert(booking.commission_status === 'CALCULATED', '佣金狀態應為 CALCULATED', 'CALCULATED', booking.commission_status);
+                    
+                    const commissionAmount = parseFloat(booking.commission_amount);
+                    assert(commissionAmount > 0, '佣金金額應大於 0', '> 0', commissionAmount);
+                    
+                    // For LV1 first referral: 1000 base + 1500 bonus = 2500
+                    if (initialReferrals === 0) {
+                        assert(commissionAmount === 2500, 'LV1 首次推薦佣金應為 2500', 2500, commissionAmount);
+                    } else {
+                        assert(commissionAmount === 1000, 'LV1 一般佣金應為 1000', 1000, commissionAmount);
+                    }
+                }
+                
+                // Check partner updates
+                const partner = data.data.partners.find(p => p.partner_code === partnerCode);
+                if (partner) {
+                    const currentPoints = parseFloat(partner.available_points);
+                    const currentReferrals = parseFloat(partner.successful_referrals);
+                    
+                    const pointsChange = currentPoints - initialPoints;
+                    const referralsChange = currentReferrals - initialReferrals;
+                    
+                    log(`變化: 點數 +${pointsChange}, 推薦數 +${referralsChange}`, 'info');
+                    
+                    assert(referralsChange === 1, '成功推薦數應增加 1', 1, referralsChange);
+                    
+                    if (initialReferrals === 0) {
+                        assertAlmostEqual(pointsChange, 2500, 1, '首次推薦點數應增加 2500');
+                    } else {
+                        assertAlmostEqual(pointsChange, 1000, 1, '一般推薦點數應增加 1000');
+                    }
+                    
+                    return { booking, partner, pointsChange, referralsChange };
+                }
+            }
+            
+            return null;
+        }
+
+        async function testUsePoints(partnerCode, amount) {
+            log(`=== 測試使用 ${amount} 點住宿金 ===`, 'test');
+            
+            // Get initial state
+            let initialData = await getData();
+            let initialPartner = null;
+            if (initialData && initialData.data && initialData.data.partners) {
+                initialPartner = initialData.data.partners.find(p => p.partner_code === partnerCode);
+            }
+            
+            const initialAvailable = initialPartner ? parseFloat(initialPartner.available_points) : 0;
+            const initialUsed = initialPartner ? parseFloat(initialPartner.points_used) : 0;
+            
+            log(`使用前: 可用=${initialAvailable}, 已使用=${initialUsed}`, 'info');
+            
+            await callAPI('use_accommodation_points', {
+                partner_code: partnerCode,
+                deduct_amount: amount,
+                checkin_date: '2024-12-30',
+                room_price: 5000,
+                notes: `壓力測試使用 ${amount} 點`
+            });
+            
+            await delay(3000);
+            
+            // Check result
+            const data = await getData();
+            if (data && data.data && data.data.partners) {
+                const partner = data.data.partners.find(p => p.partner_code === partnerCode);
+                
+                if (partner) {
+                    const currentAvailable = parseFloat(partner.available_points);
+                    const currentUsed = parseFloat(partner.points_used);
+                    
+                    log(`使用後: 可用=${currentAvailable}, 已使用=${currentUsed}`, 'info');
+                    
+                    assertAlmostEqual(currentAvailable, initialAvailable - amount, 1, `可用點數應減少 ${amount}`);
+                    assertAlmostEqual(currentUsed, initialUsed + amount, 1, `已使用點數應增加 ${amount}`);
+                    
+                    return { success: true, before: { initialAvailable, initialUsed }, after: { currentAvailable, currentUsed } };
+                }
+            }
+            
+            return { success: false };
+        }
+
+        async function testConvertToCash(partnerCode, points) {
+            log(`=== 測試轉換 ${points} 點為現金 ===`, 'test');
+            
+            // Get initial state
+            let initialData = await getData();
+            let initialPartner = null;
+            if (initialData && initialData.data && initialData.data.partners) {
+                initialPartner = initialData.data.partners.find(p => p.partner_code === partnerCode);
+            }
+            
+            const initialAvailable = initialPartner ? parseFloat(initialPartner.available_points) : 0;
+            const initialUsed = initialPartner ? parseFloat(initialPartner.points_used) : 0;
+            const initialPending = initialPartner ? parseFloat(initialPartner.pending_commission) : 0;
+            
+            log(`轉換前: 可用點數=${initialAvailable}, 待結算現金=${initialPending}`, 'info');
+            
+            await callAPI('convert_points_to_cash', {
+                partner_code: partnerCode,
+                points_used: points,
+                notes: `壓力測試轉換 ${points} 點`
+            });
+            
+            await delay(3000);
+            
+            // Check result
+            const data = await getData();
+            if (data && data.data && data.data.partners) {
+                const partner = data.data.partners.find(p => p.partner_code === partnerCode);
+                
+                if (partner) {
+                    const currentAvailable = parseFloat(partner.available_points);
+                    const currentUsed = parseFloat(partner.points_used);
+                    const currentPending = parseFloat(partner.pending_commission);
+                    
+                    const expectedCash = Math.floor(points * 0.5); // 50% 匯率
+                    
+                    log(`轉換後: 可用點數=${currentAvailable}, 待結算現金=${currentPending}`, 'info');
+                    log(`預期現金增加: ${expectedCash} (匯率 50%)`, 'info');
+                    
+                    assertAlmostEqual(currentAvailable, initialAvailable - points, 1, `可用點數應減少 ${points}`);
+                    assertAlmostEqual(currentUsed, initialUsed + points, 1, `已使用點數應增加 ${points}`);
+                    assertAlmostEqual(currentPending, initialPending + expectedCash, 1, `待結算現金應增加 ${expectedCash}`);
+                    
+                    return { success: true, cashAmount: expectedCash };
+                }
+            }
+            
+            return { success: false };
+        }
+
+        async function testEdgeCases() {
+            log('=== 邊界條件測試 ===', 'test');
+            
+            // Test negative points prevention
+            const partner = testEntities.partners[0];
+            if (partner) {
+                const currentPoints = parseFloat(partner.available_points);
+                
+                log('測試防止負數點數...', 'info');
+                const result = await callAPI('use_accommodation_points', {
+                    partner_code: partner.partner_code,
+                    deduct_amount: currentPoints + 10000,
+                    checkin_date: '2024-12-31',
+                    room_price: 999999
+                });
+                
+                assert(!result.success, '應該拒絕超額使用', false, result.success);
+                if (result.error) {
+                    assert(result.error.includes('點數不足'), '錯誤訊息應包含"點數不足"');
+                }
+            }
+            
+            // Test duplicate booking prevention
+            log('測試重複確認入住...', 'info');
+            const booking = testEntities.bookings[0];
+            if (booking && booking.stay_status === 'COMPLETED') {
+                await callAPI('confirm_checkin_completion', {
+                    booking_id: booking.id,
+                    confirmed_by: 'duplicate_test'
+                });
+                
+                await delay(2000);
+                
+                const data = await getData();
+                if (data && data.data && data.data.bookings) {
+                    const updatedBooking = data.data.bookings.find(b => b.id === booking.id);
+                    assert(updatedBooking.commission_amount === booking.commission_amount, 
+                           '重複確認不應改變佣金', booking.commission_amount, updatedBooking.commission_amount);
+                }
+            }
+        }
+
+        // Main test orchestrator
+        async function startUltimateTest() {
+            // Reset state
+            testState = {
+                assertions: { total: 0, passed: 0, failed: 0, warnings: 0 },
+                currentTest: null,
+                testData: {},
+                startTime: Date.now(),
+                endTime: null,
+                results: []
+            };
+            testEntities = { partners: [], bookings: [], payouts: [] };
+            
+            log('===== 開始終極壓力測試 =====', 'test');
+            log(`測試時間: ${new Date().toLocaleString()}`, 'info');
+            log(`測試URL: ${document.getElementById('scriptUrl').value}`, 'info');
+            
+            try {
+                // Phase 1: Core functions
+                updateSection('coreSection', 'running');
+                log('階段 1: 核心功能測試', 'test');
+                
+                const partner = await testCreatePartner();
+                if (!partner) {
+                    log('創建大使失敗，終止測試', 'fail');
+                    return;
+                }
+                
+                const booking = await testCreateBooking(partner.partner_code);
+                if (!booking) {
+                    log('創建訂房失敗，終止測試', 'fail');
+                    return;
+                }
+                
+                updateSection('coreSection', testState.assertions.failed === 0 ? 'pass' : 'fail');
+                
+                // Phase 2: Commission logic
+                updateSection('commissionSection', 'running');
+                log('階段 2: 佣金邏輯測試', 'test');
+                
+                const checkinResult = await testConfirmCheckin(booking.id, partner.partner_code);
+                if (!checkinResult) {
+                    warn('確認入住可能失敗');
+                }
+                
+                updateSection('commissionSection', checkinResult ? 'pass' : 'fail');
+                
+                // Phase 3: Points system
+                log('階段 3: 點數系統測試', 'test');
+                
+                await testUsePoints(partner.partner_code, 1000);
+                await testConvertToCash(partner.partner_code, 2000);
+                
+                // Phase 4: Edge cases
+                updateSection('edgeSection', 'running');
+                log('階段 4: 邊界條件測試', 'test');
+                
+                await testEdgeCases();
+                
+                updateSection('edgeSection', 'pass');
+                
+                // Phase 5: Stress test (if selected)
+                const intensity = document.getElementById('testIntensity').value;
+                if (intensity === 'stress' || intensity === 'extreme') {
+                    log('階段 5: 壓力測試', 'test');
+                    
+                    // Create multiple partners and bookings
+                    for (let i = 0; i < 3; i++) {
+                        const stressPartner = await testCreatePartner();
+                        if (stressPartner) {
+                            for (let j = 0; j < 2; j++) {
+                                const stressBooking = await testCreateBooking(stressPartner.partner_code);
+                                if (stressBooking) {
+                                    await testConfirmCheckin(stressBooking.id, stressPartner.partner_code);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                log(`測試異常終止: ${error.message}`, 'fail');
+            }
+            
+            // Final report
+            testState.endTime = Date.now();
+            const duration = ((testState.endTime - testState.startTime) / 1000).toFixed(2);
+            
+            log('===== 測試完成 =====', 'test');
+            log(`總耗時: ${duration} 秒`, 'info');
+            log(`總斷言: ${testState.assertions.total}`, 'info');
+            log(`通過: ${testState.assertions.passed} (${Math.round((testState.assertions.passed / testState.assertions.total) * 100)}%)`, 
+                testState.assertions.passed === testState.assertions.total ? 'pass' : 'warn');
+            log(`失敗: ${testState.assertions.failed}`, 
+                testState.assertions.failed > 0 ? 'fail' : 'info');
+            
+            if (testState.assertions.failed === 0) {
+                log('🎉 所有測試通過！系統運作正常！', 'pass');
+            } else {
+                log(`⚠️ 有 ${testState.assertions.failed} 個斷言失敗，請檢查詳細日誌`, 'fail');
+            }
+        }
+
+        // Scenario tests
+        async function runScenarioTest() {
+            log('===== 業務情境測試 =====', 'test');
+            
+            updateSection('scenarioSection', 'running');
+            
+            // Scenario 1: Complete customer journey
+            log('情境 1: 完整客戶旅程', 'test');
+            
+            const scenarioPartner = await testCreatePartner();
+            if (scenarioPartner) {
+                // First referral (with bonus)
+                const booking1 = await testCreateBooking(scenarioPartner.partner_code);
+                if (booking1) {
+                    await testConfirmCheckin(booking1.id, scenarioPartner.partner_code);
+                }
+                
+                // Second referral (no bonus)
+                const booking2 = await testCreateBooking(scenarioPartner.partner_code);
+                if (booking2) {
+                    await testConfirmCheckin(booking2.id, scenarioPartner.partner_code);
+                }
+                
+                // Use points
+                await testUsePoints(scenarioPartner.partner_code, 1500);
+                
+                // Convert to cash
+                await testConvertToCash(scenarioPartner.partner_code, 1000);
+            }
+            
+            updateSection('scenarioSection', 'pass');
+            
+            log('情境測試完成', 'test');
+        }
+
+        // UI helpers
+        function updateSection(sectionId, status) {
+            const section = document.getElementById(sectionId);
+            section.classList.remove('test-pass', 'test-fail', 'test-running');
+            
+            if (status === 'pass') {
+                section.classList.add('test-pass');
+            } else if (status === 'fail') {
+                section.classList.add('test-fail');
+            } else if (status === 'running') {
+                section.classList.add('test-running');
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('testLog').innerHTML = '<div class="log-entry">系統已重置</div>';
+            testState = {
+                assertions: { total: 0, passed: 0, failed: 0, warnings: 0 },
+                currentTest: null,
+                testData: {},
+                startTime: null,
+                endTime: null,
+                results: []
+            };
+            updateStats();
+        }
+
+        function filterLog(type) {
+            const entries = document.getElementById('testLog').querySelectorAll('.log-entry');
+            entries.forEach(entry => {
+                const text = entry.textContent;
+                if (type === 'all') {
+                    entry.style.display = 'block';
+                } else if (type === 'pass' && text.includes('PASS')) {
+                    entry.style.display = 'block';
+                } else if (type === 'fail' && text.includes('FAIL')) {
+                    entry.style.display = 'block';
+                } else if (type === 'warn' && text.includes('WARN')) {
+                    entry.style.display = 'block';
+                } else {
+                    entry.style.display = 'none';
+                }
+            });
+        }
+
+        function exportReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                duration: testState.endTime ? ((testState.endTime - testState.startTime) / 1000) + 's' : 'N/A',
+                stats: testState.assertions,
+                successRate: testState.assertions.total > 0 
+                    ? Math.round((testState.assertions.passed / testState.assertions.total) * 100) + '%'
+                    : '0%',
+                results: testState.results,
+                entities: testEntities
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `stress-test-report-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize
+        log('終極壓力測試系統 v3.0.0 已載入', 'info');
+        log('準備就緒，請點擊"開始終極測試"', 'info');
+    </script>
+</body>
+</html>

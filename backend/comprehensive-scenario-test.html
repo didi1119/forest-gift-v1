@@ -288,8 +288,8 @@
             ],
             edge: [
                 { id: 'E001', name: '空值輸入', description: '所有欄位都是空值' },
-                { id: 'E002', name: 'SQL注入', description: "'; DROP TABLE; --" },
-                { id: 'E003', name: 'XSS攻擊', description: '<script>alert("XSS")</script>' },
+                { id: 'E002', name: 'SQL注入', description: '\'; DROP TABLE; --' },
+                { id: 'E003', name: 'XSS攻擊', description: '<script>alert(XSS)</script>' },
                 { id: 'E004', name: '超長字串', description: '10000字元的名稱' },
                 { id: 'E005', name: 'Unicode字元', description: '表情符號、特殊語言' },
                 { id: 'E006', name: '最大整數', description: '2147483647' },

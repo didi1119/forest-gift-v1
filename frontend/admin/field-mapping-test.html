@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>欄位對應測試工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">🔍 欄位對應測試工具</h1>
+        
+        <!-- 測試按鈕 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">測試控制台</h2>
+            <div class="flex gap-4">
+                <button onclick="loadPartnerData()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    載入 Partners 資料
+                </button>
+                <button onclick="checkFieldMapping()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    檢查欄位對應
+                </button>
+                <button onclick="clearResults()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    清除結果
+                </button>
+            </div>
+        </div>
+        
+        <!-- 結果顯示區 -->
+        <div id="results" class="space-y-4"></div>
+    </div>
+    
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+        let partnersData = [];
+        
+        function log(title, content, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const typeClass = {
+                'info': 'bg-blue-50 border-blue-200',
+                'success': 'bg-green-50 border-green-200',
+                'warning': 'bg-yellow-50 border-yellow-200',
+                'error': 'bg-red-50 border-red-200'
+            }[type];
+            
+            const html = `
+                <div class="bg-white rounded-lg shadow p-6 border-2 ${typeClass}">
+                    <h3 class="text-lg font-bold mb-2">${title}</h3>
+                    <pre class="text-sm overflow-x-auto">${typeof content === 'object' ? JSON.stringify(content, null, 2) : content}</pre>
+                </div>
+            `;
+            resultsDiv.innerHTML += html;
+        }
+        
+        async function loadPartnerData() {
+            log('載入資料', '正在從 Google Sheets 載入 Partners 資料...', 'info');
+            
+            try {
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=get_all_data`);
+                const result = await response.json();
+                
+                if (result.success !== false && result.data && result.data.partners) {
+                    partnersData = result.data.partners;
+                    log('載入成功', `成功載入 ${partnersData.length} 位夥伴資料`, 'success');
+                    
+                    // 顯示第一位夥伴的資料結構
+                    if (partnersData.length > 0) {
+                        log('第一位夥伴資料範例', partnersData[0], 'info');
+                    }
+                } else {
+                    log('載入失敗', result.error || '無法載入資料', 'error');
+                }
+            } catch (error) {
+                log('載入錯誤', error.message, 'error');
+            }
+        }
+        
+        function checkFieldMapping() {
+            if (partnersData.length === 0) {
+                log('錯誤', '請先載入 Partners 資料', 'error');
+                return;
+            }
+            
+            log('開始檢查欄位對應', '分析所有夥伴的欄位名稱...', 'info');
+            
+            // 收集所有欄位名稱
+            const fieldStats = {};
+            const fieldExamples = {};
+            
+            partnersData.forEach(partner => {
+                Object.keys(partner).forEach(field => {
+                    if (!fieldStats[field]) {
+                        fieldStats[field] = 0;
+                        fieldExamples[field] = [];
+                    }
+                    fieldStats[field]++;
+                    if (fieldExamples[field].length < 3 && partner[field]) {
+                        fieldExamples[field].push(partner[field]);
+                    }
+                });
+            });
+            
+            // 檢查新舊欄位對應
+            const fieldMapping = {
+                '姓名欄位': {
+                    'partner_name (新)': fieldStats['partner_name'] || 0,
+                    'name (舊)': fieldStats['name'] || 0,
+                    '範例': fieldExamples['partner_name'] || fieldExamples['name']
+                },
+                '等級欄位': {
+                    'partner_level (新)': fieldStats['partner_level'] || 0,
+                    'level (舊)': fieldStats['level'] || 0,
+                    '範例': fieldExamples['partner_level'] || fieldExamples['level']
+                },
+                '電話欄位': {
+                    'contact_phone (新)': fieldStats['contact_phone'] || 0,
+                    'phone (舊)': fieldStats['phone'] || 0,
+                    '範例': fieldExamples['contact_phone'] || fieldExamples['phone']
+                },
+                'Email欄位': {
+                    'contact_email (新)': fieldStats['contact_email'] || 0,
+                    'email (舊)': fieldStats['email'] || 0,
+                    '範例': fieldExamples['contact_email'] || fieldExamples['email']
+                },
+                '成功推薦數': {
+                    'successful_referrals (新)': fieldStats['successful_referrals'] || 0,
+                    'total_successful_referrals (舊)': fieldStats['total_successful_referrals'] || 0,
+                    '範例': fieldExamples['successful_referrals'] || fieldExamples['total_successful_referrals']
+                },
+                '年度進度': {
+                    'yearly_referrals (新)': fieldStats['yearly_referrals'] || 0,
+                    'level_progress (舊)': fieldStats['level_progress'] || 0,
+                    '範例': fieldExamples['yearly_referrals'] || fieldExamples['level_progress']
+                }
+            };
+            
+            log('欄位對應分析結果', fieldMapping, 'warning');
+            
+            // 檢查關鍵欄位是否存在
+            const criticalFields = ['partner_code', 'available_points', 'points_used', 'pending_commission'];
+            const missingFields = [];
+            
+            criticalFields.forEach(field => {
+                if (!fieldStats[field] || fieldStats[field] < partnersData.length) {
+                    missingFields.push(`${field} (${fieldStats[field] || 0}/${partnersData.length})`);
+                }
+            });
+            
+            if (missingFields.length > 0) {
+                log('缺少關鍵欄位', missingFields.join(', '), 'error');
+            } else {
+                log('關鍵欄位檢查', '所有關鍵欄位都存在', 'success');
+            }
+            
+            // 顯示所有欄位統計
+            log('完整欄位統計', fieldStats, 'info');
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // 頁面載入時自動執行
+        window.addEventListener('load', () => {
+            log('測試工具已就緒', '點擊「載入 Partners 資料」開始測試', 'success');
+        });
+    </script>
+</body>
+</html>

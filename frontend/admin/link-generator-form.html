@@ -7,16 +7,30 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FDFBF8;
+            color: #5C544B;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+        .brand-accent {
+            color: #2E4B36;
         }
         .forest-gradient {
-            background: linear-gradient(135deg, #1e3c1e 0%, #2d5a2d 100%);
+            background: linear-gradient(135deg, #2E4B36 0%, #3A5A40 100%);
+        }
+        .brand-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE6E1;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
         }
         .card-shadow {
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
         }
         .link-display {
             word-break: break-all;
@@ -52,20 +66,20 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-green-50 to-emerald-50 min-h-screen">
+<body class="min-h-screen">
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
     <div class="container mx-auto px-4 py-8 max-w-4xl">
         <!-- Header -->
         <div class="forest-gradient text-white p-8 rounded-2xl mb-8 card-shadow">
-            <h1 class="text-3xl font-bold mb-2">🌲 知音大使專屬連結生成器</h1>
+            <h1 class="font-serif text-3xl font-bold mb-2">🌲 知音大使專屬連結生成器</h1>
             <p class="text-green-100">為每位大使生成專屬的推薦連結，開啟森林旅程</p>
         </div>
 
         <!-- Main Form -->
-        <div class="bg-white rounded-2xl p-8 mb-6 card-shadow">
-            <h2 class="text-2xl font-bold text-green-800 mb-6">📝 大使資訊</h2>
+        <div class="brand-card p-8 mb-6">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">📝 大使資訊</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Basic Info -->
@@ -108,7 +122,7 @@
 
             <!-- Coupon Info -->
             <div class="mt-6 p-6 bg-amber-50 rounded-lg border-2 border-amber-200">
-                <h3 class="text-lg font-bold text-amber-800 mb-4">🎫 專屬優惠券設定</h3>
+                <h3 class="font-serif text-lg font-semibold text-amber-800 mb-4">🎫 專屬優惠券設定</h3>
                 <p class="text-sm text-amber-700 mb-4">
                     ⚠️ 重要：請先到 LINE 官方帳號後台建立專屬優惠券，然後將連結貼在下方
                 </p>
@@ -134,7 +148,7 @@
 
             <!-- Bank Info -->
             <div class="mt-6">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">🏦 銀行資訊（選填）</h3>
+                <h3 class="font-serif text-lg font-semibold text-gray-800 mb-4">🏦 銀行資訊（選填）</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">銀行名稱</label>
@@ -171,14 +185,14 @@
 
             <!-- Generate Button -->
             <button onclick="generateLinks()" 
-                    class="mt-8 w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-3 px-6 rounded-lg hover:from-green-700 hover:to-emerald-700 transition duration-200 shadow-lg">
+                    class="mt-8 w-full bg-gradient-to-r from-green-700 to-green-800 text-white font-bold py-3 px-6 rounded-lg hover:from-green-800 hover:to-green-900 transition duration-200 shadow-lg">
                 🔗 生成專屬連結
             </button>
         </div>
 
         <!-- Result Section -->
-        <div id="resultSection" class="bg-white rounded-2xl p-8 card-shadow hidden">
-            <h2 class="text-2xl font-bold text-green-800 mb-6">✨ 生成結果</h2>
+        <div id="resultSection" class="brand-card p-8 hidden">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">✨ 生成結果</h2>
             
             <!-- Links Display -->
             <div class="space-y-4 mb-6">
@@ -197,14 +211,14 @@
                 <h3 class="font-semibold text-gray-700 mb-2">📱 分享範本</h3>
                 <textarea id="shareTemplate" class="w-full h-48 p-4 border border-gray-300 rounded-lg" readonly>生成中...</textarea>
                 <button onclick="copyShareTemplate()" 
-                        class="mt-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-200">
+                        class="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
                     📋 複製分享文案
                 </button>
             </div>
 
             <!-- Save Button -->
             <button onclick="saveToSheets()" 
-                    class="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg hover:from-amber-600 hover:to-orange-600 transition duration-200 shadow-lg">
+                    class="w-full bg-gradient-to-r from-amber-600 to-amber-700 text-white font-bold py-3 px-6 rounded-lg hover:from-amber-700 hover:to-amber-800 transition duration-200 shadow-lg">
                 💾 儲存到 Google Sheets
             </button>
             
@@ -214,7 +228,7 @@
 
             <!-- Tips -->
             <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                <p><strong class="text-green-800">💡 使用提示：</strong></p>
+                <p><strong class="font-serif text-green-800">💡 使用提示：</strong></p>
                 <ul class="text-sm text-green-700 mt-2 space-y-1">
                     <li>• 短網址更美觀易記，適合分享</li>
                     <li>• 請確保優惠券連結是大使專屬的</li>

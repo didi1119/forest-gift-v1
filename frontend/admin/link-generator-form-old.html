@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知音大使專屬連結生成器 (表單版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // 抑制 Tailwind CSS 生產環境警告
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                mode: 'jit'
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FDFBF8;
+            color: #5C544B;
+        }
+        h1, h2, h3, .font-serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+        .brand-accent {
+            color: #2E4B36;
+        }
+        .brand-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE6E1;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        }
+        .link-box {
+            background-color: #F8F5F2;
+            border: 2px dashed #2E4B36;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen py-12">
+    <div class="max-w-4xl mx-auto px-6">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold brand-accent mb-4">知音大使專屬連結生成器</h1>
+            <p class="text-lg text-stone-600">為每位知音大使生成個人化的分享連結並寫入 Google Sheets</p>
+            <p class="text-sm text-amber-600 mt-2">📝 使用表單提交方式，確保資料能順利儲存</p>
+        </header>
+
+        <div class="brand-card p-8 mb-8">
+            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">生成專屬連結</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">夥伴姓名 *</label>
+                    <input type="text" id="partnerName" placeholder="例：王小明" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">夥伴代碼 *</label>
+                    <input type="text" id="partnerCode" placeholder="例：WANG001 或 xiaoming" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    <p class="text-xs text-stone-500 mt-1">建議格式：大寫字母+數字，例如 WANG001</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">手機號碼</label>
+                    <input type="tel" id="partnerPhone" placeholder="0912345678" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    <p class="text-xs text-stone-500 mt-1">用於聯絡大使</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">Email</label>
+                    <input type="email" id="partnerEmail" placeholder="partner@example.com" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">優惠券代碼</label>
+                    <input type="text" id="couponCode" placeholder="例：FOREST_WANG001" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    <p class="text-xs text-stone-500 mt-1">選填：如有專屬優惠券可填入</p>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-stone-700 mb-2">專屬優惠券連結 *</label>
+                    <input type="url" id="couponUrl" placeholder="例：https://lin.ee/abc123" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    <p class="text-xs text-stone-500 mt-1">請貼上從 LINE 官方帳號後台取得的專屬優惠券連結</p>
+                </div>
+            </div>
+            
+            <!-- 銀行帳戶資訊區塊 -->
+            <div class="bg-gray-50 p-4 rounded-lg mt-6">
+                <h4 class="font-semibold text-stone-800 mb-4">💰 匯款帳戶資訊</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">銀行名稱</label>
+                        <input type="text" id="bankName" placeholder="例：台灣銀行" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">銀行代碼</label>
+                        <input type="text" id="bankCode" placeholder="例：004" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">分行名稱</label>
+                        <input type="text" id="bankBranch" placeholder="例：信義分行" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-2">戶名</label>
+                        <input type="text" id="bankAccountName" placeholder="帳戶持有人姓名" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-stone-700 mb-2">帳號</label>
+                        <input type="text" id="bankAccountNumber" placeholder="例：1234567890123" class="w-full p-3 border-2 border-stone-200 rounded-lg focus:border-green-800 focus:outline-none">
+                        <p class="text-xs text-stone-500 mt-1">請確認帳號正確，以確保佣金能順利匯款</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <button onclick="generateLinks()" class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
+                    🔗 生成專屬連結
+                </button>
+                
+                <button onclick="saveToSheets()" class="w-full bg-green-800 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-900 transition duration-300">
+                    💾 儲存到 Google Sheets
+                </button>
+                
+                <p class="text-xs text-stone-500 text-center">
+                    生成連結後，請點擊「儲存到 Google Sheets」將資料寫入系統
+                </p>
+            </div>
+        </div>
+
+        <div id="resultSection" class="brand-card p-8 hidden">
+            <h3 class="font-serif text-xl font-semibold brand-accent mb-4">生成結果</h3>
+            
+            <!-- 連結類型切換 -->
+            <div class="mb-4 text-center">
+                <div class="inline-flex bg-stone-100 rounded-lg p-1">
+                    <button id="shortUrlToggle" onclick="toggleUrlDisplay(true)" class="px-4 py-2 text-sm rounded-md bg-green-600 text-white transition-all">
+                        📎 短網址（推薦分享）
+                    </button>
+                    <button id="fullUrlToggle" onclick="toggleUrlDisplay(false)" class="px-4 py-2 text-sm rounded-md text-stone-600 hover:text-stone-800 transition-all">
+                        🔗 完整連結
+                    </button>
+                </div>
+                <p class="text-xs text-stone-500 mt-2">💡 短網址更適合分享，完整連結方便除錯</p>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">主頁連結（透過中繼服務追蹤）</label>
+                    <div class="link-box" id="landingLink">生成短網址中...</div>
+                    <button onclick="copyText('landingLink')" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">複製連結</button>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-2">LINE 官方帳號連結（透過中繼服務追蹤）</label>
+                    <div class="link-box" id="couponLink">生成短網址中...</div>
+                    <button onclick="copyText('couponLink')" class="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">複製連結</button>
+                    <p class="text-xs text-stone-500 mt-1">注意：優惠券需要在 LINE 官方帳號後台另行設定</p>
+                </div>
+                
+                <div class="bg-amber-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-amber-800 mb-2">📱 分享範本</h4>
+                    <div class="text-sm text-amber-700 leading-relaxed">
+                        <p id="shareTemplate"></p>
+                    </div>
+                    <button onclick="copyText('shareTemplate')" class="mt-3 px-3 py-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700">複製範本</button>
+                </div>
+                
+                <div id="saveStatus" class="bg-gray-50 p-4 rounded-lg hidden">
+                    <div class="flex items-center justify-between">
+                        <p id="saveStatusText" class="text-gray-700">⏳ 尚未儲存到系統</p>
+                        <button onclick="saveToBackend()" id="saveBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            儲存大使資料
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="brand-card p-8 mt-8">
+            <h3 class="font-serif text-xl font-semibold brand-accent mb-4">系統說明</h3>
+            <div class="space-y-3 text-sm text-stone-600">
+                <p><strong class="text-stone-800">連結追蹤：</strong>所有連結都會通過 Apps Script 中繼服務進行點擊追蹤</p>
+                <p><strong class="text-stone-800">短網址服務：</strong>自動使用 TinyURL 和 is.gd 生成簡潔的分享連結</p>
+                <p><strong class="text-stone-800">資料管理：</strong>夥伴資料會儲存在 Google Sheets，作為系統資料庫</p>
+                <p><strong class="text-stone-800">績效統計：</strong>系統每日自動彙整點擊數與轉換數據</p>
+                <p><strong class="text-stone-800">獎金計算：</strong>僅已付費且實際入住的訂房才算有效轉換</p>
+                <p><strong class="text-stone-800">技術說明：</strong>使用表單提交方式，避免 CORS 跨域問題</p>
+                <p><strong class="text-amber-800">💡 分享建議：</strong>短網址更美觀易記，完整連結方便技術除錯</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隱藏的 iframe 用於接收表單回應 -->
+    <iframe id="hiddenFrame" name="hiddenFrame" style="display:none;"></iframe>
+
+    <script>
+        // 設定值
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec'; 
+        const GITHUB_PAGES_URL = 'https://didi1119.github.io/forest-gift-v1'; 
+        const DEFAULT_LINE_COUPON_URL = 'https://lin.ee/q38pqot';
+        
+        let generatedData = null;
+        
+        // 短網址服務函數
+        async function createShortUrl(originalUrl) {
+            try {
+                // 使用 TinyURL API - 免費且穩定
+                const response = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(originalUrl));
+                
+                if (response.ok) {
+                    const shortUrl = await response.text();
+                    // 檢查是否為有效的短網址
+                    if (shortUrl && shortUrl.startsWith('https://tinyurl.com/')) {
+                        return shortUrl;
+                    }
+                }
+                
+                // TinyURL 失敗時，嘗試使用 is.gd
+                const isGdResponse = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(originalUrl));
+                if (isGdResponse.ok) {
+                    const isGdShortUrl = await isGdResponse.text();
+                    if (isGdShortUrl && isGdShortUrl.startsWith('https://is.gd/')) {
+                        return isGdShortUrl;
+                    }
+                }
+                
+                throw new Error('所有短網址服務都無法使用');
+                
+            } catch (error) {
+                console.warn('短網址生成失敗:', error);
+                // 如果短網址服務失敗，返回原始 URL
+                return originalUrl;
+            }
+        }
+        
+        async function generateLinks() {
+            const partnerCode = document.getElementById('partnerCode').value.trim();
+            const partnerName = document.getElementById('partnerName').value.trim();
+            const partnerEmail = document.getElementById('partnerEmail').value.trim();
+            const couponCode = document.getElementById('couponCode').value.trim();
+            const couponUrl = document.getElementById('couponUrl').value.trim();
+            
+            if (!partnerCode || !partnerName) {
+                alert('請填寫夥伴代碼和姓名');
+                return;
+            }
+            
+            if (!couponUrl) {
+                alert('請提供專屬優惠券連結！\n\n請到 LINE 官方帳號後台建立專屬優惠券，然後將連結貼上。');
+                return;
+            }
+            
+            // 顯示生成中狀態
+            document.getElementById('resultSection').classList.remove('hidden');
+            document.getElementById('landingLink').textContent = '生成短網址中...';
+            document.getElementById('couponLink').textContent = '生成短網址中...';
+            document.getElementById('shareTemplate').textContent = '生成中...';
+            document.getElementById('saveStatus').classList.remove('hidden');
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+            
+            try {
+                // 生成透過 Apps Script 中繼的連結
+                const landingUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=landing`;
+                const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
+                
+                // 生成短網址
+                const shortLandingUrl = await createShortUrl(landingUrl);
+                const shortCouponUrl = await createShortUrl(trackedCouponUrl);
+                
+                // 生成分享範本（使用短網址）
+                const shareText = `🌲 來自靜謐森林的特別邀請
+
+親愛的朋友，我想與你分享一個很特別的地方 —— 一片能讓心靈真正休息的森林。
+
+這裡不只是住宿，更是一場回到內心家園的旅程。我為你準備了一份專屬的森林禮物，希望能為你的生活帶來一些不一樣的寧靜與感動。
+
+🎁 點擊連結，開始你的森林之旅：
+${shortLandingUrl}
+
+期待你也能在這裡，找到屬於自己的那份安靜。
+
+—— ${partnerName} 真誠推薦 ❤️`;
+                
+                // 保存生成的資料（包含原始連結、短網址和銀行帳戶資訊）
+                generatedData = {
+                    partner_code: partnerCode,
+                    partner_name: partnerName,
+                    contact_email: partnerEmail,
+                    coupon_code: couponCode,
+                    coupon_url: couponUrl,  // 保存使用者輸入的專屬優惠券連結
+                    landing_link: landingUrl,
+                    coupon_link: trackedCouponUrl,
+                    short_landing_link: shortLandingUrl,
+                    short_coupon_link: shortCouponUrl,
+                    email: partnerEmail,
+                    contact_email: partnerEmail,
+                    contact_phone: document.getElementById('partnerPhone') ? document.getElementById('partnerPhone').value.trim() : '',
+                    coupon_code: couponCode,
+                    coupon_url: couponUrl,
+                    line_coupon_url: couponUrl,  // 保存到後端的欄位
+                    landing_link: landingUrl,
+                    coupon_link: trackedCouponUrl,
+                    short_landing_link: shortLandingUrl,
+                    short_coupon_link: shortCouponUrl,
+                    bank_name: document.getElementById('bankName').value.trim(),
+                    bank_code: document.getElementById('bankCode').value.trim(),
+                    bank_branch: document.getElementById('bankBranch').value.trim(),
+                    bank_account_name: document.getElementById('bankAccountName').value.trim(),
+                    bank_account_number: document.getElementById('bankAccountNumber').value.trim(),
+                    commission_preference: 'ACCOMMODATION'  // 預設偏好
+                };
+                
+                // 顯示結果（短網址）
+                document.getElementById('landingLink').textContent = shortLandingUrl;
+                document.getElementById('couponLink').textContent = shortCouponUrl;
+                document.getElementById('shareTemplate').textContent = shareText;
+                
+                showToast('✅ 連結和短網址生成成功！');
+                
+            } catch (error) {
+                console.error('生成短網址失敗:', error);
+                // 失敗時使用原始連結
+                const landingUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=landing`;
+                const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
+                
+                const shareText = `🌲 來自靜謐森林的特別邀請
+
+親愛的朋友，我想與你分享一個很特別的地方 —— 一片能讓心靈真正休息的森林。
+
+這裡不只是住宿，更是一場回到內心家園的旅程。我為你準備了一份專屬的森林禮物，希望能為你的生活帶來一些不一樣的寧靜與感動。
+
+🎁 點擊連結，開始你的森林之旅：
+${landingUrl}
+
+期待你也能在這裡，找到屬於自己的那份安靜。
+
+—— ${partnerName} 真誠推薦 ❤️`;
+                
+                    bank_name: document.getElementById('bankName').value.trim(),
+                    bank_code: document.getElementById('bankCode').value.trim(),
+                    bank_branch: document.getElementById('bankBranch').value.trim(),
+                    bank_account_name: document.getElementById('bankAccountName').value.trim(),
+                    bank_account_number: document.getElementById('bankAccountNumber').value.trim()
+                };
+                
+                document.getElementById('landingLink').textContent = landingUrl;
+                document.getElementById('couponLink').textContent = trackedCouponUrl;
+                document.getElementById('shareTemplate').textContent = shareText;
+                
+                showToast('⚠️ 短網址生成失敗，使用原始連結');
+            }
+        }
+        
+        function saveToSheets() {
+            if (!generatedData) {
+                alert('請先生成連結');
+                return;
+            }
+            
+            const button = document.querySelector('button[onclick="saveToSheets()"]');
+            const originalText = button.textContent;
+            button.textContent = '儲存中...';
+            button.disabled = true;
+            
+            try {
+                // 準備完整的 Partner 資料
+                const fullPartnerData = {
+                    action: 'create_partner',
+                    // 基本資料
+                    partner_code: generatedData.partner_code,
+                    partner_name: generatedData.partner_name,
+                    name: generatedData.partner_name,  // 兼容欄位
+                    email: generatedData.email || generatedData.contact_email || '',
+                    contact_email: generatedData.email || generatedData.contact_email || '',
+                    phone: generatedData.contact_phone || '',
+                    contact_phone: generatedData.contact_phone || '',
+                    
+                    // 等級資料（初始值）
+                    partner_level: 'LV1_INSIDER',  // 明確設定初始等級
+                    level: 'LV1_INSIDER',  // 兼容欄位
+                    level_progress: 0,
+                    total_referrals: 0,
+                    total_successful_referrals: 0,
+                    successful_referrals: 0,
+                    yearly_referrals: 0,
+                    
+                    // 佣金資料（初始值）
+                    commission_preference: generatedData.commission_preference || 'ACCOMMODATION',
+                    total_commission_earned: 0,
+                    total_commission_paid: 0,
+                    pending_commission: 0,
+                    available_points: 0,
+                    points_used: 0,
+                    
+                    // 優惠券資料
+                    coupon_code: generatedData.coupon_code || '',
+                    coupon_url: generatedData.coupon_url || '',
+                    line_coupon_url: generatedData.coupon_url || '',  // 重要：LINE 優惠券連結
+                    
+                    // 連結資料
+                    landing_link: generatedData.landing_link || '',
+                    coupon_link: generatedData.coupon_link || '',
+                    short_landing_link: generatedData.short_landing_link || '',
+                    short_coupon_link: generatedData.short_coupon_link || '',
+                    
+                    // 銀行資料
+                    bank_name: generatedData.bank_name || '',
+                    bank_code: generatedData.bank_code || '',
+                    bank_branch: generatedData.bank_branch || '',
+                    bank_account_name: generatedData.bank_account_name || '',
+                    bank_account_number: generatedData.bank_account_number || '',
+                    bank_account: generatedData.bank_account_number || '',  // 兼容欄位
+                    
+                    // 其他
+                    is_active: true,
+                    join_date: new Date().toISOString(),
+                    notes: `創建於連結生成器 ${new Date().toLocaleDateString('zh-TW')}`
+                };
+                
+                // 建立隱藏表單
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame'; // 導向隱藏的 iframe
+                form.style.display = 'none';
+                
+                // 添加所有數據作為隱藏輸入
+                for (const [key, value] of Object.entries(fullPartnerData)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value || '';
+                    form.appendChild(input);
+                }
+                
+                // 監聽 iframe 載入完成事件
+                const iframe = document.getElementById('hiddenFrame');
+                iframe.onload = function() {
+                    try {
+                        // 嘗試讀取 iframe 內容（可能因跨域限制失敗）
+                        setTimeout(() => {
+                            // 假設成功（因為無法讀取跨域 iframe 內容）
+                            document.getElementById('saveStatus').innerHTML = `
+                                <p class="text-green-700">✅ 資料已提交儲存</p>
+                                <p class="text-sm text-gray-600 mt-1">夥伴代碼：${generatedData.partner_code}</p>
+                                <p class="text-sm text-gray-600">優惠券 URL：${generatedData.coupon_url}</p>
+                                <p class="text-xs text-amber-600 mt-2">📝 請檢查 Google Sheets 確認資料已正確儲存</p>
+                            `;
+                            document.getElementById('saveStatus').className = 'bg-green-50 p-4 rounded-lg';
+                            
+                            showToast('✅ 資料已提交！請檢查 Google Sheets');
+                            
+                            button.textContent = originalText;
+                            button.disabled = false;
+                        }, 2000);
+                        
+                    } catch (error) {
+                        // 跨域錯誤是正常的，表示提交成功
+                        console.log('跨域限制，但提交應該成功');
+                    }
+                };
+                
+                // 提交表單
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+                
+            } catch (error) {
+                console.error('提交失敗:', error);
+                alert('❌ 提交失敗：' + error.message);
+                
+                document.getElementById('saveStatus').innerHTML = `
+                    <p class="text-red-700">❌ 提交失敗：${error.message}</p>
+                `;
+                document.getElementById('saveStatus').className = 'bg-red-50 p-4 rounded-lg';
+                
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+        
+        let showShortUrls = true; // 預設顯示短網址
+        
+        function toggleUrlDisplay(useShortUrl) {
+            showShortUrls = useShortUrl;
+            
+            // 更新按鈕狀態
+            const shortBtn = document.getElementById('shortUrlToggle');
+            const fullBtn = document.getElementById('fullUrlToggle');
+            
+            if (useShortUrl) {
+                shortBtn.className = 'px-4 py-2 text-sm rounded-md bg-green-600 text-white transition-all';
+                fullBtn.className = 'px-4 py-2 text-sm rounded-md text-stone-600 hover:text-stone-800 transition-all';
+            } else {
+                shortBtn.className = 'px-4 py-2 text-sm rounded-md text-stone-600 hover:text-stone-800 transition-all';
+                fullBtn.className = 'px-4 py-2 text-sm rounded-md bg-stone-600 text-white transition-all';
+            }
+            
+            // 如果已經有生成的資料，更新顯示
+            if (generatedData) {
+                updateDisplayedLinks();
+            }
+        }
+        
+        function updateDisplayedLinks() {
+            if (!generatedData) return;
+            
+            if (showShortUrls && generatedData.short_landing_link) {
+                document.getElementById('landingLink').textContent = generatedData.short_landing_link;
+                document.getElementById('couponLink').textContent = generatedData.short_coupon_link;
+                // 更新分享範本中的連結
+                const shareText = document.getElementById('shareTemplate').textContent;
+                const updatedShareText = shareText.replace(generatedData.landing_link, generatedData.short_landing_link);
+                document.getElementById('shareTemplate').textContent = updatedShareText;
+            } else {
+                document.getElementById('landingLink').textContent = generatedData.landing_link;
+                document.getElementById('couponLink').textContent = generatedData.coupon_link;
+                // 還原分享範本中的連結
+                const shareText = document.getElementById('shareTemplate').textContent;
+                if (generatedData.short_landing_link) {
+                    const updatedShareText = shareText.replace(generatedData.short_landing_link, generatedData.landing_link);
+                    document.getElementById('shareTemplate').textContent = updatedShareText;
+                }
+            }
+        }
+        
+        function copyText(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent || element.innerText;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('✅ 已複製到剪貼簿');
+            }).catch(err => {
+                console.error('複製失敗:', err);
+                // 退化方案：選取文字
+                const range = document.createRange();
+                range.selectNode(element);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                alert('請按 Ctrl+C 複製');
+            });
+        }
+        
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        async function saveToBackend() {
+            if (!generatedData) {
+                showToast('❌ 請先生成連結');
+                return;
+            }
+            
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '儲存中...';
+            saveBtn.disabled = true;
+            
+            try {
+                // 準備要儲存的資料
+                const saveData = {
+                    action: 'create_partner',
+                    partner_code: generatedData.partner_code,
+                    partner_name: generatedData.partner_name,
+                    contact_phone: generatedData.contact_phone || '待補充',
+                    contact_email: generatedData.contact_email || generatedData.email || '',
+                    bank_code: generatedData.bank_code || '',
+                    bank_account: generatedData.bank_account_number || '',
+                    line_coupon_url: generatedData.coupon_url || '',  // 重要：儲存優惠券連結
+                    commission_preference: 'ACCOMMODATION',
+                    notes: `生成於 ${new Date().toLocaleDateString()}\n優惠券代碼: ${generatedData.coupon_code || ''}\n短網址: ${generatedData.short_landing_link || ''}`
+                };
+                
+                // 使用表單提交
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = APPS_SCRIPT_URL;
+                form.target = 'hiddenFrame';
+                form.style.display = 'none';
+                
+                Object.keys(saveData).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = saveData[key];
+                    form.appendChild(input);
+                });
+                
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+                
+                // 等待一下讓請求發送
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // 更新狀態
+                document.getElementById('saveStatusText').innerHTML = '✅ 已儲存到系統';
+                saveBtn.textContent = '已儲存';
+                saveBtn.disabled = true;
+                showToast('✅ 大使資料已儲存到系統');
+                
+            } catch (error) {
+                console.error('儲存失敗:', error);
+                showToast('❌ 儲存失敗，請稍後再試');
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+        
+        // 自動生成夥伴代碼建議
+        document.getElementById('partnerName').addEventListener('input', function() {
+            const name = this.value.trim();
+            if (name && !document.getElementById('partnerCode').value) {
+                // 簡單的中文轉拼音邏輯
+                const suggestion = name.replace(/\s+/g, '').toUpperCase() + '001';
+                document.getElementById('partnerCode').placeholder = `建議：${suggestion}`;
+            }
+        });
+    </script>
+</body>
+</html>

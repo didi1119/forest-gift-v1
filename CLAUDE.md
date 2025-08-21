@@ -398,3 +398,4 @@ accommodation_voucher_code, notes, created_by, created_at, updated_at
 - 。Google Apps Script 在 GitHub Pages 上確實會被 CORS 政策阻擋，我需要改回使用 form 提交方式。
 - COMMISSION-SYSTEM-ARCHITECTURE.md 更新到claude.md
 - 前端有更新都自動幫我部署上去
+- sheet正確id:1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4

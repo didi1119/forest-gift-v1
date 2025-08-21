@@ -1204,16 +1204,18 @@
          * @returns {string} - 返回完整的卡片 HTML 字串
          */
         function generatePartnerCard(partner) {
-            // --- 資料計算 (保持與現有版本一致) ---
-            const levelClass = getLevelClass(partner.level);
-            const levelText = getLevelText(partner.level);
+            // --- 資料計算 (使用新版欄位名稱) ---
+            const level = partner.partner_level || partner.level || 'LV1_INSIDER';
+            const name = partner.partner_name || partner.name || '未設定姓名';
+            const levelClass = getLevelClass(level);
+            const levelText = getLevelText(level);
             // 使用正確的欄位
             const availablePoints = parseFloat(partner.available_points) || 0;
             const pointsUsed = parseFloat(partner.points_used) || 0;
             const accommodationBalance = availablePoints;  // available_points 已經是可用餘額
             const pendingCash = parseFloat(partner.pending_commission) || 0;
             const totalClicks = getPartnerClicks(partner.partner_code);
-            const completedReferrals = partner.total_successful_referrals || 0;
+            const completedReferrals = partner.successful_referrals || partner.total_successful_referrals || 0;
 
             // --- 呼叫操作按鈕生成函式 ---
             const smartActions = generateSmartActions(partner);
@@ -1232,7 +1234,7 @@
                                     <h3 class="font-bold text-lg text-stone-800 hover:text-blue-600 cursor-pointer transition-colors" 
                                         onclick="viewPartnerDetails('${partner.partner_code}')"
                                         title="點擊查看詳情">
-                                        ${partner.name || '未設定姓名'}
+                                        ${name}
                                     </h3>
                                     <span class="text-sm text-stone-500 font-mono">${partner.partner_code}</span>
                                 </div>
@@ -1264,7 +1266,7 @@
 
                             <!-- 2b. 次要績效指標 -->
                             <div class="kpi-item kpi-divider">
-                                <div class="font-semibold text-lg text-stone-700">${partner.level_progress || 0} / <span class="text-base font-normal">${getNextLevelRequirement(partner.level)}</span></div>
+                                <div class="font-semibold text-lg text-stone-700">${partner.yearly_referrals || partner.level_progress || 0} / <span class="text-base font-normal">${getNextLevelRequirement(level)}</span></div>
                                 <div class="text-xs text-stone-500 mt-1">本年進度</div>
                             </div>
                             <div class="kpi-item kpi-divider">
@@ -1436,7 +1438,7 @@
                                 <div class="font-medium text-green-700">${booking.partner_code}</div>
                                 ${partner ? `
                                     <div class="text-xs text-stone-600">${partner.name}</div>
-                                    <div class="text-xs text-stone-500">${getLevelText(partner.level)}</div>
+                                    <div class="text-xs text-stone-500">${getLevelText(partner.partner_level || partner.level)}</div>
                                 ` : ''}
                             ` : `
                                 <span class="text-stone-400">非推薦訂房</span>
@@ -1878,9 +1880,9 @@
             const data = allData.partners.map(p => ({
                 '夥伴代碼': p.partner_code,
                 '姓名': p.name,
-                '等級': getLevelText(p.level),
-                '本年進度': p.level_progress,
-                '累積推薦': p.total_successful_referrals,
+                '等級': getLevelText(p.partner_level || p.level),
+                '本年進度': p.yearly_referrals || p.level_progress || 0,
+                '累積推薦': p.successful_referrals || p.total_successful_referrals || 0,
                 '可用點數': parseFloat(p.available_points) || 0,
                 '待支付現金': p.pending_cash || p.pending_commission || 0
             }));
@@ -1959,7 +1961,7 @@
                             </div>
                             <div>
                                 <span class="text-gray-600">等級：</span>
-                                <span class="font-medium">${getLevelText(partner.level || '')}</span>
+                                <span class="font-medium">${getLevelText(partner.partner_level || partner.level || '')}</span>
                             </div>
                             <div>
                                 <span class="text-gray-600">結算類型：</span>
@@ -2105,11 +2107,11 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">等級</p>
-                                <p class="font-semibold">${getLevelText(partner.level)}</p>
+                                <p class="font-semibold">${getLevelText(partner.partner_level || partner.level)}</p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">本年進度</p>
-                                <p class="font-semibold">${partner.level_progress || 0} / ${getNextLevelRequirement(partner.level)}</p>
+                                <p class="font-semibold">${partner.yearly_referrals || partner.level_progress || 0} / ${getNextLevelRequirement(partner.partner_level || partner.level)}</p>
                             </div>
                         </div>
                         
@@ -2961,11 +2963,11 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">大使等級</label>
-                                        <p>${getLevelText(partner.level)}</p>
+                                        <p>${getLevelText(partner.partner_level || partner.level)}</p>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">聯絡方式</label>
-                                        <p class="text-sm">${partner.phone || '-'}</p>
+                                        <p class="text-sm">${partner.contact_phone || partner.phone || '-'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -3043,7 +3045,7 @@
             
             const partnersOptions = allData.partners.map(partner => 
                 `<option value="${partner.partner_code}" ${booking.partner_code === partner.partner_code ? 'selected' : ''}>
-                    ${partner.partner_code} - ${partner.name || '未設定'} (${getLevelText(partner.level)})
+                    ${partner.partner_code} - ${partner.partner_name || partner.name || '未設定'} (${getLevelText(partner.partner_level || partner.level)})
                 </option>`
             ).join('');
 
@@ -3203,8 +3205,8 @@
             return `
                 <div>
                     <p class="font-medium text-green-700">${partner.name || '未設定姓名'}</p>
-                    <p class="text-xs text-gray-600">${getLevelText(partner.level)}</p>
-                    <p class="text-xs text-gray-600">電話：${partner.phone || '未設定'}</p>
+                    <p class="text-xs text-gray-600">${getLevelText(partner.partner_level || partner.level)}</p>
+                    <p class="text-xs text-gray-600">電話：${partner.contact_phone || partner.phone || '未設定'}</p>
                     <p class="text-xs text-blue-600">佣金：住宿金 $${expectedCommission.accommodation}（可轉換現金 $${expectedCommission.cash}）</p>
                 </div>
             `;
@@ -3217,7 +3219,7 @@
             const partner = allData.partners.find(p => p.partner_code === booking.partner_code);
             if (!partner) return '<p class="text-sm text-gray-500">大使不存在</p>';
             
-            const expectedCommission = calculateExpectedCommission(partner.level, booking.room_price || 0);
+            const expectedCommission = calculateExpectedCommission(partner.partner_level || partner.level, booking.room_price || 0);
             return `
                 <div class="text-sm">
                     <p class="font-medium text-blue-700">預計佣金</p>
@@ -3643,7 +3645,7 @@
                     if (partner && partner.partner_code) {
                         const option = document.createElement('option');
                         option.value = partner.partner_code;
-                        option.textContent = `${partner.partner_code} - ${partner.name || '未設定姓名'} (${getLevelText(partner.level)})`;
+                        option.textContent = `${partner.partner_code} - ${partner.partner_name || partner.name || '未設定姓名'} (${getLevelText(partner.partner_level || partner.level)})`;
                         partnerSelect.appendChild(option);
                     }
                 });
@@ -3671,13 +3673,13 @@
                                     <p class="text-gray-600">姓名：${partner.name || '未設定'}</p>
                                 </div>
                                 <div>
-                                    <p class="text-gray-600">等級：${getLevelText(partner.level)}</p>
-                                    <p class="text-gray-600">電話：${partner.phone || '未設定'}</p>
+                                    <p class="text-gray-600">等級：${getLevelText(partner.partner_level || partner.level)}</p>
+                                    <p class="text-gray-600">電話：${partner.contact_phone || partner.phone || '未設定'}</p>
                                 </div>
                             </div>
                             <div class="mt-3 p-2 bg-green-50 rounded">
                                 <p class="font-medium text-green-800">預計佣金：</p>
-                                <p class="text-sm text-green-600">${getCommissionText(partner.level)}</p>
+                                <p class="text-sm text-green-600">${getCommissionText(partner.partner_level || partner.level)}</p>
                             </div>
                         </div>
                     `;
@@ -6478,8 +6480,8 @@ ${landingUrl}
                 <tr class="border-b hover:bg-stone-50">
                     <td class="py-3 px-4 font-medium">${partner.partner_code}</td>
                     <td class="py-3 px-4 text-center">
-                        <span class="px-2 py-1 rounded text-xs ${getLevelClass(partner.level)}">
-                            ${getLevelText(partner.level)}
+                        <span class="px-2 py-1 rounded text-xs ${getLevelClass(partner.partner_level || partner.level)}">
+                            ${getLevelText(partner.partner_level || partner.level)}
                         </span>
                     </td>
                     <td class="py-3 px-4 text-center text-stone-400">開發中</td>
@@ -6503,7 +6505,7 @@ ${landingUrl}
             const reportData = partnerStats.map(p => ({
                 '大使代碼': p.partner_code,
                 '姓名': p.name || '-',
-                '等級': getLevelText(p.level),
+                '等級': getLevelText(p.partner_level || p.level),
                 '點擊數': '開發中',
                 '訂房數': p.bookings,
                 '完成數': p.completed,

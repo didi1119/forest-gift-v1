@@ -399,3 +399,4 @@ accommodation_voucher_code, notes, created_by, created_at, updated_at
 - COMMISSION-SYSTEM-ARCHITECTURE.md 更新到claude.md
 - 前端有更新都自動幫我部署上去
 - sheet正確id:1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4
+- 你先創建一個專門給測試系統的資料夾(test)，裡面有說明文件與測試腳本，然後我會要你用腳本自動測試，同時我也會手動操作找bug，如果有新的問題是你腳本沒測試到的，我們要重新檢視COMMISSION-SYSTEM-ARCHITECTUREㄡ.md裡是否漏寫的這個規則，若有則補上並把這個測試條件加入測試說明與腳本中，以供未來測試。若本來在COMMISSION-SYSTEM-ARCHITECTURE.md就有寫清楚，則不需要補說明，只需要更新測試腳本與測試說明就好。

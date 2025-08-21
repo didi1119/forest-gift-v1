@@ -2080,10 +2080,19 @@ function handleRedirect(e) {
       redirectUrl = partner && partner.line_coupon_url ? partner.line_coupon_url : DEFAULT_LINE_COUPON_URL;
     }
   } else {
+    // 處理 landing 頁面跳轉
     if (e && e.queryString) {
+      // 保留所有查詢參數（包括 coupon_url）
       redirectUrl = GITHUB_PAGES_URL + '?' + e.queryString;
     } else if (subid) {
+      // 建立基本的跳轉 URL
       redirectUrl = GITHUB_PAGES_URL + `?subid=${encodeURIComponent(subid)}`;
+      
+      // 如果有 coupon_url 參數，將其加入跳轉 URL
+      const couponUrl = e && e.parameter && e.parameter.coupon_url;
+      if (couponUrl) {
+        redirectUrl += `&coupon_url=${encodeURIComponent(couponUrl)}`;
+      }
     } else {
       redirectUrl = GITHUB_PAGES_URL;
     }

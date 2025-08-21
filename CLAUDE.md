@@ -397,3 +397,4 @@ accommodation_voucher_code, notes, created_by, created_at, updated_at
 - 紀錄表單結構還有業務邏輯
 - 。Google Apps Script 在 GitHub Pages 上確實會被 CORS 政策阻擋，我需要改回使用 form 提交方式。
 - COMMISSION-SYSTEM-ARCHITECTURE.md 更新到claude.md
+- 前端有更新都自動幫我部署上去

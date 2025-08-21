@@ -293,8 +293,8 @@
             document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
 
             try {
-                // Generate tracking URLs
-                const landingUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=landing`;
+                // Generate tracking URLs (include coupon_url in landing page URL)
+                const landingUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=landing&coupon_url=${encodeURIComponent(couponUrl)}`;
                 const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
 
                 // Generate short URLs

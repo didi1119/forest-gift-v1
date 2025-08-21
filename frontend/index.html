@@ -307,6 +307,27 @@
             return subid;
         }
         
+        // 從 URL 獲取專屬優惠券連結
+        function getCouponUrl() {
+            // 嘗試從多個可能的參數名稱獲取優惠券連結
+            let couponUrl = getUrlParameter('coupon_url') || 
+                          getUrlParameter('couponUrl') || 
+                          getUrlParameter('coupon') ||
+                          getUrlParameter('target');
+            
+            // 如果沒有從 URL 獲得，嘗試從 localStorage 獲取
+            if (!couponUrl) {
+                couponUrl = localStorage.getItem('forest_coupon_url');
+            }
+            
+            // 如果有優惠券連結，儲存到 localStorage
+            if (couponUrl) {
+                localStorage.setItem('forest_coupon_url', couponUrl);
+            }
+            
+            return couponUrl;
+        }
+        
         function trackEvent(eventType, data = {}) {
             const subid = getSubid();
             console.log(`📊 事件追蹤: ${eventType}`, {
@@ -342,22 +363,39 @@
         
         function goToLineCoupon() {
             const subid = getSubid();
+            const couponUrl = getCouponUrl();
             
             trackEvent('line_click', {
                 page: 'index',
-                has_subid: !!subid
+                has_subid: !!subid,
+                has_coupon_url: !!couponUrl
             });
             
             if (subid && subid !== 'demo' && subid !== 'no-subid') {
-                // 有有效的 subid，透過 Apps Script 中繼追蹤跳轉到該夥伴的專屬優惠券連結
-                // Apps Script 會根據 pid 查找該夥伴的 coupon_url，並進行追蹤後跳轉
-                const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon`;
-                console.log('🎁 跳轉到專屬優惠券 (透過追蹤):', trackedCouponUrl);
-                window.open(trackedCouponUrl, '_blank');
+                // 有有效的 subid
+                if (couponUrl) {
+                    // 有專屬優惠券連結，透過 Apps Script 中繼追蹤並跳轉到該連結
+                    const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
+                    console.log('🎁 跳轉到專屬優惠券 (透過追蹤):', trackedCouponUrl);
+                    console.log('   目標連結:', couponUrl);
+                    window.open(trackedCouponUrl, '_blank');
+                } else {
+                    // 沒有專屬優惠券連結，透過 Apps Script 查找（舊邏輯）
+                    const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon`;
+                    console.log('🎁 透過 Apps Script 查找優惠券連結:', trackedCouponUrl);
+                    window.open(trackedCouponUrl, '_blank');
+                }
             } else {
-                // 沒有有效的 subid，直接跳轉到預設 LINE 官方帳號（無追蹤）
-                console.log('🎁 直接跳轉到 LINE 官方帳號（無追蹤）');
-                window.open(LINE_OFFICIAL_URL, '_blank');
+                // 沒有有效的 subid
+                if (couponUrl) {
+                    // 有優惠券連結但沒有 subid，直接跳轉（無追蹤）
+                    console.log('🎁 直接跳轉到優惠券連結（無追蹤）:', couponUrl);
+                    window.open(couponUrl, '_blank');
+                } else {
+                    // 沒有 subid 也沒有優惠券連結，跳轉到預設 LINE 官方帳號
+                    console.log('🎁 直接跳轉到 LINE 官方帳號（無追蹤）');
+                    window.open(LINE_OFFICIAL_URL, '_blank');
+                }
             }
         }
 

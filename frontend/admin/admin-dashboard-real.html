@@ -4291,14 +4291,14 @@
                 return;
             }
             
-            // ✅ 使用正確的計算公式
+            // 使用正確的欄位
+            const availablePoints = parseFloat(partner.available_points) || 0;
             const totalEarned = parseFloat(partner.total_commission_earned) || 0;
-            const totalPaid = parseFloat(partner.total_commission_paid) || 0;
-            const availablePoints = totalEarned - totalPaid;
+            const pointsUsed = parseFloat(partner.points_used) || 0;
             
             console.log(`🔍 使用住宿金調試 - ${partnerCode}:`, {
                 totalEarned,
-                totalPaid,
+                pointsUsed,
                 availablePoints,
                 partner: partner
             });
@@ -4489,10 +4489,8 @@
             const roomPrice = parseFloat(document.getElementById('use_room_price').value) || 0;
             const notes = document.getElementById('use_notes').value;
             
-            // ✅ 驗證金額 - 使用正確的計算公式
-            const totalEarned = parseFloat(partner.total_commission_earned) || 0;
-            const totalPaid = parseFloat(partner.total_commission_paid) || 0;
-            const availablePoints = totalEarned - totalPaid;
+            // 驗證金額 - 使用正確的欄位
+            const availablePoints = parseFloat(partner.available_points) || 0;
             if (amount <= 0) {
                 showErrorMessage('折抵金額必須大於 0');
                 return;
@@ -4566,14 +4564,16 @@
                 // 立即更新前端數據（後端已處理所有邏輯）
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                 if (partnerIndex !== -1) {
-                    // 更新 total_commission_paid，這樣住宿金餘額會自動減少
-                    const currentPaid = parseFloat(allData.partners[partnerIndex].total_commission_paid) || 0;
-                    allData.partners[partnerIndex].total_commission_paid = currentPaid + amount;
+                    // 更新正確的欄位
+                    allData.partners[partnerIndex].available_points = availablePoints - amount;
+                    allData.partners[partnerIndex].points_used = (parseFloat(allData.partners[partnerIndex].points_used) || 0) + amount;
+                    // total_commission_earned 不變
                     
                     const newBalance = availablePoints - amount;
                     console.log('✅ 前端數據更新完成:', {
                         partner: partnerCode,
-                        total_commission_paid: allData.partners[partnerIndex].total_commission_paid,
+                        available_points: allData.partners[partnerIndex].available_points,
+                        points_used: allData.partners[partnerIndex].points_used,
                         accommodation_balance: newBalance
                     });
                 }
@@ -4663,14 +4663,14 @@
                 return;
             }
             
-            // ✅ 修復：使用正確的餘額計算
+            // 使用正確的欄位
+            const availablePoints = parseFloat(partner.available_points) || 0;
             const totalEarned = parseFloat(partner.total_commission_earned) || 0;
-            const totalPaid = parseFloat(partner.total_commission_paid) || 0;
-            const availablePoints = totalEarned - totalPaid;
+            const pointsUsed = parseFloat(partner.points_used) || 0;
             
             console.log(`🔍 轉換現金調試 - ${partnerCode}:`, {
                 totalEarned,
-                totalPaid,
+                pointsUsed,
                 availablePoints,
                 partner: partner
             });
@@ -4853,9 +4853,10 @@
                 if (partnerIndex !== -1) {
                     const partner = allData.partners[partnerIndex];
                     
-                    // 更新住宿金統計：增加 total_commission_paid
-                    const currentPaid = parseFloat(partner.total_commission_paid) || 0;
-                    partner.total_commission_paid = currentPaid + points;
+                    // 更新正確的欄位
+                    partner.available_points = (parseFloat(partner.available_points) || 0) - points;
+                    partner.points_used = (parseFloat(partner.points_used) || 0) + points;
+                    // total_commission_earned 不變
                     
                     // 更新待結算現金：增加 pending_commission
                     const currentPending = parseFloat(partner.pending_commission) || 0;

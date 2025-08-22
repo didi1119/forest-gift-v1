@@ -456,10 +456,10 @@ function manageAccommodationPoints(partnerCode) {
 
 // 創建住宿金點數管理模態框
 function createAccommodationPointsModal(partner) {
-    // 使用現有欄位：住宿金 = total_commission_earned, 已使用 = total_commission_paid
-    const availablePoints = partner.total_commission_earned || 0;
-    const usedPoints = partner.total_commission_paid || 0;
-    const totalPoints = availablePoints + usedPoints;
+    // 使用正確的欄位定義
+    const availablePoints = partner.available_points || 0;  // 可用點數
+    const usedPoints = partner.points_used || 0;  // 已使用點數
+    const totalEarned = partner.total_commission_earned || 0;  // 歷史總收入
     
     const modal = document.createElement('div');
     modal.id = 'accommodationPointsModal';
@@ -479,8 +479,8 @@ function createAccommodationPointsModal(partner) {
             <!-- 點數概覽 -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div class="bg-blue-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-blue-600">${totalPoints.toLocaleString()}</div>
-                    <div class="text-sm text-gray-600">總獲得點數</div>
+                    <div class="text-2xl font-bold text-blue-600">${totalEarned.toLocaleString()}</div>
+                    <div class="text-sm text-gray-600">歷史總收入</div>
                 </div>
                 <div class="bg-red-50 p-4 rounded-lg text-center">
                     <div class="text-2xl font-bold text-red-600">${usedPoints.toLocaleString()}</div>
@@ -488,7 +488,7 @@ function createAccommodationPointsModal(partner) {
                 </div>
                 <div class="bg-green-50 p-4 rounded-lg text-center">
                     <div class="text-2xl font-bold text-green-600">${availablePoints.toLocaleString()}</div>
-                    <div class="text-sm text-gray-600">可用點數</div>
+                    <div class="text-sm text-gray-600">可用餘額</div>
                 </div>
             </div>
             
@@ -631,13 +631,14 @@ async function processPointsDeduction(partnerCode) {
             const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
             if (partnerIndex !== -1) {
                 const partner = allData.partners[partnerIndex];
-                // 扣除住宿金：減少 total_commission_earned，增加 total_commission_paid
-                const currentPoints = partner.total_commission_earned || 0;
-                partner.total_commission_earned = Math.max(0, currentPoints - deductAmount);
-                partner.total_commission_paid = (partner.total_commission_paid || 0) + deductAmount;
+                // 正確的欄位更新：減少 available_points，增加 points_used
+                const currentPoints = partner.available_points || 0;
+                partner.available_points = Math.max(0, currentPoints - deductAmount);
+                partner.points_used = (partner.points_used || 0) + deductAmount;
+                // total_commission_earned 不變（歷史總收入不應因使用點數而減少）
                 
                 console.log(`已扣除 ${partnerCode} 的 ${deductAmount} 點數`);
-                console.log(`剩餘可用點數: ${partner.total_commission_earned}`);
+                console.log(`剩餘可用點數: ${partner.available_points}`);
             }
             
             showSuccessMessage(`成功抵扣 ${deductAmount.toLocaleString()} 住宿金點數！`);

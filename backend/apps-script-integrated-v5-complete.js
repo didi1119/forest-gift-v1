@@ -732,23 +732,18 @@ function handleUseAccommodationPoints(data) {
     
     const booking = createRecord('Bookings', bookingData);
     
-    // 計算新的點數值（v5.0 修復）
+    // 計算新的點數值
     const newAvailablePoints = currentPoints - deductAmount;
     const newPointsUsed = (parseFloat(partner.points_used) || 0) + deductAmount;
     
-    // 同步更新 total_commission_earned（v5.0 新增）
-    let newTotalEarned = parseFloat(partner.total_commission_earned) || 0;
-    if (newPointsUsed > newTotalEarned) {
-      // 如果使用的點數超過總獲得，需要同步調整
-      newTotalEarned = newPointsUsed;
-      Logger.log(`調整 total_commission_earned: ${partner.total_commission_earned} → ${newTotalEarned}`);
-    }
+    // 注意：使用點數時 total_commission_earned 不應該改變！
+    // total_commission_earned 是歷史總收入，只在確認入住(+)或取消結算(-)時改變
     
     // 更新大使數據（原子操作）
     updateRecord('Partners', partner.partner_code, {
       available_points: newAvailablePoints,
-      points_used: newPointsUsed,
-      total_commission_earned: newTotalEarned
+      points_used: newPointsUsed
+      // 移除 total_commission_earned 的更新
     });
     
     Logger.log(`更新大使點數 - 可用: ${currentPoints} → ${newAvailablePoints}, 已使用: ${partner.points_used || 0} → ${newPointsUsed}`);
@@ -1673,26 +1668,21 @@ function handleConvertPointsToCash(data) {
     const newPointsUsed = (parseFloat(partner.points_used) || 0) + convertAmount;
     const newPendingCommission = (parseFloat(partner.pending_commission) || 0) + cashAmount;
     
-    // 同步更新 total_commission_earned（v5.0 新增）
-    let newTotalEarned = parseFloat(partner.total_commission_earned) || 0;
-    if (newPointsUsed > newTotalEarned) {
-      // 如果使用的點數超過總獲得，需要同步調整
-      newTotalEarned = newPointsUsed;
-      Logger.log(`調整 total_commission_earned: ${partner.total_commission_earned} → ${newTotalEarned}`);
-    }
+    // 注意：點數轉現金時 total_commission_earned 不應該改變！
+    // total_commission_earned 是歷史總收入，只在確認入住(+)或取消結算(-)時改變
     
     Logger.log(`更新大使 ${partnerCode}:`);
     Logger.log(`  可用點數: ${currentPoints} → ${newAvailablePoints}`);
     Logger.log(`  已使用點數: ${partner.points_used || 0} → ${newPointsUsed}`);
     Logger.log(`  待支付現金: ${partner.pending_commission || 0} → ${newPendingCommission}`);
-    Logger.log(`  總獲得佣金: ${partner.total_commission_earned || 0} → ${newTotalEarned}`);
+    Logger.log(`  總獲得佣金: ${partner.total_commission_earned || 0} （不變）`);
     
     // 更新大使數據（原子操作）
     updateRecord('Partners', partnerCode, {
       available_points: newAvailablePoints,
       points_used: newPointsUsed,
-      pending_commission: newPendingCommission,
-      total_commission_earned: newTotalEarned
+      pending_commission: newPendingCommission
+      // 移除 total_commission_earned 的更新
     });
     
     // 創建轉換記錄

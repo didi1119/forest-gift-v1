@@ -245,7 +245,13 @@ function updateRecord(sheetName, id, updates) {
     const results = findRecordsByField(sheetName, 'partner_code', id);
     record = results.length > 0 ? results[0] : null;
   } else {
+    // 對於其他表，嘗試兩種ID欄位名稱
     record = findRecordById(sheetName, id);
+    if (!record && sheetName === 'Payouts') {
+      // 如果是 Payouts 表且找不到，嘗試大寫 ID
+      const results = findRecordsByField(sheetName, 'ID', id);
+      record = results.length > 0 ? results[0] : null;
+    }
   }
   
   if (!record) {
@@ -286,9 +292,15 @@ function createRecord(sheetName, data) {
   data.created_at = data.created_at || timestamp;
   data.updated_at = data.updated_at || timestamp;
   
-  // 如果需要生成ID
-  if (dataModel.hasField('id') && !data.id) {
-    data.id = generateNextId(sheet, sheetName);
+  // 如果需要生成ID（檢查 id 或 ID）
+  if ((dataModel.hasField('id') || dataModel.hasField('ID')) && !data.id && !data.ID) {
+    const newId = generateNextId(sheet, sheetName);
+    // 根據表頭欄位名稱設置ID
+    if (dataModel.hasField('ID')) {
+      data.ID = newId;
+    } else {
+      data.id = newId;
+    }
   }
   
   // 轉換為數據行
@@ -310,7 +322,11 @@ function generateNextId(sheet, tableName) {
   
   let maxId = 0;
   for (let i = 1; i < values.length; i++) {
-    const id = parseInt(dataModel.getFieldValue(values[i], 'id'));
+    // 嘗試兩種ID欄位名稱
+    let id = parseInt(dataModel.getFieldValue(values[i], 'id'));
+    if (isNaN(id)) {
+      id = parseInt(dataModel.getFieldValue(values[i], 'ID'));
+    }
     if (!isNaN(id) && id > maxId) {
       maxId = id;
     }
@@ -1241,10 +1257,19 @@ function handleCancelPayout(data) {
       throw new Error('Payout ID is required');
     }
     
-    // 查找 Payout 記錄
-    const payoutResults = findRecordsByField('Payouts', 'id', payoutId);
+    Logger.log(`=== handleCancelPayout 開始 ===`);
+    Logger.log(`Payout ID: ${payoutId}`);
+    
+    // 查找 Payout 記錄 - 嘗試兩種欄位名稱
+    let payoutResults = findRecordsByField('Payouts', 'id', payoutId);
     if (payoutResults.length === 0) {
-      throw new Error('Payout not found');
+      // 嘗試大寫 ID
+      payoutResults = findRecordsByField('Payouts', 'ID', payoutId);
+    }
+    
+    if (payoutResults.length === 0) {
+      Logger.log(`找不到 Payout: ${payoutId}`);
+      throw new Error(`Payout not found: ${payoutId}`);
     }
     
     const payout = payoutResults[0].data;
@@ -1323,10 +1348,11 @@ function handleCancelPayout(data) {
         }
         
         // 更新大使數據
+        Logger.log(`更新夥伴數據: ${JSON.stringify(partnerUpdates)}`);
         updateRecord('Partners', partner.partner_code, partnerUpdates);
         
         // 創建撤銷記錄（負數金額）
-        createRecord('Payouts', {
+        const reversalData = {
           partner_code: payout.partner_code,
           payout_type: 'COMMISSION_REVERSAL',
           amount: -amount,
@@ -1335,13 +1361,16 @@ function handleCancelPayout(data) {
           payout_status: 'COMPLETED',
           notes: `撤銷 Payout #${payoutId} 的佣金`,
           created_by: 'admin'
-        });
+        };
+        Logger.log(`創建撤銷記錄: ${JSON.stringify(reversalData)}`);
+        createRecord('Payouts', reversalData);
         
         Logger.log(`Reversed commission for partner ${partner.partner_code}, amount: ${amount}`);
       }
     }
     
     // 更新原 Payout 狀態
+    Logger.log(`更新 Payout 狀態為 CANCELLED: ${payoutId}`);
     const updated = updateRecord('Payouts', payoutId, {
       payout_status: 'CANCELLED',
       notes: (payout.notes || '') + ` [取消於 ${new Date().toISOString()}]`

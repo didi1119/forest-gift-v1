@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>取消結算測試工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">🧪 取消結算完整測試</h1>
+        
+        <!-- 測試控制面板 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">測試控制</h2>
+            <div class="grid grid-cols-3 gap-4">
+                <button onclick="runAllTests()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    執行所有測試
+                </button>
+                <button onclick="createTestData()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    創建測試數據
+                </button>
+                <button onclick="cleanupTestData()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    清理測試數據
+                </button>
+            </div>
+        </div>
+
+        <!-- 測試場景 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- 場景 A: 住宿金結算取消 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-bold text-lg mb-4">場景 A: 取消住宿金結算</h3>
+                <div class="space-y-2 text-sm">
+                    <div>Payout 類型: ACCOMMODATION</div>
+                    <div>金額: 2500 點</div>
+                    <div>當前可用點數: 5000</div>
+                </div>
+                <button onclick="testScenarioA()" class="mt-4 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    測試場景 A
+                </button>
+                <div id="resultA" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+            </div>
+
+            <!-- 場景 B: 現金結算取消 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-bold text-lg mb-4">場景 B: 取消現金結算</h3>
+                <div class="space-y-2 text-sm">
+                    <div>Payout 類型: CASH</div>
+                    <div>金額: 750 元</div>
+                    <div>當前待付: 1500</div>
+                </div>
+                <button onclick="testScenarioB()" class="mt-4 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    測試場景 B
+                </button>
+                <div id="resultB" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+            </div>
+
+            <!-- 場景 C: 點數不足 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-bold text-lg mb-4">場景 C: 點數不足時取消</h3>
+                <div class="space-y-2 text-sm">
+                    <div>要取消: 2500 點</div>
+                    <div>當前只有: 1000 點</div>
+                    <div class="text-red-600">預期: 點數歸零，記錄負債</div>
+                </div>
+                <button onclick="testScenarioC()" class="mt-4 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    測試場景 C
+                </button>
+                <div id="resultC" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+            </div>
+
+            <!-- 場景 D: 點數轉換取消 -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="font-bold text-lg mb-4">場景 D: 取消點數轉換</h3>
+                <div class="space-y-2 text-sm">
+                    <div>類型: CASH_CONVERSION</div>
+                    <div>原轉換: 1000點 → 500現金</div>
+                    <div class="text-green-600">預期: 點數返還，現金減少</div>
+                </div>
+                <button onclick="testScenarioD()" class="mt-4 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    測試場景 D
+                </button>
+                <div id="resultD" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+            </div>
+        </div>
+
+        <!-- 數據驗證面板 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">數據驗證結果</h2>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b">
+                        <th class="text-left p-2">檢查項目</th>
+                        <th class="text-left p-2">預期值</th>
+                        <th class="text-left p-2">實際值</th>
+                        <th class="text-center p-2">狀態</th>
+                    </tr>
+                </thead>
+                <tbody id="validationTable">
+                    <tr>
+                        <td colspan="4" class="text-center text-gray-400 p-4">等待測試...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 測試日誌 -->
+        <div class="bg-gray-900 text-green-400 rounded-lg p-6">
+            <h3 class="text-white font-bold mb-4">測試日誌</h3>
+            <div id="testLog" class="font-mono text-xs h-64 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+        
+        // 測試數據
+        let testData = {
+            partners: {},
+            payouts: {},
+            bookings: {}
+        };
+
+        // 創建測試數據
+        async function createTestData() {
+            log('創建測試數據...', 'info');
+            
+            // 1. 創建測試夥伴
+            const partners = [
+                {
+                    partner_code: 'TEST_CANCEL_001',
+                    partner_name: '測試取消-住宿金',
+                    partner_level: 'LV2_GUIDE',
+                    available_points: 5000,
+                    points_used: 1000,
+                    total_commission_earned: 6000,
+                    pending_commission: 0,
+                    contact_phone: '0900000001'
+                },
+                {
+                    partner_code: 'TEST_CANCEL_002',
+                    partner_name: '測試取消-現金',
+                    partner_level: 'LV2_GUIDE',
+                    available_points: 0,
+                    pending_commission: 1500,
+                    total_commission_earned: 3000,
+                    contact_phone: '0900000002'
+                },
+                {
+                    partner_code: 'TEST_CANCEL_003',
+                    partner_name: '測試取消-點數不足',
+                    partner_level: 'LV1_INSIDER',
+                    available_points: 1000,
+                    points_used: 2000,
+                    total_commission_earned: 3000,
+                    contact_phone: '0900000003'
+                }
+            ];
+            
+            for (const partner of partners) {
+                const result = await apiCall({
+                    action: 'create_partner',
+                    ...partner
+                });
+                testData.partners[partner.partner_code] = result.data;
+                log(`創建夥伴: ${partner.partner_code}`, 'success');
+            }
+            
+            // 2. 創建測試 Payouts
+            const payouts = [
+                {
+                    partner_code: 'TEST_CANCEL_001',
+                    payout_type: 'ACCOMMODATION',
+                    amount: 2500,
+                    payout_status: 'PENDING',
+                    notes: '測試住宿金結算'
+                },
+                {
+                    partner_code: 'TEST_CANCEL_002',
+                    payout_type: 'CASH',
+                    amount: 750,
+                    payout_status: 'PENDING',
+                    notes: '測試現金結算'
+                }
+            ];
+            
+            for (const payout of payouts) {
+                const result = await apiCall({
+                    action: 'create_payout',
+                    ...payout
+                });
+                testData.payouts[payout.partner_code] = result.data;
+                log(`創建 Payout: ${payout.partner_code}`, 'success');
+            }
+            
+            log('測試數據創建完成', 'success');
+        }
+
+        // 場景 A: 取消住宿金結算
+        async function testScenarioA() {
+            log('=== 測試場景 A: 取消住宿金結算 ===', 'test');
+            
+            const partnerCode = 'TEST_CANCEL_001';
+            const payout = testData.payouts[partnerCode];
+            
+            if (!payout) {
+                log('請先創建測試數據', 'error');
+                return;
+            }
+            
+            // 記錄初始狀態
+            const beforePartner = await getPartner(partnerCode);
+            log(`取消前 - 可用點數: ${beforePartner.available_points}, 總佣金: ${beforePartner.total_commission_earned}`, 'info');
+            
+            // 執行取消
+            const cancelResult = await apiCall({
+                action: 'cancel_payout',
+                payout_id: payout.id || payout.ID
+            });
+            
+            if (!cancelResult.success) {
+                log(`取消失敗: ${cancelResult.error}`, 'error');
+                showResult('resultA', '❌ 取消失敗', 'error');
+                return;
+            }
+            
+            // 等待同步
+            await wait(2000);
+            
+            // 驗證結果
+            const afterPartner = await getPartner(partnerCode);
+            const afterPayout = await getPayout(payout.id || payout.ID);
+            
+            const validations = [
+                {
+                    name: 'Payout 狀態',
+                    expected: 'CANCELLED',
+                    actual: afterPayout?.payout_status,
+                    match: afterPayout?.payout_status === 'CANCELLED'
+                },
+                {
+                    name: '可用點數',
+                    expected: 2500,
+                    actual: afterPartner.available_points,
+                    match: afterPartner.available_points == 2500
+                },
+                {
+                    name: '總佣金減少',
+                    expected: 3500,
+                    actual: afterPartner.total_commission_earned,
+                    match: afterPartner.total_commission_earned == 3500
+                }
+            ];
+            
+            updateValidationTable(validations);
+            
+            const allPassed = validations.every(v => v.match);
+            showResult('resultA', allPassed ? '✅ 測試通過' : '❌ 測試失敗', allPassed ? 'success' : 'error');
+        }
+
+        // 場景 B: 取消現金結算
+        async function testScenarioB() {
+            log('=== 測試場景 B: 取消現金結算 ===', 'test');
+            
+            const partnerCode = 'TEST_CANCEL_002';
+            const payout = testData.payouts[partnerCode];
+            
+            if (!payout) {
+                log('請先創建測試數據', 'error');
+                return;
+            }
+            
+            // 記錄初始狀態
+            const beforePartner = await getPartner(partnerCode);
+            log(`取消前 - 待付現金: ${beforePartner.pending_commission}`, 'info');
+            
+            // 執行取消
+            const cancelResult = await apiCall({
+                action: 'cancel_payout',
+                payout_id: payout.id || payout.ID
+            });
+            
+            // 驗證結果
+            const afterPartner = await getPartner(partnerCode);
+            
+            const validations = [
+                {
+                    name: '待付現金',
+                    expected: 750,
+                    actual: afterPartner.pending_commission,
+                    match: afterPartner.pending_commission == 750
+                }
+            ];
+            
+            updateValidationTable(validations);
+            showResult('resultB', validations[0].match ? '✅ 測試通過' : '❌ 測試失敗');
+        }
+
+        // 場景 C: 點數不足
+        async function testScenarioC() {
+            log('=== 測試場景 C: 點數不足時取消 ===', 'test');
+            
+            // 創建特殊測試案例
+            const result = await apiCall({
+                action: 'create_payout',
+                partner_code: 'TEST_CANCEL_003',
+                payout_type: 'ACCOMMODATION',
+                amount: 2500,
+                payout_status: 'PENDING'
+            });
+            
+            const payout = result.data;
+            
+            // 執行取消
+            const cancelResult = await apiCall({
+                action: 'cancel_payout',
+                payout_id: payout.id || payout.ID
+            });
+            
+            // 驗證結果
+            const afterPartner = await getPartner('TEST_CANCEL_003');
+            
+            const validations = [
+                {
+                    name: '可用點數（不應為負）',
+                    expected: 0,
+                    actual: afterPartner.available_points,
+                    match: afterPartner.available_points == 0
+                }
+            ];
+            
+            updateValidationTable(validations);
+            showResult('resultC', validations[0].match ? '✅ 測試通過' : '❌ 測試失敗');
+        }
+
+        // 場景 D: 點數轉換取消
+        async function testScenarioD() {
+            log('=== 測試場景 D: 取消點數轉換 ===', 'test');
+            
+            // 創建點數轉換 Payout
+            const partner = await getPartner('TEST_CANCEL_001');
+            const beforePoints = partner.available_points;
+            const beforeCash = partner.pending_commission;
+            
+            // 創建轉換記錄
+            const result = await apiCall({
+                action: 'create_payout',
+                partner_code: 'TEST_CANCEL_001',
+                payout_type: 'CASH_CONVERSION',
+                amount: 500,  // 現金金額
+                related_points: 1000,  // 使用的點數
+                payout_status: 'PENDING'
+            });
+            
+            const payout = result.data;
+            
+            // 執行取消
+            const cancelResult = await apiCall({
+                action: 'cancel_payout',
+                payout_id: payout.id || payout.ID
+            });
+            
+            // 驗證結果
+            const afterPartner = await getPartner('TEST_CANCEL_001');
+            
+            const validations = [
+                {
+                    name: '點數返還',
+                    expected: beforePoints + 1000,
+                    actual: afterPartner.available_points,
+                    match: afterPartner.available_points == (beforePoints + 1000)
+                },
+                {
+                    name: '現金減少',
+                    expected: beforeCash - 500,
+                    actual: afterPartner.pending_commission,
+                    match: afterPartner.pending_commission == (beforeCash - 500)
+                }
+            ];
+            
+            updateValidationTable(validations);
+            const allPassed = validations.every(v => v.match);
+            showResult('resultD', allPassed ? '✅ 測試通過' : '❌ 測試失敗');
+        }
+
+        // 執行所有測試
+        async function runAllTests() {
+            log('開始執行所有測試...', 'info');
+            await createTestData();
+            await wait(2000);
+            await testScenarioA();
+            await wait(2000);
+            await testScenarioB();
+            await wait(2000);
+            await testScenarioC();
+            await wait(2000);
+            await testScenarioD();
+            log('所有測試完成', 'success');
+        }
+
+        // 清理測試數據
+        async function cleanupTestData() {
+            log('清理測試數據...', 'warning');
+            
+            // 刪除測試夥伴和相關數據
+            const testPartnerCodes = ['TEST_CANCEL_001', 'TEST_CANCEL_002', 'TEST_CANCEL_003'];
+            
+            for (const code of testPartnerCodes) {
+                try {
+                    await apiCall({
+                        action: 'delete_partner',
+                        partner_code: code
+                    });
+                    log(`刪除夥伴: ${code}`, 'success');
+                } catch (e) {
+                    log(`刪除失敗: ${code}`, 'error');
+                }
+            }
+            
+            testData = { partners: {}, payouts: {}, bookings: {} };
+            log('清理完成', 'success');
+        }
+
+        // === 輔助函數 ===
+
+        async function apiCall(params) {
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(params).toString()
+            });
+            return await response.json();
+        }
+
+        async function getPartner(partnerCode) {
+            const response = await fetch(`${APPS_SCRIPT_URL}?action=get_all_data`);
+            const data = await response.json();
+            return data.data.partners.find(p => p.partner_code === partnerCode);
+        }
+
+        async function getPayout(payoutId) {
+            const response = await fetch(`${APPS_SCRIPT_URL}?action=get_all_data`);
+            const data = await response.json();
+            return data.data.payouts.find(p => p.id == payoutId || p.ID == payoutId);
+        }
+
+        function updateValidationTable(validations) {
+            const table = document.getElementById('validationTable');
+            table.innerHTML = validations.map(v => `
+                <tr class="border-b">
+                    <td class="p-2">${v.name}</td>
+                    <td class="p-2">${v.expected}</td>
+                    <td class="p-2 ${v.match ? '' : 'text-red-600 font-bold'}">${v.actual}</td>
+                    <td class="p-2 text-center">${v.match ? '✅' : '❌'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const colors = {
+                'success': 'text-green-600',
+                'error': 'text-red-600',
+                'info': 'text-blue-600'
+            };
+            element.innerHTML = `<div class="${colors[type] || 'text-gray-600'} font-bold">${message}</div>`;
+        }
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('testLog');
+            const time = new Date().toLocaleTimeString();
+            const colors = {
+                'info': 'text-gray-400',
+                'test': 'text-blue-400',
+                'success': 'text-green-400',
+                'error': 'text-red-400',
+                'warning': 'text-yellow-400'
+            };
+            
+            const div = document.createElement('div');
+            div.className = colors[type] || 'text-gray-400';
+            div.textContent = `[${time}] ${message}`;
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            log('測試系統就緒', 'success');
+        });
+    </script>
+</body>
+</html>

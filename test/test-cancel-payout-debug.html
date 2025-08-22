@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>取消結算除錯測試</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">🔧 取消結算除錯測試</h1>
+        
+        <!-- 步驟 1: 創建測試夥伴 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-4">
+            <h2 class="text-lg font-bold mb-4">步驟 1: 創建測試夥伴</h2>
+            <button onclick="createTestPartner()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                創建測試夥伴 TEST_DEBUG_001
+            </button>
+            <div id="step1Result" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+        </div>
+
+        <!-- 步驟 2: 創建測試 Payout -->
+        <div class="bg-white rounded-lg shadow p-6 mb-4">
+            <h2 class="text-lg font-bold mb-4">步驟 2: 創建測試 Payout</h2>
+            <button onclick="createTestPayout()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                創建住宿金 Payout (2000點)
+            </button>
+            <div id="step2Result" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+        </div>
+
+        <!-- 步驟 3: 取消 Payout -->
+        <div class="bg-white rounded-lg shadow p-6 mb-4">
+            <h2 class="text-lg font-bold mb-4">步驟 3: 取消 Payout</h2>
+            <input type="text" id="payoutIdInput" placeholder="輸入 Payout ID" class="border rounded px-3 py-2 mr-2">
+            <button onclick="cancelPayout()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                取消 Payout
+            </button>
+            <div id="step3Result" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+        </div>
+
+        <!-- 步驟 4: 驗證結果 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-4">
+            <h2 class="text-lg font-bold mb-4">步驟 4: 驗證結果</h2>
+            <button onclick="verifyResults()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                驗證數據變化
+            </button>
+            <div id="step4Result" class="mt-4 p-3 bg-gray-50 rounded text-sm"></div>
+        </div>
+
+        <!-- 調試日誌 -->
+        <div class="bg-gray-900 text-green-400 rounded-lg p-6">
+            <h3 class="text-white font-bold mb-4">調試日誌</h3>
+            <div id="debugLog" class="font-mono text-xs h-64 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+        
+        let testPartnerId = null;
+        let testPayoutId = null;
+        let beforeData = null;
+        let afterData = null;
+
+        // 創建測試夥伴
+        async function createTestPartner() {
+            log('創建測試夥伴...', 'info');
+            
+            try {
+                // 先檢查是否已存在
+                const checkResponse = await fetch(`${APPS_SCRIPT_URL}?action=get_all_data`);
+                const checkData = await checkResponse.json();
+                
+                const existingPartner = checkData.data.partners.find(p => p.partner_code === 'TEST_DEBUG_001');
+                
+                if (existingPartner) {
+                    log('夥伴已存在，使用現有資料', 'warning');
+                    testPartnerId = existingPartner.partner_code;
+                    document.getElementById('step1Result').innerHTML = `
+                        <div class="text-green-600">✅ 使用現有夥伴</div>
+                        <div>代碼: ${existingPartner.partner_code}</div>
+                        <div>可用點數: ${existingPartner.available_points}</div>
+                        <div>已使用點數: ${existingPartner.points_used}</div>
+                        <div>總佣金: ${existingPartner.total_commission_earned}</div>
+                    `;
+                    return;
+                }
+                
+                // 創建新夥伴
+                const params = new URLSearchParams({
+                    action: 'create_partner',
+                    partner_code: 'TEST_DEBUG_001',
+                    partner_name: '除錯測試夥伴',
+                    partner_level: 'LV2_GUIDE',
+                    available_points: 5000,
+                    points_used: 1000,
+                    total_commission_earned: 6000,
+                    pending_commission: 0,
+                    contact_phone: '0900000001',
+                    commission_preference: 'ACCOMMODATION'
+                });
+                
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+                
+                const result = await response.json();
+                log('創建夥伴回應: ' + JSON.stringify(result), 'debug');
+                
+                if (result.success) {
+                    testPartnerId = 'TEST_DEBUG_001';
+                    document.getElementById('step1Result').innerHTML = `
+                        <div class="text-green-600">✅ 創建成功</div>
+                        <div>代碼: TEST_DEBUG_001</div>
+                        <div>初始點數: 5000</div>
+                    `;
+                } else {
+                    throw new Error(result.error || '創建失敗');
+                }
+                
+            } catch (error) {
+                log('創建夥伴失敗: ' + error.message, 'error');
+                document.getElementById('step1Result').innerHTML = `
+                    <div class="text-red-600">❌ ${error.message}</div>
+                `;
+            }
+        }
+
+        // 創建測試 Payout
+        async function createTestPayout() {
+            log('創建測試 Payout...', 'info');
+            
+            if (!testPartnerId) {
+                alert('請先創建測試夥伴');
+                return;
+            }
+            
+            try {
+                const params = new URLSearchParams({
+                    action: 'create_payout',
+                    partner_code: 'TEST_DEBUG_001',
+                    payout_type: 'ACCOMMODATION',
+                    amount: 2000,
+                    payout_status: 'PENDING',
+                    notes: '除錯測試用 Payout'
+                });
+                
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+                
+                const result = await response.json();
+                log('創建 Payout 回應: ' + JSON.stringify(result), 'debug');
+                
+                if (result.success) {
+                    testPayoutId = result.data.id || result.data.ID;
+                    document.getElementById('payoutIdInput').value = testPayoutId;
+                    document.getElementById('step2Result').innerHTML = `
+                        <div class="text-green-600">✅ 創建成功</div>
+                        <div>Payout ID: ${testPayoutId}</div>
+                        <div>類型: ACCOMMODATION</div>
+                        <div>金額: 2000 點</div>
+                    `;
+                    
+                    // 記錄取消前的狀態
+                    await getPartnerData('before');
+                    
+                } else {
+                    throw new Error(result.error || '創建失敗');
+                }
+                
+            } catch (error) {
+                log('創建 Payout 失敗: ' + error.message, 'error');
+                document.getElementById('step2Result').innerHTML = `
+                    <div class="text-red-600">❌ ${error.message}</div>
+                `;
+            }
+        }
+
+        // 取消 Payout
+        async function cancelPayout() {
+            const payoutId = document.getElementById('payoutIdInput').value;
+            if (!payoutId) {
+                alert('請輸入 Payout ID');
+                return;
+            }
+            
+            log(`開始取消 Payout: ${payoutId}`, 'info');
+            
+            try {
+                // 使用 fetch API 直接調用
+                const params = new URLSearchParams({
+                    action: 'cancel_payout',
+                    payout_id: payoutId
+                });
+                
+                log('發送請求: ' + params.toString(), 'debug');
+                
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+                
+                const responseText = await response.text();
+                log('原始回應: ' + responseText, 'debug');
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (e) {
+                    log('回應不是有效的 JSON: ' + responseText, 'error');
+                    throw new Error('伺服器回應格式錯誤');
+                }
+                
+                log('取消 Payout 回應: ' + JSON.stringify(result), 'debug');
+                
+                if (result.success) {
+                    document.getElementById('step3Result').innerHTML = `
+                        <div class="text-green-600">✅ 取消成功</div>
+                        <div>${result.message}</div>
+                    `;
+                    
+                    // 記錄取消後的狀態
+                    await getPartnerData('after');
+                    
+                } else {
+                    throw new Error(result.error || '取消失敗');
+                }
+                
+            } catch (error) {
+                log('取消 Payout 失敗: ' + error.message, 'error');
+                document.getElementById('step3Result').innerHTML = `
+                    <div class="text-red-600">❌ ${error.message}</div>
+                `;
+            }
+        }
+
+        // 獲取夥伴數據
+        async function getPartnerData(timing) {
+            try {
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=get_all_data`);
+                const data = await response.json();
+                
+                const partner = data.data.partners.find(p => p.partner_code === 'TEST_DEBUG_001');
+                const payouts = data.data.payouts.filter(p => p.partner_code === 'TEST_DEBUG_001');
+                
+                if (timing === 'before') {
+                    beforeData = { partner, payouts };
+                    log(`取消前數據: 點數=${partner.available_points}, 總佣金=${partner.total_commission_earned}`, 'info');
+                } else {
+                    afterData = { partner, payouts };
+                    log(`取消後數據: 點數=${partner.available_points}, 總佣金=${partner.total_commission_earned}`, 'info');
+                }
+                
+            } catch (error) {
+                log(`獲取數據失敗 (${timing}): ${error.message}`, 'error');
+            }
+        }
+
+        // 驗證結果
+        async function verifyResults() {
+            log('開始驗證結果...', 'info');
+            
+            if (!beforeData || !afterData) {
+                alert('請先執行取消操作');
+                return;
+            }
+            
+            const before = beforeData.partner;
+            const after = afterData.partner;
+            
+            const changes = {
+                available_points: after.available_points - before.available_points,
+                total_commission_earned: after.total_commission_earned - before.total_commission_earned,
+                points_used: after.points_used - before.points_used
+            };
+            
+            const validations = [];
+            
+            // 驗證點數應該減少 2000
+            if (changes.available_points === -2000) {
+                validations.push('✅ 點數正確減少 2000');
+            } else {
+                validations.push(`❌ 點數變化錯誤: ${changes.available_points} (預期 -2000)`);
+            }
+            
+            // 驗證總佣金應該減少 2000
+            if (changes.total_commission_earned === -2000) {
+                validations.push('✅ 總佣金正確減少 2000');
+            } else {
+                validations.push(`❌ 總佣金變化錯誤: ${changes.total_commission_earned} (預期 -2000)`);
+            }
+            
+            // 檢查 Payout 狀態
+            const cancelledPayout = afterData.payouts.find(p => 
+                (p.id == testPayoutId || p.ID == testPayoutId) && p.payout_status === 'CANCELLED'
+            );
+            
+            if (cancelledPayout) {
+                validations.push('✅ Payout 狀態已更新為 CANCELLED');
+            } else {
+                validations.push('❌ Payout 狀態未正確更新');
+            }
+            
+            // 檢查是否有撤銷記錄
+            const reversalPayout = afterData.payouts.find(p => 
+                p.payout_type === 'COMMISSION_REVERSAL' && p.amount == -2000
+            );
+            
+            if (reversalPayout) {
+                validations.push('✅ 已創建撤銷記錄');
+            } else {
+                validations.push('❌ 未找到撤銷記錄');
+            }
+            
+            document.getElementById('step4Result').innerHTML = `
+                <div class="space-y-2">
+                    <div class="font-bold">數據變化：</div>
+                    <div>點數: ${before.available_points} → ${after.available_points} (${changes.available_points > 0 ? '+' : ''}${changes.available_points})</div>
+                    <div>總佣金: ${before.total_commission_earned} → ${after.total_commission_earned} (${changes.total_commission_earned > 0 ? '+' : ''}${changes.total_commission_earned})</div>
+                    <div class="mt-3 font-bold">驗證結果：</div>
+                    ${validations.map(v => `<div>${v}</div>`).join('')}
+                </div>
+            `;
+            
+            const allPassed = validations.every(v => v.startsWith('✅'));
+            log(allPassed ? '所有驗證通過！' : '部分驗證失敗', allPassed ? 'success' : 'error');
+        }
+
+        // 日誌功能
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('debugLog');
+            const time = new Date().toLocaleTimeString();
+            const colors = {
+                'info': 'text-gray-400',
+                'debug': 'text-blue-400',
+                'success': 'text-green-400',
+                'error': 'text-red-400',
+                'warning': 'text-yellow-400'
+            };
+            
+            const div = document.createElement('div');
+            div.className = colors[type] || 'text-gray-400';
+            div.textContent = `[${time}] ${message}`;
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            log('除錯測試工具就緒', 'success');
+            log('請按順序執行步驟 1-4', 'info');
+        });
+    </script>
+</body>
+</html>

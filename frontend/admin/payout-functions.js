@@ -179,94 +179,71 @@ async function cancelPayout(payoutId) {
     }
     
     try {
-        // 使用表單提交方式
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = APPS_SCRIPT_URL;
-        form.target = 'hiddenFrame';
-        form.style.display = 'none';
+        // 改用 fetch API 避免 403 錯誤
+        const params = new URLSearchParams({
+            action: 'cancel_payout',
+            payout_id: payoutId
+        });
         
-        const actionInput = document.createElement('input');
-        actionInput.type = 'hidden';
-        actionInput.name = 'action';
-        actionInput.value = 'cancel_payout';
-        form.appendChild(actionInput);
+        const response = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: params.toString()
+        });
         
-        const payoutIdInput = document.createElement('input');
-        payoutIdInput.type = 'hidden';
-        payoutIdInput.name = 'payout_id';
-        payoutIdInput.value = payoutId;
-        form.appendChild(payoutIdInput);
+        const result = await response.json();
+        console.log('取消結算回應:', result);
         
-        // 確保隱藏iframe存在
-        let hiddenFrame = document.getElementById('hiddenFrame');
-        if (!hiddenFrame) {
-            hiddenFrame = document.createElement('iframe');
-            hiddenFrame.id = 'hiddenFrame';
-            hiddenFrame.name = 'hiddenFrame';
-            hiddenFrame.style.display = 'none';
-            document.body.appendChild(hiddenFrame);
+        if (!result.success) {
+            throw new Error(result.error || '取消失敗');
         }
         
-        document.body.appendChild(form);
-        form.submit();
-        
-        // 延時回調處理結果
-        setTimeout(() => {
-            // 立即更新前端數據
-            const payoutIndex = allData.payouts.findIndex(p => p.id == payoutId);
-            if (payoutIndex !== -1) {
-                // 獲取相關訂單ID
-                const relatedBookingIds = allData.payouts[payoutIndex].related_booking_ids;
-                
-                // 移除結算記錄
-                allData.payouts.splice(payoutIndex, 1);
-                console.log('已從前端移除結算記錄');
-                
-                // 更新相關訂單狀態
-                if (relatedBookingIds && relatedBookingIds !== '-') {
-                    const bookingIds = String(relatedBookingIds).split(',').map(id => id.trim());
-                    bookingIds.forEach(bookingId => {
-                        const booking = allData.bookings.find(b => String(b.id) === String(bookingId));
-                        if (booking) {
-                            booking.stay_status = 'PENDING';
-                            booking.commission_status = 'PENDING';
-                            booking.commission_amount = 0;
-                            console.log(`前端更新訂單 ${bookingId}: stay_status → PENDING`);
-                        }
-                    });
-                    
-                    // 如果訂單管理頁面正在顯示，立即更新
-                    if (typeof displayBookings === 'function') {
-                        displayBookings(allData.bookings);
+        // 立即更新前端數據
+        const payoutIndex = allData.payouts.findIndex(p => p.id == payoutId);
+        if (payoutIndex !== -1) {
+            // 獲取相關訂單ID
+            const relatedBookingIds = allData.payouts[payoutIndex].related_booking_ids;
+            
+            // 更新結算狀態為已取消
+            allData.payouts[payoutIndex].payout_status = 'CANCELLED';
+            console.log('已更新結算狀態為 CANCELLED');
+            
+            // 更新相關訂單狀態
+            if (relatedBookingIds && relatedBookingIds !== '-') {
+                const bookingIds = String(relatedBookingIds).split(',').map(id => id.trim());
+                bookingIds.forEach(bookingId => {
+                    const booking = allData.bookings.find(b => String(b.id) === String(bookingId));
+                    if (booking) {
+                        booking.stay_status = 'PENDING';
+                        booking.commission_status = 'PENDING';
+                        booking.commission_amount = 0;
+                        console.log(`前端更新訂單 ${bookingId}: stay_status → PENDING`);
                     }
+                });
+                
+                // 如果訂單管理頁面正在顯示，立即更新
+                if (typeof displayBookings === 'function') {
+                    displayBookings(allData.bookings);
                 }
             }
-            
-            showSuccessMessage('結算已取消！相關訂單狀態已重置');
-            closeModal('payoutDetailsModal');
-            displayPayouts(allData.payouts);
-            
-            // 延遲重新載入數據，避免與 iframe 衝突
-            setTimeout(() => {
-                loadRealData().then(() => {
-                    console.log('結算取消後數據重新載入完成');
-                    displayPayouts(allData.payouts);
-                    // 同時更新大使列表，因為佣金可能已連動調整
-                    if (typeof displayPartners === 'function') {
-                        displayPartners(allData.partners);
-                    }
-                    // 更新訂單列表
-                    if (typeof displayBookings === 'function') {
-                        displayBookings(allData.bookings);
-                    }
-                }).catch(error => {
-                    console.error('重新載入數據失敗:', error);
-                });
-            }, 2000); // 延遲 2 秒再重新載入
-            
-            document.body.removeChild(form);
-        }, 1000);
+        }
+        
+        showSuccessMessage('結算已取消！相關訂單狀態已重置');
+        closeModal('payoutDetailsModal');
+        displayPayouts(allData.payouts);
+        
+        // 更新大使列表，因為佣金可能已連動調整
+        if (typeof displayPartners === 'function') {
+            displayPartners(allData.partners);
+        }
+        // 更新訂單列表
+        if (typeof displayBookings === 'function') {
+            displayBookings(allData.bookings);
+        }
+        
+        console.log('結算取消完成，前端數據已更新');
         
     } catch (error) {
         console.error('取消結算失敗:', error);
@@ -325,33 +302,70 @@ function createEditPayoutModal(payout) {
                 </button>
             </div>
             
+            <!-- 不可修改的提示 -->
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">
+                            基於財務安全，<strong>金額、類型、大使代碼</strong>不可修改。<br>
+                            如需變更這些欄位，請先取消此結算，然後創建新的結算記錄。
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
             <form id="editPayoutForm" class="space-y-4">
+                <!-- 顯示但不可編輯的核心欄位 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">大使代碼（不可改）</label>
+                        <input type="text" value="${payout.partner_code}" 
+                            class="w-full p-2 border rounded-md bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">結算類型（不可改）</label>
+                        <input type="text" value="${payout.payout_type === 'CASH' ? '現金' : '住宿金'}" 
+                            class="w-full p-2 border rounded-md bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 mb-1">結算金額（不可改）</label>
+                        <input type="text" value="$${(payout.amount || 0).toLocaleString()}" 
+                            class="w-full p-2 border rounded-md bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled>
+                    </div>
+                </div>
+                
+                <!-- 可編輯的欄位 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">大使代碼</label>
-                        <input type="text" id="edit_payout_partner_code" value="${payout.partner_code}" 
-                            class="w-full p-2 border rounded-md bg-gray-100" readonly>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">結算類型</label>
-                        <select id="edit_payout_type" class="w-full p-2 border rounded-md">
-                            <option value="CASH" ${payout.payout_type === 'CASH' ? 'selected' : ''}>現金</option>
-                            <option value="ACCOMMODATION" ${payout.payout_type === 'ACCOMMODATION' ? 'selected' : ''}>住宿金</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">結算金額</label>
-                        <input type="number" id="edit_payout_amount" value="${payout.amount || 0}" 
-                            class="w-full p-2 border rounded-md" min="0" step="1" required>
-                    </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">付款狀態</label>
                         <select id="edit_payout_status" class="w-full p-2 border rounded-md">
                             <option value="PENDING" ${payout.payout_status === 'PENDING' ? 'selected' : ''}>待付款</option>
                             <option value="COMPLETED" ${payout.payout_status === 'COMPLETED' ? 'selected' : ''}>已付款</option>
+                            <option value="CANCELLED" ${payout.payout_status === 'CANCELLED' ? 'selected' : ''}>已取消</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">銀行轉帳日期</label>
+                        <input type="date" id="edit_bank_transfer_date" value="${payout.bank_transfer_date || ''}" 
+                            class="w-full p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">銀行轉帳參考號</label>
+                        <input type="text" id="edit_bank_transfer_reference" value="${payout.bank_transfer_reference || ''}" 
+                            class="w-full p-2 border rounded-md" placeholder="轉帳交易序號...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">住宿券代碼</label>
+                        <input type="text" id="edit_accommodation_voucher_code" value="${payout.accommodation_voucher_code || ''}" 
+                            class="w-full p-2 border rounded-md" placeholder="僅適用於住宿金結算...">
+                    </div>
                 </div>
+                
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">備註</label>
                     <textarea id="edit_payout_notes" rows="3" class="w-full p-2 border rounded-md"
@@ -378,20 +392,23 @@ function createEditPayoutModal(payout) {
 // 儲存結算變更
 async function savePayoutChanges(payoutId) {
     try {
+        // 只更新可編輯的欄位
         const formData = {
             action: 'update_payout',
             payout_id: payoutId,
-            payout_type: document.getElementById('edit_payout_type').value,
-            amount: parseFloat(document.getElementById('edit_payout_amount').value) || 0,
             payout_status: document.getElementById('edit_payout_status').value,
+            bank_transfer_date: document.getElementById('edit_bank_transfer_date').value.trim(),
+            bank_transfer_reference: document.getElementById('edit_bank_transfer_reference').value.trim(),
+            accommodation_voucher_code: document.getElementById('edit_accommodation_voucher_code').value.trim(),
             notes: document.getElementById('edit_payout_notes').value.trim()
         };
         
-        // 驗證金額
-        if (formData.amount <= 0) {
-            alert('請輸入有效的金額！');
-            return;
-        }
+        // 移除空值欄位
+        Object.keys(formData).forEach(key => {
+            if (formData[key] === '' && key !== 'notes') {
+                delete formData[key];
+            }
+        });
         
         // 使用表單提交方式
         const form = document.createElement('form');

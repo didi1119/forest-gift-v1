@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>結算修改限制測試</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">💰 結算修改限制測試</h1>
+        
+        <!-- 測試說明 -->
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-blue-700">
+                        <strong>測試目標：</strong>驗證結算記錄的財務欄位（金額、類型、大使代碼）無法修改<br>
+                        <strong>測試策略：</strong>確保只有非財務欄位可以更新
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 測試步驟 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-lg font-bold mb-4">測試步驟</h2>
+            
+            <!-- 步驟 1: 創建測試結算 -->
+            <div class="mb-4">
+                <h3 class="font-semibold mb-2">1️⃣ 創建測試結算</h3>
+                <button onclick="createTestPayout()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    創建測試結算
+                </button>
+                <div id="step1Result" class="mt-2 text-sm text-gray-600"></div>
+            </div>
+
+            <!-- 步驟 2: 嘗試修改財務欄位 -->
+            <div class="mb-4">
+                <h3 class="font-semibold mb-2">2️⃣ 測試財務欄位限制</h3>
+                <button onclick="testFinancialFieldRestriction()" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                    嘗試修改金額和類型
+                </button>
+                <div id="step2Result" class="mt-2 text-sm text-gray-600"></div>
+            </div>
+
+            <!-- 步驟 3: 測試非財務欄位修改 -->
+            <div class="mb-4">
+                <h3 class="font-semibold mb-2">3️⃣ 測試非財務欄位</h3>
+                <button onclick="testNonFinancialFieldEdit()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    修改備註和狀態
+                </button>
+                <div id="step3Result" class="mt-2 text-sm text-gray-600"></div>
+            </div>
+
+            <!-- 步驟 4: 測試取消並重建流程 -->
+            <div class="mb-4">
+                <h3 class="font-semibold mb-2">4️⃣ 取消並重建流程</h3>
+                <button onclick="testCancelAndRecreate()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    執行取消並重建
+                </button>
+                <div id="step4Result" class="mt-2 text-sm text-gray-600"></div>
+            </div>
+        </div>
+
+        <!-- 測試結果 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-bold mb-4">測試結果</h2>
+            <div id="testResults" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+        let testPayoutId = null;
+
+        // 創建測試結算
+        async function createTestPayout() {
+            try {
+                const params = new URLSearchParams({
+                    action: 'create_payout',
+                    partner_code: 'TEST_RESTRICT_001',
+                    payout_type: 'ACCOMMODATION',
+                    amount: 3000,
+                    payout_status: 'PENDING',
+                    notes: '測試限制修改'
+                });
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    testPayoutId = result.data.id || result.data.ID;
+                    document.getElementById('step1Result').innerHTML = 
+                        `✅ 創建成功，ID: ${testPayoutId}`;
+                    addTestResult('創建測試結算', true, `ID: ${testPayoutId}`);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                document.getElementById('step1Result').innerHTML = 
+                    `❌ 創建失敗: ${error.message}`;
+                addTestResult('創建測試結算', false, error.message);
+            }
+        }
+
+        // 測試財務欄位限制
+        async function testFinancialFieldRestriction() {
+            if (!testPayoutId) {
+                alert('請先創建測試結算');
+                return;
+            }
+
+            try {
+                // 嘗試修改金額和類型（應該被忽略）
+                const params = new URLSearchParams({
+                    action: 'update_payout',
+                    payout_id: testPayoutId,
+                    amount: 5000,  // 嘗試改變金額
+                    payout_type: 'CASH',  // 嘗試改變類型
+                    notes: '嘗試修改財務欄位'
+                });
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+
+                const result = await response.json();
+                
+                // 檢查數據是否真的沒有改變
+                const checkResponse = await fetch(`${APPS_SCRIPT_URL}?action=get_all_data`);
+                const checkData = await checkResponse.json();
+                const payout = checkData.data.payouts.find(p => p.id == testPayoutId);
+                
+                const amountUnchanged = payout.amount == 3000;
+                const typeUnchanged = payout.payout_type === 'ACCOMMODATION';
+                
+                if (amountUnchanged && typeUnchanged) {
+                    document.getElementById('step2Result').innerHTML = 
+                        `✅ 財務欄位已被保護（金額仍為3000，類型仍為ACCOMMODATION）`;
+                    addTestResult('財務欄位限制', true, '金額和類型無法修改');
+                } else {
+                    document.getElementById('step2Result').innerHTML = 
+                        `❌ 財務欄位未被保護！`;
+                    addTestResult('財務欄位限制', false, '金額或類型被修改了');
+                }
+            } catch (error) {
+                document.getElementById('step2Result').innerHTML = 
+                    `❌ 測試失敗: ${error.message}`;
+                addTestResult('財務欄位限制', false, error.message);
+            }
+        }
+
+        // 測試非財務欄位修改
+        async function testNonFinancialFieldEdit() {
+            if (!testPayoutId) {
+                alert('請先創建測試結算');
+                return;
+            }
+
+            try {
+                const newNotes = '測試備註 - ' + new Date().toLocaleTimeString();
+                const params = new URLSearchParams({
+                    action: 'update_payout',
+                    payout_id: testPayoutId,
+                    payout_status: 'COMPLETED',
+                    bank_transfer_reference: 'REF123456',
+                    bank_transfer_date: new Date().toISOString().split('T')[0],
+                    notes: newNotes
+                });
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                });
+
+                const result = await response.json();
+                
+                // 檢查數據是否更新
+                const checkResponse = await fetch(`${APPS_SCRIPT_URL}?action=get_all_data`);
+                const checkData = await checkResponse.json();
+                const payout = checkData.data.payouts.find(p => p.id == testPayoutId);
+                
+                const statusUpdated = payout.payout_status === 'COMPLETED';
+                const notesUpdated = payout.notes === newNotes;
+                const refUpdated = payout.bank_transfer_reference === 'REF123456';
+                
+                if (statusUpdated && notesUpdated && refUpdated) {
+                    document.getElementById('step3Result').innerHTML = 
+                        `✅ 非財務欄位成功更新`;
+                    addTestResult('非財務欄位修改', true, '狀態、備註、參考號成功更新');
+                } else {
+                    document.getElementById('step3Result').innerHTML = 
+                        `⚠️ 部分欄位未更新`;
+                    addTestResult('非財務欄位修改', false, '某些欄位未正確更新');
+                }
+            } catch (error) {
+                document.getElementById('step3Result').innerHTML = 
+                    `❌ 測試失敗: ${error.message}`;
+                addTestResult('非財務欄位修改', false, error.message);
+            }
+        }
+
+        // 測試取消並重建流程
+        async function testCancelAndRecreate() {
+            if (!testPayoutId) {
+                alert('請先創建測試結算');
+                return;
+            }
+
+            try {
+                // 步驟1: 取消原結算
+                const cancelParams = new URLSearchParams({
+                    action: 'cancel_payout',
+                    payout_id: testPayoutId
+                });
+
+                const cancelResponse = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: cancelParams.toString()
+                });
+
+                const cancelResult = await cancelResponse.json();
+                if (!cancelResult.success) {
+                    throw new Error('取消失敗: ' + cancelResult.error);
+                }
+
+                // 步驟2: 創建新結算（不同金額和類型）
+                const createParams = new URLSearchParams({
+                    action: 'create_payout',
+                    partner_code: 'TEST_RESTRICT_001',
+                    payout_type: 'CASH',  // 改為現金
+                    amount: 1500,  // 改為1500
+                    payout_status: 'PENDING',
+                    notes: '重新創建的結算（原為3000點住宿金）'
+                });
+
+                const createResponse = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: createParams.toString()
+                });
+
+                const createResult = await createResponse.json();
+                if (createResult.success) {
+                    const newPayoutId = createResult.data.id || createResult.data.ID;
+                    document.getElementById('step4Result').innerHTML = 
+                        `✅ 成功取消並重建<br>原ID: ${testPayoutId}（已取消）<br>新ID: ${newPayoutId}（現金 $1500）`;
+                    addTestResult('取消並重建流程', true, `新結算ID: ${newPayoutId}`);
+                    testPayoutId = newPayoutId;  // 更新測試ID
+                } else {
+                    throw new Error('重建失敗: ' + createResult.error);
+                }
+            } catch (error) {
+                document.getElementById('step4Result').innerHTML = 
+                    `❌ 流程失敗: ${error.message}`;
+                addTestResult('取消並重建流程', false, error.message);
+            }
+        }
+
+        // 添加測試結果
+        function addTestResult(testName, success, detail) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultItem = document.createElement('div');
+            resultItem.className = success ? 
+                'p-2 bg-green-50 border-l-4 border-green-400' : 
+                'p-2 bg-red-50 border-l-4 border-red-400';
+            resultItem.innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-lg mr-2">${success ? '✅' : '❌'}</span>
+                    <div>
+                        <div class="font-semibold">${testName}</div>
+                        <div class="text-sm text-gray-600">${detail}</div>
+                    </div>
+                </div>
+            `;
+            resultsDiv.appendChild(resultItem);
+        }
+
+        // 初始化
+        window.addEventListener('load', () => {
+            console.log('結算修改限制測試工具就緒');
+        });
+    </script>
+</body>
+</html>

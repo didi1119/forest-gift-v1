@@ -400,3 +400,13 @@ accommodation_voucher_code, notes, created_by, created_at, updated_at
 - 前端有更新都自動幫我部署上去
 - sheet正確id:1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4
 - 你先創建一個專門給測試系統的資料夾(test)，裡面有說明文件與測試腳本，然後我會要你用腳本自動測試，同時我也會手動操作找bug，如果有新的問題是你腳本沒測試到的，我們要重新檢視COMMISSION-SYSTEM-ARCHITECTUREㄡ.md裡是否漏寫的這個規則，若有則補上並把這個測試條件加入測試說明與腳本中，以供未來測試。若本來在COMMISSION-SYSTEM-ARCHITECTURE.md就有寫清楚，則不需要補說明，只需要更新測試腳本與測試說明就好。
+- 你得先仔細閱讀COMMISSION-SYSTEM-ARCHITECTURE.md了解每個規則，然後確認邏輯上是否正確，在確認你剛剛修復的是基於修改COMMISSION-SYSTEM-ARCHITECTURE的錯誤邏輯，還是單純程式碼沒正確實現他希望的邏輯。任何關於規則的修改，都要詳閱COMMISSION-SYSTEM-ARCHITECTURE做作為指導原則並完善之。按照文檔說明是#### 住宿金管理（重要：與佣金統計分開）
+
+- `available_points` - **當前可用住宿金點數**（實時餘額）
+- `points_used` - **已使用點數累計**（折抵房費 + 轉換現金的歷史總和）
+
+#### 佣金統計（歷史記錄）
+
+- `total_commission_earned` - **累積獲得佣金總額**（歷史記錄，包含住宿金+現金）
+- `total_commission_paid` - **已結算支付的現金總額**（歷史累計）
+- `pending_commission` - **待結算現金**（現金佣金 + 點數轉換的現金 - 已支付）

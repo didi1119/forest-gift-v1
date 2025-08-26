@@ -697,7 +697,11 @@
                 'manually_confirmed_at',        // S列 - 手動確認時間
                 'notes',                        // T列 - 備註
                 'created_at',                   // U列 - 創建時間
-                'updated_at'                    // V列 - 更新時間
+                'updated_at',                   // V列 - 更新時間
+                'original_room_price',          // W列 - 原始房價（恢復時使用）
+                'original_commission_amount',   // X列 - 原始佣金金額（恢復時使用）
+                'restored_at',                  // Y列 - 恢復時間
+                'restored_by'                   // Z列 - 恢復操作者
             ],
             
             // 欄位預設值
@@ -1199,23 +1203,47 @@
         }
 
         /**
+         * 統一的佣金資料計算函數
+         */
+        function calculatePartnerFinancials(partner) {
+            const financials = {
+                // 住宿金相關
+                availablePoints: parseFloat(partner.available_points) || 0,
+                pointsUsed: parseFloat(partner.points_used) || 0,
+                
+                // 現金相關
+                pendingCash: parseFloat(partner.pending_commission) || 0,
+                totalPaid: parseFloat(partner.total_commission_paid) || 0,
+                
+                // 統計資料
+                totalEarned: parseFloat(partner.total_commission_earned) || 0,
+                
+                // 績效指標
+                successfulReferrals: partner.successful_referrals || partner.total_successful_referrals || 0,
+                yearlyReferrals: partner.yearly_referrals || partner.level_progress || 0,
+                
+                // 等級資訊
+                level: partner.partner_level || partner.level || 'LV1_INSIDER',
+                name: partner.partner_name || partner.name || '未設定姓名',
+                code: partner.partner_code
+            };
+            
+            return financials;
+        }
+        
+        /**
          * 生成單個夥伴的卡片 HTML (V5 - 財務重點版)
          * @param {object} partner - 從後端獲取的夥伴資料物件
          * @returns {string} - 返回完整的卡片 HTML 字串
          */
         function generatePartnerCard(partner) {
-            // --- 資料計算 (使用新版欄位名稱) ---
-            const level = partner.partner_level || partner.level || 'LV1_INSIDER';
-            const name = partner.partner_name || partner.name || '未設定姓名';
-            const levelClass = getLevelClass(level);
-            const levelText = getLevelText(level);
-            // 使用正確的欄位
-            const availablePoints = parseFloat(partner.available_points) || 0;
-            const pointsUsed = parseFloat(partner.points_used) || 0;
-            const accommodationBalance = availablePoints;  // available_points 已經是可用餘額
-            const pendingCash = parseFloat(partner.pending_commission) || 0;
-            const totalClicks = getPartnerClicks(partner.partner_code);
-            const completedReferrals = partner.successful_referrals || partner.total_successful_referrals || 0;
+            // --- 使用統一計算函數 ---
+            const f = calculatePartnerFinancials(partner);
+            const levelClass = getLevelClass(f.level);
+            const levelText = getLevelText(f.level);
+            const totalClicks = getPartnerClicks(f.code);
+            const accommodationBalance = f.availablePoints;  // 使用統一計算的值
+            const pendingCash = f.pendingCash;
 
             // --- 呼叫操作按鈕生成函式 ---
             const smartActions = generateSmartActions(partner);
@@ -1232,11 +1260,11 @@
                             <div class="flex-grow">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <h3 class="font-bold text-lg text-stone-800 hover:text-blue-600 cursor-pointer transition-colors" 
-                                        onclick="viewPartnerDetails('${partner.partner_code}')"
+                                        onclick="viewPartnerDetails('${f.code}')"
                                         title="點擊查看詳情">
-                                        ${name}
+                                        ${f.name}
                                     </h3>
-                                    <span class="text-sm text-stone-500 font-mono">${partner.partner_code}</span>
+                                    <span class="text-sm text-stone-500 font-mono">${f.code}</span>
                                 </div>
                                 <div class="mt-1">
                                     <span class="px-3 py-1 rounded-full text-xs font-medium ${levelClass}">${levelText}</span>
@@ -1266,7 +1294,7 @@
 
                             <!-- 2b. 次要績效指標 -->
                             <div class="kpi-item kpi-divider">
-                                <div class="font-semibold text-lg text-stone-700">${partner.yearly_referrals || partner.level_progress || 0} / <span class="text-base font-normal">${getNextLevelRequirement(level)}</span></div>
+                                <div class="font-semibold text-lg text-stone-700">${f.yearlyReferrals} / <span class="text-base font-normal">${getNextLevelRequirement(f.level)}</span></div>
                                 <div class="text-xs text-stone-500 mt-1">本年進度</div>
                             </div>
                             <div class="kpi-item kpi-divider">
@@ -1274,7 +1302,7 @@
                                 <div class="text-xs text-stone-500 mt-1">點擊數</div>
                             </div>
                             <div class="kpi-item kpi-divider">
-                                <div class="font-semibold text-lg text-green-600">${completedReferrals}</div>
+                                <div class="font-semibold text-lg text-green-600">${f.successfulReferrals}</div>
                                 <div class="text-xs text-stone-500 mt-1">完成入住</div>
                             </div>
                         </div>
@@ -2126,11 +2154,11 @@
                             <div id="commission-view-${partner.partner_code}" class="grid grid-cols-3 gap-4">
                                 <div>
                                     <p class="text-sm text-gray-600">可用點數</p>
-                                    <p class="font-semibold text-blue-600">${((parseFloat(partner.total_commission_earned) || 0) - (parseFloat(partner.total_commission_paid) || 0)).toLocaleString()} 點</p>
+                                    <p class="font-semibold text-blue-600">${(parseFloat(partner.available_points) || 0).toLocaleString()} 點</p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-600">已使用點數</p>
-                                    <p class="font-semibold text-gray-600">${(parseFloat(partner.total_commission_paid) || 0).toLocaleString()} 點</p>
+                                    <p class="font-semibold text-gray-600">${(parseFloat(partner.points_used) || 0).toLocaleString()} 點</p>
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-600">待支付現金</p>
@@ -2140,15 +2168,15 @@
                             <div id="commission-edit-${partner.partner_code}" class="hidden space-y-3">
                                 <div class="grid grid-cols-3 gap-4">
                                     <div>
-                                        <label class="text-sm text-gray-600">累積佣金</label>
-                                        <input type="number" id="edit-total-earned-${partner.partner_code}" 
-                                               value="${parseFloat(partner.total_commission_earned) || 0}"
+                                        <label class="text-sm text-gray-600">可用點數</label>
+                                        <input type="number" id="edit-available-points-${partner.partner_code}" 
+                                               value="${parseFloat(partner.available_points) || 0}"
                                                class="w-full px-2 py-1 border rounded text-sm">
                                     </div>
                                     <div>
                                         <label class="text-sm text-gray-600">已使用點數</label>
-                                        <input type="number" id="edit-total-paid-${partner.partner_code}" 
-                                               value="${parseFloat(partner.total_commission_paid) || 0}"
+                                        <input type="number" id="edit-points-used-${partner.partner_code}" 
+                                               value="${parseFloat(partner.points_used) || 0}"
                                                class="w-full px-2 py-1 border rounded text-sm">
                                     </div>
                                     <div>
@@ -3924,7 +3952,9 @@
             const relatedBookings = payout.related_booking_ids;
             
             // 1. 手動調整的結算
-            if (method === 'MANUAL_ADJUSTMENT' || notes.includes('手動調整') || notes.includes('管理者') || notes.includes('手動修改')) {
+            // 確保 notes 是字串才執行 includes
+            const notesStr = String(notes || '');
+            if (method === 'MANUAL_ADJUSTMENT' || notesStr.includes('手動調整') || notesStr.includes('管理者') || notesStr.includes('手動修改')) {
                 return {
                     text: '👤 管理者手動調整',
                     class: 'bg-purple-100 text-purple-800',
@@ -5698,14 +5728,14 @@ ${landingUrl}
                 return;
             }
             
-            // 記錄原始值
-            const oldTotalEarned = parseFloat(partner.total_commission_earned) || 0;
-            const oldTotalPaid = parseFloat(partner.total_commission_paid) || 0;
+            // 記錄原始值（使用正確的欄位）
+            const oldAvailablePoints = parseFloat(partner.available_points) || 0;
+            const oldPointsUsed = parseFloat(partner.points_used) || 0;
             const oldPendingCash = parseFloat(partner.pending_commission) || 0;
             
-            // 獲取新值
-            const totalEarned = parseFloat(document.getElementById(`edit-total-earned-${partnerCode}`).value) || 0;
-            const totalPaid = parseFloat(document.getElementById(`edit-total-paid-${partnerCode}`).value) || 0;
+            // 獲取新值（使用正確的欄位）
+            const availablePoints = parseFloat(document.getElementById(`edit-available-points-${partnerCode}`).value) || 0;
+            const pointsUsed = parseFloat(document.getElementById(`edit-points-used-${partnerCode}`).value) || 0;
             const pendingCash = parseFloat(document.getElementById(`edit-pending-cash-${partnerCode}`).value) || 0;
             const notes = document.getElementById(`edit-notes-${partnerCode}`).value.trim();
 
@@ -5714,47 +5744,29 @@ ${landingUrl}
                 return;
             }
 
-            if (totalEarned < 0 || totalPaid < 0 || pendingCash < 0) {
+            if (availablePoints < 0 || pointsUsed < 0 || pendingCash < 0) {
                 showErrorMessage('金額不能為負數');
                 return;
             }
-
-            if (totalPaid > totalEarned) {
-                showErrorMessage('已使用點數不能超過累積佣金');
                 return;
             }
             
             // 計算調整金額（新值 - 舊值）
-            const adjustmentAmount = totalEarned - oldTotalEarned;
-            const adjustmentText = adjustmentAmount >= 0 ? `+${adjustmentAmount}` : `${adjustmentAmount}`;
+            const pointsAdjustment = availablePoints - oldAvailablePoints;
+            const cashAdjustment = pendingCash - oldPendingCash;
 
             try {
-                // 🎯 創建手動調整記錄到 Payouts 表
-                const adjustmentData = {
-                    action: 'create_payout',
-                    partner_code: partnerCode,
-                    payout_type: 'ADJUSTMENT',
-                    amount: adjustmentAmount, // 保留原始值（可能為負）
-                    payout_method: 'MANUAL_ADJUSTMENT',
-                    payout_status: 'COMPLETED',
-                    notes: `👤 管理者手動調整 - ${notes} - 累積佣金 ${adjustmentText} - ${new Date().toLocaleString()}`
-                };
-
-                console.log('🚀 準備創建手動調整記錄:', adjustmentData);
-
-                // 只發送一次請求：更新佣金資訊（不需要單獨創建 payout）
-                // 後端會自動記錄調整歷史
+                // 更新佣金資訊（使用正確的欄位）
                 const updateData = {
                     action: 'update_partner_commission',
                     partner_code: partnerCode,
-                    total_commission_earned: totalEarned,
-                    total_commission_paid: totalPaid,
+                    available_points: availablePoints,
+                    points_used: pointsUsed,
                     pending_commission: pendingCash,
-                    adjustment_amount: adjustmentAmount, // 傳遞調整金額
                     adjustment_notes: notes // 傳遞調整備註
                 };
 
-                console.log('🚀 準備更新夥伴佣金（含調整記錄）:', updateData);
+                console.log('🚀 準備更新夥伴佣金（使用正確欄位）:', updateData);
 
                 // 使用 form 提交方式避免 CORS 問題
                 submitToBackendViaForm(updateData);
@@ -5764,11 +5776,11 @@ ${landingUrl}
                 
                 console.log('✅ 佣金調整請求已發送');
 
-                // 🎯 更新本地數據
+                // 🎯 更新本地數據（使用正確的欄位）
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                 if (partnerIndex !== -1) {
-                    allData.partners[partnerIndex].total_commission_earned = totalEarned;
-                    allData.partners[partnerIndex].total_commission_paid = totalPaid;
+                    allData.partners[partnerIndex].available_points = availablePoints;
+                    allData.partners[partnerIndex].points_used = pointsUsed;
                     allData.partners[partnerIndex].pending_commission = pendingCash;
                     allData.partners[partnerIndex].pending_cash = pendingCash;
                 }

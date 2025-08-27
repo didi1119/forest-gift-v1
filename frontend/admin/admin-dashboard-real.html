@@ -969,11 +969,36 @@
             payouts: [],
             clicks: []
         };
+        
+        // 資料快取控制
+        let dataCache = {
+            lastFetchTime: null,
+            isFetching: false,
+            cacheTimeout: 5 * 60 * 1000, // 5 分鐘快取
+            isDataLoaded: false
+        };
 
 
-        // 載入真實數據
-        async function loadRealData() {
+        // 載入真實數據（帶快取機制）
+        async function loadRealData(forceRefresh = false) {
+            // 檢查是否正在載入
+            if (dataCache.isFetching) {
+                console.log('⏳ 數據正在載入中，避免重複請求');
+                return;
+            }
+            
+            // 檢查快取是否有效
+            const now = Date.now();
+            if (!forceRefresh && dataCache.lastFetchTime && 
+                (now - dataCache.lastFetchTime) < dataCache.cacheTimeout && 
+                dataCache.isDataLoaded) {
+                console.log('✅ 使用快取數據，上次更新：', 
+                    Math.round((now - dataCache.lastFetchTime) / 1000), '秒前');
+                return;
+            }
+            
             try {
+                dataCache.isFetching = true;
                 showLoadingSpinner('載入數據中...');
                 console.log('🔄 開始載入真實數據...');
                 console.log('🌐 請求 URL:', APPS_SCRIPT_URL);
@@ -1101,6 +1126,10 @@
                     }
                     
                     showSuccessMessage(`成功載入 ${allData.partners?.length || 0} 位夥伴的資料！`);
+                    
+                    // 更新快取狀態
+                    dataCache.lastFetchTime = Date.now();
+                    dataCache.isDataLoaded = true;
                 } else {
                     throw new Error(data.error || '載入數據失敗');
                 }
@@ -1132,12 +1161,17 @@
                 // 使用模擬數據作為備用方案
                 loadMockData();
                 console.log('🔄 已切換到模擬數據模式');
+            } finally {
+                dataCache.isFetching = false;
             }
         }
 
         // 載入概覽數據
         async function loadOverviewData() {
-            await loadRealData();
+            // 只在第一次或快取過期時載入
+            if (!dataCache.isDataLoaded) {
+                await loadRealData();
+            }
             displayPartners(allData.partners);
             updateStats();
             displayRecentActivity();
@@ -1371,7 +1405,8 @@
 
         // 載入訂單數據
         async function loadBookingsData() {
-            if (allData.bookings.length === 0) {
+            // 只在第一次或快取過期時載入
+            if (!dataCache.isDataLoaded) {
                 await loadRealData();
             }
             displayBookings(allData.bookings);
@@ -1563,7 +1598,8 @@
 
         // 載入結算數據
         async function loadPayoutsData() {
-            if (allData.payouts.length === 0) {
+            // 只在第一次或快取過期時載入
+            if (!dataCache.isDataLoaded) {
                 await loadRealData();
             }
             displayPayouts(allData.payouts);
@@ -1645,7 +1681,8 @@
 
         // 載入分析數據
         async function loadAnalyticsData() {
-            if (allData.clicks.length === 0) {
+            // 只在第一次或快取過期時載入
+            if (!dataCache.isDataLoaded) {
                 await loadRealData();
             }
             displayAnalytics();
@@ -1858,11 +1895,31 @@
 
         function showLoadingSpinner(message) {
             console.log('Loading:', message);
-            // 可以在這裡添加實際的 loading UI
+            // 顯示載入提示
+            let spinner = document.getElementById('global-loading-spinner');
+            if (!spinner) {
+                spinner = document.createElement('div');
+                spinner.id = 'global-loading-spinner';
+                spinner.className = 'fixed top-4 right-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded shadow-lg z-50';
+                spinner.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700 mr-3"></div>
+                        <span id="loading-message">${message}</span>
+                    </div>
+                `;
+                document.body.appendChild(spinner);
+            } else {
+                document.getElementById('loading-message').textContent = message;
+                spinner.style.display = 'block';
+            }
         }
 
         function hideLoadingSpinner() {
             console.log('Loading complete');
+            const spinner = document.getElementById('global-loading-spinner');
+            if (spinner) {
+                spinner.style.display = 'none';
+            }
         }
         
         function showSuccessMessage(message) {
@@ -1901,7 +1958,15 @@
 
         // 功能按鈕
         window.refreshData = function() {
-            location.reload();
+            console.log('🔄 強制重新載入所有數據');
+            loadRealData(true).then(() => {  // 強制重新載入
+                // 更新當前顯示的標籤
+                const activeTab = document.querySelector('.tab-button.active');
+                if (activeTab) {
+                    const tabName = activeTab.id.replace('tab-', '');
+                    showTab(tabName);
+                }
+            });
         }
 
         window.exportPartnersData = function() {
@@ -6233,8 +6298,15 @@ ${landingUrl}
         // 載入分析數據（使用真實數據）
         function loadAnalyticsData() {
             try {
-                if (!allData || !allData.partners) {
-                    console.log('等待真實數據載入...');
+                // 檢查數據是否已載入
+                if (!dataCache.isDataLoaded || !allData || !allData.partners) {
+                    console.log('等待數據載入...');
+                    // 如果數據未載入，先載入數據
+                    if (!dataCache.isDataLoaded) {
+                        loadRealData().then(() => {
+                            loadAnalyticsData();  // 載入完成後重新呼叫
+                        });
+                    }
                     return;
                 }
                 
@@ -6583,6 +6655,20 @@ ${landingUrl}
                     break;
             }
         }
+        
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 頁面載入完成，初始化應用程式');
+            // 預先載入資料
+            loadRealData().then(() => {
+                // 顯示預設的概覽標籤
+                showTab('overview');
+            }).catch(error => {
+                console.error('初始載入失敗:', error);
+                // 即使失敗也顯示概覽標籤
+                showTab('overview');
+            });
+        });
     </script>
     <!-- 外部 JavaScript 文件，添加版本號防止快取 -->
     <script src="payout-functions.js?v=20240816"></script>

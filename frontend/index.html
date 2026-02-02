@@ -279,6 +279,10 @@
                     <button id="line-coupon-btn" class="brand-button button-primary text-lg px-8 py-3" onclick="goToLineCoupon()">
                         領取專屬森林優惠 🎁
                     </button>
+                    <!-- Debug info: 顯示當前優惠券連結狀態 -->
+                    <div id="coupon-debug" class="mt-4 text-sm text-stone-500" style="display: none;">
+                        <p>✓ 已載入專屬優惠券連結</p>
+                    </div>
                 </div>
             </section>
         </main>
@@ -364,36 +368,48 @@
         function goToLineCoupon() {
             const subid = getSubid();
             const couponUrl = getCouponUrl();
-            
+
+            console.log('\n=== 點擊優惠券按鈕 ===');
+            console.log('subid:', subid || '無');
+            console.log('couponUrl:', couponUrl || '無');
+
             trackEvent('line_click', {
                 page: 'index',
                 has_subid: !!subid,
                 has_coupon_url: !!couponUrl
             });
-            
+
             if (subid && subid !== 'demo' && subid !== 'no-subid') {
                 // 有有效的 subid
                 if (couponUrl) {
                     // 有專屬優惠券連結，透過 Apps Script 中繼追蹤並跳轉到該連結
                     const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
-                    console.log('🎁 跳轉到專屬優惠券 (透過追蹤):', trackedCouponUrl);
-                    console.log('   目標連結:', couponUrl);
+                    console.log('✅ 使用專屬優惠券連結（帶追蹤）');
+                    console.log('   追蹤連結:', trackedCouponUrl);
+                    console.log('   最終目標:', couponUrl);
+                    console.log('========================\n');
                     window.open(trackedCouponUrl, '_blank');
                 } else {
                     // 沒有專屬優惠券連結，透過 Apps Script 查找（舊邏輯）
                     const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon`;
-                    console.log('🎁 透過 Apps Script 查找優惠券連結:', trackedCouponUrl);
+                    console.log('⚠️ 無專屬優惠券，透過 Apps Script 查找');
+                    console.log('   追蹤連結:', trackedCouponUrl);
+                    console.log('========================\n');
                     window.open(trackedCouponUrl, '_blank');
                 }
             } else {
                 // 沒有有效的 subid
                 if (couponUrl) {
                     // 有優惠券連結但沒有 subid，直接跳轉（無追蹤）
-                    console.log('🎁 直接跳轉到優惠券連結（無追蹤）:', couponUrl);
+                    console.log('⚠️ 無 subid，直接跳轉優惠券連結（無追蹤）');
+                    console.log('   目標連結:', couponUrl);
+                    console.log('========================\n');
                     window.open(couponUrl, '_blank');
                 } else {
                     // 沒有 subid 也沒有優惠券連結，跳轉到預設 LINE 官方帳號
-                    console.log('🎁 直接跳轉到 LINE 官方帳號（無追蹤）');
+                    console.log('⚠️ 無 subid 也無專屬優惠券，使用預設 LINE');
+                    console.log('   預設連結:', LINE_OFFICIAL_URL);
+                    console.log('========================\n');
                     window.open(LINE_OFFICIAL_URL, '_blank');
                 }
             }
@@ -671,7 +687,22 @@
             
             console.log('🌲 靜謐森林網站載入完成');
             console.log('📊 當前 subid:', getSubid() || '無');
-            console.log('💡 測試推薦功能：在網址後加上 ?subid=test123');
+
+            // 檢查並顯示優惠券 URL
+            const couponUrl = getCouponUrl();
+            if (couponUrl) {
+                console.log('🎁 已載入專屬優惠券連結:', couponUrl);
+                console.log('   連結來源:', getUrlParameter('coupon_url') ? 'URL 參數' : 'LocalStorage');
+                // 顯示 debug 提示
+                const debugDiv = document.getElementById('coupon-debug');
+                if (debugDiv) {
+                    debugDiv.style.display = 'block';
+                }
+            } else {
+                console.log('🎁 優惠券連結: 使用預設 LINE 官方帳號');
+            }
+
+            console.log('💡 測試推薦功能：在網址後加上 ?subid=test123&coupon_url=YOUR_LINE_URL');
         });
     </script>
 </body>

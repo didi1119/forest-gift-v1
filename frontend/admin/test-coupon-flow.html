@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>優惠券連結流程測試</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">🎁 優惠券連結流程測試</h1>
+
+        <!-- 測試配置 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">測試配置</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        推薦人代碼
+                    </label>
+                    <input type="text" id="partnerCode"
+                           class="w-full px-3 py-2 border border-gray-300 rounded"
+                           placeholder="例如：KOBE"
+                           value="KOBE">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        專屬 LINE 優惠券連結
+                    </label>
+                    <input type="text" id="couponUrl"
+                           class="w-full px-3 py-2 border border-gray-300 rounded"
+                           placeholder="https://lin.ee/xxxxx"
+                           value="https://lin.ee/KOBE001">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Apps Script URL
+                </label>
+                <input type="text" id="scriptUrl"
+                       class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                       value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+            </div>
+
+            <button onclick="generateTestLinks()"
+                    class="w-full bg-blue-600 text-white px-4 py-3 rounded hover:bg-blue-700 font-semibold">
+                生成測試連結
+            </button>
+        </div>
+
+        <!-- 測試連結 -->
+        <div id="testLinks" class="bg-white rounded-lg shadow p-6 mb-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">📎 測試連結</h2>
+
+            <div class="space-y-4">
+                <div>
+                    <h3 class="font-semibold text-gray-700 mb-2">1️⃣ 短網址（主頁連結）</h3>
+                    <p class="text-sm text-gray-600 mb-2">用戶點擊此連結後，應該會看到主頁，並且優惠券按鈕會連結到專屬 LINE</p>
+                    <div class="bg-green-50 border border-green-200 rounded p-3 mb-2">
+                        <code id="shortLandingLink" class="text-sm break-all text-green-800"></code>
+                    </div>
+                    <button onclick="testLink('shortLandingLink')" class="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+                        🧪 測試此連結
+                    </button>
+                    <button onclick="copyLink('shortLandingLink')" class="text-sm bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700">
+                        📋 複製
+                    </button>
+                </div>
+
+                <div class="border-t pt-4">
+                    <h3 class="font-semibold text-gray-700 mb-2">2️⃣ 短網址（直接優惠券連結）</h3>
+                    <p class="text-sm text-gray-600 mb-2">用戶點擊此連結後，應該直接跳轉到專屬 LINE 優惠券</p>
+                    <div class="bg-blue-50 border border-blue-200 rounded p-3 mb-2">
+                        <code id="shortCouponLink" class="text-sm break-all text-blue-800"></code>
+                    </div>
+                    <button onclick="testLink('shortCouponLink')" class="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+                        🧪 測試此連結
+                    </button>
+                    <button onclick="copyLink('shortCouponLink')" class="text-sm bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700">
+                        📋 複製
+                    </button>
+                </div>
+
+                <div class="border-t pt-4">
+                    <h3 class="font-semibold text-gray-700 mb-2">3️⃣ 完整連結（用於 debug）</h3>
+                    <details class="text-sm">
+                        <summary class="cursor-pointer text-gray-600 hover:text-gray-800">點擊查看完整連結</summary>
+                        <div class="mt-2 space-y-2">
+                            <div>
+                                <p class="text-xs text-gray-500">主頁連結（完整）：</p>
+                                <code id="fullLandingLink" class="text-xs break-all block bg-gray-50 p-2 rounded"></code>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">優惠券連結（完整）：</p>
+                                <code id="fullCouponLink" class="text-xs break-all block bg-gray-50 p-2 rounded"></code>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </div>
+
+        <!-- 測試步驟 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🧪 測試步驟</h2>
+            <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                <li>填寫推薦人代碼和專屬 LINE 優惠券連結</li>
+                <li>點擊「生成測試連結」</li>
+                <li>點擊「🧪 測試此連結」打開主頁連結</li>
+                <li>打開瀏覽器的開發者工具（F12），查看 Console</li>
+                <li>應該會看到：<code class="bg-gray-100 px-2 py-1 rounded text-sm">🎁 已載入專屬優惠券連結: https://lin.ee/xxxxx</code></li>
+                <li>點擊主頁上的「領取專屬森林優惠 🎁」按鈕</li>
+                <li>檢查 Console，應該會看到使用了正確的專屬優惠券連結</li>
+                <li>確認跳轉到了正確的 LINE 優惠券頁面</li>
+            </ol>
+        </div>
+
+        <!-- 預期結果 -->
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
+            <h2 class="text-lg font-semibold text-blue-800 mb-3">✅ 預期結果</h2>
+            <ul class="space-y-2 text-blue-700">
+                <li>✓ 主頁載入時，Console 顯示「已載入專屬優惠券連結」</li>
+                <li>✓ 優惠券按鈕下方顯示「✓ 已載入專屬優惠券連結」</li>
+                <li>✓ 點擊按鈕後，Console 顯示使用「專屬優惠券連結（帶追蹤）」</li>
+                <li>✓ 最終跳轉到正確的 LINE 優惠券頁面</li>
+                <li>✓ Google Sheets 的 Clicks 表格記錄了點擊</li>
+            </ul>
+        </div>
+
+        <!-- 故障排除 -->
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-6 rounded mt-6">
+            <h2 class="text-lg font-semibold text-amber-800 mb-3">⚠️ 故障排除</h2>
+            <div class="space-y-3 text-amber-700">
+                <div>
+                    <p class="font-semibold">問題：Console 沒有顯示優惠券連結</p>
+                    <p class="text-sm">→ 檢查 URL 是否包含 <code class="bg-amber-100 px-1">coupon_url</code> 參數</p>
+                </div>
+                <div>
+                    <p class="font-semibold">問題：點擊按鈕後跳轉到預設 LINE</p>
+                    <p class="text-sm">→ 確認 Apps Script 的 handleRedirect 函數正確傳遞了 coupon_url</p>
+                </div>
+                <div>
+                    <p class="font-semibold">問題：短網址無法生成</p>
+                    <p class="text-sm">→ 檢查網路連線，或使用完整連結測試</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function generateTestLinks() {
+            const partnerCode = document.getElementById('partnerCode').value.trim();
+            const couponUrl = document.getElementById('couponUrl').value.trim();
+            const scriptUrl = document.getElementById('scriptUrl').value.trim();
+
+            if (!partnerCode || !couponUrl) {
+                alert('請填寫推薦人代碼和優惠券連結');
+                return;
+            }
+
+            // 生成完整連結
+            const landingUrl = `${scriptUrl}?pid=${encodeURIComponent(partnerCode)}&dest=landing&coupon_url=${encodeURIComponent(couponUrl)}`;
+            const trackedCouponUrl = `${scriptUrl}?pid=${encodeURIComponent(partnerCode)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
+
+            // 顯示完整連結
+            document.getElementById('fullLandingLink').textContent = landingUrl;
+            document.getElementById('fullCouponLink').textContent = trackedCouponUrl;
+
+            // 生成短網址
+            document.getElementById('shortLandingLink').textContent = '生成中...';
+            document.getElementById('shortCouponLink').textContent = '生成中...';
+            document.getElementById('testLinks').classList.remove('hidden');
+
+            try {
+                const shortLanding = await createShortUrl(landingUrl);
+                const shortCoupon = await createShortUrl(trackedCouponUrl);
+
+                document.getElementById('shortLandingLink').textContent = shortLanding;
+                document.getElementById('shortCouponLink').textContent = shortCoupon;
+            } catch (error) {
+                console.error('生成短網址失敗:', error);
+                document.getElementById('shortLandingLink').textContent = landingUrl;
+                document.getElementById('shortCouponLink').textContent = trackedCouponUrl;
+            }
+        }
+
+        function testLink(elementId) {
+            const link = document.getElementById(elementId).textContent;
+            if (link && link !== '生成中...') {
+                window.open(link, '_blank');
+            }
+        }
+
+        function copyLink(elementId) {
+            const link = document.getElementById(elementId).textContent;
+            if (link && link !== '生成中...') {
+                navigator.clipboard.writeText(link).then(() => {
+                    alert('已複製到剪貼簿！');
+                });
+            }
+        }
+
+        async function createShortUrl(originalUrl) {
+            try {
+                const response = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(originalUrl));
+                if (response.ok) {
+                    const shortUrl = await response.text();
+                    if (shortUrl && shortUrl.startsWith('https://is.gd/')) {
+                        return shortUrl;
+                    }
+                }
+            } catch (error) {
+                console.warn('is.gd 失敗:', error);
+            }
+
+            try {
+                const response = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(originalUrl));
+                if (response.ok) {
+                    const shortUrl = await response.text();
+                    if (shortUrl && shortUrl.startsWith('https://tinyurl.com/')) {
+                        return shortUrl;
+                    }
+                }
+            } catch (error) {
+                console.warn('TinyURL 失敗:', error);
+            }
+
+            return originalUrl;
+        }
+    </script>
+</body>
+</html>

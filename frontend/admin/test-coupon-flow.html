@@ -203,6 +203,28 @@
         }
 
         async function createShortUrl(originalUrl) {
+            // Try reurl.cc API first
+            try {
+                const response = await fetch('https://api.reurl.cc/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'reurl-api-key': '4070ff49d794e43515523b663c974755ecd7b335959e04df8a38b58d65165567c4f5d6'
+                    },
+                    body: JSON.stringify({ url: originalUrl })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.res === 'success' && data.short_url) {
+                        return data.short_url;
+                    }
+                }
+            } catch (error) {
+                console.warn('reurl.cc 失敗:', error);
+            }
+
+            // Fallback to is.gd
             try {
                 const response = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(originalUrl));
                 if (response.ok) {
@@ -213,18 +235,6 @@
                 }
             } catch (error) {
                 console.warn('is.gd 失敗:', error);
-            }
-
-            try {
-                const response = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(originalUrl));
-                if (response.ok) {
-                    const shortUrl = await response.text();
-                    if (shortUrl && shortUrl.startsWith('https://tinyurl.com/')) {
-                        return shortUrl;
-                    }
-                }
-            } catch (error) {
-                console.warn('TinyURL 失敗:', error);
             }
 
             return originalUrl;

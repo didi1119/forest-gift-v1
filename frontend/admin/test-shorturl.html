@@ -40,22 +40,30 @@
 
             let html = '';
 
-            // Test 1: is.gd
+            // Test 1: reurl.cc API
             html += '<div class="border-b pb-4">';
-            html += '<h3 class="font-semibold mb-2">1️⃣ is.gd 服務測試</h3>';
+            html += '<h3 class="font-semibold mb-2">1️⃣ reurl.cc API 測試（主要服務）</h3>';
             try {
                 const start1 = Date.now();
-                const response1 = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(url));
+                const response1 = await fetch('https://api.reurl.cc/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'reurl-api-key': '4070ff49d794e43515523b663c974755ecd7b335959e04df8a38b58d65165567c4f5d6'
+                    },
+                    body: JSON.stringify({ url: url })
+                });
                 const time1 = Date.now() - start1;
 
                 if (response1.ok) {
-                    const shortUrl = await response1.text();
-                    if (shortUrl && shortUrl.startsWith('https://is.gd/')) {
+                    const data = await response1.json();
+                    if (data.res === 'success' && data.short_url) {
                         html += `<p class="text-green-600">✅ 成功 (${time1}ms)</p>`;
-                        html += `<p class="text-sm bg-green-50 p-2 rounded mt-2 break-all">${shortUrl}</p>`;
+                        html += `<p class="text-sm bg-green-50 p-2 rounded mt-2 break-all">${data.short_url}</p>`;
+                        html += `<p class="text-xs text-gray-500 mt-1">原始連結: ${data.original_url}</p>`;
                     } else {
-                        html += `<p class="text-red-600">❌ 回應格式錯誤</p>`;
-                        html += `<p class="text-sm text-gray-600">回應: ${shortUrl}</p>`;
+                        html += `<p class="text-red-600">❌ 回應異常</p>`;
+                        html += `<p class="text-sm text-gray-600">回應: ${JSON.stringify(data)}</p>`;
                     }
                 } else {
                     html += `<p class="text-red-600">❌ HTTP ${response1.status}</p>`;
@@ -65,17 +73,17 @@
             }
             html += '</div>';
 
-            // Test 2: TinyURL
+            // Test 2: is.gd (backup)
             html += '<div class="border-b pb-4 mt-4">';
-            html += '<h3 class="font-semibold mb-2">2️⃣ TinyURL 服務測試</h3>';
+            html += '<h3 class="font-semibold mb-2">2️⃣ is.gd 服務測試（備用服務）</h3>';
             try {
                 const start2 = Date.now();
-                const response2 = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(url));
+                const response2 = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(url));
                 const time2 = Date.now() - start2;
 
                 if (response2.ok) {
                     const shortUrl = await response2.text();
-                    if (shortUrl && shortUrl.startsWith('https://tinyurl.com/')) {
+                    if (shortUrl && shortUrl.startsWith('https://is.gd/')) {
                         html += `<p class="text-green-600">✅ 成功 (${time2}ms)</p>`;
                         html += `<p class="text-sm bg-green-50 p-2 rounded mt-2 break-all">${shortUrl}</p>`;
                     } else {
@@ -116,32 +124,40 @@
 
         // Same function as in link-generator-form.html
         async function createShortUrl(originalUrl) {
-            // Try is.gd first (has CORS support)
+            // Try reurl.cc API (professional service, no ads)
+            try {
+                const response = await fetch('https://api.reurl.cc/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'reurl-api-key': '4070ff49d794e43515523b663c974755ecd7b335959e04df8a38b58d65165567c4f5d6'
+                    },
+                    body: JSON.stringify({ url: originalUrl })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.res === 'success' && data.short_url) {
+                        console.log('✅ reurl.cc 短網址生成成功:', data.short_url);
+                        return data.short_url;
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ reurl.cc API 錯誤:', error);
+            }
+
+            // Fallback: Try is.gd
             try {
                 const response = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(originalUrl));
                 if (response.ok) {
                     const shortUrl = await response.text();
                     if (shortUrl && shortUrl.startsWith('https://is.gd/')) {
-                        console.log('✅ is.gd 短網址生成成功:', shortUrl);
+                        console.log('✅ is.gd 短網址生成成功 (備用):', shortUrl);
                         return shortUrl;
                     }
                 }
             } catch (error) {
-                console.warn('⚠️ is.gd 短網址生成失敗，嘗試備用方案:', error);
-            }
-
-            // Fallback to TinyURL
-            try {
-                const response = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(originalUrl));
-                if (response.ok) {
-                    const shortUrl = await response.text();
-                    if (shortUrl && shortUrl.startsWith('https://tinyurl.com/')) {
-                        console.log('✅ TinyURL 短網址生成成功:', shortUrl);
-                        return shortUrl;
-                    }
-                }
-            } catch (error) {
-                console.warn('⚠️ TinyURL 短網址生成失敗:', error);
+                console.warn('⚠️ is.gd 短網址生成失敗:', error);
             }
 
             // If all services fail, return original URL

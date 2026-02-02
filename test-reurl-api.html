@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>測試 reurl.cc API</title>
+</head>
+<body>
+    <h1>測試 reurl.cc API</h1>
+    <button onclick="testAPI()">測試 API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const testUrl = 'https://www.google.com';
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '測試中...';
+
+            try {
+                const response = await fetch('https://api.reurl.cc/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'reurl-api-key': '4070ff49d794e43515523b663c974755ecd7b335959e04df8a38b58d65165567c4f5d6'
+                    },
+                    body: JSON.stringify({ url: testUrl })
+                });
+
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (data.res === 'success') {
+                    resultDiv.innerHTML = `
+                        <h2>✅ 成功!</h2>
+                        <p>原始網址: ${testUrl}</p>
+                        <p>短網址: <a href="${data.short_url}" target="_blank">${data.short_url}</a></p>
+                        <p>完整響應: ${JSON.stringify(data, null, 2)}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <h2>❌ 失敗</h2>
+                        <p>錯誤代碼: ${data.code || 'unknown'}</p>
+                        <p>錯誤訊息: ${data.msg || 'unknown'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h2>❌ 錯誤</h2>
+                    <p>${error.message}</p>
+                `;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

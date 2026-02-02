@@ -244,7 +244,7 @@
             <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
                 <p><strong class="font-serif text-green-800">💡 使用提示：</strong></p>
                 <ul class="text-sm text-green-700 mt-2 space-y-1">
-                    <li>• <strong>短網址服務</strong>：系統會自動嘗試 is.gd 和 TinyURL 服務</li>
+                    <li>• <strong>短網址服務</strong>：使用專業的 reurl.cc 服務（無廣告），備用 is.gd</li>
                     <li>• <strong>狀態標籤</strong>：綠色「✓ 短網址」表示成功，橙色「⚠ 原始連結」表示服務異常</li>
                     <li>• <strong>連結功能</strong>：兩個連結都包含點擊追蹤，可在管理後台查看統計</li>
                     <li>• <strong>分享建議</strong>：短網址更美觀易記，適合在社群媒體和訊息中分享</li>
@@ -274,34 +274,49 @@
             }, 3000);
         }
 
-        // Create short URL with multiple fallback services
-        async function createShortUrl(originalUrl) {
-            // Try is.gd first (has CORS support)
+        // Create short URL using reurl.cc API
+        async function createShortUrl(originalUrl, utmParams = {}) {
+            // Try reurl.cc API (professional service, no ads)
+            try {
+                const requestBody = {
+                    url: originalUrl,
+                    ...utmParams  // 可選的 UTM 參數
+                };
+
+                const response = await fetch('https://api.reurl.cc/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'reurl-api-key': '4070ff49d794e43515523b663c974755ecd7b335959e04df8a38b58d65165567c4f5d6'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.res === 'success' && data.short_url) {
+                        console.log('✅ reurl.cc 短網址生成成功:', data.short_url);
+                        return data.short_url;
+                    } else {
+                        console.warn('⚠️ reurl.cc 回應異常:', data);
+                    }
+                }
+            } catch (error) {
+                console.warn('⚠️ reurl.cc API 錯誤:', error);
+            }
+
+            // Fallback: Try is.gd (free service)
             try {
                 const response = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(originalUrl));
                 if (response.ok) {
                     const shortUrl = await response.text();
                     if (shortUrl && shortUrl.startsWith('https://is.gd/')) {
-                        console.log('✅ is.gd 短網址生成成功:', shortUrl);
+                        console.log('✅ is.gd 短網址生成成功 (備用):', shortUrl);
                         return shortUrl;
                     }
                 }
             } catch (error) {
-                console.warn('⚠️ is.gd 短網址生成失敗，嘗試備用方案:', error);
-            }
-
-            // Fallback to TinyURL
-            try {
-                const response = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(originalUrl));
-                if (response.ok) {
-                    const shortUrl = await response.text();
-                    if (shortUrl && shortUrl.startsWith('https://tinyurl.com/')) {
-                        console.log('✅ TinyURL 短網址生成成功:', shortUrl);
-                        return shortUrl;
-                    }
-                }
-            } catch (error) {
-                console.warn('⚠️ TinyURL 短網址生成失敗:', error);
+                console.warn('⚠️ is.gd 短網址生成失敗:', error);
             }
 
             // If all services fail, return original URL

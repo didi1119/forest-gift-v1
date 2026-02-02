@@ -429,7 +429,7 @@
                 let landingUrl, trackedCouponUrl;
                 if (isDirectMode) {
                     // Direct Link Mode - No Apps Script redirect
-                    landingUrl = `${GITHUB_PAGES_URL}/frontend/index.html?subid=${encodeURIComponent(partnerCode)}&coupon_url=${encodeURIComponent(couponUrl)}`;
+                    landingUrl = `${GITHUB_PAGES_URL}/frontend/index.html?subid=${encodeURIComponent(partnerCode)}&coupon_url=${encodeURIComponent(couponUrl)}&mode=direct`;
                     trackedCouponUrl = couponUrl; // Direct LINE URL (no tracking)
                     console.log('🔗 使用直接連結模式（無 Apps Script 中繼）');
                 } else {

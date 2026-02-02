@@ -368,23 +368,42 @@
         function goToLineCoupon() {
             const subid = getSubid();
             const couponUrl = getCouponUrl();
+            const mode = getUrlParameter('mode'); // Check for direct mode
 
             console.log('\n=== 點擊優惠券按鈕 ===');
             console.log('subid:', subid || '無');
             console.log('couponUrl:', couponUrl || '無');
+            console.log('mode:', mode || '無（預設追蹤模式）');
 
             trackEvent('line_click', {
                 page: 'index',
                 has_subid: !!subid,
-                has_coupon_url: !!couponUrl
+                has_coupon_url: !!couponUrl,
+                mode: mode || 'tracking'
             });
 
+            // Direct Mode: No Apps Script redirect
+            if (mode === 'direct') {
+                if (couponUrl) {
+                    console.log('🔗 直接連結模式：直接跳轉到 LINE 優惠券');
+                    console.log('   目標:', couponUrl);
+                    console.log('========================\n');
+                    window.open(couponUrl, '_blank');
+                } else {
+                    console.log('❌ 直接模式但無優惠券連結，使用預設 LINE');
+                    console.log('========================\n');
+                    window.open(LINE_OFFICIAL_URL, '_blank');
+                }
+                return; // Exit early for direct mode
+            }
+
+            // Full Tracking Mode: Via Apps Script (original logic)
             if (subid && subid !== 'demo' && subid !== 'no-subid') {
                 // 有有效的 subid
                 if (couponUrl) {
                     // 有專屬優惠券連結，透過 Apps Script 中繼追蹤並跳轉到該連結
                     const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
-                    console.log('✅ 使用專屬優惠券連結（帶追蹤）');
+                    console.log('📊 完整追蹤模式：使用專屬優惠券連結（帶追蹤）');
                     console.log('   追蹤連結:', trackedCouponUrl);
                     console.log('   最終目標:', couponUrl);
                     console.log('========================\n');

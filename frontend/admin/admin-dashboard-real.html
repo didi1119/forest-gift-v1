@@ -5067,7 +5067,8 @@ ${landingUrl}
                             // 其他必要欄位...
                         };
                         allData.partners.push(newPartner);
-                        loadPartnersForLinkGen(); // 只更新下拉選單
+                        // 已移除：連結生成器現在使用 iframe，不需要更新下拉選單
+                        // loadPartnersForLinkGen();
                     }
                     
                     document.body.removeChild(form);
@@ -5151,10 +5152,10 @@ ${landingUrl}
             }
             
             showTab('overview');
-            // 自動載入夥伴列表
-            setTimeout(() => {
-                loadPartnersForLinkGen();
-            }, 1000);
+            // 已移除：連結生成器現在使用 iframe，不需要自動載入夥伴列表
+            // setTimeout(() => {
+            //     loadPartnersForLinkGen();
+            // }, 1000);
         });
         
         // 修復數據映射問題

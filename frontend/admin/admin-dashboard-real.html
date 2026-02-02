@@ -4866,30 +4866,36 @@
 
         // 載入夥伴列表到選擇器
         async function loadPartnersForLinkGen() {
-            try {
+            // 已棄用：連結生成器現在使用 iframe (link-generator-form.html)
+            // 此函數保留僅為了向後兼容，但不再執行任何操作
+            console.log('⚠️ loadPartnersForLinkGen 已棄用，連結生成器使用 iframe');
+            return;
+
+            // 以下代碼已停用
+            /* try {
                 if (allData.partners.length === 0) {
                     // 只在沒有數據時才重新載入
                     await loadRealData();
                 }
-                
+
                 const select = document.getElementById('linkgen_partner_select');
                 select.innerHTML = `
                     <option value="">-- 選擇現有夥伴或新增 --</option>
                     <option value="new">➕ 新增夥伴</option>
                 `;
-                
+
                 allData.partners.forEach(partner => {
                     const option = document.createElement('option');
                     option.value = partner.partner_code;
                     option.textContent = `${partner.name} (${partner.partner_code})`;
                     select.appendChild(option);
                 });
-                
+
                 showSuccessMessage('✅ 夥伴列表已載入');
             } catch (error) {
                 console.error('載入夥伴失敗:', error);
                 showErrorMessage('載入夥伴失敗：' + error.message);
-            }
+            } */
         }
 
         // 選擇夥伴時的處理

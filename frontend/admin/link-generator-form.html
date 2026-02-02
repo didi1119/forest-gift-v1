@@ -120,6 +120,50 @@
                 </div>
             </div>
 
+            <!-- Link Mode Selector -->
+            <div class="mt-6 p-6 bg-blue-50 rounded-lg border-2 border-blue-200">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h3 class="font-serif text-lg font-semibold text-blue-800">🔗 連結模式選擇</h3>
+                        <p class="text-sm text-blue-600 mt-1">選擇連結生成方式</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="directLinkMode" class="sr-only peer" checked>
+                        <div class="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+
+                <div id="directModeInfo" class="text-sm space-y-2">
+                    <div class="flex items-start">
+                        <span class="text-blue-700 font-medium mr-2">✓</span>
+                        <div class="text-blue-700">
+                            <strong>直接連結模式（推薦）</strong>
+                            <ul class="mt-1 ml-4 space-y-1 text-xs">
+                                <li>• 用戶點擊後直接前往目標頁面（無跳轉橫幅）</li>
+                                <li>• 更快的載入速度</li>
+                                <li>• 使用 reurl.cc 後台追蹤點擊數據</li>
+                                <li>• Google Sheets 不記錄點擊</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="trackingModeInfo" class="text-sm space-y-2 hidden">
+                    <div class="flex items-start">
+                        <span class="text-gray-600 font-medium mr-2">○</span>
+                        <div class="text-gray-600">
+                            <strong>完整追蹤模式</strong>
+                            <ul class="mt-1 ml-4 space-y-1 text-xs">
+                                <li>• 透過 Google Apps Script 中繼服務</li>
+                                <li>• 在 Google Sheets 記錄所有點擊</li>
+                                <li>• 會顯示「即將離開 Google」橫幅</li>
+                                <li>• 速度較慢（多一層重定向）</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Coupon Info -->
             <div class="mt-6 p-6 bg-amber-50 rounded-lg border-2 border-amber-200">
                 <h3 class="font-serif text-lg font-semibold text-amber-800 mb-4">🎫 專屬優惠券設定</h3>
@@ -243,10 +287,11 @@
             <!-- Tips -->
             <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
                 <p><strong class="font-serif text-green-800">💡 使用提示：</strong></p>
-                <ul class="text-sm text-green-700 mt-2 space-y-1">
+                <ul id="tipsContent" class="text-sm text-green-700 mt-2 space-y-1">
+                    <li>• <strong>連結模式</strong>：預設使用「直接連結模式」，無 Apps Script 跳轉橫幅</li>
                     <li>• <strong>短網址服務</strong>：使用專業的 reurl.cc 服務（無廣告），備用 is.gd</li>
                     <li>• <strong>狀態標籤</strong>：綠色「✓ 短網址」表示成功，橙色「⚠ 原始連結」表示服務異常</li>
-                    <li>• <strong>連結功能</strong>：兩個連結都包含點擊追蹤，可在管理後台查看統計</li>
+                    <li>• <strong>點擊追蹤</strong>：登入 reurl.cc 後台查看點擊統計（直接模式）或查看 Google Sheets Clicks 表（追蹤模式）</li>
                     <li>• <strong>分享建議</strong>：短網址更美觀易記，適合在社群媒體和訊息中分享</li>
                     <li>• <strong>儲存資料</strong>：記得點擊「儲存到 Google Sheets」將大使資料存入系統</li>
                 </ul>
@@ -261,8 +306,28 @@
         // Configuration
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
         const GITHUB_PAGES_URL = 'https://didi1119.github.io/forest-gift-v1';
-        
+
         let generatedData = null;
+
+        // Initialize mode toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const modeToggle = document.getElementById('directLinkMode');
+            const directInfo = document.getElementById('directModeInfo');
+            const trackingInfo = document.getElementById('trackingModeInfo');
+
+            // Toggle info display based on mode
+            modeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    // Direct mode
+                    directInfo.classList.remove('hidden');
+                    trackingInfo.classList.add('hidden');
+                } else {
+                    // Tracking mode
+                    directInfo.classList.add('hidden');
+                    trackingInfo.classList.remove('hidden');
+                }
+            });
+        });
 
         // Toast notification
         function showToast(message) {
@@ -357,9 +422,22 @@
             document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
 
             try {
-                // Generate tracking URLs (include coupon_url in landing page URL)
-                const landingUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=landing&coupon_url=${encodeURIComponent(couponUrl)}`;
-                const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
+                // Check link mode
+                const isDirectMode = document.getElementById('directLinkMode').checked;
+
+                // Generate URLs based on mode
+                let landingUrl, trackedCouponUrl;
+                if (isDirectMode) {
+                    // Direct Link Mode - No Apps Script redirect
+                    landingUrl = `${GITHUB_PAGES_URL}/frontend/index.html?subid=${encodeURIComponent(partnerCode)}&coupon_url=${encodeURIComponent(couponUrl)}`;
+                    trackedCouponUrl = couponUrl; // Direct LINE URL (no tracking)
+                    console.log('🔗 使用直接連結模式（無 Apps Script 中繼）');
+                } else {
+                    // Full Tracking Mode - Via Apps Script
+                    landingUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=landing&coupon_url=${encodeURIComponent(couponUrl)}`;
+                    trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
+                    console.log('📊 使用完整追蹤模式（透過 Apps Script）');
+                }
 
                 // Update status - generating landing link
                 document.getElementById('landingStatus').textContent = '生成短網址中...';

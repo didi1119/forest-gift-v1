@@ -745,14 +745,22 @@
                                 (p.notes || '').includes('住宿金')
                             );
 
+                            // 新增：計算點數轉現金操作
+                            const cashConversionPayouts = data.payouts.filter(p =>
+                                p.partner_code === partner.partner_code &&
+                                p.payout_type === 'CASH_CONVERSION'
+                            );
+
                             const totalEarned = accommodationPayouts.reduce((sum, p) =>
                                 sum + parseFloat(p.amount || 0), 0);
                             const totalDebit = debitPayouts.reduce((sum, p) =>
                                 sum + Math.abs(parseFloat(p.amount || 0)), 0);
                             const totalReversal = reversalPayouts.reduce((sum, p) =>
                                 sum + Math.abs(parseFloat(p.amount || 0)), 0);
+                            const totalConverted = cashConversionPayouts.reduce((sum, p) =>
+                                sum + Math.abs(parseFloat(p.points_used || p.amount || 0)), 0);
 
-                            const expectedPoints = totalEarned - totalDebit - totalReversal;
+                            const expectedPoints = totalEarned - totalDebit - totalReversal - totalConverted;
                             const actualPoints = parseFloat(partner.available_points || 0);
 
                             const diff = Math.abs(expectedPoints - actualPoints);

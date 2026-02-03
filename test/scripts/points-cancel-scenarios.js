@@ -9,8 +9,8 @@ const testUsePointsThenCancel = {
     description: '測試使用住宿金折抵後，取消訂房是否正確退回點數',
     
     async execute(framework) {
-        const partnerCode = 'gg';
-        
+        const partnerCode = framework.testPartnerCode || 'TEST_AUTO';
+
         framework.log('步驟 1: 記錄初始點數狀態');
         const initialState = await framework.fetchSheetData();
         const partnerInitial = initialState.partners.find(p => p.partner_code === partnerCode);
@@ -166,7 +166,7 @@ const testConvertToCashThenCancel = {
     description: '測試點數轉換為現金後，取消結算是否正確退回點數',
     
     async execute(framework) {
-        const partnerCode = 'gg';
+        const partnerCode = framework.testPartnerCode || 'TEST_AUTO';
         
         framework.log('步驟 1: 記錄初始狀態');
         const initialState = await framework.fetchSheetData();
@@ -243,7 +243,7 @@ const testMultipleUsagePartialCancel = {
     description: '測試多次使用住宿金後，只取消部分使用的情況',
     
     async execute(framework) {
-        const partnerCode = 'gg';
+        const partnerCode = framework.testPartnerCode || 'TEST_AUTO';
         const usages = [];
         
         framework.log('步驟 1: 記錄初始狀態');
@@ -370,7 +370,7 @@ const testChainConvertAndCancel = {
     description: '測試連續進行點數轉換和取消的複雜情況',
     
     async execute(framework) {
-        const partnerCode = 'gg';
+        const partnerCode = framework.testPartnerCode || 'TEST_AUTO';
         const operations = [];
         
         framework.log('步驟 1: 執行連續操作序列');
@@ -469,7 +469,7 @@ const testCancelWithInsufficientPoints = {
     description: '測試當可用點數不足時，取消操作的處理',
     
     async execute(framework) {
-        const partnerCode = 'gg';
+        const partnerCode = framework.testPartnerCode || 'TEST_AUTO';
         
         framework.log('步驟 1: 確保點數餘額較低');
         const initialState = await framework.fetchSheetData();
@@ -526,7 +526,7 @@ const testMixedOperationsStress = {
     description: '快速執行多種點數操作，測試系統穩定性',
     
     async execute(framework) {
-        const partnerCode = 'gg';
+        const partnerCode = framework.testPartnerCode || 'TEST_AUTO';
         const results = [];
         
         framework.log('開始壓力測試...');

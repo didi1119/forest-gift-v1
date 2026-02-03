@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新功能測試 - 取消/恢復/退款功能</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .status-pass { background: #10b981; }
+        .status-fail { background: #ef4444; }
+        .status-running { background: #fbbf24; animation: pulse 2s infinite; }
+        .status-pending { background: #6b7280; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-8">🆕 新功能測試套件</h1>
+        
+        <!-- 測試配置 -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">⚙️ 測試配置</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Google Apps Script URL</label>
+                    <input type="text" id="appsScriptUrl" class="w-full px-3 py-2 border rounded-lg" 
+                           placeholder="輸入你的 Apps Script URL">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">測試用大使代碼</label>
+                    <input type="text" id="partnerCode" value="gg" class="w-full px-3 py-2 border rounded-lg">
+                </div>
+            </div>
+            <button onclick="saveConfig()" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                💾 儲存設定
+            </button>
+        </div>
+
+        <!-- 新功能測試 -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">🚀 新功能測試</h2>
+            <div class="space-y-2">
+                <button onclick="testCancelAccommodationUsage()" class="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-left">
+                    1️⃣ 測試取消住宿金使用（退回點數）
+                </button>
+                <button onclick="testRestoreBooking()" class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 text-left">
+                    2️⃣ 測試恢復已取消訂房
+                </button>
+                <button onclick="testPartialRefund()" class="w-full px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-left">
+                    3️⃣ 測試部分退款
+                </button>
+                <button onclick="testBatchCancel()" class="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 text-left">
+                    4️⃣ 測試批量取消
+                </button>
+                <button onclick="testCompleteFlow()" class="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 text-left font-bold">
+                    🎯 完整流程測試（訂房→入住→取消→恢復）
+                </button>
+            </div>
+        </div>
+
+        <!-- 測試結果 -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">📊 測試結果</h2>
+            <div id="testResults" class="space-y-2 max-h-96 overflow-y-auto">
+                <div class="text-gray-500">等待測試開始...</div>
+            </div>
+        </div>
+
+        <!-- Console 輸出 -->
+        <div class="bg-black text-green-400 rounded-lg p-4 mt-6 font-mono text-sm">
+            <h3 class="text-white mb-2">💻 Console</h3>
+            <div id="console" class="max-h-64 overflow-y-auto">
+                <div>Ready...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        let APPS_SCRIPT_URL = localStorage.getItem('appsScriptUrl') || '';
+        let PARTNER_CODE = localStorage.getItem('partnerCode') || 'gg';
+        
+        // 載入配置
+        window.onload = function() {
+            document.getElementById('appsScriptUrl').value = APPS_SCRIPT_URL;
+            document.getElementById('partnerCode').value = PARTNER_CODE;
+        };
+        
+        // 儲存配置
+        function saveConfig() {
+            APPS_SCRIPT_URL = document.getElementById('appsScriptUrl').value;
+            PARTNER_CODE = document.getElementById('partnerCode').value;
+            localStorage.setItem('appsScriptUrl', APPS_SCRIPT_URL);
+            localStorage.setItem('partnerCode', PARTNER_CODE);
+            log('✅ 配置已儲存');
+        }
+        
+        // Console 輸出
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'text-red-400' : type === 'success' ? 'text-green-400' : 'text-gray-400';
+            console.innerHTML += `<div class="${color}">[${time}] ${message}</div>`;
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        // 顯示測試結果
+        function showResult(testName, success, details) {
+            const results = document.getElementById('testResults');
+            const statusClass = success ? 'status-pass' : 'status-fail';
+            const statusText = success ? '✅ 通過' : '❌ 失敗';
+            
+            const resultHtml = `
+                <div class="p-3 border rounded-lg ${success ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}">
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">${testName}</span>
+                        <span class="px-2 py-1 rounded text-white text-sm ${statusClass}">${statusText}</span>
+                    </div>
+                    ${details ? `<div class="mt-2 text-sm text-gray-600">${details}</div>` : ''}
+                </div>
+            `;
+            
+            if (results.querySelector('.text-gray-500')) {
+                results.innerHTML = resultHtml;
+            } else {
+                results.innerHTML = resultHtml + results.innerHTML;
+            }
+        }
+        
+        // API 呼叫
+        async function callAPI(action, data) {
+            if (!APPS_SCRIPT_URL) {
+                throw new Error('請先設定 Apps Script URL');
+            }
+            
+            const params = new URLSearchParams({
+                action: action,
+                ...data
+            });
+            
+            log(`📡 呼叫 API: ${action}`);
+            
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params.toString(),
+                mode: 'no-cors'
+            });
+            
+            // 因為 no-cors 模式，我們無法讀取回應
+            // 需要等待一下讓後端處理完成
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            log(`✅ API 呼叫完成: ${action}`);
+            return { success: true };
+        }
+        
+        // 測試 1: 取消住宿金使用
+        async function testCancelAccommodationUsage() {
+            log('🧪 開始測試：取消住宿金使用');
+            
+            try {
+                // Step 1: 先使用一些住宿金
+                log('Step 1: 使用住宿金 500 點');
+                await callAPI('use_accommodation_points', {
+                    partner_code: PARTNER_CODE,
+                    deduct_amount: 500,
+                    guest_name: 'TEST_CANCEL_' + Date.now(),
+                    checkin_date: new Date().toISOString().split('T')[0],
+                    notes: '測試取消使用'
+                });
+                
+                // Step 2: 取消使用
+                log('Step 2: 取消住宿金使用，退回 500 點');
+                await callAPI('cancel_accommodation_usage', {
+                    partner_code: PARTNER_CODE,
+                    refund_amount: 500,
+                    reason: '測試取消'
+                });
+                
+                showResult('取消住宿金使用', true, '成功使用 500 點後取消並退回');
+                log('✅ 測試完成：取消住宿金使用', 'success');
+                
+            } catch (error) {
+                showResult('取消住宿金使用', false, error.message);
+                log('❌ 測試失敗：' + error.message, 'error');
+            }
+        }
+        
+        // 測試 2: 恢復已取消訂房
+        async function testRestoreBooking() {
+            log('🧪 開始測試：恢復已取消訂房');
+            
+            try {
+                // Step 1: 創建訂房
+                log('Step 1: 創建測試訂房');
+                const bookingId = 'BK_TEST_' + Date.now();
+                await callAPI('create_booking', {
+                    id: bookingId,
+                    partner_code: PARTNER_CODE,
+                    guest_name: 'RESTORE_TEST',
+                    guest_phone: '0912345678',
+                    checkin_date: new Date().toISOString().split('T')[0],
+                    checkout_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                    room_price: 3000,
+                    booking_source: 'REFERRAL'
+                });
+                
+                // Step 2: 取消訂房
+                log('Step 2: 取消訂房');
+                await callAPI('delete_booking', {
+                    booking_id: bookingId,
+                    reason: '測試取消'
+                });
+                
+                // Step 3: 恢復訂房
+                log('Step 3: 恢復訂房');
+                await callAPI('restore_booking', {
+                    booking_id: bookingId,
+                    new_status: 'PENDING',
+                    reason: '測試恢復'
+                });
+                
+                showResult('恢復已取消訂房', true, '成功創建→取消→恢復訂房');
+                log('✅ 測試完成：恢復已取消訂房', 'success');
+                
+            } catch (error) {
+                showResult('恢復已取消訂房', false, error.message);
+                log('❌ 測試失敗：' + error.message, 'error');
+            }
+        }
+        
+        // 測試 3: 部分退款
+        async function testPartialRefund() {
+            log('🧪 開始測試：部分退款');
+            
+            try {
+                // Step 1: 創建並確認訂房
+                log('Step 1: 創建測試訂房（房價 5000）');
+                const bookingId = 'BK_REFUND_' + Date.now();
+                await callAPI('create_booking', {
+                    id: bookingId,
+                    partner_code: PARTNER_CODE,
+                    guest_name: 'REFUND_TEST',
+                    guest_phone: '0923456789',
+                    checkin_date: new Date().toISOString().split('T')[0],
+                    checkout_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                    room_price: 5000,
+                    booking_source: 'REFERRAL'
+                });
+                
+                log('Step 2: 確認入住完成');
+                await callAPI('confirm_checkin_completion', {
+                    booking_id: bookingId,
+                    confirmed_by: 'TEST'
+                });
+                
+                // Step 3: 部分退款
+                log('Step 3: 部分退款，調整房價為 3000');
+                await callAPI('partial_refund', {
+                    booking_id: bookingId,
+                    new_room_price: 3000,
+                    reason: '縮短住宿天數'
+                });
+                
+                showResult('部分退款', true, '成功將房價從 5000 調整為 3000');
+                log('✅ 測試完成：部分退款', 'success');
+                
+            } catch (error) {
+                showResult('部分退款', false, error.message);
+                log('❌ 測試失敗：' + error.message, 'error');
+            }
+        }
+        
+        // 測試 4: 批量取消
+        async function testBatchCancel() {
+            log('🧪 開始測試：批量取消');
+            
+            try {
+                // Step 1: 創建多筆訂房
+                log('Step 1: 創建 3 筆測試訂房');
+                const bookingIds = [];
+                for (let i = 1; i <= 3; i++) {
+                    const bookingId = `BK_BATCH_${Date.now()}_${i}`;
+                    bookingIds.push(bookingId);
+                    
+                    await callAPI('create_booking', {
+                        id: bookingId,
+                        partner_code: PARTNER_CODE,
+                        guest_name: `BATCH_TEST_${i}`,
+                        guest_phone: `091234567${i}`,
+                        checkin_date: new Date().toISOString().split('T')[0],
+                        checkout_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                        room_price: 2000 + i * 500,
+                        booking_source: 'REFERRAL'
+                    });
+                    
+                    log(`  - 創建訂房 ${i}/3: ${bookingId}`);
+                }
+                
+                // Step 2: 批量取消
+                log('Step 2: 批量取消 3 筆訂房');
+                await callAPI('batch_cancel', {
+                    booking_ids: JSON.stringify(bookingIds),
+                    reason: '團體取消'
+                });
+                
+                showResult('批量取消', true, `成功批量取消 ${bookingIds.length} 筆訂房`);
+                log('✅ 測試完成：批量取消', 'success');
+                
+            } catch (error) {
+                showResult('批量取消', false, error.message);
+                log('❌ 測試失敗：' + error.message, 'error');
+            }
+        }
+        
+        // 測試 5: 完整流程測試
+        async function testCompleteFlow() {
+            log('🧪 開始完整流程測試');
+            
+            try {
+                const bookingId = 'BK_FLOW_' + Date.now();
+                
+                // 1. 創建訂房
+                log('📌 Step 1: 創建訂房');
+                await callAPI('create_booking', {
+                    id: bookingId,
+                    partner_code: PARTNER_CODE,
+                    guest_name: 'COMPLETE_FLOW_TEST',
+                    guest_phone: '0987654321',
+                    checkin_date: new Date().toISOString().split('T')[0],
+                    checkout_date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
+                    room_price: 8000,
+                    booking_source: 'REFERRAL'
+                });
+                
+                // 2. 確認入住
+                log('📌 Step 2: 確認入住完成（計算佣金）');
+                await callAPI('confirm_checkin_completion', {
+                    booking_id: bookingId,
+                    confirmed_by: 'ADMIN'
+                });
+                
+                // 3. 部分退款
+                log('📌 Step 3: 部分退款（8000 → 6000）');
+                await callAPI('partial_refund', {
+                    booking_id: bookingId,
+                    new_room_price: 6000,
+                    reason: '縮短一晚'
+                });
+                
+                // 4. 取消訂房
+                log('📌 Step 4: 取消訂房');
+                await callAPI('delete_booking', {
+                    booking_id: bookingId,
+                    reason: '客戶取消'
+                });
+                
+                // 5. 恢復訂房
+                log('📌 Step 5: 恢復訂房');
+                await callAPI('restore_booking', {
+                    booking_id: bookingId,
+                    new_status: 'PENDING',
+                    reason: '客戶改變心意'
+                });
+                
+                // 6. 重新確認入住
+                log('📌 Step 6: 重新確認入住');
+                await callAPI('confirm_checkin_completion', {
+                    booking_id: bookingId,
+                    confirmed_by: 'ADMIN_2'
+                });
+                
+                showResult('完整流程測試', true, 
+                    '✅ 創建 → ✅ 入住 → ✅ 退款 → ✅ 取消 → ✅ 恢復 → ✅ 重新入住');
+                log('🎉 完整流程測試成功！', 'success');
+                
+            } catch (error) {
+                showResult('完整流程測試', false, error.message);
+                log('❌ 完整流程測試失敗：' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

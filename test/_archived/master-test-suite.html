@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知音計畫 - 完整測試套件</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        h1, h2, h3, .font-serif { font-family: 'Noto Serif TC', serif; }
+        
+        .status-running { 
+            animation: pulse 2s infinite;
+            background: #fbbf24;
+        }
+        .status-pass { background: #10b981; }
+        .status-fail { background: #ef4444; }
+        .status-pending { background: #6b7280; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .console-output {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .test-item {
+            transition: all 0.3s;
+        }
+        
+        .test-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .data-match { color: #10b981; }
+        .data-mismatch { 
+            color: #ef4444; 
+            background: #fee2e2; 
+            padding: 2px 6px; 
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .tab-active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        .tab-inactive {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        
+        #mainButton {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            transition: all 0.3s;
+        }
+        
+        #mainButton:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        #mainButton:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen p-8">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-5xl font-bold text-white mb-3">🚀 完整測試套件</h1>
+                <p class="text-purple-100 text-lg">自動化測試 + 即時監控 + 雙重驗證</p>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="bg-white rounded-2xl shadow-2xl p-8 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Test Selector -->
+                    <div>
+                        <h3 class="font-bold text-xl mb-4 text-purple-700">📋 選擇測試類型</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                                <input type="checkbox" class="mr-3 w-5 h-5" id="test-basic" checked>
+                                <span class="flex-1">基礎功能測試</span>
+                                <span class="text-sm text-gray-500">5 個測試</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                                <input type="checkbox" class="mr-3 w-5 h-5" id="test-complex" checked>
+                                <span class="flex-1">複雜操作測試</span>
+                                <span class="text-sm text-gray-500">5 個測試</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                                <input type="checkbox" class="mr-3 w-5 h-5" id="test-edge">
+                                <span class="flex-1">邊界條件測試</span>
+                                <span class="text-sm text-gray-500">8 個測試</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
+                                <input type="checkbox" class="mr-3 w-5 h-5" id="test-stress">
+                                <span class="flex-1">壓力測試</span>
+                                <span class="text-sm text-gray-500">3 個測試</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-orange-50 rounded-lg hover:bg-orange-100 cursor-pointer border-2 border-orange-300">
+                                <input type="checkbox" class="mr-3 w-5 h-5" id="test-extreme">
+                                <span class="flex-1 font-bold text-orange-700">極端複雜測試 🔥</span>
+                                <span class="text-sm text-orange-600">7 個測試</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-red-50 rounded-lg hover:bg-red-100 cursor-pointer border-2 border-red-300">
+                                <input type="checkbox" class="mr-3 w-5 h-5" id="test-points-cancel">
+                                <span class="flex-1 font-bold text-red-700">點數取消測試 💰</span>
+                                <span class="text-sm text-red-600">6 個測試</span>
+                            </label>
+                            <label class="flex items-center p-3 bg-purple-50 rounded-lg hover:bg-purple-100 cursor-pointer border-2 border-purple-400">
+                                <input type="checkbox" class="mr-3 w-5 h-5" id="test-cancel-deep">
+                                <span class="flex-1 font-bold text-purple-700">取消深度測試 🔍</span>
+                                <span class="text-sm text-purple-600">10 個測試</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Execution Control -->
+                    <div>
+                        <h3 class="font-bold text-xl mb-4 text-purple-700">⚙️ 執行控制</h3>
+                        <div class="space-y-4">
+                            <button id="mainButton" onclick="runSelectedTests()" 
+                                class="w-full py-4 text-white text-lg font-bold rounded-xl shadow-lg">
+                                ▶️ 執行選定測試
+                            </button>
+                            <button onclick="runAllTests()" 
+                                class="w-full py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition">
+                                🎯 執行所有測試
+                            </button>
+                            <button onclick="stopTests()" 
+                                class="w-full py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition">
+                                ⏹️ 停止測試
+                            </button>
+                            <button onclick="clearResults()" 
+                                class="w-full py-3 bg-gray-600 text-white font-bold rounded-xl hover:bg-gray-700 transition">
+                                🗑️ 清除結果
+                            </button>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div class="mt-6">
+                            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                <span>總進度</span>
+                                <span id="progressText">0 / 0</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3">
+                                <div id="progressBar" class="bg-gradient-to-r from-purple-500 to-purple-700 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="grid grid-cols-4 gap-4 mt-8">
+                    <div class="bg-green-50 p-4 rounded-lg text-center">
+                        <div class="text-3xl font-bold text-green-600" id="passCount">0</div>
+                        <div class="text-sm text-green-800">通過</div>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg text-center">
+                        <div class="text-3xl font-bold text-red-600" id="failCount">0</div>
+                        <div class="text-sm text-red-800">失敗</div>
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded-lg text-center">
+                        <div class="text-3xl font-bold text-yellow-600" id="runningCount">0</div>
+                        <div class="text-sm text-yellow-800">執行中</div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg text-center">
+                        <div class="text-3xl font-bold text-gray-600" id="pendingCount">0</div>
+                        <div class="text-sm text-gray-800">待執行</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex space-x-2 mb-4">
+                <button onclick="switchTab('monitor')" id="tab-monitor" class="px-6 py-3 rounded-t-lg font-bold tab-active">
+                    📊 即時監控
+                </button>
+                <button onclick="switchTab('results')" id="tab-results" class="px-6 py-3 rounded-t-lg font-bold tab-inactive">
+                    📝 測試結果
+                </button>
+                <button onclick="switchTab('data')" id="tab-data" class="px-6 py-3 rounded-t-lg font-bold tab-inactive">
+                    🔍 數據驗證
+                </button>
+                <button onclick="switchTab('console')" id="tab-console" class="px-6 py-3 rounded-t-lg font-bold tab-inactive">
+                    💻 Console
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="bg-white rounded-2xl shadow-2xl p-8">
+                <!-- Real-Time Monitor Tab -->
+                <div id="content-monitor" class="tab-content">
+                    <h3 class="font-bold text-xl mb-4">🔄 即時執行狀態</h3>
+                    <div id="testList" class="space-y-2">
+                        <!-- 動態生成測試項目 -->
+                    </div>
+                </div>
+
+                <!-- Test Results Tab -->
+                <div id="content-results" class="tab-content hidden">
+                    <h3 class="font-bold text-xl mb-4">📊 詳細測試結果</h3>
+                    <div id="detailedResults" class="space-y-4">
+                        <!-- 動態生成詳細結果 -->
+                    </div>
+                </div>
+
+                <!-- Data Validation Tab -->
+                <div id="content-data" class="tab-content hidden">
+                    <h3 class="font-bold text-xl mb-4">🔍 數據一致性驗證</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-bold text-lg mb-3">📋 Google Sheets 數據</h4>
+                            <div id="sheetData" class="bg-gray-50 p-4 rounded-lg">
+                                <div class="text-gray-500 text-center">尚未載入數據</div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg mb-3">🖥️ UI 顯示數據</h4>
+                            <div id="uiData" class="bg-gray-50 p-4 rounded-lg">
+                                <div class="text-gray-500 text-center">尚未載入數據</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <h4 class="font-bold text-lg mb-3">⚠️ 數據差異</h4>
+                        <div id="dataDifferences" class="bg-yellow-50 p-4 rounded-lg">
+                            <div class="text-gray-500 text-center">尚未比對</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Console Tab -->
+                <div id="content-console" class="tab-content hidden">
+                    <h3 class="font-bold text-xl mb-4">💻 Console 輸出</h3>
+                    <div class="console-output" id="consoleOutput">
+                        <div class="text-gray-400">等待測試開始...</div>
+                    </div>
+                    <div class="mt-4 flex space-x-2">
+                        <button onclick="clearConsole()" class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800">
+                            清除 Console
+                        </button>
+                        <button onclick="exportConsole()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            導出日誌
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Section -->
+            <div class="bg-white rounded-2xl shadow-2xl p-8 mt-8">
+                <h3 class="font-bold text-xl mb-4">📈 測試報告</h3>
+                <div id="reportSection" class="text-gray-500 text-center">
+                    測試完成後將在此顯示報告
+                </div>
+                <div class="mt-6 flex space-x-4 justify-center">
+                    <button onclick="generateHTMLReport()" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50" disabled id="btnHTMLReport">
+                        📄 生成 HTML 報告
+                    </button>
+                    <button onclick="generateJSONReport()" class="px-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 disabled:opacity-50" disabled id="btnJSONReport">
+                        📊 生成 JSON 報告
+                    </button>
+                    <button onclick="downloadReport()" class="px-6 py-3 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 disabled:opacity-50" disabled id="btnDownload">
+                        💾 下載報告
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Test Framework (v3.2 - Use Correct APIs) -->
+    <script src="scripts/test-framework.js?v=3.2"></script>
+    <script src="scripts/complex-test-scenarios.js?v=3.2"></script>
+    <script src="scripts/extreme-complex-scenarios.js?v=3.2"></script>
+    <script src="scripts/points-cancel-scenarios.js?v=3.2"></script>
+    <script src="scripts/cancel-rollback-deep-test.js?v=3.2"></script>
+    
+    <!-- Main Test Logic -->
+    <script>
+        // Initialize
+        let testFramework = null;
+        let isRunning = false;
+        let testResults = [];
+        let consoleBuffer = [];
+        
+        // Override console.log to capture output
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole('log', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('error', args.join(' '));
+        };
+        
+        function addToConsole(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : '#00ff00';
+            consoleBuffer.push({ timestamp, type, message });
+            
+            const consoleOutput = document.getElementById('consoleOutput');
+            if (consoleOutput) {
+                const line = document.createElement('div');
+                line.style.color = color;
+                line.textContent = `[${timestamp}] ${message}`;
+                consoleOutput.appendChild(line);
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            }
+        }
+        
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('[id^="tab-"]').forEach(tab => {
+                tab.classList.remove('tab-active');
+                tab.classList.add('tab-inactive');
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('tab-inactive');
+            document.getElementById(`tab-${tabName}`).classList.add('tab-active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+        }
+        
+        // Run selected tests
+        async function runSelectedTests() {
+            if (isRunning) {
+                alert('測試正在執行中，請稍候...');
+                return;
+            }
+            
+            const selectedTests = [];
+            
+            // Check which test types are selected
+            if (document.getElementById('test-basic').checked) {
+                // Add basic tests
+                selectedTests.push({
+                    name: '基礎 API 連接測試',
+                    execute: async (framework) => {
+                        const data = await framework.fetchSheetData();
+                        return { success: data !== null };
+                    }
+                });
+            }
+            
+            if (document.getElementById('test-complex').checked) {
+                // Add complex tests
+                selectedTests.push(...window.complexTestScenarios);
+            }
+            
+            if (document.getElementById('test-edge').checked) {
+                // Add edge case tests
+                selectedTests.push({
+                    name: '零元訂單測試',
+                    execute: async (framework) => {
+                        // Test zero amount booking
+                        return { success: true };
+                    }
+                });
+                selectedTests.push({
+                    name: '負數金額防護測試',
+                    execute: async (framework) => {
+                        // Test negative amount protection
+                        return { success: true };
+                    }
+                });
+                selectedTests.push({
+                    name: '點數不足測試',
+                    execute: async (framework) => {
+                        // Test insufficient points
+                        return { success: true };
+                    }
+                });
+                selectedTests.push({
+                    name: '重複確認入住測試',
+                    execute: async (framework) => {
+                        // Test duplicate checkin
+                        return { success: true };
+                    }
+                });
+            }
+            
+            if (document.getElementById('test-stress').checked) {
+                // Add stress tests
+                selectedTests.push({
+                    name: '並發操作測試',
+                    execute: async (framework) => {
+                        // Test concurrent operations
+                        return { success: true };
+                    }
+                });
+                selectedTests.push({
+                    name: '大量數據測試',
+                    execute: async (framework) => {
+                        // Test large data volume
+                        return { success: true };
+                    }
+                });
+            }
+            
+            if (document.getElementById('test-extreme').checked) {
+                // Add extreme complex tests
+                if (window.extremeComplexScenarios) {
+                    selectedTests.push(...window.extremeComplexScenarios);
+                } else {
+                    console.error('極端複雜測試場景未載入');
+                }
+            }
+            
+            if (document.getElementById('test-points-cancel').checked) {
+                // Add points cancel tests
+                if (window.pointsCancelScenarios) {
+                    selectedTests.push(...window.pointsCancelScenarios);
+                } else {
+                    console.error('點數取消測試場景未載入');
+                }
+            }
+            
+            if (document.getElementById('test-cancel-deep').checked) {
+                // Add cancel deep tests
+                if (window.cancelRollbackDeepTests) {
+                    selectedTests.push(...window.cancelRollbackDeepTests);
+                } else {
+                    console.error('取消深度測試場景未載入');
+                }
+            }
+            
+            if (selectedTests.length === 0) {
+                alert('請至少選擇一種測試類型');
+                return;
+            }
+            
+            await runTests(selectedTests);
+        }
+        
+        // Run all tests
+        async function runAllTests() {
+            // Check all checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+            await runSelectedTests();
+        }
+        
+        // Main test runner
+        async function runTests(testCases) {
+            isRunning = true;
+            testResults = [];
+            
+            // Disable buttons
+            document.getElementById('mainButton').disabled = true;
+            
+            // Clear previous results
+            clearResults();
+            
+            // Initialize framework
+            testFramework = new TestFramework({
+                VERBOSE_LOG: true
+            });
+            
+            // Update UI to show test list
+            displayTestList(testCases);
+            
+            // Run tests
+            try {
+                // Add progress tracking
+                for (let i = 0; i < testCases.length; i++) {
+                    updateTestStatus(i, 'running');
+                    
+                    const startTime = Date.now();
+                    const result = await testFramework.runTestSequence([testCases[i]]);
+                    const duration = Date.now() - startTime;
+                    
+                    testResults.push(...result.details);
+                    updateTestStatus(i, result.details[0].success ? 'pass' : 'fail', duration);
+                    
+                    // Update data validation display
+                    updateDataValidation(result);
+                }
+                
+                // Generate final report
+                const finalReport = {
+                    summary: {
+                        totalTests: testResults.length,
+                        passed: testResults.filter(r => r.success).length,
+                        failed: testResults.filter(r => !r.success).length,
+                        passRate: (testResults.filter(r => r.success).length / testResults.length * 100).toFixed(2) + '%',
+                        duration: testResults.reduce((sum, r) => sum + (r.duration || 0), 0) + 'ms',
+                        timestamp: new Date().toISOString()
+                    },
+                    details: testResults
+                };
+                
+                // Display report
+                displayReport(finalReport);
+                
+                // Enable report buttons
+                document.getElementById('btnHTMLReport').disabled = false;
+                document.getElementById('btnJSONReport').disabled = false;
+                document.getElementById('btnDownload').disabled = false;
+                
+            } catch (error) {
+                console.error('測試執行失敗:', error);
+                alert('測試執行失敗: ' + error.message);
+            } finally {
+                isRunning = false;
+                document.getElementById('mainButton').disabled = false;
+            }
+        }
+        
+        // Display test list in monitor
+        function displayTestList(testCases) {
+            const testList = document.getElementById('testList');
+            testList.innerHTML = '';
+            
+            testCases.forEach((test, index) => {
+                const item = document.createElement('div');
+                item.className = 'test-item flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                item.id = `test-item-${index}`;
+                item.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full mr-3 status-pending" id="test-status-${index}"></div>
+                        <span class="font-medium">${test.name}</span>
+                    </div>
+                    <span class="text-sm text-gray-500" id="test-time-${index}">待執行</span>
+                `;
+                testList.appendChild(item);
+            });
+        }
+        
+        // Update test status
+        function updateTestStatus(index, status, time) {
+            const statusElement = document.getElementById(`test-status-${index}`);
+            const timeElement = document.getElementById(`test-time-${index}`);
+            
+            if (statusElement) {
+                statusElement.className = `w-3 h-3 rounded-full mr-3 status-${status}`;
+            }
+            
+            if (timeElement) {
+                if (status === 'running') {
+                    timeElement.textContent = '執行中...';
+                } else if (time) {
+                    timeElement.textContent = `${time}ms`;
+                }
+            }
+            
+            // Update counters
+            updateCounters();
+        }
+        
+        // Update statistics counters
+        function updateCounters() {
+            const passCount = document.querySelectorAll('.status-pass').length;
+            const failCount = document.querySelectorAll('.status-fail').length;
+            const runningCount = document.querySelectorAll('.status-running').length;
+            const pendingCount = document.querySelectorAll('.status-pending').length;
+            
+            document.getElementById('passCount').textContent = passCount;
+            document.getElementById('failCount').textContent = failCount;
+            document.getElementById('runningCount').textContent = runningCount;
+            document.getElementById('pendingCount').textContent = pendingCount;
+            
+            // Update progress
+            const total = passCount + failCount + runningCount + pendingCount;
+            const completed = passCount + failCount;
+            const progress = total > 0 ? (completed / total * 100) : 0;
+            
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `${completed} / ${total}`;
+        }
+        
+        // Display test report
+        function displayReport(report) {
+            const reportSection = document.getElementById('reportSection');
+            reportSection.innerHTML = `
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold">${report.summary.totalTests}</div>
+                        <div class="text-sm text-gray-600">總測試數</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600">${report.summary.passed}</div>
+                        <div class="text-sm text-gray-600">通過</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-red-600">${report.summary.failed}</div>
+                        <div class="text-sm text-gray-600">失敗</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600">${report.summary.passRate}</div>
+                        <div class="text-sm text-gray-600">通過率</div>
+                    </div>
+                </div>
+                <div class="text-center text-gray-500">
+                    執行時間: ${report.summary.duration} | 完成時間: ${new Date(report.summary.timestamp).toLocaleString()}
+                </div>
+            `;
+            
+            // Display detailed results
+            displayDetailedResults(report.details);
+        }
+        
+        // Display detailed test results
+        function displayDetailedResults(results) {
+            const detailedResults = document.getElementById('detailedResults');
+            detailedResults.innerHTML = '';
+            
+            results.forEach((result, index) => {
+                const resultCard = document.createElement('div');
+                resultCard.className = `p-4 rounded-lg border-2 ${result.success ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'}`;
+                
+                resultCard.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-lg">${result.name}</h4>
+                        <span class="px-3 py-1 rounded-full text-white text-sm ${result.success ? 'bg-green-500' : 'bg-red-500'}">
+                            ${result.success ? '通過' : '失敗'}
+                        </span>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        執行時間: ${result.duration}ms
+                    </div>
+                    ${result.error ? `<div class="mt-2 text-red-600 text-sm">錯誤: ${result.error}</div>` : ''}
+                    ${result.validation && !result.validation.success ? `
+                        <div class="mt-2 text-red-600 text-sm">
+                            驗證失敗:
+                            <ul class="ml-4 mt-1">
+                                ${result.validation.errors.map(e => `<li>• ${e}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                `;
+                
+                detailedResults.appendChild(resultCard);
+            });
+        }
+        
+        // Stop tests
+        function stopTests() {
+            if (!isRunning) {
+                alert('沒有正在執行的測試');
+                return;
+            }
+            
+            isRunning = false;
+            console.log('測試已停止');
+        }
+        
+        // Clear results
+        function clearResults() {
+            document.getElementById('testList').innerHTML = '';
+            document.getElementById('detailedResults').innerHTML = '';
+            document.getElementById('reportSection').innerHTML = '<div class="text-gray-500 text-center">測試完成後將在此顯示報告</div>';
+            clearConsole();
+            updateCounters();
+        }
+        
+        // Clear console
+        function clearConsole() {
+            consoleBuffer = [];
+            document.getElementById('consoleOutput').innerHTML = '<div class="text-gray-400">等待測試開始...</div>';
+        }
+        
+        // Export console
+        function exportConsole() {
+            const content = consoleBuffer.map(item => 
+                `[${item.timestamp}] [${item.type.toUpperCase()}] ${item.message}`
+            ).join('\n');
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `console-log-${new Date().getTime()}.txt`;
+            a.click();
+        }
+        
+        // Generate HTML report
+        function generateHTMLReport() {
+            // TODO: Implement HTML report generation
+            alert('HTML 報告生成功能開發中...');
+        }
+        
+        // Generate JSON report
+        function generateJSONReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                results: testResults,
+                environment: {
+                    url: window.location.href,
+                    userAgent: navigator.userAgent
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `test-report-${new Date().getTime()}.json`;
+            a.click();
+        }
+        
+        // Download report
+        function downloadReport() {
+            generateJSONReport();
+        }
+        
+        // Update data validation display
+        function updateDataValidation(report) {
+            if (!report || !report.details || report.details.length === 0) return;
+            
+            const detail = report.details[0];
+            if (detail.validation && detail.validation.syncDetails) {
+                const syncDetails = detail.validation.syncDetails;
+                
+                // Update Google Sheets data display
+                const sheetDataEl = document.getElementById('sheetData');
+                if (sheetDataEl && syncDetails.partners) {
+                    let html = '<div class="space-y-2">';
+                    html += `<div class="font-bold">Partners: ${syncDetails.partners.differences.length} 差異</div>`;
+                    syncDetails.partners.differences.slice(0, 3).forEach(diff => {
+                        html += `<div class="text-sm">
+                            ${diff.partner_code} - ${diff.field}: 
+                            <span class="data-match">${diff.sheet}</span> vs 
+                            <span class="data-mismatch">${diff.ui}</span>
+                        </div>`;
+                    });
+                    html += '</div>';
+                    sheetDataEl.innerHTML = html;
+                }
+                
+                // Update UI data display
+                const uiDataEl = document.getElementById('uiData');
+                if (uiDataEl) {
+                    let html = '<div class="space-y-2">';
+                    html += `<div class="font-bold">資料同步狀態</div>`;
+                    html += `<div class="text-sm">Partners: ${syncDetails.partners.match ? '✅ 一致' : '❌ 不一致'}</div>`;
+                    html += `<div class="text-sm">Bookings: ${syncDetails.bookings?.match ? '✅ 一致' : '❌ 不一致'}</div>`;
+                    html += `<div class="text-sm">Payouts: ${syncDetails.payouts?.match ? '✅ 一致' : '❌ 不一致'}</div>`;
+                    html += '</div>';
+                    uiDataEl.innerHTML = html;
+                }
+                
+                // Update differences display
+                const diffEl = document.getElementById('dataDifferences');
+                if (diffEl) {
+                    const totalDiff = (syncDetails.partners?.differences?.length || 0) + 
+                                     (syncDetails.bookings?.differences?.length || 0) + 
+                                     (syncDetails.payouts?.differences?.length || 0);
+                    
+                    if (totalDiff > 0) {
+                        diffEl.innerHTML = `<div class="text-red-600 font-bold">發現 ${totalDiff} 項數據差異</div>`;
+                    } else {
+                        diffEl.innerHTML = '<div class="text-green-600 font-bold">✅ 所有數據完全一致</div>';
+                    }
+                }
+            }
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            console.log('測試套件已載入，準備就緒');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自動化測試套件 - 知音計畫</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-pass { background-color: #d4edda; color: #155724; }
+        .test-fail { background-color: #f8d7da; color: #721c24; }
+        .test-pending { background-color: #fff3cd; color: #856404; }
+        .test-running { background-color: #cce5ff; color: #004085; }
+        .log-entry { font-family: 'Courier New', monospace; font-size: 12px; }
+        .error-trace { background-color: #2d2d2d; color: #f92672; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4 max-w-7xl">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <!-- Header -->
+            <div class="border-b pb-4 mb-6">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">🧪 自動化測試套件</h1>
+                <p class="text-gray-600">完整的端對端測試，確保系統功能正常運作</p>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">API 端點</label>
+                    <input type="text" id="apiEndpoint" class="w-full p-2 border rounded" 
+                           value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">測試環境</label>
+                    <select id="testEnv" class="w-full p-2 border rounded">
+                        <option value="safe">安全模式（不修改真實數據）</option>
+                        <option value="sandbox">沙盒模式（使用測試數據）</option>
+                        <option value="live">實際模式（修改真實數據）</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">測試選項</label>
+                    <div class="space-y-1">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="cleanupAfterTest" checked class="mr-2">
+                            <span class="text-sm">測試後清理數據</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="verboseLogging" checked class="mr-2">
+                            <span class="text-sm">詳細日誌</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Categories -->
+            <div class="mb-6">
+                <h2 class="text-xl font-semibold mb-3">測試類別</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <label class="flex items-center p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="test-category mr-2" data-category="api" checked>
+                        <span>🔌 API 連接</span>
+                    </label>
+                    <label class="flex items-center p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="test-category mr-2" data-category="booking" checked>
+                        <span>📋 訂房管理</span>
+                    </label>
+                    <label class="flex items-center p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="test-category mr-2" data-category="commission" checked>
+                        <span>💰 佣金計算</span>
+                    </label>
+                    <label class="flex items-center p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="test-category mr-2" data-category="payout" checked>
+                        <span>💳 結算管理</span>
+                    </label>
+                    <label class="flex items-center p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="test-category mr-2" data-category="cancellation" checked>
+                        <span>❌ 取消操作</span>
+                    </label>
+                    <label class="flex items-center p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="test-category mr-2" data-category="edge" checked>
+                        <span>⚠️ 邊界案例</span>
+                    </label>
+                    <label class="flex items-center p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="test-category mr-2" data-category="regression" checked>
+                        <span>🔄 迴歸測試</span>
+                    </label>
+                    <label class="flex items-center p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" class="test-category mr-2" data-category="performance">
+                        <span>⚡ 性能測試</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex space-x-3 mb-6">
+                <button onclick="runAllTests()" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    ▶️ 執行所有測試
+                </button>
+                <button onclick="runSelectedTests()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    ▶️ 執行選中的測試
+                </button>
+                <button onclick="stopTests()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                    ⏹️ 停止測試
+                </button>
+                <button onclick="clearResults()" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                    🗑️ 清除結果
+                </button>
+                <button onclick="exportResults()" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                    📥 導出報告
+                </button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mb-6 hidden" id="progressContainer">
+                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                    <span id="progressText">執行中...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Test Summary -->
+            <div class="grid grid-cols-4 gap-4 mb-6" id="summary">
+                <div class="text-center p-3 bg-gray-50 rounded">
+                    <div class="text-2xl font-bold text-gray-700" id="totalTests">0</div>
+                    <div class="text-sm text-gray-500">總測試數</div>
+                </div>
+                <div class="text-center p-3 bg-green-50 rounded">
+                    <div class="text-2xl font-bold text-green-600" id="passedTests">0</div>
+                    <div class="text-sm text-gray-500">通過</div>
+                </div>
+                <div class="text-center p-3 bg-red-50 rounded">
+                    <div class="text-2xl font-bold text-red-600" id="failedTests">0</div>
+                    <div class="text-sm text-gray-500">失敗</div>
+                </div>
+                <div class="text-center p-3 bg-yellow-50 rounded">
+                    <div class="text-2xl font-bold text-yellow-600" id="skippedTests">0</div>
+                    <div class="text-sm text-gray-500">跳過</div>
+                </div>
+            </div>
+
+            <!-- Test Results -->
+            <div class="mb-6">
+                <h2 class="text-xl font-semibold mb-3">測試結果</h2>
+                <div id="testResults" class="space-y-2 max-h-96 overflow-y-auto border rounded p-3 bg-gray-50">
+                    <div class="text-gray-500 text-center py-8">尚未執行測試</div>
+                </div>
+            </div>
+
+            <!-- Detailed Logs -->
+            <div>
+                <h2 class="text-xl font-semibold mb-3">詳細日誌</h2>
+                <div id="detailedLogs" class="bg-black text-green-400 p-4 rounded h-64 overflow-y-auto log-entry">
+                    <div class="text-gray-500">等待測試執行...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Framework Script -->
+    <script>
+    // ========================================
+    // 測試框架核心
+    // ========================================
+    
+    class TestFramework {
+        constructor() {
+            this.tests = [];
+            this.results = [];
+            this.isRunning = false;
+            this.currentTestIndex = 0;
+            this.apiEndpoint = '';
+            this.testData = {
+                partners: [],
+                bookings: [],
+                payouts: []
+            };
+            this.cleanupTasks = [];
+        }
+
+        // 註冊測試
+        register(category, name, testFn, options = {}) {
+            this.tests.push({
+                category,
+                name,
+                testFn,
+                options: {
+                    timeout: options.timeout || 10000,
+                    retries: options.retries || 0,
+                    cleanup: options.cleanup || null,
+                    skip: options.skip || false,
+                    critical: options.critical || false
+                }
+            });
+        }
+
+        // 執行單個測試
+        async runTest(test) {
+            const startTime = Date.now();
+            let result = {
+                name: test.name,
+                category: test.category,
+                status: 'pending',
+                duration: 0,
+                error: null,
+                logs: [],
+                assertions: []
+            };
+
+            // 測試上下文
+            const context = {
+                log: (msg) => result.logs.push(msg),
+                assert: (condition, message) => {
+                    const assertion = { condition, message, passed: !!condition };
+                    result.assertions.push(assertion);
+                    if (!condition) {
+                        throw new Error(`Assertion failed: ${message}`);
+                    }
+                    return assertion;
+                },
+                assertEqual: (actual, expected, message) => {
+                    const passed = JSON.stringify(actual) === JSON.stringify(expected);
+                    const assertion = { 
+                        actual, 
+                        expected, 
+                        message, 
+                        passed,
+                        type: 'assertEqual'
+                    };
+                    result.assertions.push(assertion);
+                    if (!passed) {
+                        throw new Error(`${message}\nExpected: ${JSON.stringify(expected)}\nActual: ${JSON.stringify(actual)}`);
+                    }
+                    return assertion;
+                },
+                assertContains: (haystack, needle, message) => {
+                    const passed = haystack && haystack.includes(needle);
+                    const assertion = { 
+                        haystack, 
+                        needle, 
+                        message, 
+                        passed,
+                        type: 'assertContains'
+                    };
+                    result.assertions.push(assertion);
+                    if (!passed) {
+                        throw new Error(`${message}\n"${haystack}" does not contain "${needle}"`);
+                    }
+                    return assertion;
+                },
+                api: this.createApiClient(),
+                testData: this.testData,
+                cleanup: (fn) => this.cleanupTasks.push(fn)
+            };
+
+            try {
+                // 執行測試
+                await Promise.race([
+                    test.testFn(context),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Test timeout')), test.options.timeout)
+                    )
+                ]);
+                
+                result.status = 'passed';
+            } catch (error) {
+                result.status = 'failed';
+                result.error = {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name
+                };
+            }
+
+            result.duration = Date.now() - startTime;
+            return result;
+        }
+
+        // 建立 API 客戶端
+        createApiClient() {
+            const endpoint = document.getElementById('apiEndpoint').value;
+            
+            return {
+                get: async (action, params = {}) => {
+                    const url = new URL(endpoint);
+                    url.searchParams.append('action', action);
+                    Object.keys(params).forEach(key => {
+                        url.searchParams.append(key, params[key]);
+                    });
+
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return await response.json();
+                },
+                
+                post: async (action, data = {}) => {
+                    const formData = new URLSearchParams();
+                    formData.append('action', action);
+                    Object.keys(data).forEach(key => {
+                        formData.append(key, data[key]);
+                    });
+
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: formData.toString()
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return await response.json();
+                }
+            };
+        }
+
+        // 執行所有測試
+        async runAll(categories = null) {
+            this.isRunning = true;
+            this.results = [];
+            this.currentTestIndex = 0;
+
+            const testsToRun = categories 
+                ? this.tests.filter(t => categories.includes(t.category))
+                : this.tests;
+
+            updateProgress(0, testsToRun.length);
+
+            for (let i = 0; i < testsToRun.length; i++) {
+                if (!this.isRunning) break;
+                
+                this.currentTestIndex = i;
+                const test = testsToRun[i];
+                
+                if (test.options.skip) {
+                    this.results.push({
+                        name: test.name,
+                        category: test.category,
+                        status: 'skipped',
+                        duration: 0
+                    });
+                    continue;
+                }
+
+                displayTestRunning(test.name);
+                const result = await this.runTest(test);
+                this.results.push(result);
+                displayTestResult(result);
+                updateProgress(i + 1, testsToRun.length);
+            }
+
+            // 執行清理
+            if (document.getElementById('cleanupAfterTest').checked) {
+                await this.runCleanup();
+            }
+
+            this.isRunning = false;
+            displaySummary(this.results);
+            return this.results;
+        }
+
+        // 清理測試數據
+        async runCleanup() {
+            for (const task of this.cleanupTasks) {
+                try {
+                    await task();
+                } catch (error) {
+                    console.error('Cleanup failed:', error);
+                }
+            }
+            this.cleanupTasks = [];
+            this.testData = { partners: [], bookings: [], payouts: [] };
+        }
+
+        // 停止測試
+        stop() {
+            this.isRunning = false;
+        }
+    }
+
+    // ========================================
+    // 測試定義
+    // ========================================
+    
+    const testFramework = new TestFramework();
+
+    // API 連接測試
+    testFramework.register('api', 'API 連接測試', async (ctx) => {
+        ctx.log('測試 API 連接...');
+        const result = await ctx.api.get('get_all_data');
+        ctx.assert(result.success, 'API 應返回 success: true');
+        ctx.assert(result.data, 'API 應返回數據');
+        ctx.assert(result.data.partners, 'API 應返回 partners 數據');
+        ctx.log(`成功獲取 ${result.data.partners.length} 位大使數據`);
+    });
+
+    // 取消結算測試 - 重點測試！
+    testFramework.register('cancellation', '取消結算 - related_booking_ids 類型處理', async (ctx) => {
+        ctx.log('測試取消結算的 related_booking_ids 類型問題...');
+        
+        // 1. 先創建測試大使
+        const testPartner = {
+            partner_code: `TEST_${Date.now()}`,
+            partner_name: '測試大使',
+            partner_level: 'LV1_INSIDER',
+            successful_referrals: 0,
+            commission_preference: 'ACCOMMODATION',
+            available_points: 0
+        };
+        
+        ctx.log('創建測試大使...');
+        const partnerResult = await ctx.api.post('create_partner', testPartner);
+        ctx.assert(partnerResult.success, '創建大使應成功');
+        ctx.testData.partners.push(testPartner.partner_code);
+        
+        // 2. 創建測試訂房
+        const testBooking = {
+            partner_code: testPartner.partner_code,
+            guest_name: '測試房客',
+            guest_phone: '0912345678',
+            checkin_date: '2024-12-01',
+            checkout_date: '2024-12-03',
+            room_price: 5000
+        };
+        
+        ctx.log('創建測試訂房...');
+        const bookingResult = await ctx.api.post('create_booking', testBooking);
+        ctx.assert(bookingResult.success, '創建訂房應成功');
+        const bookingId = bookingResult.data.id;
+        ctx.testData.bookings.push(bookingId);
+        
+        // 3. 確認入住以產生佣金
+        ctx.log('確認入住...');
+        const checkinResult = await ctx.api.post('confirm_checkin_completion', {
+            booking_id: bookingId,
+            confirmed_by: 'TEST'
+        });
+        ctx.assert(checkinResult.success, '確認入住應成功');
+        
+        // 4. 獲取產生的 Payout
+        ctx.log('獲取 Payout 記錄...');
+        const allData = await ctx.api.get('get_all_data');
+        const payouts = allData.data.payouts.filter(p => 
+            p.partner_code === testPartner.partner_code &&
+            // related_booking_ids 可能是數字或字串
+            (String(p.related_booking_ids) === String(bookingId) || 
+             String(p.related_booking_ids).includes(String(bookingId)))
+        );
+        
+        ctx.assert(payouts.length > 0, '應該有至少一筆 Payout 記錄');
+        ctx.log(`找到 ${payouts.length} 筆 Payout 記錄`);
+        
+        // 5. 測試取消結算（這裡是重點！）
+        for (const payout of payouts) {
+            ctx.log(`測試取消 Payout ID: ${payout.id}, related_booking_ids 類型: ${typeof payout.related_booking_ids}`);
+            
+            try {
+                const cancelResult = await ctx.api.post('cancel_payout', {
+                    payout_id: payout.id
+                });
+                
+                ctx.assert(cancelResult.success, `取消 Payout ${payout.id} 應成功`);
+                ctx.testData.payouts.push(payout.id);
+                ctx.log(`成功取消 Payout ${payout.id}`);
+            } catch (error) {
+                // 檢查是否是 trim 錯誤
+                ctx.assert(!error.message.includes('trim is not a function'), 
+                    'Should not have trim error on related_booking_ids');
+                throw error;
+            }
+        }
+        
+        // 6. 驗證取消後的狀態
+        ctx.log('驗證取消後的狀態...');
+        const finalData = await ctx.api.get('get_all_data');
+        const partner = finalData.data.partners.find(p => p.partner_code === testPartner.partner_code);
+        
+        ctx.assertEqual(partner.successful_referrals, 0, '取消後成功推薦數應為 0');
+        ctx.assertEqual(partner.available_points, 0, '取消後可用點數應為 0');
+        
+        // 清理函數
+        ctx.cleanup(async () => {
+            // 清理測試數據
+            if (bookingId) {
+                await ctx.api.post('delete_booking', { booking_id: bookingId });
+            }
+        });
+    });
+
+    // 智慧取消結算測試
+    testFramework.register('cancellation', '智慧取消結算 - n-1 邏輯測試', async (ctx) => {
+        ctx.log('測試智慧取消結算的 n-1 邏輯...');
+        
+        // 創建有多筆成功訂單的大使
+        const partner = {
+            partner_code: `SMART_${Date.now()}`,
+            partner_name: '智慧測試大使',
+            partner_level: 'LV2_GUIDE',
+            successful_referrals: 5,
+            yearly_referrals: 5,
+            available_points: 6000, // 5筆 x 1200
+            commission_preference: 'ACCOMMODATION'
+        };
+        
+        ctx.log('創建 LV2 大使（5筆成功）...');
+        const partnerResult = await ctx.api.post('create_partner', partner);
+        ctx.assert(partnerResult.success, '創建大使應成功');
+        
+        // 創建第6筆訂單
+        const booking = {
+            partner_code: partner.partner_code,
+            guest_name: '第六位房客',
+            guest_phone: '0912345678',
+            checkin_date: '2024-12-10',
+            room_price: 5000
+        };
+        
+        const bookingResult = await ctx.api.post('create_booking', booking);
+        const bookingId = bookingResult.data.id;
+        
+        // 確認入住
+        await ctx.api.post('confirm_checkin_completion', {
+            booking_id: bookingId
+        });
+        
+        // 獲取 Payout
+        const data = await ctx.api.get('get_all_data');
+        const payout = data.data.payouts.find(p => 
+            p.partner_code === partner.partner_code &&
+            String(p.related_booking_ids).includes(String(bookingId))
+        );
+        
+        // 取消結算
+        ctx.log('執行智慧取消...');
+        const cancelResult = await ctx.api.post('cancel_payout', {
+            payout_id: payout.id
+        });
+        
+        ctx.assert(cancelResult.success, '取消應成功');
+        
+        // 驗證：應該回到5筆的狀態，仍是LV2
+        const finalData = await ctx.api.get('get_all_data');
+        const updatedPartner = finalData.data.partners.find(p => 
+            p.partner_code === partner.partner_code
+        );
+        
+        ctx.assertEqual(updatedPartner.successful_referrals, 5, '應回到5筆');
+        ctx.assertEqual(updatedPartner.partner_level, 'LV2_GUIDE', '應維持LV2');
+        ctx.assertEqual(updatedPartner.available_points, 6000, '點數應回到6000');
+        
+        ctx.log('智慧取消測試通過！');
+    });
+
+    // 邊界測試：等級降級
+    testFramework.register('edge', '等級降級測試', async (ctx) => {
+        ctx.log('測試從 LV2 降級到 LV1...');
+        
+        // 創建剛好 LV2 的大使（4筆）
+        const partner = {
+            partner_code: `EDGE_${Date.now()}`,
+            partner_name: '邊界測試大使',
+            partner_level: 'LV2_GUIDE',
+            successful_referrals: 4,
+            yearly_referrals: 4,
+            available_points: 4800, // 4筆 x 1200
+            commission_preference: 'ACCOMMODATION'
+        };
+        
+        const partnerResult = await ctx.api.post('create_partner', partner);
+        
+        // 創建第5筆並確認
+        const booking = {
+            partner_code: partner.partner_code,
+            guest_name: '邊界測試房客',
+            guest_phone: '0987654321',
+            checkin_date: '2024-12-15',
+            room_price: 5000
+        };
+        
+        const bookingResult = await ctx.api.post('create_booking', booking);
+        await ctx.api.post('confirm_checkin_completion', {
+            booking_id: bookingResult.data.id
+        });
+        
+        // 找到並取消 Payout
+        const data = await ctx.api.get('get_all_data');
+        const payout = data.data.payouts.find(p => 
+            p.partner_code === partner.partner_code
+        );
+        
+        const cancelResult = await ctx.api.post('cancel_payout', {
+            payout_id: payout.id
+        });
+        
+        // 驗證降級
+        const finalData = await ctx.api.get('get_all_data');
+        const updatedPartner = finalData.data.partners.find(p => 
+            p.partner_code === partner.partner_code
+        );
+        
+        ctx.assertEqual(updatedPartner.successful_referrals, 3, '應降到3筆');
+        ctx.assertEqual(updatedPartner.partner_level, 'LV1_INSIDER', '應降級到LV1');
+        
+        // 在 n-1=3 的狀態下，第4筆應該只得1000點（LV1標準）
+        ctx.assertEqual(updatedPartner.available_points, 3800, '點數應為3800 (4800-1000)');
+    });
+
+    // 負債測試
+    testFramework.register('edge', '點數不足產生負債', async (ctx) => {
+        ctx.log('測試點數不足的情況...');
+        
+        // 創建點數已用光的大使
+        const partner = {
+            partner_code: `DEBT_${Date.now()}`,
+            partner_name: '負債測試大使',
+            partner_level: 'LV1_INSIDER',
+            successful_referrals: 1,
+            available_points: 500, // 只有500點
+            pending_commission: 1000, // 有1000現金
+            commission_preference: 'ACCOMMODATION'
+        };
+        
+        await ctx.api.post('create_partner', partner);
+        
+        // 創建訂單並確認（會得到2500點：1000基礎+1500首次）
+        const booking = {
+            partner_code: partner.partner_code,
+            guest_name: '負債測試房客',
+            guest_phone: '0911111111',
+            checkin_date: '2024-12-20',
+            room_price: 5000
+        };
+        
+        const bookingResult = await ctx.api.post('create_booking', booking);
+        await ctx.api.post('confirm_checkin_completion', {
+            booking_id: bookingResult.data.id
+        });
+        
+        // 模擬使用掉大部分點數
+        await ctx.api.post('use_accommodation_points', {
+            partner_code: partner.partner_code,
+            deduct_amount: 2000,
+            guest_name: '使用點數',
+            checkin_date: '2024-12-21'
+        });
+        
+        // 現在取消原訂單，應該產生負債
+        const data = await ctx.api.get('get_all_data');
+        const payout = data.data.payouts.find(p => 
+            p.partner_code === partner.partner_code &&
+            p.payout_type === 'ACCOMMODATION'
+        );
+        
+        const cancelResult = await ctx.api.post('cancel_payout', {
+            payout_id: payout.id
+        });
+        
+        // 檢查是否產生負債記錄
+        const finalData = await ctx.api.get('get_all_data');
+        const debtRecord = finalData.data.payouts.find(p => 
+            p.partner_code === partner.partner_code &&
+            p.payout_type === 'DEBT_RECORD'
+        );
+        
+        ctx.assert(debtRecord, '應產生負債記錄');
+        ctx.log(`產生負債: ${Math.abs(debtRecord.amount)} 點`);
+    });
+
+    // 資料驗證測試
+    testFramework.register('regression', '資料類型驗證', async (ctx) => {
+        ctx.log('驗證所有 related_booking_ids 的處理...');
+        
+        const data = await ctx.api.get('get_all_data');
+        const payouts = data.data.payouts || [];
+        
+        let typeStats = {
+            string: 0,
+            number: 0,
+            undefined: 0,
+            null: 0,
+            other: 0
+        };
+        
+        payouts.forEach(payout => {
+            const type = typeof payout.related_booking_ids;
+            if (type === 'string') typeStats.string++;
+            else if (type === 'number') typeStats.number++;
+            else if (type === 'undefined') typeStats.undefined++;
+            else if (payout.related_booking_ids === null) typeStats.null++;
+            else typeStats.other++;
+        });
+        
+        ctx.log('related_booking_ids 類型統計:');
+        ctx.log(`  字串: ${typeStats.string}`);
+        ctx.log(`  數字: ${typeStats.number}`);
+        ctx.log(`  未定義: ${typeStats.undefined}`);
+        ctx.log(`  null: ${typeStats.null}`);
+        ctx.log(`  其他: ${typeStats.other}`);
+        
+        // 測試每種類型的取消操作
+        const testTypes = [];
+        if (typeStats.string > 0) {
+            const stringPayout = payouts.find(p => typeof p.related_booking_ids === 'string');
+            if (stringPayout) testTypes.push(stringPayout);
+        }
+        if (typeStats.number > 0) {
+            const numberPayout = payouts.find(p => typeof p.related_booking_ids === 'number');
+            if (numberPayout) testTypes.push(numberPayout);
+        }
+        
+        for (const payout of testTypes.slice(0, 2)) { // 只測試前2個避免破壞太多數據
+            ctx.log(`測試取消 ${typeof payout.related_booking_ids} 類型的 payout...`);
+            try {
+                const result = await ctx.api.post('cancel_payout', {
+                    payout_id: payout.id
+                });
+                ctx.assert(result.success || result.error === 'Payout already cancelled', 
+                    `應能處理 ${typeof payout.related_booking_ids} 類型`);
+            } catch (error) {
+                if (error.message.includes('trim is not a function')) {
+                    ctx.assert(false, `trim 錯誤出現在 ${typeof payout.related_booking_ids} 類型`);
+                }
+            }
+        }
+    });
+
+    // ========================================
+    // UI 功能
+    // ========================================
+    
+    function updateProgress(current, total) {
+        const percent = Math.round((current / total) * 100);
+        document.getElementById('progressContainer').classList.remove('hidden');
+        document.getElementById('progressBar').style.width = `${percent}%`;
+        document.getElementById('progressPercent').textContent = `${percent}%`;
+        document.getElementById('progressText').textContent = `執行中... (${current}/${total})`;
+    }
+
+    function displayTestRunning(testName) {
+        const resultsDiv = document.getElementById('testResults');
+        const testDiv = document.createElement('div');
+        testDiv.className = 'flex items-center justify-between p-2 bg-blue-100 rounded test-running';
+        testDiv.innerHTML = `
+            <span>⏳ ${testName}</span>
+            <span class="text-xs">執行中...</span>
+        `;
+        resultsDiv.appendChild(testDiv);
+        resultsDiv.scrollTop = resultsDiv.scrollHeight;
+    }
+
+    function displayTestResult(result) {
+        const resultsDiv = document.getElementById('testResults');
+        const runningDiv = resultsDiv.querySelector('.test-running');
+        if (runningDiv) runningDiv.remove();
+
+        const statusClass = {
+            passed: 'test-pass',
+            failed: 'test-fail',
+            skipped: 'test-pending'
+        }[result.status];
+
+        const statusIcon = {
+            passed: '✅',
+            failed: '❌',
+            skipped: '⏭️'
+        }[result.status];
+
+        const testDiv = document.createElement('div');
+        testDiv.className = `p-2 rounded ${statusClass} mb-1`;
+        testDiv.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span>${statusIcon} ${result.name}</span>
+                <span class="text-xs">${result.duration}ms</span>
+            </div>
+            ${result.error ? `<div class="text-xs mt-1 error-trace">${result.error.message}</div>` : ''}
+        `;
+        
+        testDiv.onclick = () => displayDetailedLog(result);
+        resultsDiv.appendChild(testDiv);
+        resultsDiv.scrollTop = resultsDiv.scrollHeight;
+
+        // 更新詳細日誌
+        if (document.getElementById('verboseLogging').checked) {
+            const logsDiv = document.getElementById('detailedLogs');
+            logsDiv.innerHTML += `
+<span class="text-yellow-400">[${new Date().toLocaleTimeString()}]</span> ${statusIcon} ${result.name}
+${result.logs.map(log => `  <span class="text-gray-400">${log}</span>`).join('\n')}
+${result.error ? `  <span class="text-red-400">ERROR: ${result.error.message}</span>` : ''}
+`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+    }
+
+    function displayDetailedLog(result) {
+        const logsDiv = document.getElementById('detailedLogs');
+        logsDiv.innerHTML = `
+<span class="text-cyan-400">========== ${result.name} ==========</span>
+<span class="text-yellow-400">Status:</span> ${result.status}
+<span class="text-yellow-400">Duration:</span> ${result.duration}ms
+<span class="text-yellow-400">Category:</span> ${result.category}
+
+<span class="text-cyan-400">Logs:</span>
+${result.logs.map(log => `  ${log}`).join('\n')}
+
+<span class="text-cyan-400">Assertions (${result.assertions.length}):</span>
+${result.assertions.map(a => 
+    `  ${a.passed ? '✓' : '✗'} ${a.message || 'Assertion'}
+   ${a.type === 'assertEqual' && !a.passed ? 
+     `    Expected: ${JSON.stringify(a.expected)}\n    Actual: ${JSON.stringify(a.actual)}` : ''}`
+).join('\n')}
+
+${result.error ? `
+<span class="text-red-400">Error:</span>
+  ${result.error.message}
+  
+<span class="text-red-400">Stack:</span>
+${result.error.stack}` : ''}
+`;
+    }
+
+    function displaySummary(results) {
+        const summary = {
+            total: results.length,
+            passed: results.filter(r => r.status === 'passed').length,
+            failed: results.filter(r => r.status === 'failed').length,
+            skipped: results.filter(r => r.status === 'skipped').length
+        };
+
+        document.getElementById('totalTests').textContent = summary.total;
+        document.getElementById('passedTests').textContent = summary.passed;
+        document.getElementById('failedTests').textContent = summary.failed;
+        document.getElementById('skippedTests').textContent = summary.skipped;
+
+        // 隱藏進度條
+        document.getElementById('progressContainer').classList.add('hidden');
+    }
+
+    function clearResults() {
+        document.getElementById('testResults').innerHTML = '<div class="text-gray-500 text-center py-8">尚未執行測試</div>';
+        document.getElementById('detailedLogs').innerHTML = '<div class="text-gray-500">等待測試執行...</div>';
+        document.getElementById('totalTests').textContent = '0';
+        document.getElementById('passedTests').textContent = '0';
+        document.getElementById('failedTests').textContent = '0';
+        document.getElementById('skippedTests').textContent = '0';
+    }
+
+    async function runAllTests() {
+        clearResults();
+        const categories = Array.from(document.querySelectorAll('.test-category:checked'))
+            .map(cb => cb.dataset.category);
+        await testFramework.runAll(categories);
+    }
+
+    async function runSelectedTests() {
+        clearResults();
+        const categories = Array.from(document.querySelectorAll('.test-category:checked'))
+            .map(cb => cb.dataset.category);
+        if (categories.length === 0) {
+            alert('請選擇至少一個測試類別');
+            return;
+        }
+        await testFramework.runAll(categories);
+    }
+
+    function stopTests() {
+        testFramework.stop();
+    }
+
+    function exportResults() {
+        const results = testFramework.results;
+        const report = {
+            timestamp: new Date().toISOString(),
+            environment: document.getElementById('testEnv').value,
+            endpoint: document.getElementById('apiEndpoint').value,
+            summary: {
+                total: results.length,
+                passed: results.filter(r => r.status === 'passed').length,
+                failed: results.filter(r => r.status === 'failed').length,
+                skipped: results.filter(r => r.status === 'skipped').length
+            },
+            results: results
+        };
+
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `test-report-${Date.now()}.json`;
+        a.click();
+    }
+    </script>
+</body>
+</html>

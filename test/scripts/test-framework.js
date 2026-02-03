@@ -141,7 +141,8 @@ class TestFramework {
                     const input = document.createElement('input');
                     input.type = 'hidden';
                     input.name = key;
-                    input.value = submitData[key] || '';
+                    // 修復：正確處理數值 0，避免被當作 falsy 值而變成空字串
+                    input.value = (submitData[key] !== undefined && submitData[key] !== null) ? submitData[key] : '';
                     form.appendChild(input);
                 });
                 

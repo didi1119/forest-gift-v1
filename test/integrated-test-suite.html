@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知音計畫 - 整合自動化測試套件</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .test-pass { background: #10b981; }
+        .test-fail { background: #ef4444; }
+        .test-running {
+            background: #fbbf24;
+            animation: pulse 1.5s infinite;
+        }
+        .test-pending { background: #6b7280; }
+        .test-skipped { background: #f59e0b; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .console-log {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            line-height: 1.4;
+            max-height: 500px;
+            overflow-y: auto;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-5xl font-bold text-white mb-3">整合自動化測試套件</h1>
+            <p class="text-purple-100 text-lg">完整測試 + 數據驗證 + 一致性檢查</p>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Test Configuration -->
+                <div>
+                    <h3 class="font-bold text-xl mb-4 text-purple-700">測試配置</h3>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Apps Script URL</label>
+                        <input type="text" id="appsScriptUrl"
+                               value="https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec"
+                               class="w-full px-3 py-2 border rounded text-sm">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">測試大使代碼</label>
+                        <input type="text" id="testPartnerCode"
+                               value="gg"
+                               class="w-full px-3 py-2 border rounded">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="cleanupAfter" checked class="mr-2">
+                            <span class="text-sm">測試後清理數據</span>
+                        </label>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="detailedLog" checked class="mr-2">
+                            <span class="text-sm">顯示詳細日誌</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Test Selection -->
+                <div>
+                    <h3 class="font-bold text-xl mb-4 text-purple-700">測試選擇</h3>
+
+                    <div class="space-y-2 max-h-64 overflow-y-auto">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="all" checked>
+                            <span class="ml-2 font-bold">全選</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="basic" checked>
+                            <span class="ml-2">基礎功能測試</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="commission" checked>
+                            <span class="ml-2">佣金計算測試</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="lifecycle" checked>
+                            <span class="ml-2">訂房生命週期測試</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="cancellation" checked>
+                            <span class="ml-2">取消與撤銷測試</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="points" checked>
+                            <span class="ml-2">點數操作測試</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="level" checked>
+                            <span class="ml-2">等級晉升測試</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="consistency" checked>
+                            <span class="ml-2">數據一致性測試</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="mt-6 flex gap-4">
+                <button onclick="startTests()" id="startBtn"
+                        class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white font-bold py-3 px-6 rounded-lg hover:from-green-700 hover:to-green-800 transition">
+                    開始測試
+                </button>
+                <button onclick="stopTests()" id="stopBtn" disabled
+                        class="flex-1 bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition disabled:opacity-50">
+                    停止測試
+                </button>
+                <button onclick="exportReport()"
+                        class="flex-1 bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition">
+                    匯出報告
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex justify-between mb-2">
+                <span class="font-semibold">測試進度</span>
+                <span id="progressText">0 / 0</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-6">
+                <div id="progressBar" class="progress-bar h-6 rounded-full bg-gradient-to-r from-green-500 to-blue-500" style="width: 0%"></div>
+            </div>
+            <div class="mt-4 grid grid-cols-5 gap-4 text-center text-sm">
+                <div>
+                    <div class="font-bold text-2xl text-green-600" id="passCount">0</div>
+                    <div class="text-gray-600">通過</div>
+                </div>
+                <div>
+                    <div class="font-bold text-2xl text-red-600" id="failCount">0</div>
+                    <div class="text-gray-600">失敗</div>
+                </div>
+                <div>
+                    <div class="font-bold text-2xl text-yellow-600" id="skipCount">0</div>
+                    <div class="text-gray-600">跳過</div>
+                </div>
+                <div>
+                    <div class="font-bold text-2xl text-blue-600" id="totalCount">0</div>
+                    <div class="text-gray-600">總數</div>
+                </div>
+                <div>
+                    <div class="font-bold text-2xl text-purple-600" id="timeElapsed">0s</div>
+                    <div class="text-gray-600">耗時</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="font-bold text-2xl mb-4">測試結果</h2>
+            <div id="testResults" class="space-y-3 max-h-96 overflow-y-auto">
+                <!-- Test items will be added here -->
+            </div>
+        </div>
+
+        <!-- Console Output -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="font-bold text-2xl mb-4">詳細日誌</h2>
+            <div id="consoleOutput" class="console-log">
+                準備執行測試...
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Test Scripts -->
+    <script src="scripts/test-framework.js"></script>
+    <script src="scripts/complex-test-scenarios.js"></script>
+    <script src="scripts/extreme-complex-scenarios.js"></script>
+    <script src="scripts/points-cancel-scenarios.js"></script>
+    <script src="scripts/cancel-rollback-deep-test.js"></script>
+
+    <script>
+        // Global test state
+        let testRunner = null;
+        let startTime = null;
+        let isRunning = false;
+        let shouldStop = false;
+
+        // Test results
+        let results = {
+            passed: 0,
+            failed: 0,
+            skipped: 0,
+            total: 0,
+            details: []
+        };
+
+        // All available tests organized by category
+        const allTests = {
+            basic: [
+                {
+                    name: '基礎連線測試',
+                    execute: async (framework) => {
+                        const data = await framework.fetchSheetData();
+                        if (!data.partners || !data.bookings) {
+                            throw new Error('無法獲取基礎數據');
+                        }
+                        return { success: true, partnersCount: data.partners.length };
+                    }
+                },
+                {
+                    name: '數據結構驗證',
+                    execute: async (framework) => {
+                        const data = await framework.fetchSheetData();
+                        const requiredFields = ['partner_code', 'partner_name', 'available_points'];
+                        const partner = data.partners[0];
+
+                        for (const field of requiredFields) {
+                            if (!(field in partner)) {
+                                throw new Error(`缺少必要欄位: ${field}`);
+                            }
+                        }
+                        return { success: true };
+                    }
+                }
+            ],
+            commission: [
+                {
+                    name: 'LV1 住宿金佣金計算',
+                    execute: async (framework) => {
+                        const data = await framework.fetchSheetData();
+                        const lv1Partner = data.partners.find(p =>
+                            p.partner_level === 'LV1_INSIDER' &&
+                            p.commission_preference === 'ACCOMMODATION'
+                        );
+
+                        if (!lv1Partner) {
+                            return { success: true, skipped: true, reason: '找不到 LV1 住宿金大使' };
+                        }
+
+                        const expectedBase = 1000;
+                        framework.log(`LV1 住宿金基礎佣金應為 ${expectedBase}`);
+
+                        return { success: true, partner: lv1Partner.partner_code };
+                    }
+                },
+                {
+                    name: 'LV1 首次推薦獎勵驗證',
+                    execute: async (framework) => {
+                        const data = await framework.fetchSheetData();
+                        const newPartner = data.partners.find(p =>
+                            p.partner_level === 'LV1_INSIDER' &&
+                            parseInt(p.successful_referrals || 0) === 0 &&
+                            p.commission_preference === 'ACCOMMODATION'
+                        );
+
+                        if (!newPartner) {
+                            return { success: true, skipped: true, reason: '找不到符合條件的新大使' };
+                        }
+
+                        framework.log(`找到新大使: ${newPartner.partner_code}`);
+                        framework.log(`首次推薦應獲得: 1000 (基礎) + 1500 (獎勵) = 2500 點`);
+
+                        return { success: true };
+                    }
+                }
+            ],
+            lifecycle: [
+                testBookingLifecycle
+            ],
+            cancellation: [
+                testCommissionReversalCycle,
+                {
+                    name: '簡單取消測試',
+                    execute: async (framework) => {
+                        const data = await framework.fetchSheetData();
+                        const testPartner = data.partners[0];
+                        const initialPoints = parseInt(testPartner.available_points || 0);
+
+                        framework.log(`初始點數: ${initialPoints}`);
+
+                        // 創建測試訂房
+                        const bookingData = {
+                            partner_code: testPartner.partner_code,
+                            guest_name: `CANCEL_TEST_${Date.now()}`,
+                            guest_phone: '0900000001',
+                            checkin_date: new Date().toISOString().split('T')[0],
+                            checkout_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                            room_price: '5000',
+                            booking_source: 'REFERRAL'
+                        };
+
+                        await framework.executeAPIAction('create_booking', bookingData);
+                        await framework.wait(3000);
+
+                        // 找到訂房
+                        const state1 = await framework.fetchSheetData();
+                        const booking = state1.bookings.find(b => b.guest_name === bookingData.guest_name);
+
+                        if (!booking) {
+                            throw new Error('找不到創建的訂房');
+                        }
+
+                        // 確認入住
+                        await framework.executeAPIAction('confirm_checkin_completion', {
+                            booking_id: booking.id
+                        });
+                        await framework.wait(3000);
+
+                        // 驗證佣金
+                        const state2 = await framework.fetchSheetData();
+                        const partnerAfter = state2.partners.find(p => p.partner_code === testPartner.partner_code);
+                        const pointsAfterConfirm = parseInt(partnerAfter.available_points || 0);
+
+                        framework.log(`確認入住後點數: ${pointsAfterConfirm}`);
+
+                        if (pointsAfterConfirm <= initialPoints) {
+                            throw new Error('確認入住後點數未增加');
+                        }
+
+                        // 取消訂房
+                        await framework.executeAPIAction('delete_booking', {
+                            booking_id: booking.id
+                        });
+                        await framework.wait(3000);
+
+                        // 驗證撤銷
+                        const state3 = await framework.fetchSheetData();
+                        const partnerFinal = state3.partners.find(p => p.partner_code === testPartner.partner_code);
+                        const finalPoints = parseInt(partnerFinal.available_points || 0);
+
+                        framework.log(`取消後點數: ${finalPoints}`);
+
+                        // 檢查是否正確撤銷
+                        const pointsReversed = pointsAfterConfirm - finalPoints;
+                        framework.log(`撤銷點數: ${pointsReversed}`);
+
+                        return {
+                            success: true,
+                            initialPoints,
+                            afterConfirm: pointsAfterConfirm,
+                            afterCancel: finalPoints,
+                            reversed: pointsReversed
+                        };
+                    }
+                }
+            ],
+            points: [
+                testUsePointsThenCancel,
+                {
+                    name: '點數轉現金測試',
+                    execute: async (framework) => {
+                        const data = await framework.fetchSheetData();
+                        const partner = data.partners.find(p =>
+                            parseInt(p.available_points || 0) >= 2000
+                        );
+
+                        if (!partner) {
+                            return { success: true, skipped: true, reason: '沒有大使有足夠點數（需 ≥2000）' };
+                        }
+
+                        const initialPoints = parseInt(partner.available_points || 0);
+                        const initialPending = parseInt(partner.pending_commission || 0);
+                        const pointsToConvert = 2000;
+
+                        framework.log(`轉換前 - 點數: ${initialPoints}, 待結算: ${initialPending}`);
+
+                        await framework.executeAPIAction('convert_points_to_cash', {
+                            partner_code: partner.partner_code,
+                            points_used: pointsToConvert
+                        });
+
+                        await framework.wait(3000);
+
+                        const state = await framework.fetchSheetData();
+                        const updatedPartner = state.partners.find(p => p.partner_code === partner.partner_code);
+
+                        const finalPoints = parseInt(updatedPartner.available_points || 0);
+                        const finalPending = parseInt(updatedPartner.pending_commission || 0);
+                        const expectedCash = pointsToConvert / 2;
+
+                        framework.log(`轉換後 - 點數: ${finalPoints}, 待結算: ${finalPending}`);
+
+                        if (finalPoints !== initialPoints - pointsToConvert) {
+                            throw new Error(`點數扣除錯誤: 預期 ${initialPoints - pointsToConvert}, 實際 ${finalPoints}`);
+                        }
+
+                        if (finalPending !== initialPending + expectedCash) {
+                            throw new Error(`現金增加錯誤: 預期 ${initialPending + expectedCash}, 實際 ${finalPending}`);
+                        }
+
+                        return {
+                            success: true,
+                            converted: pointsToConvert,
+                            cashReceived: expectedCash
+                        };
+                    }
+                }
+            ],
+            level: [
+                {
+                    name: '等級判定邏輯測試',
+                    execute: async (framework) => {
+                        const data = await framework.fetchSheetData();
+
+                        // 檢查各等級大使的推薦數
+                        const lv1Partners = data.partners.filter(p => p.partner_level === 'LV1_INSIDER');
+                        const lv2Partners = data.partners.filter(p => p.partner_level === 'LV2_GUIDE');
+                        const lv3Partners = data.partners.filter(p => p.partner_level === 'LV3_GUARDIAN');
+
+                        framework.log(`LV1 大使: ${lv1Partners.length} 位`);
+                        framework.log(`LV2 大使: ${lv2Partners.length} 位`);
+                        framework.log(`LV3 大使: ${lv3Partners.length} 位`);
+
+                        // 檢查 LV2 大使的推薦數是否 >= 4
+                        for (const partner of lv2Partners) {
+                            const refs = parseInt(partner.yearly_referrals || 0);
+                            if (refs < 4) {
+                                framework.log(`警告: ${partner.partner_code} 是 LV2 但年度推薦數只有 ${refs}`);
+                            }
+                        }
+
+                        // 檢查 LV3 大使的推薦數是否 >= 10
+                        for (const partner of lv3Partners) {
+                            const refs = parseInt(partner.yearly_referrals || 0);
+                            if (refs < 10) {
+                                framework.log(`警告: ${partner.partner_code} 是 LV3 但年度推薦數只有 ${refs}`);
+                            }
+                        }
+
+                        return {
+                            success: true,
+                            lv1Count: lv1Partners.length,
+                            lv2Count: lv2Partners.length,
+                            lv3Count: lv3Partners.length
+                        };
+                    }
+                }
+            ],
+            consistency: [
+                {
+                    name: '住宿金點數一致性驗證',
+                    execute: async (framework) => {
+                        const data = await framework.fetchSheetData();
+                        const inconsistencies = [];
+
+                        for (const partner of data.partners) {
+                            // 計算預期點數（從 Payouts 表計算）
+                            const accommodationPayouts = data.payouts.filter(p =>
+                                p.partner_code === partner.partner_code &&
+                                p.payout_type === 'ACCOMMODATION'
+                            );
+
+                            const debitPayouts = data.payouts.filter(p =>
+                                p.partner_code === partner.partner_code &&
+                                p.payout_type === 'POINTS_ADJUSTMENT_DEBIT'
+                            );
+
+                            const reversalPayouts = data.payouts.filter(p =>
+                                p.partner_code === partner.partner_code &&
+                                p.payout_type === 'COMMISSION_REVERSAL' &&
+                                (p.notes || '').includes('住宿金')
+                            );
+
+                            const totalEarned = accommodationPayouts.reduce((sum, p) =>
+                                sum + parseFloat(p.amount || 0), 0);
+                            const totalDebit = debitPayouts.reduce((sum, p) =>
+                                sum + Math.abs(parseFloat(p.amount || 0)), 0);
+                            const totalReversal = reversalPayouts.reduce((sum, p) =>
+                                sum + Math.abs(parseFloat(p.amount || 0)), 0);
+
+                            const expectedPoints = totalEarned - totalDebit - totalReversal;
+                            const actualPoints = parseFloat(partner.available_points || 0);
+
+                            const diff = Math.abs(expectedPoints - actualPoints);
+
+                            if (diff > 0.01) { // 允許小數點誤差
+                                inconsistencies.push({
+                                    partner: partner.partner_code,
+                                    expected: expectedPoints,
+                                    actual: actualPoints,
+                                    diff: diff
+                                });
+                                framework.log(`⚠️ ${partner.partner_code}: 預期 ${expectedPoints}, 實際 ${actualPoints}, 差異 ${diff}`);
+                            }
+                        }
+
+                        if (inconsistencies.length > 0) {
+                            throw new Error(`發現 ${inconsistencies.length} 個點數不一致`);
+                        }
+
+                        framework.log(`✅ 所有大使的點數一致性驗證通過`);
+                        return { success: true, verified: data.partners.length };
+                    }
+                },
+                {
+                    name: 'Payouts 審計完整性驗證',
+                    execute: async (framework) => {
+                        const data = await framework.fetchSheetData();
+                        const issues = [];
+
+                        // 檢查所有 Payout 記錄的必要欄位
+                        for (const payout of data.payouts) {
+                            if (!payout.partner_code) {
+                                issues.push(`Payout ${payout.id} 缺少 partner_code`);
+                            }
+                            if (!payout.payout_type) {
+                                issues.push(`Payout ${payout.id} 缺少 payout_type`);
+                            }
+                            if (payout.amount === undefined || payout.amount === null) {
+                                issues.push(`Payout ${payout.id} 缺少 amount`);
+                            }
+                            if (!payout.created_at) {
+                                issues.push(`Payout ${payout.id} 缺少 created_at`);
+                            }
+                        }
+
+                        if (issues.length > 0) {
+                            framework.log(`發現 ${issues.length} 個問題:`);
+                            issues.forEach(issue => framework.log(`  - ${issue}`));
+                            throw new Error(`Payouts 表有 ${issues.length} 個完整性問題`);
+                        }
+
+                        framework.log(`✅ Payouts 表完整性驗證通過（${data.payouts.length} 筆記錄）`);
+                        return { success: true, payoutsCount: data.payouts.length };
+                    }
+                }
+            ]
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup test selector "all" checkbox
+            document.querySelector('.test-selector[value="all"]').addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('.test-selector:not([value="all"])');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+            });
+
+            log('系統就緒，請配置測試參數並開始測試');
+        });
+
+        async function startTests() {
+            if (isRunning) {
+                alert('測試正在執行中');
+                return;
+            }
+
+            isRunning = true;
+            shouldStop = false;
+            startTime = Date.now();
+
+            // Reset results
+            results = { passed: 0, failed: 0, skipped: 0, total: 0, details: [] };
+            document.getElementById('testResults').innerHTML = '';
+            updateStats();
+
+            // Disable start button
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+
+            // Get configuration
+            const config = {
+                APPS_SCRIPT_URL: document.getElementById('appsScriptUrl').value,
+                TEST_PREFIX: 'TEST_',
+                CLEANUP_AFTER: document.getElementById('cleanupAfter').checked,
+                VERBOSE_LOG: document.getElementById('detailedLog').checked
+            };
+
+            // Initialize framework
+            testRunner = new TestFramework(config);
+            testRunner.log = log; // Override log function
+
+            log('========================================');
+            log('開始執行整合測試套件');
+            log('========================================');
+
+            // Collect selected tests
+            const selectedCategories = Array.from(document.querySelectorAll('.test-selector:checked:not([value="all"])'))
+                .map(cb => cb.value);
+
+            const testsToRun = [];
+            for (const category of selectedCategories) {
+                if (allTests[category]) {
+                    testsToRun.push(...allTests[category]);
+                }
+            }
+
+            results.total = testsToRun.length;
+            updateStats();
+
+            log(`已選擇 ${testsToRun.length} 個測試`);
+
+            // Run tests
+            for (let i = 0; i < testsToRun.length; i++) {
+                if (shouldStop) {
+                    log('測試被用戶停止');
+                    break;
+                }
+
+                const test = testsToRun[i];
+                await runSingleTest(test, i + 1);
+
+                // Update progress
+                const progress = ((i + 1) / testsToRun.length) * 100;
+                document.getElementById('progressBar').style.width = progress + '%';
+                document.getElementById('progressText').textContent = `${i + 1} / ${testsToRun.length}`;
+            }
+
+            // Finish
+            const elapsed = Math.round((Date.now() - startTime) / 1000);
+            log('========================================');
+            log(`測試完成！總耗時: ${elapsed} 秒`);
+            log(`通過: ${results.passed}, 失敗: ${results.failed}, 跳過: ${results.skipped}`);
+            log('========================================');
+
+            isRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+        }
+
+        async function runSingleTest(test, index) {
+            const testName = test.name || '未命名測試';
+            log(`\n[${index}] 執行: ${testName}`);
+
+            // Add test item to UI
+            const testItem = document.createElement('div');
+            testItem.className = 'flex items-center justify-between p-3 rounded-lg test-running';
+            testItem.id = `test-${index}`;
+            testItem.innerHTML = `
+                <div>
+                    <span class="font-semibold">[${index}] ${testName}</span>
+                    <span class="text-sm text-white ml-2">執行中...</span>
+                </div>
+                <div class="text-sm text-white">⏱️</div>
+            `;
+            document.getElementById('testResults').appendChild(testItem);
+            testItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            const testStartTime = Date.now();
+
+            try {
+                const result = await test.execute(testRunner);
+                const elapsed = Date.now() - testStartTime;
+
+                if (result.skipped) {
+                    results.skipped++;
+                    testItem.className = 'flex items-center justify-between p-3 rounded-lg test-skipped';
+                    testItem.innerHTML = `
+                        <div>
+                            <span class="font-semibold text-white">[${index}] ${testName}</span>
+                            <span class="text-sm text-white ml-2">⚠️ 跳過: ${result.reason || '未知原因'}</span>
+                        </div>
+                        <div class="text-sm text-white">${elapsed}ms</div>
+                    `;
+                    log(`⚠️ 跳過: ${result.reason || '未知原因'}`);
+                } else {
+                    results.passed++;
+                    testItem.className = 'flex items-center justify-between p-3 rounded-lg test-pass';
+                    testItem.innerHTML = `
+                        <div>
+                            <span class="font-semibold text-white">[${index}] ${testName}</span>
+                            <span class="text-sm text-white ml-2">✓ 通過</span>
+                        </div>
+                        <div class="text-sm text-white">${elapsed}ms</div>
+                    `;
+                    log(`✓ 通過 (${elapsed}ms)`);
+                }
+
+                results.details.push({
+                    index,
+                    name: testName,
+                    status: result.skipped ? 'skipped' : 'passed',
+                    elapsed,
+                    result
+                });
+
+            } catch (error) {
+                const elapsed = Date.now() - testStartTime;
+                results.failed++;
+                testItem.className = 'flex items-center justify-between p-3 rounded-lg test-fail';
+                testItem.innerHTML = `
+                    <div>
+                        <span class="font-semibold text-white">[${index}] ${testName}</span>
+                        <span class="text-sm text-white ml-2">✗ 失敗: ${error.message}</span>
+                    </div>
+                    <div class="text-sm text-white">${elapsed}ms</div>
+                `;
+                log(`✗ 失敗: ${error.message}`);
+                console.error(error);
+
+                results.details.push({
+                    index,
+                    name: testName,
+                    status: 'failed',
+                    elapsed,
+                    error: error.message
+                });
+            }
+
+            updateStats();
+        }
+
+        function stopTests() {
+            shouldStop = true;
+            log('正在停止測試...');
+        }
+
+        function updateStats() {
+            document.getElementById('passCount').textContent = results.passed;
+            document.getElementById('failCount').textContent = results.failed;
+            document.getElementById('skipCount').textContent = results.skipped;
+            document.getElementById('totalCount').textContent = results.total;
+
+            if (startTime) {
+                const elapsed = Math.round((Date.now() - startTime) / 1000);
+                document.getElementById('timeElapsed').textContent = elapsed + 's';
+            }
+        }
+
+        function log(message) {
+            const consoleOutput = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            consoleOutput.innerHTML += `\n[${timestamp}] ${message}`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function exportReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                summary: {
+                    total: results.total,
+                    passed: results.passed,
+                    failed: results.failed,
+                    skipped: results.skipped,
+                    passRate: results.total > 0 ? ((results.passed / results.total) * 100).toFixed(2) + '%' : '0%',
+                    elapsed: startTime ? Math.round((Date.now() - startTime) / 1000) + 's' : '0s'
+                },
+                details: results.details
+            };
+
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `test-report-${Date.now()}.json`;
+            a.click();
+
+            log('測試報告已匯出');
+        }
+    </script>
+</body>
+</html>

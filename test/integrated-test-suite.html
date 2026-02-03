@@ -230,8 +230,17 @@
                     name: '數據結構驗證',
                     execute: async (framework) => {
                         const data = await framework.fetchSheetData();
+
+                        if (!data.partners || data.partners.length === 0) {
+                            throw new Error('Partners 表無資料');
+                        }
+
                         const requiredFields = ['partner_code', 'partner_name', 'available_points'];
                         const partner = data.partners[0];
+
+                        if (!partner) {
+                            throw new Error('無法讀取第一筆 Partner 資料');
+                        }
 
                         for (const field of requiredFields) {
                             if (!(field in partner)) {
@@ -292,7 +301,13 @@
                     name: '簡單取消測試',
                     execute: async (framework) => {
                         const data = await framework.fetchSheetData();
-                        const testPartner = data.partners[0];
+                        const testPartnerCode = document.getElementById('testPartnerCode').value;
+                        const testPartner = data.partners.find(p => p.partner_code === testPartnerCode);
+
+                        if (!testPartner) {
+                            throw new Error(`找不到測試大使: ${testPartnerCode}`);
+                        }
+
                         const initialPoints = parseInt(testPartner.available_points || 0);
 
                         framework.log(`初始點數: ${initialPoints}`);
@@ -592,6 +607,10 @@
             log('開始執行整合測試套件');
             log('========================================');
 
+            // Step 1: Create test partner if needed
+            const testPartnerCode = document.getElementById('testPartnerCode').value;
+            await ensureTestPartner(testPartnerCode);
+
             // Collect selected tests
             const selectedCategories = Array.from(document.querySelectorAll('.test-selector:checked:not([value="all"])'))
                 .map(cb => cb.value);
@@ -716,6 +735,77 @@
             }
 
             updateStats();
+        }
+
+        /**
+         * 確保測試大使存在，如果不存在則自動創建
+         */
+        async function ensureTestPartner(partnerCode) {
+            try {
+                log(`\n檢查測試大使: ${partnerCode}`);
+
+                // Check if partner exists
+                const data = await testRunner.fetchSheetData();
+                const existingPartner = data.partners.find(p => p.partner_code === partnerCode);
+
+                if (existingPartner) {
+                    log(`✓ 測試大使已存在`);
+                    log(`  等級: ${existingPartner.partner_level || 'LV1_INSIDER'}`);
+                    log(`  偏好: ${existingPartner.commission_preference || 'ACCOMMODATION'}`);
+                    log(`  可用點數: ${existingPartner.available_points || 0}`);
+                    return existingPartner;
+                }
+
+                // Create test partner if not exists
+                log(`測試大使不存在，正在創建...`);
+
+                const partnerData = {
+                    partner_code: partnerCode,
+                    partner_name: `測試大使_${partnerCode}`,
+                    partner_level: 'LV1_INSIDER',
+                    commission_preference: 'ACCOMMODATION',
+                    contact_phone: '0900000000',
+                    contact_email: `test_${partnerCode}@example.com`,
+                    bank_code: '012',
+                    bank_account: '1234567890',
+                    bank_name: '台北富邦銀行',
+                    line_coupon_url: 'https://lin.ee/q38pqot',
+                    available_points: 0,
+                    points_used: 0,
+                    total_commission_earned: 0,
+                    pending_commission: 0,
+                    successful_referrals: 0,
+                    total_successful_referrals: 0,
+                    yearly_referrals: 0,
+                    level_progress: 0
+                };
+
+                const result = await testRunner.apiCall('create_partner', partnerData);
+
+                if (result.success) {
+                    log(`✓ 測試大使創建成功`);
+
+                    // Wait for data sync
+                    await testRunner.wait(3000);
+
+                    // Verify partner was created
+                    const verifyData = await testRunner.fetchSheetData();
+                    const createdPartner = verifyData.partners.find(p => p.partner_code === partnerCode);
+
+                    if (createdPartner) {
+                        log(`✓ 驗證成功，測試大使已同步到資料庫`);
+                        return createdPartner;
+                    } else {
+                        throw new Error('測試大使創建後驗證失敗');
+                    }
+                } else {
+                    throw new Error(`創建測試大使失敗: ${result.error || '未知錯誤'}`);
+                }
+
+            } catch (error) {
+                log(`✗ 測試大使設置失敗: ${error.message}`);
+                throw error;
+            }
         }
 
         function stopTests() {

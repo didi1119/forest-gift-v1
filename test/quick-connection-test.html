@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>快速連線測試</title>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 快速連線測試</h1>
+    <p>這個測試會驗證本地 HTML 是否能與 Google Sheets 通訊</p>
+
+    <button onclick="testRead()">測試 1: 讀取 Google Sheets</button>
+    <button onclick="testSheetAccess()">測試 2: 檢查表格訪問權限</button>
+
+    <div id="result"></div>
+
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = type;
+        }
+
+        async function testRead() {
+            showResult('⏳ 正在連接 Google Apps Script...', 'info');
+
+            try {
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=get_all_data`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP 錯誤: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const partnersCount = data.data.partners ? data.data.partners.length : 0;
+                    const bookingsCount = data.data.bookings ? data.data.bookings.length : 0;
+                    const payoutsCount = data.data.payouts ? data.data.payouts.length : 0;
+
+                    showResult(
+                        `✅ 連線成功！可以讀取 Google Sheets\n\n` +
+                        `📊 當前數據：\n` +
+                        `- Partners: ${partnersCount} 筆\n` +
+                        `- Bookings: ${bookingsCount} 筆\n` +
+                        `- Payouts: ${payoutsCount} 筆\n\n` +
+                        `這證明本地 HTML 可以讀取真實的 Google Sheets 數據！`,
+                        'success'
+                    );
+                } else {
+                    throw new Error(data.error || '未知錯誤');
+                }
+            } catch (error) {
+                showResult(
+                    `❌ 連線失敗\n\n` +
+                    `錯誤訊息: ${error.message}\n\n` +
+                    `可能原因：\n` +
+                    `1. Apps Script URL 不正確\n` +
+                    `2. Apps Script 未部署或權限不足\n` +
+                    `3. 網絡連接問題`,
+                    'error'
+                );
+            }
+        }
+
+        async function testSheetAccess() {
+            showResult('⏳ 檢查 Google Sheets 訪問權限...', 'info');
+
+            try {
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=get_all_data`);
+                const data = await response.json();
+
+                if (data.success && data.data.partners && data.data.partners.length > 0) {
+                    const firstPartner = data.data.partners[0];
+                    const fields = Object.keys(firstPartner);
+
+                    showResult(
+                        `✅ 可以訪問 Google Sheets！\n\n` +
+                        `📋 Partners 表欄位（共 ${fields.length} 個）：\n` +
+                        fields.map((f, i) => `${i + 1}. ${f}`).join('\n') + `\n\n` +
+                        `第一筆資料範例：\n` +
+                        `- 大使代碼: ${firstPartner.partner_code || '(空)'}\n` +
+                        `- 大使姓名: ${firstPartner.partner_name || '(空)'}\n` +
+                        `- 等級: ${firstPartner.partner_level || '(空)'}\n` +
+                        `- 可用點數: ${firstPartner.available_points || 0}\n\n` +
+                        `✅ 確認：本地 HTML 可以讀取 Google Sheets 的完整數據！`,
+                        'success'
+                    );
+                } else {
+                    throw new Error('無法讀取 Partners 數據或表格為空');
+                }
+            } catch (error) {
+                showResult(
+                    `❌ 訪問失敗\n\n` +
+                    `錯誤訊息: ${error.message}`,
+                    'error'
+                );
+            }
+        }
+    </script>
+
+    <hr style="margin: 40px 0;">
+
+    <h2>💡 說明</h2>
+    <ul>
+        <li><strong>測試 1</strong>：驗證能否連接到 Google Apps Script 並讀取數據</li>
+        <li><strong>測試 2</strong>：檢查能否訪問完整的表格數據和欄位</li>
+    </ul>
+
+    <h2>⚠️ 關於寫入操作</h2>
+    <p>
+        這個測試只包含<strong>讀取</strong>操作，不會修改任何數據。<br>
+        完整的測試套件（TEST-SUITE.html）會執行<strong>寫入</strong>操作，包括：
+    </p>
+    <ul>
+        <li>創建測試大使</li>
+        <li>創建測試訂房</li>
+        <li>確認入住（觸發佣金計算）</li>
+        <li>取消訂房（撤銷佣金）</li>
+        <li>使用住宿金</li>
+        <li>點數轉現金</li>
+    </ul>
+    <p>
+        <strong>所有寫入操作都使用 <code>TEST_</code> 前綴，且可以在測試後自動清理。</strong>
+    </p>
+</body>
+</html>

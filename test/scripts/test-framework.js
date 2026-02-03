@@ -11,12 +11,16 @@ class TestFramework {
             CLEANUP_AFTER: true,
             VERBOSE_LOG: true,
             WAIT_TIME: 2000, // 等待數據同步的時間（毫秒）
+            TEST_PARTNER_CODE: 'TEST_AUTO', // 預設測試大使代碼
             ...config
         };
-        
+
         this.testResults = [];
         this.currentTest = null;
         this.startTime = null;
+
+        // 提供便捷訪問：外部測試腳本可以使用 framework.testPartnerCode
+        this.testPartnerCode = this.config.TEST_PARTNER_CODE;
     }
 
     // ============= 1. API 客戶端 =============

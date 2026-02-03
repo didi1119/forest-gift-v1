@@ -119,6 +119,23 @@
                             <input type="checkbox" class="test-selector" value="consistency" checked>
                             <span class="ml-2">數據一致性測試</span>
                         </label>
+                        <hr class="my-2 border-gray-600">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="complex">
+                            <span class="ml-2">複雜操作測試 (5個)</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="extreme">
+                            <span class="ml-2">極端複雜測試 (7個)</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="points-cancel">
+                            <span class="ml-2">點數取消測試 (6個)</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="cancel-deep">
+                            <span class="ml-2">取消深度測試 (9個)</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -192,7 +209,10 @@
 
     <!-- Load Test Scripts -->
     <script src="scripts/test-framework.js"></script>
-    <!-- Note: All test definitions are now inline in this file -->
+    <script src="scripts/complex-test-scenarios.js"></script>
+    <script src="scripts/extreme-complex-scenarios.js"></script>
+    <script src="scripts/points-cancel-scenarios.js"></script>
+    <script src="scripts/cancel-rollback-deep-test.js"></script>
 
     <script>
         // Global test state
@@ -822,12 +842,16 @@
                 document.getElementById('startBtn').disabled = true;
                 document.getElementById('stopBtn').disabled = false;
 
+                // Step 1: Get test partner code FIRST
+                const testPartnerCode = document.getElementById('testPartnerCode').value;
+
                 // Get configuration
                 const config = {
                     APPS_SCRIPT_URL: document.getElementById('appsScriptUrl').value,
                     TEST_PREFIX: 'TEST_',
                     CLEANUP_AFTER: document.getElementById('cleanupAfter').checked,
-                    VERBOSE_LOG: document.getElementById('detailedLog').checked
+                    VERBOSE_LOG: document.getElementById('detailedLog').checked,
+                    TEST_PARTNER_CODE: testPartnerCode // 傳遞測試大使代碼到框架
                 };
 
                 // Initialize framework
@@ -836,10 +860,10 @@
 
                 log('========================================');
                 log('開始執行整合測試套件');
+                log(`使用測試大使代碼: ${testPartnerCode}`);
                 log('========================================');
 
-                // Step 1: Create test partner if needed
-                const testPartnerCode = document.getElementById('testPartnerCode').value;
+                // Step 2: Create test partner if needed
                 await ensureTestPartner(testPartnerCode);
 
                 log('========================================');
@@ -852,15 +876,38 @@
 
                 const testsToRun = [];
                 for (const category of selectedCategories) {
+                    // 內聯測試
                     if (allTests[category]) {
                         testsToRun.push(...allTests[category]);
+                        log(`✓ 載入 ${category}: ${allTests[category].length} 個測試`);
+                    }
+                    // 外部測試腳本
+                    else if (category === 'complex' && window.complexTestScenarios) {
+                        testsToRun.push(...window.complexTestScenarios);
+                        log(`✓ 載入複雜操作測試: ${window.complexTestScenarios.length} 個`);
+                    }
+                    else if (category === 'extreme' && window.extremeComplexScenarios) {
+                        testsToRun.push(...window.extremeComplexScenarios);
+                        log(`✓ 載入極端複雜測試: ${window.extremeComplexScenarios.length} 個`);
+                    }
+                    else if (category === 'points-cancel' && window.pointsCancelScenarios) {
+                        testsToRun.push(...window.pointsCancelScenarios);
+                        log(`✓ 載入點數取消測試: ${window.pointsCancelScenarios.length} 個`);
+                    }
+                    else if (category === 'cancel-deep' && window.cancelRollbackDeepTests) {
+                        testsToRun.push(...window.cancelRollbackDeepTests);
+                        log(`✓ 載入取消深度測試: ${window.cancelRollbackDeepTests.length} 個`);
+                    }
+                    else {
+                        log(`⚠️ 警告: 測試類別 "${category}" 未找到`);
                     }
                 }
 
                 results.total = testsToRun.length;
                 updateStats();
 
-                log(`已選擇 ${testsToRun.length} 個測試`);
+                log(`========================================`);
+                log(`總計已選擇 ${testsToRun.length} 個測試`);
 
                 // Run tests
                 for (let i = 0; i < testsToRun.length; i++) {

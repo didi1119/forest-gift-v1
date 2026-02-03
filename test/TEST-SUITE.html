@@ -780,7 +780,7 @@
                     level_progress: 0
                 };
 
-                const result = await testRunner.apiCall('create_partner', partnerData);
+                const result = await testRunner.executeAPIAction('create_partner', partnerData);
 
                 if (result.success) {
                     log(`✓ 測試大使創建成功`);

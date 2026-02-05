@@ -592,31 +592,21 @@
                 has_coupon_url: !!couponUrl
             });
 
-            if (subid && subid !== 'demo' && subid !== 'no-subid') {
-                // 有有效的 subid
-                if (couponUrl) {
-                    // 有專屬優惠券連結，透過 Apps Script 中繼追蹤並跳轉到該連結
-                    const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
-                    console.log('🎁 跳轉到專屬優惠券 (透過追蹤):', trackedCouponUrl);
-                    console.log('   目標連結:', couponUrl);
-                    window.open(trackedCouponUrl, '_blank');
-                } else {
-                    // 沒有專屬優惠券連結，透過 Apps Script 查找（舊邏輯）
-                    const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon`;
-                    console.log('🎁 透過 Apps Script 查找優惠券連結:', trackedCouponUrl);
-                    window.open(trackedCouponUrl, '_blank');
-                }
+            // 優先使用連結生成器傳入的 couponUrl（已包含追蹤邏輯）
+            if (couponUrl) {
+                // 有專屬優惠券連結（來自連結生成器），直接跳轉
+                console.log('🎁 跳轉到專屬優惠券連結:', couponUrl);
+                console.log('   來源: 連結生成器生成的短網址');
+                window.open(couponUrl, '_blank');
+            } else if (subid && subid !== 'demo' && subid !== 'no-subid') {
+                // 有 subid 但沒有 couponUrl，透過 Apps Script 查找（舊邏輯）
+                const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon`;
+                console.log('🎁 透過 Apps Script 查找優惠券連結:', trackedCouponUrl);
+                window.open(trackedCouponUrl, '_blank');
             } else {
-                // 沒有有效的 subid
-                if (couponUrl) {
-                    // 有優惠券連結但沒有 subid，直接跳轉（無追蹤）
-                    console.log('🎁 直接跳轉到優惠券連結（無追蹤）:', couponUrl);
-                    window.open(couponUrl, '_blank');
-                } else {
-                    // 沒有 subid 也沒有優惠券連結，跳轉到預設 LINE 官方帳號
-                    console.log('🎁 直接跳轉到 LINE 官方帳號（無追蹤）');
-                    window.open(LINE_OFFICIAL_URL, '_blank');
-                }
+                // 沒有 couponUrl 也沒有有效的 subid，跳轉到預設 LINE 官方帳號
+                console.log('🎁 跳轉到 LINE 官方帳號（無追蹤）');
+                window.open(LINE_OFFICIAL_URL, '_blank');
             }
         }
 

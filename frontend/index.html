@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,82 +8,183 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Warm Earth Tones -->
-    <!-- Application Structure Plan: A single-page, vertical-scrolling application designed as a digital gift box for brand ambassadors. The structure flows from a warm introduction to four distinct, interactive sections, one for each gift (Music, E-book, Oracle Cards, Story). This linear, curated flow enhances the feeling of a personal gift and aligns with the brand's calm, focused aesthetic, prioritizing user experience over data density. -->
-    <!-- Visualization & Content Choices: Gift 1 (Music) -> Goal: Present playlist -> Method: HTML/CSS player card with Unicode icons -> Interaction: Click-to-reveal link. Gift 2 (E-book) -> Goal: Showcase e-book -> Method: HTML/CSS book cover card -> Interaction: Download button. Gift 3 (Oracle) -> Goal: Interactive card reading -> Method: JS-powered card spread layout with images -> Interaction: Click to draw cards, reveal detailed interpretations based on the "World Tree" spread. Gift 4 (Story) -> Goal: Create exclusivity -> Method: "Locked" card -> Interaction: Click-to-reveal link. All choices prioritize brand aesthetic and user engagement. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <!-- Aesthetic: Mystical Forest Sanctuary -->
     <style>
+        :root {
+            --forest-dark: #1A2F23;
+            --forest-medium: #2D4A3E;
+            --forest-light: #4A675A;
+            --mist: #E8ECE9;
+            --paper: #F5F2EB;
+            --gold: #C5A065;
+            --gold-light: #DFC698;
+        }
+
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #F8F5F2; /* A warm, soft beige */
-            color: #4B423B; /* A deep, earthy brown */
+            background: #F5F2EB;
+            color: #1A2F23;
+            overflow-x: hidden;
+            position: relative;
         }
-        h1, h2, h3, .font-serif {
+
+        /* Grain texture overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.4;
+        }
+
+        /* Ambient Backgrounds */
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 10% 20%, rgba(223, 198, 152, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 60%, rgba(45, 74, 62, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 50% 110%, rgba(26, 47, 35, 0.1) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        .font-serif {
             font-family: 'Noto Serif TC', serif;
         }
-        .brand-accent {
-            color: #3A5A40; /* A deep, calming forest green */
+
+        .gold-text {
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(197, 160, 101, 0.2);
         }
-        .brand-accent-bg {
-            background-color: #3A5A40;
-        }
-        .brand-card {
-            background-color: #FFFFFF;
-            border: 1px solid #EAE0D5;
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
             border-radius: 1.5rem;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
+            box-shadow:
+                0 4px 6px -1px rgba(0, 0, 0, 0.02),
+                0 20px 40px -4px rgba(26, 47, 35, 0.04),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .brand-button {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow:
+                0 10px 15px -3px rgba(0, 0, 0, 0.02),
+                0 30px 60px -8px rgba(26, 47, 35, 0.08),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        .btn-mystic {
+            position: relative;
+            padding: 0.8rem 2rem;
             border-radius: 9999px;
+            font-family: 'Noto Serif TC', serif;
             font-weight: 500;
+            letter-spacing: 0.05em;
+            background: var(--forest-dark);
+            color: #F5F2EB;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            box-shadow: 0 4px 12px rgba(26, 47, 35, 0.2);
+        }
+
+        .btn-mystic::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(223, 198, 152, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .btn-mystic:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(26, 47, 35, 0.25);
+            background: var(--forest-medium);
+        }
+
+        .btn-mystic:hover::before {
+            left: 100%;
+        }
+
+        .btn-outline {
+            padding: 0.8rem 2rem;
+            border-radius: 9999px;
+            font-family: 'Noto Serif TC', serif;
+            font-weight: 500;
+            border: 1px solid var(--forest-medium);
+            color: var(--forest-dark);
+            background: transparent;
             transition: all 0.3s ease;
-            cursor: pointer;
-            text-align: center;
         }
-        .button-primary {
-            background-color: #3A5A40;
-            color: #FFFFFF;
-        }
-        .button-primary:hover {
-            background-color: #2F4833;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(58,90,64,0.2);
-        }
-        .button-secondary {
-            background-color: #FFFFFF;
-            color: #3A5A40;
-            border: 1px solid #3A5A40;
-        }
-        .button-secondary:hover {
-            background-color: #F0F5F0;
+
+        .btn-outline:hover {
+            background: rgba(45, 74, 62, 0.05);
             transform: translateY(-2px);
         }
+
         .section-fade-in {
             opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.8s ease, transform 0.8s ease;
+            transform: translateY(30px);
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), transform 1s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         .section-fade-in.visible {
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* Oracle Card Styling */
         .card-container {
-            perspective: 1000px;
+            perspective: 1200px;
         }
+
         .card-inner {
             position: relative;
             width: 100%;
             height: 100%;
-            transition: transform 0.8s;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             transform-style: preserve-3d;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
+
+        .card-container:hover .card-inner {
+            transform: translateY(-10px);
+        }
+
         .card-container.flipped .card-inner {
             transform: rotateY(180deg);
         }
+
+        .card-container.flipped:hover .card-inner {
+            transform: rotateY(180deg) translateY(0);
+            /* Prevent double transform issue */
+        }
+
         .card-face {
             position: absolute;
             width: 100%;
@@ -92,204 +194,319 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 1rem;
+            border-radius: 12px;
             overflow: hidden;
         }
+
         .card-back {
-            background-color: #3A5A40;
-            color: white;
-            border: 4px solid #fff;
-            box-shadow: 0 0 0 1px #EAE0D5;
+            background: radial-gradient(circle at center, #2D4A3E 0%, #1A2F23 100%);
+            border: 1px solid rgba(197, 160, 101, 0.3);
         }
+
+        .card-back::after {
+            content: "✦";
+            font-size: 2rem;
+            color: var(--gold);
+            opacity: 0.6;
+        }
+
         .card-front {
-            background-color: #F8F5F2;
+            background: white;
             transform: rotateY(180deg);
-            flex-direction: column;
-            padding: 0;
-            border: 1px solid #EAE0D5;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
-        .card-image {
+
+        .icon-circle {
+            background: linear-gradient(135deg, var(--forest-light), var(--forest-dark));
+            box-shadow:
+                inset 0 2px 10px rgba(255, 255, 255, 0.2),
+                0 10px 20px rgba(26, 47, 35, 0.2);
+        }
+
+        .decorative-line {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .card-text-content {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-            color: white;
-            padding: 1.5rem 1rem 1rem;
-            text-align: center;
-        }
-        .interpretation-card {
-            background-color: #FDFBF8;
-            border: 1px solid #EAE0D5;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-top: 1rem;
+            opacity: 0.5;
+            margin: 2rem 0;
         }
     </style>
 </head>
+
 <body class="antialiased">
 
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32 relative z-10">
 
-        <header class="text-center mb-20 section-fade-in">
-            <h1 class="text-4xl sm:text-5xl font-semibold brand-accent mb-4">靜謐森林</h1>
-            <h2 class="text-2xl sm:text-3xl font-serif text-stone-700 mb-6">知音大使・贈禮工具包</h2>
-            <p class="max-w-2xl mx-auto text-lg text-stone-600 leading-relaxed">
-                親愛的知音，這是一份來自森林的特別心意。我們相信，最好的連結，來自於無所求的分享。這裡的每一份禮物，都承載著一份我們想與您共同守護的寧靜。願它們能為您的日常，帶來片刻的安頓與喜悅。
+        <header class="text-center mb-40 section-fade-in relative">
+            <!-- Decorative vertical line (Top of page anchor) -->
+            <div
+                class="absolute -top-32 left-1/2 -translate-x-1/2 w-px h-32 bg-gradient-to-b from-transparent to-[#1A2F23]/20">
+            </div>
+
+            <h1 class="text-5xl sm:text-7xl font-bold tracking-tight text-[#1A2F23] mb-8 font-serif">
+                靜謐<span class="text-[#4A675A] opacity-80">森林</span>
+            </h1>
+
+            <!-- Ultra-thin elegant separator -->
+            <div class="w-16 h-[0.5px] bg-[#1A2F23]/40 mx-auto mb-10"></div>
+
+            <h2 class="text-sm sm:text-base font-serif text-[#1A2F23] mb-12 tracking-[0.3em] uppercase opacity-60">The
+                Sanctuary Gift</h2>
+
+            <p class="max-w-xl mx-auto text-lg text-stone-600 leading-loose font-serif italic">
+                「在聲音與寂靜的縫隙間，我們種下了一座森林。」
             </p>
-            
+
             <!-- 推薦來源顯示 -->
-            <div id="referral-note" class="hidden mt-8 p-4 bg-white rounded-2xl max-w-lg mx-auto border border-stone-200 shadow-sm">
-                <p class="text-stone-600 text-center">
-                    ✨ 感謝 <span id="referrer-name" class="font-serif font-semibold brand-accent"></span> 的推薦分享
+            <div id="referral-note" class="hidden mt-16 p-2 px-6 bg-[#F5F2EB] rounded-sm inline-block shadow-sm">
+                <p class="text-stone-500 text-xs tracking-widest uppercase">
+                    Invited by <span id="referrer-name" class="font-serif font-bold text-[#1A2F23] lowercase"></span>
                 </p>
             </div>
         </header>
 
-        <main class="space-y-20">
+        <main class="space-y-40">
 
-            <!-- Gift 1 & 2 can remain the same -->
-            <section id="gift-music" class="section-fade-in">
-                <div class="brand-card p-8 sm:p-12 flex flex-col md:flex-row items-center gap-8">
-                    <div class="flex-shrink-0 text-center">
-                        <div class="w-32 h-32 sm:w-40 sm:h-40 brand-accent-bg rounded-full flex items-center justify-center shadow-lg">
-                            <span class="text-6xl text-white">♫</span>
+            <!-- Gift 1: Music -->
+            <section id="gift-music" class="section-fade-in group py-10">
+                <div
+                    class="glass-card p-8 sm:p-20 flex flex-col md:flex-row items-center gap-16 relative overflow-hidden transition-all duration-700 hover:shadow-soft">
+                    <div class="absolute top-0 right-0 p-8 opacity-[0.03] text-9xl font-serif z-0 select-none">01</div>
+                    <div class="flex-shrink-0 relative z-10">
+                        <div class="w-40 h-40 rounded-full flex items-center justify-center border border-[#C5A065]/20 animate-spin-slow"
+                            style="animation-duration: 30s;">
+                            <span class="text-5xl text-[#1A2F23]/80 font-serif">♪</span>
                         </div>
                     </div>
-                    <div class="flex-1 text-center md:text-left">
-                        <h3 class="text-2xl font-serif font-semibold text-stone-800 mb-2">禮物一：聲音的風景</h3>
-                        <p class="text-lg brand-accent mb-4">《內在森林的回響》</p>
-                        <p class="text-stone-600 mb-6">
-                            這是一份主人的私房歌單，一場精心策展的聽覺之旅。願這份聲音的風景，能陪伴您每一個需要獨處的時刻。
+                    <div class="flex-1 text-center md:text-left z-10">
+                        <div class="mb-4">
+                            <span class="text-[0.6rem] font-bold tracking-[0.3em] text-[#C5A065] uppercase">Gift
+                                One</span>
+                        </div>
+                        <h3 class="text-3xl sm:text-4xl font-serif font-bold text-[#1A2F23] mb-4">聲音的風景</h3>
+                        <p class="text-stone-500 font-serif italic mb-8">Internal Echoes.</p>
+                        <p class="text-stone-600 mb-10 leading-loose max-w-lg font-light text-sm">
+                            這是一份主人的私房歌單，一場精心策展的聽覺之旅。<br>收錄了森林的呼吸、溪流的低語，以及那些能讓時間慢下來的旋律。
                         </p>
-                        <a href="music.html" class="brand-button button-primary" onclick="trackEvent('music_click', { page: 'index_old' })">
-                            聆聽播放清單 ↗
+                        <a href="music.html" class="btn-mystic inline-flex items-center gap-4 group/btn"
+                            onclick="trackEvent('music_click', { page: 'index_old' })">
+                            <span class="text-xs tracking-[0.2em] uppercase">Listen Now</span>
+                            <span
+                                class="text-sm transition-transform duration-500 group-hover/btn:translate-x-2">→</span>
                         </a>
                     </div>
                 </div>
             </section>
 
-            <section id="gift-ebook" class="section-fade-in">
-                <div class="brand-card p-8 sm:p-12 flex flex-col md:flex-row-reverse items-center gap-8">
-                    <div class="flex-shrink-0 text-center">
-                        <div class="w-32 h-40 sm:w-40 sm:h-52 bg-stone-100 rounded-lg flex flex-col items-center justify-center shadow-lg p-4 border border-stone-200">
-                             <span class="text-4xl brand-accent mb-3">📖</span>
-                            <p class="font-serif text-stone-700 text-sm leading-tight">內在<br>地圖<br>繪製<br>手冊</p>
-                            <div class="border-t border-stone-300 w-full my-2"></div>
-                            <p class="text-xs text-stone-500">靜謐森林</p>
+            <!-- Gift 2: E-book -->
+            <section id="gift-ebook" class="section-fade-in relative z-10 py-10">
+                <div
+                    class="glass-card p-0 sm:pr-14 flex flex-col md:flex-row items-center gap-16 relative overflow-hidden group transition-all duration-700 hover:shadow-soft">
+
+                    <!-- Ambient Background Glow -->
+                    <div
+                        class="absolute top-1/2 right-0 -translate-y-1/2 w-2/3 h-2/3 bg-[#4A675A] opacity-[0.03] blur-3xl rounded-full -z-10 pointer-events-none">
+                    </div>
+
+                    <!-- Image Section -->
+                    <div class="w-full md:w-1/2 relative h-80 md:h-[30rem] overflow-hidden">
+                        <div class="absolute inset-0 bg-[#F5F2EB]/10 z-10"></div>
+                        <img src="images/inner-map-book-v2.png" alt="內在地圖繪製手冊"
+                            class="w-full h-full object-cover transform transition-transform duration-[2s] group-hover:scale-105 opacity-90 group-hover:opacity-100">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#F5F2EB] opacity-60 md:opacity-80 mix-blend-soft-light">
                         </div>
                     </div>
-                    <div class="flex-1 text-center md:text-left">
-                        <h3 class="text-2xl font-serif font-semibold text-stone-800 mb-2">禮物二：文字的羅盤</h3>
-                        <p class="text-lg brand-accent mb-4">《內心地圖繪製手冊》</p>
-                        <p class="text-stone-600 mb-6">
-                            這是一本實用的數位手冊，將品牌哲學轉化為可親身實踐的日常儀式。我們將引導您在七天內，成為自己「內心地圖」的繪製者。
+
+                    <!-- Content Section -->
+                    <div class="flex-1 text-center md:text-left px-8 py-12 z-20">
+                        <div class="mb-8 flex flex-col md:items-start items-center">
+                            <span class="text-[0.6rem] font-bold tracking-[0.3em] text-[#C5A065] uppercase mb-4">Gift
+                                Two</span>
+                        </div>
+
+                        <h3
+                            class="text-3xl sm:text-4xl font-serif font-bold text-[#1A2F23] mb-3 leading-tight tracking-wide">
+                            內在地圖
+                        </h3>
+                        <p class="text-[#4A675A] font-serif italic text-lg mb-8 opacity-80">Mapping Your Inner World.
                         </p>
-                        <a href="inner_map.html" class="brand-button button-primary" onclick="trackEvent('inner_map_click', { page: 'index_old' })">
-                            閱讀手冊 ↗
+
+                        <p class="text-stone-600 mb-12 leading-loose max-w-lg mx-auto md:mx-0 text-sm font-light">
+                            這不只是一份手冊，而是一場為期七天的紙上儀式。<br>
+                            透過書寫與對話，為迷惘的心，繪製出一張清晰的導航圖。
+                        </p>
+
+                        <a href="inner_map.html"
+                            class="btn-mystic inline-flex items-center gap-4 group/btn transition-all"
+                            onclick="trackEvent('inner_map_click', { page: 'index_old' })">
+                            <span class="text-xs tracking-[0.2em] uppercase">Start Mapping</span>
+                            <span
+                                class="text-sm transition-transform duration-500 group-hover/btn:translate-x-2">→</span>
                         </a>
                     </div>
                 </div>
             </section>
 
-            <!-- Gift 3: Oracle Cards (Upgraded with Images) -->
-            <section id="gift-oracle" class="section-fade-in">
-                <div class="brand-card p-8 sm:p-12">
-                    <div class="text-center mb-8">
-                        <h3 class="text-2xl font-serif font-semibold text-stone-800 mb-2">禮物三：森林的指引</h3>
-                        <p class="text-lg brand-accent mb-4">世界樹牌陣・森語占卜</p>
-                        <p class="text-stone-600 max-w-2xl mx-auto">
-                            當您心中有困惑時，森林願為您低語。請在心中默念一個問題，然後依序點擊下方的三張牌卡，接收來自「根源」、「當下」與「未來潛能」的指引。
+            <!-- Gift 3: Oracle Cards -->
+            <section id="gift-oracle" class="section-fade-in py-20">
+                <div class="max-w-6xl mx-auto relative px-4">
+                    <!-- Subtle Background Number -->
+                    <div
+                        class="absolute -top-20 left-1/2 -translate-x-1/2 text-[12rem] text-[#1A2F23] opacity-[0.02] font-serif select-none pointer-events-none">
+                        03</div>
+
+                    <div class="text-center mb-16 relative z-10">
+                        <span
+                            class="text-[0.6rem] font-bold tracking-[0.4em] text-[#C5A065] uppercase block mb-4">指引</span>
+                        <h3 class="text-3xl sm:text-4xl font-serif text-[#1A2F23] mb-6 tracking-wide">森林的指引</h3>
+                        <p class="text-stone-500 font-serif italic text-lg opacity-80 mb-8">
+                            一場與潛意識的靜謐對話
                         </p>
+                        <div
+                            class="bg-[#F5F2EB]/50 backdrop-blur-sm p-6 rounded-sm max-w-xl mx-auto border border-[#1A2F23]/5">
+                            <p class="text-[#1A2F23]/80 font-serif leading-loose text-sm">
+                                <span
+                                    class="block mb-2 font-bold text-[#C5A065] uppercase tracking-widest text-xs">使用說明</span>
+                                請閉上眼睛，深呼吸。<br>
+                                在心中默念一個困擾您的問題，或是單純詢問：「今天，森林想給我什麼指引？」<br>
+                                準備好後，點擊下方的牌卡。
+                            </p>
+                        </div>
                     </div>
-                    
-                    <div id="card-reading-area" class="w-full">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-4xl mx-auto mb-12">
-                            <div class="flex flex-col items-center">
-                                <div class="card-container h-72 w-52 sm:h-80 sm:w-60 cursor-pointer" data-position="0">
-                                    <div class="card-inner">
-                                        <div class="card-face card-back"><span class="text-5xl font-serif">根</span></div>
-                                        <div class="card-face card-front"></div>
+
+                    <div id="card-reading-area" class="w-full relative z-10 transition-all duration-1000 min-h-[600px]">
+                        <div class="flex flex-col justify-center items-center mb-16 perspective-1000">
+                            <!-- Single Centered Card -->
+                            <div class="relative group cursor-pointer" data-position="0">
+                                <div
+                                    class="card-container w-72 h-[26rem] transition-transform duration-1000 transform-style-3d card-minimal shadow-2xl">
+                                    <div class="card-inner w-full h-full relative transform-style-3d">
+                                        <!-- Card Back -->
+                                        <div
+                                            class="card-face card-back w-full h-full absolute backface-hidden rounded-sm overflow-hidden bg-[#F5F2EB]">
+                                            <div class="w-full h-full bg-cover bg-center opacity-90 transition-opacity duration-500 group-hover:opacity-100"
+                                                style="background-image: url('images/card-back.png');"></div>
+                                            <!-- Ambient Glow on Hover -->
+                                            <div
+                                                class="absolute inset-0 bg-[#C5A065] opacity-0 group-hover:opacity-10 transition-opacity duration-700 mix-blend-overlay">
+                                            </div>
+                                        </div>
+                                        <!-- Card Front -->
+                                        <div
+                                            class="card-face card-front w-full h-full absolute backface-hidden rotate-y-180 bg-[#F5F2EB] shadow-soft flex items-center justify-center p-2">
+                                            <!-- Content injected by JS -->
+                                        </div>
                                     </div>
                                 </div>
-                                <h4 class="font-serif font-semibold mt-4 text-stone-700">根 (The Root)</h4>
-                                <p class="text-sm text-stone-500 text-center">問題的根源或潛在基礎</p>
-                            </div>
-                            <div class="flex flex-col items-center">
-                                <div class="card-container h-72 w-52 sm:h-80 sm:w-60 cursor-pointer" data-position="1">
-                                    <div class="card-inner">
-                                        <div class="card-face card-back"><span class="text-5xl font-serif">幹</span></div>
-                                        <div class="card-face card-front"></div>
-                                    </div>
+                                <div
+                                    class="mt-8 text-center transition-all duration-500 opacity-40 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0">
+                                    <p class="font-serif text-[#1A2F23] text-sm tracking-[0.3em] uppercase">點擊翻開</p>
                                 </div>
-                                <h4 class="font-serif font-semibold mt-4 text-stone-700">幹 (The Trunk)</h4>
-                                <p class="text-sm text-stone-500 text-center">當下的狀態或核心課題</p>
-                            </div>
-                            <div class="flex flex-col items-center">
-                                <div class="card-container h-72 w-52 sm:h-80 sm:w-60 cursor-pointer" data-position="2">
-                                    <div class="card-inner">
-                                        <div class="card-face card-back"><span class="text-5xl font-serif">冠</span></div>
-                                        <div class="card-face card-front"></div>
-                                    </div>
-                                </div>
-                                <h4 class="font-serif font-semibold mt-4 text-stone-700">冠 (The Canopy)</h4>
-                                <p class="text-sm text-stone-500 text-center">更高的視角或未來可能</p>
                             </div>
                         </div>
 
-                        <div id="interpretation-area" class="max-w-4xl mx-auto"></div>
-                        
-                        <div class="text-center mt-12">
-                            <button id="reset-reading-btn" class="brand-button button-secondary hidden">重新抽牌</button>
+                        <div id="interpretation-area" class="max-w-3xl mx-auto transition-all duration-1000 opacity-0">
+                        </div>
+
+                        <div class="text-center mt-24">
+                            <button id="reset-reading-btn"
+                                class="hidden text-xs tracking-[0.2em] text-[#1A2F23] border-b border-[#1A2F23]/20 hover:border-[#1A2F23] pb-1 transition-colors uppercase">
+                                重新抽牌
+                            </button>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Gift 4: Exclusive Story -->
+            <!-- Gift 4: Story -->
             <section id="gift-story" class="section-fade-in">
-                <div class="brand-card p-8 sm:p-12 text-center">
-                    <div class="mb-6">
-                        <div class="w-24 h-24 bg-stone-200 rounded-full mx-auto flex items-center justify-center border-4 border-white shadow-md">
-                             <span class="text-5xl">🗝️</span>
+                <div class="glass-card p-8 sm:p-14 text-center relative overflow-hidden">
+                    <!-- Fixed overlap: moved 04 to right corner like Gift 3 -->
+                    <div
+                        class="absolute -top-4 -right-4 p-8 opacity-05 text-9xl font-serif z-0 select-none pointer-events-none">
+                        04</div>
+                    <div class="relative z-10">
+                        <div class="mb-4">
+                            <span class="text-xs font-bold tracking-widest text-[#C5A065] uppercase">Gift Four</span>
                         </div>
+                        <h3 class="text-3xl sm:text-4xl font-serif font-bold text-[#1A2F23] mb-4">獨家的故事</h3>
+                        <p class="text-xl text-[#4A675A] font-serif italic mb-8">品牌幕後手記</p>
+                        <p class="text-stone-600 max-w-xl mx-auto mb-10 leading-relaxed">
+                            這是一份不對外公開的內容，分享創辦靜謐森林背後更深層的心路歷程。<br>
+                            我們相信，真實的故事，擁有治癒人心的力量。
+                        </p>
+                        <a href="story.html" class="btn-mystic inline-flex items-center gap-2"
+                            onclick="trackEvent('story_click', { page: 'index_old' })">
+                            <span>解鎖閱讀</span>
+                            <span class="text-sm">→</span>
+                        </a>
                     </div>
-                    <h3 class="text-2xl font-serif font-semibold text-stone-800 mb-2">禮物四：獨家的故事</h3>
-                    <p class="text-lg brand-accent mb-4">品牌幕後手記</p>
-                    <p class="text-stone-600 max-w-xl mx-auto mb-8">
-                        最高級的禮物，是分享一份無法被複製的真實。這是一份不對外公開的內容，分享創辦靜謐森林背後更深層的心路歷程。這份禮物，代表著我們對您極致的信任。
-                    </p>
-                    <a href="story.html" class="brand-button button-primary" onclick="trackEvent('story_click', { page: 'index_old' })">
-                        前往閱讀 ↗
-                    </a>
                 </div>
             </section>
-            <!-- Call to Action Section -->
-            <section id="line-cta" class="section-fade-in">
-                <div class="brand-card p-8 sm:p-12 text-center">
-                    <h3 class="text-2xl font-serif font-semibold text-stone-800 mb-4">準備好踏上真實的森林之旅了嗎？</h3>
-                    <p class="text-stone-600 mb-8 max-w-2xl mx-auto">
-                        當你完成了這四份心靈禮物的體驗，或許會發現內心對於更深度的寧靜有了渴望。點擊下方，領取你的專屬優惠，讓我們在現實中相遇。
-                    </p>
-                    <button id="line-coupon-btn" class="brand-button button-primary text-lg px-8 py-3" onclick="goToLineCoupon()">
-                        領取專屬森林優惠 🎁
-                    </button>
-                    <!-- Debug info: 顯示當前優惠券連結狀態 -->
-                    <div id="coupon-debug" class="mt-4 text-sm text-stone-500" style="display: none;">
-                        <p>✓ 已載入專屬優惠券連結</p>
+
+            <!-- Call to Action -->
+            <section id="line-cta" class="section-fade-in pb-24 px-4">
+                <div class="max-w-4xl mx-auto relative group">
+                    <!-- The Golden Ticket Container (Refined) -->
+                    <div
+                        class="relative bg-[#1A2F23] rounded-2xl p-8 sm:p-12 overflow-hidden shadow-2xl hover:shadow-[0_20px_50px_rgba(26,47,35,0.4)] transition-shadow duration-700">
+                        <!-- Background Decor (Subtle & Organic) -->
+                        <div
+                            class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay">
+                        </div>
+                        <div
+                            class="absolute top-0 right-0 w-64 h-64 bg-[#C5A065] opacity-[0.05] rounded-full blur-[100px] pointer-events-none">
+                        </div>
+                        <div
+                            class="absolute bottom-0 left-0 w-64 h-64 bg-[#4A675A] opacity-[0.1] rounded-full blur-[80px] pointer-events-none">
+                        </div>
+
+                        <!-- Ticket Content -->
+                        <div class="relative z-10 text-center">
+                            <div class="mb-8">
+                                <span
+                                    class="inline-block py-1 px-3 border border-[#C5A065]/30 rounded-full text-[#C5A065] text-[0.65rem] tracking-[0.3em] uppercase font-bold bg-[#1A2F23]/50 backdrop-blur-sm">Exclusive
+                                    Invitation</span>
+                            </div>
+
+                            <h3 class="text-3xl sm:text-5xl font-serif text-[#F5F2EB] mb-6 leading-tight tracking-wide">
+                                準備好踏上<br>
+                                <span class="italic text-[#C5A065] relative inline-block mt-2">
+                                    真實的森林之旅
+                                    <svg class="absolute -bottom-2 left-0 w-full h-2 text-[#C5A065]/40"
+                                        viewBox="0 0 100 10" preserveAspectRatio="none">
+                                        <path d="M0 5 Q 50 10 100 5" stroke="currentColor" stroke-width="2"
+                                            fill="none" />
+                                    </svg>
+                                </span>
+                                了嗎？
+                            </h3>
+
+                            <p
+                                class="text-[#F5F2EB]/70 mb-12 max-w-xl mx-auto leading-loose font-serif text-base sm:text-lg tracking-wide">
+                                當您完成了這四份心靈禮物的體驗，<br class="hidden sm:block">或許會發現內心對於更深度的寧靜有了渴望。<br>
+                                我們在森林深處，等待您的到來。
+                            </p>
+
+                            <button id="line-coupon-btn"
+                                class="btn-mystic inline-flex items-center gap-3 px-10 py-4 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-transform duration-300 rounded-full"
+                                onclick="goToLineCoupon()"
+                                style="background: linear-gradient(135deg, #F5F2EB 0%, #E0D8C8 100%); color: #1A2F23; border: 1px solid rgba(255,255,255,0.5);">
+                                <span class="tracking-[0.2em] font-bold text-sm uppercase">領取專屬優惠</span>
+                                <span class="text-lg animate-bounce">🎁</span>
+                            </button>
+
+                            <p class="mt-8 text-[0.6rem] uppercase tracking-[0.3em] text-[#F5F2EB]/30 font-serif">Let
+                                the forest heal you</p>
+                        </div>
                     </div>
                 </div>
             </section>
         </main>
 
-        <footer class="text-center mt-24 pt-12 border-t border-stone-200 section-fade-in">
-            <p class="font-serif text-xl text-stone-700">願森林的寧靜，與您同在。</p>
-            <p class="text-stone-500 mt-2">靜謐森林 主人 敬上</p>
+        <footer class="text-center mt-32 pt-12 border-t border-stone-200/50 section-fade-in pb-12">
+            <p class="font-serif text-xl text-[#1A2F23] mb-2">願森林的寧靜，與您同在。</p>
         </footer>
     </div>
 
@@ -299,7 +516,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
-        
+
         function getSubid() {
             let subid = getUrlParameter('subid') || getUrlParameter('pid');
             if (!subid) {
@@ -310,28 +527,28 @@
             }
             return subid;
         }
-        
+
         // 從 URL 獲取專屬優惠券連結
         function getCouponUrl() {
             // 嘗試從多個可能的參數名稱獲取優惠券連結
-            let couponUrl = getUrlParameter('coupon_url') || 
-                          getUrlParameter('couponUrl') || 
-                          getUrlParameter('coupon') ||
-                          getUrlParameter('target');
-            
+            let couponUrl = getUrlParameter('coupon_url') ||
+                getUrlParameter('couponUrl') ||
+                getUrlParameter('coupon') ||
+                getUrlParameter('target');
+
             // 如果沒有從 URL 獲得，嘗試從 localStorage 獲取
             if (!couponUrl) {
                 couponUrl = localStorage.getItem('forest_coupon_url');
             }
-            
+
             // 如果有優惠券連結，儲存到 localStorage
             if (couponUrl) {
                 localStorage.setItem('forest_coupon_url', couponUrl);
             }
-            
+
             return couponUrl;
         }
-        
+
         function trackEvent(eventType, data = {}) {
             const subid = getSubid();
             console.log(`📊 事件追蹤: ${eventType}`, {
@@ -340,7 +557,7 @@
                 ...data
             });
         }
-        
+
         function personalizeContent() {
             const subid = getSubid();
             console.log('🔍 檢查 subid:', subid);
@@ -358,77 +575,46 @@
                 console.log('ℹ️ 沒有有效的 subid 或為 demo/no-subid');
             }
         }
-        
+
         // Apps Script URL - 與連結生成器保持一致
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
-        
+
         // LINE 官方帳號連結 - 這應該是您實際的 LINE 官方帳號優惠券連結
         const LINE_OFFICIAL_URL = 'https://line.me/R/ti/p/@478hisen';
-        
+
         function goToLineCoupon() {
             const subid = getSubid();
             const couponUrl = getCouponUrl();
-            const mode = getUrlParameter('mode'); // Check for direct mode
-
-            console.log('\n=== 點擊優惠券按鈕 ===');
-            console.log('subid:', subid || '無');
-            console.log('couponUrl:', couponUrl || '無');
-            console.log('mode:', mode || '無（預設追蹤模式）');
 
             trackEvent('line_click', {
                 page: 'index',
                 has_subid: !!subid,
-                has_coupon_url: !!couponUrl,
-                mode: mode || 'tracking'
+                has_coupon_url: !!couponUrl
             });
 
-            // Direct Mode: No Apps Script redirect
-            if (mode === 'direct') {
-                if (couponUrl) {
-                    console.log('🔗 直接連結模式：直接跳轉到 LINE 優惠券');
-                    console.log('   目標:', couponUrl);
-                    console.log('========================\n');
-                    window.open(couponUrl, '_blank');
-                } else {
-                    console.log('❌ 直接模式但無優惠券連結，使用預設 LINE');
-                    console.log('========================\n');
-                    window.open(LINE_OFFICIAL_URL, '_blank');
-                }
-                return; // Exit early for direct mode
-            }
-
-            // Full Tracking Mode: Via Apps Script (original logic)
             if (subid && subid !== 'demo' && subid !== 'no-subid') {
                 // 有有效的 subid
                 if (couponUrl) {
                     // 有專屬優惠券連結，透過 Apps Script 中繼追蹤並跳轉到該連結
                     const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
-                    console.log('📊 完整追蹤模式：使用專屬優惠券連結（帶追蹤）');
-                    console.log('   追蹤連結:', trackedCouponUrl);
-                    console.log('   最終目標:', couponUrl);
-                    console.log('========================\n');
+                    console.log('🎁 跳轉到專屬優惠券 (透過追蹤):', trackedCouponUrl);
+                    console.log('   目標連結:', couponUrl);
                     window.open(trackedCouponUrl, '_blank');
                 } else {
                     // 沒有專屬優惠券連結，透過 Apps Script 查找（舊邏輯）
                     const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon`;
-                    console.log('⚠️ 無專屬優惠券，透過 Apps Script 查找');
-                    console.log('   追蹤連結:', trackedCouponUrl);
-                    console.log('========================\n');
+                    console.log('🎁 透過 Apps Script 查找優惠券連結:', trackedCouponUrl);
                     window.open(trackedCouponUrl, '_blank');
                 }
             } else {
                 // 沒有有效的 subid
                 if (couponUrl) {
                     // 有優惠券連結但沒有 subid，直接跳轉（無追蹤）
-                    console.log('⚠️ 無 subid，直接跳轉優惠券連結（無追蹤）');
-                    console.log('   目標連結:', couponUrl);
-                    console.log('========================\n');
+                    console.log('🎁 直接跳轉到優惠券連結（無追蹤）:', couponUrl);
                     window.open(couponUrl, '_blank');
                 } else {
                     // 沒有 subid 也沒有優惠券連結，跳轉到預設 LINE 官方帳號
-                    console.log('⚠️ 無 subid 也無專屬優惠券，使用預設 LINE');
-                    console.log('   預設連結:', LINE_OFFICIAL_URL);
-                    console.log('========================\n');
+                    console.log('🎁 直接跳轉到 LINE 官方帳號（無追蹤）');
                     window.open(LINE_OFFICIAL_URL, '_blank');
                 }
             }
@@ -501,7 +687,7 @@
             const cardContainers = document.querySelectorAll('.card-container');
             const interpretationArea = document.getElementById('interpretation-area');
             const resetBtn = document.getElementById('reset-reading-btn');
-            
+
             let drawnCards = [null, null, null];
             let drawnIndices = new Set();
             let cardsToDraw = 3;
@@ -585,90 +771,146 @@
                     '木耳': '59. 木耳 (The Wood Ear Fungus) — 聆聽、柔軟與意想不到的滋養.svg',
                     '地衣': '60. 地衣 (The Lichen) — 共生、合作與在最艱困之處的愛 .svg'
                 };
-                
+
                 const filename = cardMappings[cardName];
                 return filename ? `cards/${filename}` : null;
             }
 
             function displayCard(card, container) {
                 const cardFront = container.querySelector('.card-front');
-                let categoryColor = 'text-white/80';
-                const imagePath = card.imageUrl;
-                
-                cardFront.innerHTML = `
-                    <img src="${imagePath}" alt="${card.name} 美術圖" class="card-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'; this.nextElementSibling.style.alignItems='center'; this.nextElementSibling.style.justifyContent='center'; this.nextElementSibling.style.height='100%'; this.nextElementSibling.style.background='#3A5A40'; this.nextElementSibling.style.color='white';">
-                    <div style="display: none; font-size: 1.5rem; font-weight: bold; text-align: center; padding: 2rem;">
-                        <div>${card.name}</div>
-                        <div style="font-size: 0.9rem; margin-top: 1rem; opacity: 0.8;">${card.category}</div>
-                    </div>
-                    <div class="card-text-content">
-                        <p class="font-serif text-xs ${categoryColor}">${card.category}</p>
-                        <h5 class="font-serif font-semibold text-lg my-1 text-white">${card.name}</h5>
-                        <p class="text-xs text-white/80 text-center">${card.keyword}</p>
-                    </div>
-                `;
+                let categoryColor = 'text-[#1A2F23]';
+
+                // Create image with smooth loading
+                const img = new Image();
+                img.src = card.imageUrl;
+                img.className = 'w-full h-full object-cover opacity-0 transition-opacity duration-1000';
+                img.alt = `${card.name} 美術圖`;
+
+                // Create spinner (High-End Minimalist)
+                const spinner = document.createElement('div');
+                spinner.className = 'absolute inset-0 flex items-center justify-center';
+                spinner.innerHTML = '<div class="w-6 h-6 border-[1px] border-[#C5A065]/30 border-t-[#C5A065] rounded-full animate-spin"></div>';
+
+                // Clear
+                cardFront.innerHTML = '';
+                cardFront.appendChild(spinner);
+                cardFront.appendChild(img);
+
+                // Text overlay? No, keep it pure for "Premium Minimalist".
+                // Only showing minimal badge on hover is handled by CSS if needed, 
+                // but for now we keep the card face pure art.
+
+                img.onload = () => {
+                    spinner.remove();
+                    img.classList.remove('opacity-0');
+                };
+
+                img.onerror = () => {
+                    spinner.remove();
+                    img.style.display = 'none';
+                    const fallback = document.createElement('div');
+                    fallback.className = 'w-full h-full flex flex-col items-center justify-center bg-[#F5F2EB] text-[#1A2F23] p-6 text-center';
+                    fallback.innerHTML = `
+                        <div class="text-3xl font-serif mb-4 opacity-20">✦</div>
+                        <div class="text-xl font-serif font-bold mb-2 tracking-widest">${card.name}</div>
+                        <div class="text-xs uppercase tracking-[0.2em] opacity-60">${card.category}</div>
+                    `;
+                    cardFront.appendChild(fallback);
+                };
+
                 container.classList.add('flipped');
             }
-            
+
             function displayInterpretation() {
                 interpretationArea.innerHTML = '';
-                const positions = ['根 (The Root)', '幹 (The Trunk)', '冠 (The Canopy)'];
-                
+                interpretationArea.classList.remove('opacity-0');
+
                 const wrapper = document.createElement('div');
-                wrapper.className = 'bg-stone-50/50 p-6 sm:p-8 rounded-2xl border border-stone-200/80';
-                
-                let html = '<h4 class="font-serif text-2xl font-semibold text-stone-800 mb-6 text-center">森林的指引</h4>';
-                html += '<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">';
+                wrapper.className = 'mt-16 relative section-fade-in visible';
+
+                let html = `
+                    <div class="text-center mb-16">
+                        <h4 class="font-editorial text-4xl sm:text-5xl text-[#1A2F23] mb-6">牌卡指引</h4>
+                        <div class="w-px h-16 bg-gradient-to-b from-[#1A2F23]/0 via-[#1A2F23]/20 to-[#1A2F23]/0 mx-auto"></div>
+                    </div>
+                `;
 
                 drawnCards.forEach((card, index) => {
                     if (card) {
                         html += `
-                            <div class="interpretation-card">
-                                <h5 class="font-serif font-bold text-xl brand-accent mb-3">${positions[index]}：${card.name}</h5>
-                                <div class="space-y-4 text-left">
-                                    <div>
-                                        <p class="font-semibold text-stone-700">【鏡】這面鏡子映照出：</p>
-                                        <p class="text-sm text-stone-600">${card.mirror}</p>
+                            <div class="editorial-grid mb-16 pb-16 last:mb-0 last:pb-0 group animation-fade-in-up">
+                                <!-- Centered Header -->
+                                <div class="text-center mb-12">
+                                    <span class="inline-block px-3 py-1 mb-4 text-[0.6rem] font-bold tracking-[0.3em] uppercase text-[#C5A065] border border-[#C5A065]/30 rounded-full">Message from the Forest</span>
+                                    <h5 class="font-editorial text-5xl text-[#1A2F23] mb-4">${card.name}</h5>
+                                    <p class="font-serif text-lg italic text-[#4A675A] opacity-80">${card.keyword}</p>
+                                </div>
+
+                                <!-- The Whisper (Voice) - Centered & Poetic -->
+                                <div class="max-w-2xl mx-auto mb-16 text-center relative">
+                                    <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-6xl text-[#C5A065]/10 font-serif">"</span>
+                                    <p class="font-serif text-2xl leading-relaxed text-[#1A2F23]/80 italic">
+                                        ${card.whisper}
+                                    </p>
+                                </div>
+
+                                <!-- The Reflection (Grid: Light & Shadow) -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto mb-16">
+                                    <!-- Mirror (Light) -->
+                                    <div class="relative pl-8 border-l border-[#C5A065]/30">
+                                        <span class="absolute -left-3 top-0 w-6 h-6 bg-[#F5F2EB] flex items-center justify-center rounded-full border border-[#C5A065] text-[#C5A065] text-xs">☀</span>
+                                        <h6 class="font-bold text-[#1A2F23] mb-3 tracking-widest text-xs uppercase">鏡像 (Insight)</h6>
+                                        <p class="font-serif text-lg leading-relaxed text-[#1A2F23]/80">${card.mirror}</p>
                                     </div>
-                                    <div>
-                                        <p class="font-semibold text-stone-700">【語】森林的低語：</p>
-                                        <p class="text-sm text-stone-600 italic">“${card.whisper}”</p>
+                                    
+                                    <!-- Shadow (Dark) -->
+                                    <div class="relative pl-8 border-l border-[#8B4513]/20">
+                                        <span class="absolute -left-3 top-0 w-6 h-6 bg-[#F5F2EB] flex items-center justify-center rounded-full border border-[#8B4513]/40 text-[#8B4513] text-xs">☾</span>
+                                        <h6 class="font-bold text-[#8B4513]/80 mb-3 tracking-widest text-xs uppercase">陰影 (Shadow)</h6>
+                                        <p class="font-serif text-lg leading-relaxed text-[#5D4037]/80">${card.shadow}</p>
                                     </div>
-                                    <div>
-                                        <p class="font-semibold text-stone-700">【徑】您可以嘗試的路徑：</p>
-                                        <p class="text-sm text-stone-600">${card.path}</p>
-                                    </div>
-                                     <div>
-                                        <p class="font-semibold text-amber-800/80">【影】需要留意的陰影：</p>
-                                        <p class="text-sm text-amber-900/80">${card.shadow}</p>
-                                    </div>
+                                </div>
+
+                                <!-- The Path (Action) - Full Width Footer -->
+                                <div class="max-w-3xl mx-auto bg-[#1A2F23]/5 p-8 rounded-sm text-center">
+                                    <h6 class="font-bold text-[#4A675A] mb-4 tracking-widest text-xs uppercase">指引路徑 (The Path)</h6>
+                                    <p class="font-serif text-lg leading-loose text-[#1A2F23]">${card.path}</p>
                                 </div>
                             </div>
                         `;
                     }
                 });
-                html += '</div>';
+
                 wrapper.innerHTML = html;
                 interpretationArea.appendChild(wrapper);
-                interpretationArea.style.opacity = 0;
-                setTimeout(() => { interpretationArea.style.opacity = 1; interpretationArea.style.transition = 'opacity 0.5s'; }, 100);
+
+                setTimeout(() => {
+                    const firstItem = wrapper.querySelector('.editorial-grid');
+                    if (firstItem) firstItem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 300);
             }
 
-            cardContainers.forEach(container => {
-                container.addEventListener('click', () => {
-                    const position = parseInt(container.dataset.position);
-                    if (drawnCards[position] === null && cardsToDraw > 0) {
+            // Card click handlers
+            // Card click handlers
+            const cardWrappers = document.querySelectorAll('#card-reading-area .group');
+
+            cardWrappers.forEach(wrapper => {
+                wrapper.addEventListener('click', () => {
+                    const container = wrapper.querySelector('.card-container');
+                    const position = parseInt(wrapper.dataset.position);
+
+                    // Single card logic: Only position 0 is valid now
+                    if (position === 0 && drawnCards[0] === null) {
                         const card = drawCard();
                         if (card) {
-                            drawnCards[position] = card;
+                            drawnCards[0] = card;
                             displayCard(card, container);
-                            cardsToDraw--;
-                            if (cardsToDraw === 0) {
-                                setTimeout(() => {
-                                    displayInterpretation();
-                                    resetBtn.classList.remove('hidden');
-                                }, 800); 
-                            }
+
+                            // Reveal interpretation quickly for single card
+                            setTimeout(() => {
+                                displayInterpretation();
+                                resetBtn.classList.remove('hidden');
+                            }, 1000);
                         }
                     }
                 });
@@ -677,12 +919,27 @@
             resetBtn.addEventListener('click', () => {
                 drawnCards = [null, null, null];
                 drawnIndices.clear();
-                cardsToDraw = 3;
-                cardContainers.forEach(container => {
+                // Reset card draw count
+
+                const cardWrappers = document.querySelectorAll('#card-reading-area .group');
+                cardWrappers.forEach(wrapper => {
+                    const container = wrapper.querySelector('.card-container');
                     container.classList.remove('flipped');
+                    setTimeout(() => {
+                        const front = container.querySelector('.card-front');
+                        if (front) front.innerHTML = '';
+                    }, 600);
                 });
-                interpretationArea.innerHTML = '';
+
+                interpretationArea.style.opacity = '0';
+                setTimeout(() => {
+                    interpretationArea.innerHTML = '';
+                    interpretationArea.classList.add('opacity-0');
+                    interpretationArea.style.opacity = '';
+                }, 500);
+
                 resetBtn.classList.add('hidden');
+                document.getElementById('gift-oracle').scrollIntoView({ behavior: 'smooth' });
             });
 
             // 移除不需要的按鈕事件處理器
@@ -690,7 +947,7 @@
             // 初始化個人化內容和追蹤
             personalizeContent();
             trackEvent('page_view', { page: 'index_old' });
-            
+
             // 淡入動畫觀察器
             const sections = document.querySelectorAll('.section-fade-in');
             const observer = new IntersectionObserver((entries) => {
@@ -703,26 +960,12 @@
                 threshold: 0.1
             });
             sections.forEach(section => observer.observe(section));
-            
+
             console.log('🌲 靜謐森林網站載入完成');
             console.log('📊 當前 subid:', getSubid() || '無');
-
-            // 檢查並顯示優惠券 URL
-            const couponUrl = getCouponUrl();
-            if (couponUrl) {
-                console.log('🎁 已載入專屬優惠券連結:', couponUrl);
-                console.log('   連結來源:', getUrlParameter('coupon_url') ? 'URL 參數' : 'LocalStorage');
-                // 顯示 debug 提示
-                const debugDiv = document.getElementById('coupon-debug');
-                if (debugDiv) {
-                    debugDiv.style.display = 'block';
-                }
-            } else {
-                console.log('🎁 優惠券連結: 使用預設 LINE 官方帳號');
-            }
-
-            console.log('💡 測試推薦功能：在網址後加上 ?subid=test123&coupon_url=YOUR_LINE_URL');
+            console.log('💡 測試推薦功能：在網址後加上 ?subid=test123');
         });
     </script>
 </body>
+
 </html>

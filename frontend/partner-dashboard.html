@@ -6,55 +6,63 @@
     <title>知音大使 - 個人儀表板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background: linear-gradient(135deg, #F8FAF3 0%, #EEF3E5 100%);
-            color: #5C544B;
+            background: #FAFAF8;
+            color: #3D3D3D;
         }
         h1, h2, h3, .font-serif {
             font-family: 'Noto Serif TC', serif;
         }
-        .brand-accent {
-            color: #2E4B36;
-        }
-        .brand-card {
-            background-color: #FFFFFF;
-            border: 1px solid #EAE6E1;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
-        }
-        .gradient-bg {
-            background: linear-gradient(135deg, #2E4B36 0%, #4B7C4B 100%);
-        }
-        .level-badge {
-            background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        .card {
+            background: #FFFFFF;
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.03);
         }
         .stat-card {
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
         .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 12px 40px rgba(0,0,0,0.05);
         }
-        .progress-bar {
-            height: 8px;
-            background-color: #E5E7EB;
-            border-radius: 4px;
+        .progress-track {
+            height: 4px;
+            background: #F0F0F0;
+            border-radius: 2px;
             overflow: hidden;
         }
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #10B981 0%, #34D399 100%);
-            border-radius: 4px;
+            background: #2E4B36;
+            border-radius: 2px;
             transition: width 0.8s ease;
         }
-        /* Toast notification */
-        .toast-container {
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.125rem 0.625rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+        .badge-level {
+            background: #2E4B36;
+            color: #fff;
+        }
+        .badge-demo {
+            background: #F5F5F4;
+            color: #78716C;
+            border: 1px solid #E7E5E4;
+        }
+        /* Toast */
+        .toast-wrap {
             position: fixed;
-            top: 1rem;
-            right: 1rem;
+            top: 1.25rem;
+            right: 1.25rem;
             z-index: 100;
             display: flex;
             flex-direction: column;
@@ -65,353 +73,266 @@
             pointer-events: auto;
             padding: 0.75rem 1.25rem;
             border-radius: 0.75rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            font-size: 0.8125rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             transform: translateX(120%);
             opacity: 0;
-            transition: all 0.4s ease;
+            transition: all 0.35s ease;
             max-width: 320px;
+            border: 1px solid rgba(0,0,0,0.06);
+            background: #fff;
+            color: #3D3D3D;
         }
-        .toast.show {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        .toast-success {
-            background: #ECFDF5;
-            color: #065F46;
-            border: 1px solid #A7F3D0;
-        }
-        .toast-error {
-            background: #FEF2F2;
-            color: #991B1B;
-            border: 1px solid #FECACA;
-        }
-        .toast-info {
-            background: #EFF6FF;
-            color: #1E40AF;
-            border: 1px solid #BFDBFE;
-        }
-        /* Payout type badges */
-        .payout-type-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.125rem 0.5rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
+        .toast.show { transform: translateX(0); opacity: 1; }
+        .toast-success { border-left: 3px solid #2E4B36; }
+        .toast-error { border-left: 3px solid #DC2626; }
+        .toast-info { border-left: 3px solid #6B7280; }
+        /* Payout row */
+        .payout-row { transition: background 0.15s ease; }
+        .payout-row:hover { background: #FAFAF8; }
+        /* Level card indicator */
+        .level-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .level-dot-active { background: #2E4B36; }
+        .level-dot-inactive { background: #E5E7EB; }
     </style>
 </head>
-<body class="min-h-screen py-4 px-3 md:py-6 md:px-4">
+<body class="min-h-screen">
     <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
+    <div class="toast-wrap" id="toastContainer"></div>
 
-    <!-- 載入覆蓋層 -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-white/90 flex items-center justify-center z-50">
         <div class="text-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <div class="text-lg font-medium text-stone-700">載入您的成果數據中...</div>
+            <div class="w-8 h-8 border-2 border-stone-200 border-t-[#2E4B36] rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-sm text-stone-500 font-light">載入數據中...</p>
         </div>
     </div>
 
-    <div class="max-w-6xl mx-auto">
-        <!-- 頂部導航 -->
+    <div class="max-w-5xl mx-auto px-4 py-5 md:py-8">
+        <!-- Header -->
         <header class="mb-6 md:mb-8">
-            <div class="brand-card p-4 md:p-6">
-                <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 gradient-bg rounded-full flex items-center justify-center flex-shrink-0">
-                            <span class="text-white text-xl font-bold" id="userInitial">🌲</span>
-                        </div>
-                        <div class="min-w-0">
-                            <h1 class="text-lg md:text-xl font-bold brand-accent truncate">歡迎回來，<span id="partnerName">知音大使</span></h1>
-                            <div class="flex flex-wrap items-center gap-2 text-sm text-stone-600">
-                                <span>代碼：<span id="partnerCode" class="font-mono font-semibold">-</span></span>
-                                <span class="level-badge text-white px-3 py-1 rounded-full text-xs font-semibold" id="partnerLevel">
-                                    載入中...
-                                </span>
-                                <span id="demoTag" class="hidden bg-amber-500 text-white px-2 py-1 rounded text-xs font-semibold">
-                                    演示模式
-                                </span>
-                            </div>
-                        </div>
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 bg-[#2E4B36] rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span class="text-white text-sm font-semibold" id="userInitial">K</span>
                     </div>
-                    <div class="flex space-x-3 flex-shrink-0">
-                        <button onclick="refreshData()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                            重新載入
-                        </button>
-                        <button onclick="logout()" class="bg-stone-600 text-white px-4 py-2 rounded-lg hover:bg-stone-700 transition-colors text-sm">
-                            登出
-                        </button>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2.5 flex-wrap">
+                            <h1 class="text-base md:text-lg font-medium text-stone-800 truncate" id="partnerName">知音大使</h1>
+                            <span class="badge badge-level" id="partnerLevel">--</span>
+                            <span id="demoTag" class="badge badge-demo hidden">DEMO</span>
+                        </div>
+                        <p class="text-xs text-stone-400 mt-0.5">代碼 <span class="font-mono" id="partnerCode">-</span></p>
                     </div>
+                </div>
+                <div class="flex gap-2.5">
+                    <button onclick="refreshData()" class="px-4 py-2 text-xs font-medium text-stone-600 border border-stone-200 rounded-lg hover:border-stone-300 transition-colors">
+                        重新載入
+                    </button>
+                    <button onclick="logout()" class="px-4 py-2 text-xs font-medium text-stone-400 border border-stone-200 rounded-lg hover:text-stone-600 hover:border-stone-300 transition-colors">
+                        登出
+                    </button>
                 </div>
             </div>
         </header>
 
-        <!-- 核心統計 (6 張卡片, 2x3) -->
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 mb-6 md:mb-8">
-            <!-- 推薦成功數 -->
-            <div class="brand-card p-4 md:p-6 stat-card">
-                <div class="flex items-center justify-between">
-                    <div class="min-w-0">
-                        <div class="text-2xl md:text-3xl font-bold text-green-600" id="totalReferrals">-</div>
-                        <div class="text-xs md:text-sm text-stone-600 mt-1">推薦成功</div>
-                    </div>
-                    <div class="w-10 h-10 md:w-12 md:h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span class="text-xl md:text-2xl">🏆</span>
-                    </div>
-                </div>
+        <!-- Stats Grid (6 cards) -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
+            <!-- Successful Referrals -->
+            <div class="card p-4 md:p-5 stat-card">
+                <p class="text-xs text-stone-400 mb-1.5">推薦成功</p>
+                <p class="text-2xl md:text-3xl font-semibold text-stone-800 tabular-nums" id="totalReferrals">-</p>
+                <p class="text-[0.65rem] text-stone-400 mt-1">已完成入住</p>
             </div>
 
-            <!-- 累積佣金 -->
-            <div class="brand-card p-4 md:p-6 stat-card">
-                <div class="flex items-center justify-between">
-                    <div class="min-w-0">
-                        <div class="text-2xl md:text-3xl font-bold text-blue-600 truncate" id="totalCommission">-</div>
-                        <div class="text-xs md:text-sm text-stone-600 mt-1">累積佣金</div>
-                    </div>
-                    <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span class="text-xl md:text-2xl">💰</span>
-                    </div>
-                </div>
+            <!-- Total Commission -->
+            <div class="card p-4 md:p-5 stat-card">
+                <p class="text-xs text-stone-400 mb-1.5">累積佣金</p>
+                <p class="text-2xl md:text-3xl font-semibold text-stone-800 tabular-nums" id="totalCommission">-</p>
+                <p class="text-[0.65rem] text-stone-400 mt-1">總收益</p>
             </div>
 
-            <!-- 可用住宿金 -->
-            <div class="brand-card p-4 md:p-6 stat-card">
-                <div class="flex items-center justify-between">
-                    <div class="min-w-0">
-                        <div class="text-2xl md:text-3xl font-bold text-purple-600 truncate" id="availablePoints">-</div>
-                        <div class="text-xs md:text-sm text-stone-600 mt-1">可用住宿金</div>
-                    </div>
-                    <div class="w-10 h-10 md:w-12 md:h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span class="text-xl md:text-2xl">🎁</span>
-                    </div>
-                </div>
+            <!-- Available Points -->
+            <div class="card p-4 md:p-5 stat-card">
+                <p class="text-xs text-stone-400 mb-1.5">可用住宿金</p>
+                <p class="text-2xl md:text-3xl font-semibold text-[#2E4B36] tabular-nums" id="availablePoints">-</p>
+                <p class="text-[0.65rem] text-stone-400 mt-1">點數餘額</p>
             </div>
 
-            <!-- 待結算現金 -->
-            <div class="brand-card p-4 md:p-6 stat-card">
-                <div class="flex items-center justify-between">
-                    <div class="min-w-0">
-                        <div class="text-2xl md:text-3xl font-bold text-orange-600 truncate" id="pendingCash">-</div>
-                        <div class="text-xs md:text-sm text-stone-600 mt-1">待結算現金</div>
-                    </div>
-                    <div class="w-10 h-10 md:w-12 md:h-12 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span class="text-xl md:text-2xl">💵</span>
-                    </div>
-                </div>
+            <!-- Pending Cash -->
+            <div class="card p-4 md:p-5 stat-card">
+                <p class="text-xs text-stone-400 mb-1.5">待結算現金</p>
+                <p class="text-2xl md:text-3xl font-semibold text-stone-800 tabular-nums" id="pendingCash">-</p>
+                <p class="text-[0.65rem] text-stone-400 mt-1">尚未撥付</p>
             </div>
 
-            <!-- 已使用點數 -->
-            <div class="brand-card p-4 md:p-6 stat-card">
-                <div class="flex items-center justify-between">
-                    <div class="min-w-0">
-                        <div class="text-2xl md:text-3xl font-bold text-teal-600 truncate" id="pointsUsed">-</div>
-                        <div class="text-xs md:text-sm text-stone-600 mt-1">已使用點數</div>
-                    </div>
-                    <div class="w-10 h-10 md:w-12 md:h-12 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span class="text-xl md:text-2xl">🔄</span>
-                    </div>
-                </div>
+            <!-- Points Used -->
+            <div class="card p-4 md:p-5 stat-card">
+                <p class="text-xs text-stone-400 mb-1.5">已使用點數</p>
+                <p class="text-2xl md:text-3xl font-semibold text-stone-800 tabular-nums" id="pointsUsed">-</p>
+                <p class="text-[0.65rem] text-stone-400 mt-1">累計折抵</p>
             </div>
 
-            <!-- 等級進度 -->
-            <div class="brand-card p-4 md:p-6 stat-card">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="min-w-0">
-                        <div class="text-2xl md:text-3xl font-bold text-amber-600" id="levelProgress">-</div>
-                        <div class="text-xs md:text-sm text-stone-600 mt-1" id="nextLevelText">下一等級</div>
-                    </div>
-                    <div class="w-10 h-10 md:w-12 md:h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span class="text-xl md:text-2xl">⭐</span>
-                    </div>
-                </div>
-                <div class="progress-bar mt-2">
+            <!-- Level Progress -->
+            <div class="card p-4 md:p-5 stat-card">
+                <p class="text-xs text-stone-400 mb-1.5">升級進度</p>
+                <p class="text-2xl md:text-3xl font-semibold text-stone-800 tabular-nums" id="levelProgress">-</p>
+                <p class="text-[0.65rem] text-stone-400 mt-1" id="nextLevelText">下一等級</p>
+                <div class="progress-track mt-2.5">
                     <div class="progress-fill" id="levelProgressBar" style="width: 0%"></div>
                 </div>
             </div>
         </div>
 
-        <!-- 主要內容區域 -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-6 md:mb-8">
-            <!-- 推薦績效圖表 -->
-            <div class="brand-card p-6 md:p-8">
-                <h2 class="font-serif text-lg md:text-xl font-semibold brand-accent mb-4 md:mb-6">推薦績效趨勢</h2>
-                <div class="chart-container" style="position: relative; height: 200px;">
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 mb-6 md:mb-8">
+            <div class="card p-5 md:p-6">
+                <h2 class="text-sm font-medium text-stone-600 mb-4">推薦績效趨勢</h2>
+                <div style="position: relative; height: 200px;">
                     <canvas id="performanceChart"></canvas>
                 </div>
-                <div class="mt-3 text-center">
-                    <div class="text-xs md:text-sm text-stone-600">最近 6 個月推薦成果</div>
-                </div>
+                <p class="text-[0.65rem] text-stone-400 mt-3 text-center">近 6 個月</p>
             </div>
 
-            <!-- 佣金分佈 -->
-            <div class="brand-card p-6 md:p-8">
-                <h2 class="font-serif text-lg md:text-xl font-semibold brand-accent mb-4 md:mb-6">佣金類型分佈</h2>
-                <div class="chart-container" style="position: relative; height: 200px;">
+            <div class="card p-5 md:p-6">
+                <h2 class="text-sm font-medium text-stone-600 mb-4">佣金類型分佈</h2>
+                <div style="position: relative; height: 200px;">
                     <canvas id="commissionChart"></canvas>
                 </div>
-                <div class="mt-3">
-                    <div class="flex justify-between text-sm text-stone-600 mb-2">
-                        <span class="flex items-center">
-                            <span class="w-3 h-3 bg-green-500 rounded mr-2"></span>
-                            住宿金
-                        </span>
-                        <span id="accommodationTotal">-</span>
-                    </div>
-                    <div class="flex justify-between text-sm text-stone-600">
-                        <span class="flex items-center">
-                            <span class="w-3 h-3 bg-blue-500 rounded mr-2"></span>
-                            現金
-                        </span>
-                        <span id="cashTotal">-</span>
-                    </div>
+                <div class="mt-3 flex justify-between text-xs text-stone-500">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-sm bg-[#2E4B36]"></span>
+                        住宿金 <span id="accommodationTotal" class="font-medium text-stone-700">-</span>
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-sm bg-[#94A3B8]"></span>
+                        現金 <span id="cashTotal" class="font-medium text-stone-700">-</span>
+                    </span>
                 </div>
             </div>
         </div>
 
-        <!-- 詳細記錄 -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-6 md:mb-8">
-            <!-- 最近推薦記錄 -->
-            <div class="brand-card p-6 md:p-8">
-                <div class="flex justify-between items-center mb-4 md:mb-6">
-                    <h2 class="font-serif text-lg md:text-xl font-semibold brand-accent">最近推薦記錄</h2>
-                    <button onclick="exportBookings()" class="text-xs md:text-sm bg-stone-200 text-stone-700 px-3 py-1.5 rounded-lg hover:bg-stone-300 transition-colors">
-                        匯出記錄
+        <!-- Records & Tools -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 mb-6 md:mb-8">
+            <!-- Recent Bookings -->
+            <div class="card p-5 md:p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-medium text-stone-600">推薦記錄</h2>
+                    <button onclick="exportBookings()" class="text-xs text-stone-400 hover:text-stone-600 transition-colors">
+                        匯出
                     </button>
                 </div>
-                <div id="recentBookings" class="space-y-3 md:space-y-4">
-                    <div class="text-center py-8 text-stone-500">載入中...</div>
+                <div id="recentBookings" class="space-y-2.5">
+                    <p class="text-center py-8 text-xs text-stone-400">載入中...</p>
                 </div>
             </div>
 
-            <!-- 專屬推薦工具 -->
-            <div class="brand-card p-6 md:p-8">
-                <h2 class="font-serif text-lg md:text-xl font-semibold brand-accent mb-4 md:mb-6">我的推薦工具</h2>
+            <!-- Referral Tools -->
+            <div class="card p-5 md:p-6">
+                <h2 class="text-sm font-medium text-stone-600 mb-4">推薦工具</h2>
 
-                <!-- 點擊統計 -->
-                <div class="mb-5 p-3 bg-stone-50 rounded-lg">
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-stone-600">連結總點擊數</span>
-                        <span class="font-bold text-blue-600" id="totalClicks">-</span>
+                <!-- Click Stats -->
+                <div class="flex items-center justify-between py-2.5 mb-4 border-b border-stone-100">
+                    <div class="text-xs text-stone-500">
+                        連結點擊 <span class="font-medium text-stone-700" id="totalClicks">-</span>
                     </div>
-                    <div class="flex justify-between items-center text-sm mt-1">
-                        <span class="text-stone-600">轉換率</span>
-                        <span class="font-bold text-green-600" id="conversionRate">-</span>
+                    <div class="text-xs text-stone-500">
+                        轉換率 <span class="font-medium text-stone-700" id="conversionRate">-</span>
                     </div>
                 </div>
 
-                <!-- 推薦連結 -->
+                <!-- Referral Link -->
+                <div class="mb-3.5">
+                    <label class="block text-xs text-stone-400 mb-1.5">推薦連結</label>
+                    <div class="flex">
+                        <input type="text" id="referralLink" class="flex-1 min-w-0 px-3 py-2 border border-stone-200 rounded-l-lg bg-stone-50 text-xs text-stone-600 truncate focus:outline-none" readonly value="載入中...">
+                        <button onclick="copyReferralLink()" class="px-3.5 py-2 bg-[#2E4B36] text-white rounded-r-lg text-xs hover:bg-[#3A5D44] transition-colors flex-shrink-0">
+                            複製
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Coupon Link -->
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-stone-700 mb-2">專屬推薦連結</label>
+                    <label class="block text-xs text-stone-400 mb-1.5">優惠券連結</label>
                     <div class="flex">
-                        <input
-                            type="text"
-                            id="referralLink"
-                            class="flex-1 min-w-0 px-3 py-2 border border-stone-300 rounded-l-lg bg-stone-50 text-sm truncate"
-                            readonly
-                            value="載入中..."
-                        >
-                        <button
-                            onclick="copyReferralLink()"
-                            class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 text-sm flex-shrink-0"
-                        >
+                        <input type="text" id="couponLink" class="flex-1 min-w-0 px-3 py-2 border border-stone-200 rounded-l-lg bg-stone-50 text-xs text-stone-600 truncate focus:outline-none" readonly value="載入中...">
+                        <button onclick="copyCouponLink()" class="px-3.5 py-2 bg-stone-600 text-white rounded-r-lg text-xs hover:bg-stone-700 transition-colors flex-shrink-0">
                             複製
                         </button>
                     </div>
                 </div>
 
-                <!-- 優惠券連結 -->
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-stone-700 mb-2">專屬優惠券連結</label>
-                    <div class="flex">
-                        <input
-                            type="text"
-                            id="couponLink"
-                            class="flex-1 min-w-0 px-3 py-2 border border-stone-300 rounded-l-lg bg-stone-50 text-sm truncate"
-                            readonly
-                            value="載入中..."
-                        >
-                        <button
-                            onclick="copyCouponLink()"
-                            class="bg-purple-600 text-white px-4 py-2 rounded-r-lg hover:bg-purple-700 text-sm flex-shrink-0"
-                        >
-                            複製
-                        </button>
+                <!-- Template -->
+                <div class="mb-4">
+                    <label class="block text-xs text-stone-400 mb-1.5">推薦文案</label>
+                    <div class="bg-stone-50 border border-stone-100 p-3 rounded-lg text-xs text-stone-600 leading-relaxed" id="referralTemplate">
+                        發現森林中的秘密住宿體驗！透過我的專屬連結預訂，享受獨特的森林療癒之旅，還有機會獲得專屬森林禮物。<br><br>立即預訂：<span class="text-[#2E4B36] font-medium break-all" id="templateLink">[連結]</span>
                     </div>
-                </div>
-
-                <!-- 推薦文案 -->
-                <div class="mb-5">
-                    <label class="block text-sm font-medium text-stone-700 mb-2">推薦文案模板</label>
-                    <div class="bg-stone-50 p-3 md:p-4 rounded-lg text-sm">
-                        <div class="text-stone-700 leading-relaxed" id="referralTemplate">
-                            🌲 發現森林中的秘密住宿體驗！<br>
-                            ✨ 透過我的專屬連結預訂，享受獨特的森林療癒之旅<br>
-                            🎁 還有機會獲得專屬森林禮物<br><br>
-                            立即預訂：<span class="text-blue-600 break-all" id="templateLink">[您的專屬連結]</span>
-                        </div>
-                    </div>
-                    <button onclick="copyTemplate()" class="mt-2 text-xs bg-stone-200 text-stone-700 px-3 py-1 rounded hover:bg-stone-300 transition-colors">
+                    <button onclick="copyTemplate()" class="mt-2 text-xs text-stone-400 hover:text-stone-600 transition-colors">
                         複製文案
                     </button>
                 </div>
 
-                <!-- 快速分享 -->
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="shareToLine()" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-600 transition-colors">
+                <!-- Share -->
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button onclick="shareToLine()" class="py-2 text-xs font-medium text-stone-600 border border-stone-200 rounded-lg hover:border-[#06C755] hover:text-[#06C755] transition-colors">
                         LINE 分享
                     </button>
-                    <button onclick="shareToFacebook()" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600 transition-colors">
+                    <button onclick="shareToFacebook()" class="py-2 text-xs font-medium text-stone-600 border border-stone-200 rounded-lg hover:border-[#1877F2] hover:text-[#1877F2] transition-colors">
                         Facebook
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- 佣金結算記錄 -->
-        <div class="brand-card p-6 md:p-8 mb-6 md:mb-8">
-            <h2 class="font-serif text-lg md:text-xl font-semibold brand-accent mb-4 md:mb-6">佣金結算記錄</h2>
-            <div id="payoutHistory" class="space-y-3">
-                <div class="text-center py-8 text-stone-500">載入中...</div>
+        <!-- Payout History -->
+        <div class="card p-5 md:p-6 mb-6 md:mb-8">
+            <h2 class="text-sm font-medium text-stone-600 mb-4">結算記錄</h2>
+            <div id="payoutHistory">
+                <p class="text-center py-8 text-xs text-stone-400">載入中...</p>
             </div>
         </div>
 
-        <!-- 等級說明 -->
-        <div class="brand-card p-6 md:p-8">
-            <h2 class="font-serif text-lg md:text-xl font-semibold brand-accent mb-4 md:mb-6">大使等級說明</h2>
+        <!-- Level Guide -->
+        <div class="card p-5 md:p-6 mb-8">
+            <h2 class="text-sm font-medium text-stone-600 mb-5">等級制度</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                <div class="text-center">
-                    <div class="w-14 h-14 md:w-16 md:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                        <span class="text-xl md:text-2xl">🌱</span>
+                <div class="text-center py-4">
+                    <div class="flex justify-center gap-1.5 mb-3">
+                        <span class="level-dot level-dot-active"></span>
+                        <span class="level-dot level-dot-inactive"></span>
+                        <span class="level-dot level-dot-inactive"></span>
                     </div>
-                    <h3 class="font-semibold text-green-700 mb-2">LV1 知音大使</h3>
-                    <div class="text-sm text-stone-600 space-y-1">
-                        <div>每筆：1000住宿金 / 500現金</div>
-                        <div>要求：0-3 筆成功推薦</div>
-                        <div class="text-xs text-amber-600">首次推薦額外 +1500 住宿金</div>
-                    </div>
-                </div>
-                <div class="text-center">
-                    <div class="w-14 h-14 md:w-16 md:h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                        <span class="text-xl md:text-2xl">🌿</span>
-                    </div>
-                    <h3 class="font-semibold text-blue-700 mb-2">LV2 森林嚮導</h3>
-                    <div class="text-sm text-stone-600 space-y-1">
-                        <div>每筆：1200住宿金 / 600現金</div>
-                        <div>要求：年度 4-9 筆成功推薦</div>
+                    <h3 class="text-sm font-medium text-stone-700 mb-2">LV1 知音大使</h3>
+                    <div class="text-xs text-stone-500 space-y-1">
+                        <p>每筆 1,000 住宿金 / 500 現金</p>
+                        <p>0 - 3 筆成功推薦</p>
+                        <p class="text-[#2E4B36] font-medium">首次推薦 +1,500 住宿金</p>
                     </div>
                 </div>
-                <div class="text-center">
-                    <div class="w-14 h-14 md:w-16 md:h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                        <span class="text-xl md:text-2xl">🌳</span>
+                <div class="text-center py-4">
+                    <div class="flex justify-center gap-1.5 mb-3">
+                        <span class="level-dot level-dot-active"></span>
+                        <span class="level-dot level-dot-active"></span>
+                        <span class="level-dot level-dot-inactive"></span>
                     </div>
-                    <h3 class="font-semibold text-purple-700 mb-2">LV3 秘境守護者</h3>
-                    <div class="text-sm text-stone-600 space-y-1">
-                        <div>每筆：1500住宿金 / 750現金</div>
-                        <div>要求：年度 10+ 筆成功推薦</div>
+                    <h3 class="text-sm font-medium text-stone-700 mb-2">LV2 森林嚮導</h3>
+                    <div class="text-xs text-stone-500 space-y-1">
+                        <p>每筆 1,200 住宿金 / 600 現金</p>
+                        <p>年度 4 - 9 筆成功推薦</p>
+                    </div>
+                </div>
+                <div class="text-center py-4">
+                    <div class="flex justify-center gap-1.5 mb-3">
+                        <span class="level-dot level-dot-active"></span>
+                        <span class="level-dot level-dot-active"></span>
+                        <span class="level-dot level-dot-active"></span>
+                    </div>
+                    <h3 class="text-sm font-medium text-stone-700 mb-2">LV3 秘境守護者</h3>
+                    <div class="text-xs text-stone-500 space-y-1">
+                        <p>每筆 1,500 住宿金 / 750 現金</p>
+                        <p>年度 10+ 筆成功推薦</p>
                     </div>
                 </div>
             </div>
@@ -419,9 +340,8 @@
     </div>
 
     <script>
-        // Google Apps Script API URL
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
-        const SESSION_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 小時
+        const SESSION_TIMEOUT_MS = 2 * 60 * 60 * 1000;
 
         let partnerData = null;
         let allBookings = [];
@@ -429,17 +349,15 @@
         let charts = {};
 
         // ========================================
-        // 頁面初始化
+        // Init
         // ========================================
         window.addEventListener('load', function() {
             checkAuth();
             loadPartnerData();
         });
 
-        // 檢查登入狀態 & session 過期
         function checkAuth() {
             const partnerCode = sessionStorage.getItem('partnerCode');
-            const isDemoMode = sessionStorage.getItem('demoMode') === 'true';
             const loginTime = parseInt(sessionStorage.getItem('loginTime') || '0');
 
             if (!partnerCode) {
@@ -447,31 +365,27 @@
                 return;
             }
 
-            // 檢查 session 是否過期（2小時）
             if (loginTime && (Date.now() - loginTime > SESSION_TIMEOUT_MS)) {
                 sessionStorage.clear();
                 window.location.href = 'partner-login.html';
                 return;
             }
 
-            if (isDemoMode) {
+            if (sessionStorage.getItem('demoMode') === 'true') {
                 document.getElementById('demoTag').classList.remove('hidden');
             }
 
-            // 從 sessionStorage 載入快取數據快速顯示
-            const cachedData = sessionStorage.getItem('partnerData');
-            if (cachedData) {
+            const cached = sessionStorage.getItem('partnerData');
+            if (cached) {
                 try {
-                    partnerData = JSON.parse(cachedData);
+                    partnerData = JSON.parse(cached);
                     displayBasicInfo();
-                } catch (error) {
-                    console.error('解析快取數據失敗:', error);
-                }
+                } catch (e) { /* ignore */ }
             }
         }
 
         // ========================================
-        // 數據載入
+        // Data Loading
         // ========================================
         async function loadPartnerData() {
             const partnerCode = sessionStorage.getItem('partnerCode');
@@ -479,7 +393,7 @@
 
             try {
                 if (isDemoMode) {
-                    await new Promise(resolve => setTimeout(resolve, 800));
+                    await new Promise(r => setTimeout(r, 600));
 
                     partnerData = {
                         partner_code: 'DEMO_CODE',
@@ -500,16 +414,12 @@
 
                     allBookings = generateDemoBookings();
                     allPayouts = generateDemoPayouts();
-
                     displayAllData();
-                    initializeCharts();
-
+                    initCharts();
                 } else {
                     const response = await fetch(APPS_SCRIPT_URL, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
                             action: 'get_partner_dashboard_data',
                             partner_code: partnerCode
@@ -522,17 +432,13 @@
                         partnerData = result.partner;
                         allBookings = result.bookings || [];
                         allPayouts = result.payouts || [];
-
                         sessionStorage.setItem('partnerData', JSON.stringify(partnerData));
-
                         displayAllData();
-                        initializeCharts();
-
+                        initCharts();
                     } else {
                         throw new Error(result.error || '載入數據失敗');
                     }
                 }
-
             } catch (error) {
                 console.error('載入數據失敗:', error);
                 showToast('載入數據失敗，請重試', 'error');
@@ -542,17 +448,15 @@
         }
 
         // ========================================
-        // 顯示函數
+        // Display
         // ========================================
         function displayBasicInfo() {
             if (!partnerData) return;
-
-            document.getElementById('partnerName').textContent = partnerData.name || '知音大使';
+            const name = partnerData.name || '知音大使';
+            document.getElementById('partnerName').textContent = name;
             document.getElementById('partnerCode').textContent = partnerData.partner_code || '-';
             document.getElementById('partnerLevel').textContent = getLevelText(partnerData.level);
-
-            const initial = partnerData.name ? partnerData.name.charAt(0) : '🌲';
-            document.getElementById('userInitial').textContent = initial;
+            document.getElementById('userInitial').textContent = name.charAt(0);
         }
 
         function displayAllData() {
@@ -566,170 +470,116 @@
         function updateStatistics() {
             if (!partnerData) return;
 
-            const completedBookings = allBookings.filter(b => b.stay_status === 'COMPLETED').length;
-            const totalCommission = parseFloat(partnerData.total_commission_earned) || 0;
-            // 直接讀取 available_points，不再用 earned - paid 計算
-            const availablePoints = parseFloat(partnerData.available_points) || 0;
-            const pendingCash = parseFloat(partnerData.pending_commission) || 0;
-            const pointsUsed = parseFloat(partnerData.points_used) || 0;
-            const totalClicks = parseInt(partnerData.total_clicks) || 0;
+            const completed = allBookings.filter(b => b.stay_status === 'COMPLETED').length;
+            const totalComm = parseFloat(partnerData.total_commission_earned) || 0;
+            const available = parseFloat(partnerData.available_points) || 0;
+            const pending = parseFloat(partnerData.pending_commission) || 0;
+            const used = parseFloat(partnerData.points_used) || 0;
+            const clicks = parseInt(partnerData.total_clicks) || 0;
+            const yearly = parseInt(partnerData.yearly_referrals) || 0;
+            const progress = calcLevelProgress(yearly);
 
-            // 使用 yearly_referrals 和正確門檻 (4/10)
-            const yearlyReferrals = parseInt(partnerData.yearly_referrals) || 0;
-            const progress = calculateLevelProgress(yearlyReferrals);
-
-            document.getElementById('totalReferrals').textContent = completedBookings;
-            document.getElementById('totalCommission').textContent = '$' + totalCommission.toLocaleString();
-            document.getElementById('availablePoints').textContent = '$' + availablePoints.toLocaleString();
-            document.getElementById('pendingCash').textContent = '$' + pendingCash.toLocaleString();
-            document.getElementById('pointsUsed').textContent = '$' + pointsUsed.toLocaleString();
-            document.getElementById('levelProgress').textContent = progress.current + '/' + progress.target;
+            document.getElementById('totalReferrals').textContent = completed;
+            document.getElementById('totalCommission').textContent = '$' + totalComm.toLocaleString();
+            document.getElementById('availablePoints').textContent = '$' + available.toLocaleString();
+            document.getElementById('pendingCash').textContent = '$' + pending.toLocaleString();
+            document.getElementById('pointsUsed').textContent = '$' + used.toLocaleString();
+            document.getElementById('levelProgress').textContent = progress.current + ' / ' + progress.target;
             document.getElementById('nextLevelText').textContent = progress.nextLevel;
 
-            // 進度條
-            const progressPercent = progress.target === '∞' ? 100 : Math.min(100, (progress.current / progress.target) * 100);
-            document.getElementById('levelProgressBar').style.width = progressPercent + '%';
+            const pct = progress.target === '∞' ? 100 : Math.min(100, (progress.current / progress.target) * 100);
+            document.getElementById('levelProgressBar').style.width = pct + '%';
 
-            // 點擊統計
-            document.getElementById('totalClicks').textContent = totalClicks + ' 次';
-            const conversionRate = totalClicks > 0 ? ((completedBookings / totalClicks) * 100).toFixed(1) : '0.0';
-            document.getElementById('conversionRate').textContent = conversionRate + '%';
+            document.getElementById('totalClicks').textContent = clicks;
+            const rate = clicks > 0 ? ((completed / clicks) * 100).toFixed(1) + '%' : '0%';
+            document.getElementById('conversionRate').textContent = rate;
         }
 
-        // 等級進度計算 — 使用 yearlyReferrals 和正確門檻
-        function calculateLevelProgress(yearlyReferrals) {
-            let current = yearlyReferrals;
-            let target = 4;  // LV2 門檻
-            let nextLevel = 'LV2 森林嚮導';
-
-            if (yearlyReferrals >= 10) {
-                target = '∞';
-                nextLevel = '已達最高等級';
-            } else if (yearlyReferrals >= 4) {
-                target = 10;  // LV3 門檻
-                nextLevel = 'LV3 秘境守護者';
-            }
-
-            return { current, target, nextLevel };
+        function calcLevelProgress(yearly) {
+            if (yearly >= 10) return { current: yearly, target: '∞', nextLevel: '已達最高等級' };
+            if (yearly >= 4) return { current: yearly, target: 10, nextLevel: 'LV3 秘境守護者' };
+            return { current: yearly, target: 4, nextLevel: 'LV2 森林嚮導' };
         }
 
-        // 顯示最近訂房記錄
         function displayRecentBookings() {
-            const container = document.getElementById('recentBookings');
+            const el = document.getElementById('recentBookings');
 
-            if (allBookings.length === 0) {
-                container.innerHTML = '<div class="text-center py-8 text-stone-500">暫無推薦記錄</div>';
+            if (!allBookings.length) {
+                el.innerHTML = '<p class="text-center py-8 text-xs text-stone-400">暫無推薦記錄</p>';
                 return;
             }
 
-            const recentBookings = allBookings.slice(0, 5);
-
-            container.innerHTML = recentBookings.map(booking => {
-                const statusClass = getStatusClass(booking.stay_status);
-                const statusText = getStatusText(booking.stay_status);
-                const commissionAmount = parseFloat(booking.commission_amount) || 0;
-
+            el.innerHTML = allBookings.slice(0, 5).map(b => {
+                const cls = statusClass(b.stay_status);
+                const comm = parseFloat(b.commission_amount) || 0;
                 return `
-                    <div class="border border-stone-200 rounded-lg p-3 md:p-4">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="min-w-0">
-                                <div class="font-medium text-stone-800 truncate">${booking.guest_name}</div>
-                                <div class="text-xs md:text-sm text-stone-600">${formatDate(booking.checkin_date)} - ${formatDate(booking.checkout_date)}</div>
-                            </div>
-                            <span class="px-2 py-1 rounded text-xs flex-shrink-0 ml-2 ${statusClass}">
-                                ${statusText}
-                            </span>
+                    <div class="flex items-center justify-between py-2.5 border-b border-stone-50 last:border-0">
+                        <div class="min-w-0 mr-3">
+                            <p class="text-sm text-stone-700 truncate">${b.guest_name}</p>
+                            <p class="text-[0.65rem] text-stone-400">${fmtDate(b.checkin_date)} - ${fmtDate(b.checkout_date)}</p>
                         </div>
-                        <div class="flex justify-between items-center">
-                            <div class="text-xs md:text-sm text-stone-600">
-                                房價：$${(parseFloat(booking.room_price) || 0).toLocaleString()}
-                            </div>
-                            <div class="text-xs md:text-sm font-semibold ${commissionAmount > 0 ? 'text-green-600' : 'text-stone-400'}">
-                                ${commissionAmount > 0 ? `佣金：$${commissionAmount.toLocaleString()}` : '待計算'}
-                            </div>
+                        <div class="text-right flex-shrink-0">
+                            <span class="badge ${cls.bg} ${cls.text}">${cls.label}</span>
+                            <p class="text-xs mt-0.5 ${comm > 0 ? 'text-[#2E4B36] font-medium' : 'text-stone-400'}">
+                                ${comm > 0 ? '$' + comm.toLocaleString() : '--'}
+                            </p>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('');
         }
 
-        // 顯示結算記錄
         function displayPayoutHistory() {
-            const container = document.getElementById('payoutHistory');
+            const el = document.getElementById('payoutHistory');
 
-            if (!allPayouts || allPayouts.length === 0) {
-                container.innerHTML = '<div class="text-center py-8 text-stone-500">暫無結算記錄</div>';
+            if (!allPayouts || !allPayouts.length) {
+                el.innerHTML = '<p class="text-center py-8 text-xs text-stone-400">暫無結算記錄</p>';
                 return;
             }
 
-            // 按時間倒排
             const sorted = [...allPayouts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-            container.innerHTML = sorted.map(payout => {
-                const typeInfo = getPayoutTypeInfo(payout.payout_type);
-                const amount = parseFloat(payout.amount) || 0;
-                const isPositive = amount >= 0 && !['COMMISSION_REVERSAL'].includes(payout.payout_type);
-                const statusInfo = getPayoutStatusInfo(payout.payout_status);
+            el.innerHTML = `<div class="divide-y divide-stone-50">${sorted.map(p => {
+                const info = payoutTypeInfo(p.payout_type);
+                const amt = parseFloat(p.amount) || 0;
+                const isNeg = ['COMMISSION_REVERSAL'].includes(p.payout_type);
+                const stInfo = payoutStatusInfo(p.payout_status);
 
                 return `
-                    <div class="flex items-center justify-between border border-stone-200 rounded-lg p-3 md:p-4">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <span class="text-xl flex-shrink-0">${typeInfo.icon}</span>
-                            <div class="min-w-0">
-                                <div class="font-medium text-stone-800 text-sm truncate">${typeInfo.label}</div>
-                                <div class="text-xs text-stone-500">${formatDate(payout.created_at)}</div>
-                                ${payout.notes ? `<div class="text-xs text-stone-400 truncate">${payout.notes}</div>` : ''}
-                            </div>
+                    <div class="payout-row flex items-center justify-between py-3 px-1 rounded-lg">
+                        <div class="min-w-0 mr-3">
+                            <p class="text-sm text-stone-700">${info.label}</p>
+                            <p class="text-[0.65rem] text-stone-400">${fmtDate(p.created_at)}${p.notes ? ' · ' + truncate(p.notes, 20) : ''}</p>
                         </div>
-                        <div class="text-right flex-shrink-0 ml-2">
-                            <div class="font-bold text-sm ${isPositive ? 'text-green-600' : 'text-red-600'}">
-                                ${isPositive ? '+' : ''}$${Math.abs(amount).toLocaleString()}
-                            </div>
-                            <span class="payout-type-badge ${statusInfo.class}">${statusInfo.text}</span>
+                        <div class="text-right flex-shrink-0">
+                            <p class="text-sm font-medium tabular-nums ${isNeg ? 'text-red-600' : 'text-[#2E4B36]'}">
+                                ${isNeg ? '-' : '+'}$${Math.abs(amt).toLocaleString()}
+                            </p>
+                            <span class="badge ${stInfo.cls}">${stInfo.text}</span>
                         </div>
-                    </div>
-                `;
-            }).join('');
+                    </div>`;
+            }).join('')}</div>`;
         }
 
-        // 生成推薦連結 — 優先使用短網址
         function generateReferralLink() {
             if (!partnerData) return;
+            const code = partnerData.partner_code;
 
-            const partnerCode = partnerData.partner_code;
-            const appsScriptBase = APPS_SCRIPT_URL;
+            let landing = partnerData.short_landing_link;
+            if (!landing) landing = `${APPS_SCRIPT_URL}?dest=landing&pid=${code}`;
 
-            // 優先使用後端已生成的短網址（含 Apps Script 追蹤）
-            let landingLink = partnerData.short_landing_link;
-            if (!landingLink) {
-                // 降級：使用 Apps Script 中繼追蹤連結
-                landingLink = `${appsScriptBase}?dest=landing&pid=${partnerCode}`;
-            }
+            let coupon = partnerData.short_coupon_link;
+            if (!coupon) coupon = `${APPS_SCRIPT_URL}?dest=coupon&pid=${code}`;
 
-            let couponLink = partnerData.short_coupon_link;
-            if (!couponLink) {
-                couponLink = `${appsScriptBase}?dest=coupon&pid=${partnerCode}`;
-            }
-
-            document.getElementById('referralLink').value = landingLink;
-            document.getElementById('couponLink').value = couponLink;
-
-            // 更新推薦文案中的連結
-            document.getElementById('templateLink').textContent = landingLink;
+            document.getElementById('referralLink').value = landing;
+            document.getElementById('couponLink').value = coupon;
+            document.getElementById('templateLink').textContent = landing;
         }
 
         // ========================================
-        // 圖表
+        // Charts
         // ========================================
-        function initializeCharts() {
+        function initCharts() {
             if (typeof Chart === 'undefined') return;
-
-            // 調整圖表容器高度
-            const isMobile = window.innerWidth < 768;
-            document.querySelectorAll('.chart-container').forEach(el => {
-                el.style.height = isMobile ? '200px' : '300px';
-            });
-
             initPerformanceChart();
             initCommissionChart();
         }
@@ -738,34 +588,31 @@
             const ctx = document.getElementById('performanceChart');
             if (!ctx) return;
 
-            const months = [];
-            const bookingCounts = [];
-
+            const months = [], counts = [];
             for (let i = 5; i >= 0; i--) {
-                const date = new Date();
-                date.setMonth(date.getMonth() - i);
-                months.push(date.toLocaleDateString('zh-TW', { month: 'short' }));
-
-                const monthBookings = allBookings.filter(booking => {
-                    const bookingDate = new Date(booking.checkin_date);
-                    return bookingDate.getMonth() === date.getMonth() &&
-                           bookingDate.getFullYear() === date.getFullYear();
-                }).length;
-
-                bookingCounts.push(monthBookings);
+                const d = new Date();
+                d.setMonth(d.getMonth() - i);
+                months.push(d.toLocaleDateString('zh-TW', { month: 'short' }));
+                counts.push(allBookings.filter(b => {
+                    const bd = new Date(b.checkin_date);
+                    return bd.getMonth() === d.getMonth() && bd.getFullYear() === d.getFullYear();
+                }).length);
             }
 
-            charts.performance = new Chart(ctx, {
+            charts.perf = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: months,
                     datasets: [{
                         label: '推薦數',
-                        data: bookingCounts,
+                        data: counts,
                         borderColor: '#2E4B36',
-                        backgroundColor: 'rgba(46, 75, 54, 0.1)',
+                        backgroundColor: 'rgba(46,75,54,0.06)',
                         tension: 0.4,
-                        fill: true
+                        fill: true,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#2E4B36'
                     }]
                 },
                 options: {
@@ -773,7 +620,8 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#F5F5F4' } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
@@ -783,325 +631,208 @@
             const ctx = document.getElementById('commissionChart');
             if (!ctx) return;
 
-            const accommodationCommission = allBookings
+            const accComm = allBookings
                 .filter(b => b.commission_type === 'ACCOMMODATION' && b.stay_status === 'COMPLETED')
-                .reduce((sum, b) => sum + (parseFloat(b.commission_amount) || 0), 0);
-
-            const cashCommission = allBookings
+                .reduce((s, b) => s + (parseFloat(b.commission_amount) || 0), 0);
+            const cashComm = allBookings
                 .filter(b => b.commission_type === 'CASH' && b.stay_status === 'COMPLETED')
-                .reduce((sum, b) => sum + (parseFloat(b.commission_amount) || 0), 0);
+                .reduce((s, b) => s + (parseFloat(b.commission_amount) || 0), 0);
 
-            document.getElementById('accommodationTotal').textContent = '$' + accommodationCommission.toLocaleString();
-            document.getElementById('cashTotal').textContent = '$' + cashCommission.toLocaleString();
+            document.getElementById('accommodationTotal').textContent = '$' + accComm.toLocaleString();
+            document.getElementById('cashTotal').textContent = '$' + cashComm.toLocaleString();
 
-            charts.commission = new Chart(ctx, {
+            charts.comm = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['住宿金', '現金'],
                     datasets: [{
-                        data: [accommodationCommission || 0, cashCommission || 0],
-                        backgroundColor: ['#10B981', '#3B82F6']
+                        data: [accComm || 0, cashComm || 0],
+                        backgroundColor: ['#2E4B36', '#94A3B8'],
+                        borderWidth: 0,
+                        spacing: 2
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '70%',
                     plugins: { legend: { display: false } }
                 }
             });
         }
 
         // ========================================
-        // 工具函數
+        // Helpers
         // ========================================
         function getLevelText(level) {
-            const levelMap = {
-                'LV1_INSIDER': 'LV1 知音大使',
-                'LV2_GUIDE': 'LV2 森林嚮導',
-                'LV3_GUARDIAN': 'LV3 秘境守護者'
-            };
-            return levelMap[level] || level;
+            return { 'LV1_INSIDER': 'LV1', 'LV2_GUIDE': 'LV2', 'LV3_GUARDIAN': 'LV3' }[level] || level;
         }
 
-        function getStatusClass(status) {
-            const statusMap = {
-                'PENDING': 'bg-yellow-100 text-yellow-800',
-                'CONFIRMED': 'bg-blue-100 text-blue-800',
-                'CHECKED_IN': 'bg-purple-100 text-purple-800',
-                'COMPLETED': 'bg-green-100 text-green-800',
-                'CANCELLED': 'bg-red-100 text-red-800'
+        function statusClass(s) {
+            const m = {
+                'PENDING': { bg: 'bg-stone-100', text: 'text-stone-600', label: '待確認' },
+                'CONFIRMED': { bg: 'bg-blue-50', text: 'text-blue-700', label: '已確認' },
+                'CHECKED_IN': { bg: 'bg-violet-50', text: 'text-violet-700', label: '已入住' },
+                'COMPLETED': { bg: 'bg-emerald-50', text: 'text-emerald-700', label: '已完成' },
+                'CANCELLED': { bg: 'bg-red-50', text: 'text-red-600', label: '已取消' }
             };
-            return statusMap[status] || 'bg-gray-100 text-gray-800';
+            return m[s] || { bg: 'bg-stone-100', text: 'text-stone-600', label: s };
         }
 
-        function getStatusText(status) {
-            const statusMap = {
-                'PENDING': '待確認',
-                'CONFIRMED': '已確認',
-                'CHECKED_IN': '已入住',
-                'COMPLETED': '已完成',
-                'CANCELLED': '已取消'
+        function payoutTypeInfo(type) {
+            const m = {
+                'ACCOMMODATION': '住宿金佣金', 'CASH': '現金佣金',
+                'POINTS_REFUND': '點數退還', 'CASH_CONVERSION': '點數轉現金',
+                'COMMISSION_REVERSAL': '佣金撤銷', 'MANUAL_ADJUSTMENT': '手動調整',
+                'PAYMENT_COMPLETED': '支付完成', 'BOOKING_RESTORED': '訂房恢復',
+                'PARTIAL_REFUND': '部分退款'
             };
-            return statusMap[status] || status;
+            return { label: m[type] || type || '其他' };
         }
 
-        function getPayoutTypeInfo(type) {
-            const map = {
-                'ACCOMMODATION': { icon: '🏠', label: '住宿金佣金' },
-                'CASH': { icon: '💵', label: '現金佣金' },
-                'POINTS_REFUND': { icon: '↩️', label: '點數退還' },
-                'CASH_CONVERSION': { icon: '🔄', label: '點數轉現金' },
-                'COMMISSION_REVERSAL': { icon: '⛔', label: '佣金撤銷' },
-                'MANUAL_ADJUSTMENT': { icon: '✏️', label: '手動調整' },
-                'PAYMENT_COMPLETED': { icon: '✅', label: '支付完成' },
-                'BOOKING_RESTORED': { icon: '🔙', label: '訂房恢復' },
-                'PARTIAL_REFUND': { icon: '💸', label: '部分退款' }
+        function payoutStatusInfo(s) {
+            const m = {
+                'PENDING': { text: '待處理', cls: 'bg-stone-100 text-stone-600' },
+                'COMPLETED': { text: '已完成', cls: 'bg-emerald-50 text-emerald-700' },
+                'CANCELLED': { text: '已取消', cls: 'bg-red-50 text-red-600' },
+                'PROCESSING': { text: '處理中', cls: 'bg-blue-50 text-blue-700' }
             };
-            return map[type] || { icon: '📋', label: type || '其他' };
+            return m[s] || { text: s || '-', cls: 'bg-stone-100 text-stone-600' };
         }
 
-        function getPayoutStatusInfo(status) {
-            const map = {
-                'PENDING': { text: '待處理', class: 'bg-yellow-100 text-yellow-800' },
-                'COMPLETED': { text: '已完成', class: 'bg-green-100 text-green-800' },
-                'CANCELLED': { text: '已取消', class: 'bg-red-100 text-red-800' },
-                'PROCESSING': { text: '處理中', class: 'bg-blue-100 text-blue-800' }
-            };
-            return map[status] || { text: status || '未知', class: 'bg-gray-100 text-gray-800' };
+        function fmtDate(str) {
+            if (!str) return '-';
+            const d = new Date(str);
+            return isNaN(d.getTime()) ? '-' : d.toLocaleDateString('zh-TW');
         }
 
-        function formatDate(dateString) {
-            if (!dateString) return '-';
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return '-';
-            return date.toLocaleDateString('zh-TW');
+        function truncate(s, n) {
+            return s && s.length > n ? s.slice(0, n) + '...' : s;
         }
 
         // ========================================
-        // 互動功能
+        // Actions
         // ========================================
-        function copyReferralLink() {
-            const input = document.getElementById('referralLink');
-            copyToClipboard(input.value, '推薦連結已複製到剪貼簿！');
-        }
+        function copyReferralLink() { copyText(document.getElementById('referralLink').value, '推薦連結已複製'); }
+        function copyCouponLink() { copyText(document.getElementById('couponLink').value, '優惠券連結已複製'); }
+        function copyTemplate() { copyText(document.getElementById('referralTemplate').textContent, '推薦文案已複製'); }
 
-        function copyCouponLink() {
-            const input = document.getElementById('couponLink');
-            copyToClipboard(input.value, '優惠券連結已複製到剪貼簿！');
-        }
-
-        function copyTemplate() {
-            const template = document.getElementById('referralTemplate').textContent;
-            copyToClipboard(template, '推薦文案已複製到剪貼簿！');
-        }
-
-        function copyToClipboard(text, successMsg) {
+        function copyText(text, msg) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showToast(successMsg, 'success');
-                }).catch(() => {
-                    fallbackCopy(text, successMsg);
-                });
+                navigator.clipboard.writeText(text).then(() => showToast(msg, 'success')).catch(() => fallbackCopy(text, msg));
             } else {
-                fallbackCopy(text, successMsg);
+                fallbackCopy(text, msg);
             }
         }
 
-        function fallbackCopy(text, successMsg) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showToast(successMsg, 'success');
-            } catch (e) {
-                showToast('複製失敗，請手動複製', 'error');
-            }
-            document.body.removeChild(textarea);
+        function fallbackCopy(text, msg) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); showToast(msg, 'success'); }
+            catch { showToast('複製失敗', 'error'); }
+            document.body.removeChild(ta);
         }
 
         function shareToLine() {
             const link = document.getElementById('referralLink').value;
-            const text = `🌲 發現森林中的秘密住宿體驗！快來透過我的專屬連結預訂：${link}`;
-            const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
-            window.open(lineUrl, '_blank');
+            window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(link)}&text=${encodeURIComponent('發現森林中的秘密住宿體驗！' + link)}`, '_blank');
         }
 
         function shareToFacebook() {
             const link = document.getElementById('referralLink').value;
-            const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`;
-            window.open(fbUrl, '_blank');
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, '_blank');
         }
 
         function exportBookings() {
-            if (allBookings.length === 0) {
-                showToast('暫無記錄可匯出', 'info');
-                return;
-            }
-
-            const csvData = allBookings.map(booking => ({
-                '入住日期': formatDate(booking.checkin_date),
-                '退房日期': formatDate(booking.checkout_date),
-                '房客姓名': booking.guest_name,
-                '房價': parseFloat(booking.room_price) || 0,
-                '狀態': getStatusText(booking.stay_status),
-                '佣金': parseFloat(booking.commission_amount) || 0,
-                '佣金類型': booking.commission_type === 'ACCOMMODATION' ? '住宿金' : '現金'
+            if (!allBookings.length) { showToast('暫無記錄', 'info'); return; }
+            const rows = allBookings.map(b => ({
+                '入住日期': fmtDate(b.checkin_date), '退房日期': fmtDate(b.checkout_date),
+                '房客': b.guest_name, '房價': parseFloat(b.room_price) || 0,
+                '狀態': statusClass(b.stay_status).label,
+                '佣金': parseFloat(b.commission_amount) || 0,
+                '類型': b.commission_type === 'ACCOMMODATION' ? '住宿金' : '現金'
             }));
-
-            downloadCSV(csvData, `推薦記錄_${partnerData.partner_code}.csv`);
-            showToast('記錄已匯出', 'success');
-        }
-
-        function downloadCSV(data, filename) {
-            const headers = Object.keys(data[0]);
-            const csvContent = '\uFEFF' + [
-                headers.join(','),
-                ...data.map(row => headers.map(header => `"${row[header]}"`).join(','))
-            ].join('\n');
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            link.click();
+            const hdrs = Object.keys(rows[0]);
+            const csv = '\uFEFF' + [hdrs.join(','), ...rows.map(r => hdrs.map(h => `"${r[h]}"`).join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `推薦記錄_${partnerData.partner_code}.csv`;
+            a.click();
+            showToast('已匯出', 'success');
         }
 
         function refreshData() {
             showLoading();
-            // 銷毀現有圖表
             Object.values(charts).forEach(c => c && c.destroy());
             charts = {};
             loadPartnerData();
         }
 
-        // ========================================
-        // 演示數據
-        // ========================================
-        function generateDemoBookings() {
-            const today = new Date();
-            const bookings = [];
-
-            for (let i = 0; i < 8; i++) {
-                const checkinDate = new Date(today);
-                checkinDate.setDate(today.getDate() - (i * 7 + Math.floor(Math.random() * 7)));
-
-                const checkoutDate = new Date(checkinDate);
-                checkoutDate.setDate(checkinDate.getDate() + 2);
-
-                const statuses = ['COMPLETED', 'COMPLETED', 'COMPLETED', 'CONFIRMED', 'PENDING'];
-                const commissionTypes = ['ACCOMMODATION', 'CASH'];
-                const roomPrices = [3200, 3800, 4200, 2800, 3600];
-                const names = ['王**', '陳**', '林**', '張**', '李**', '黃**', '劉**', '蔡**'];
-
-                const status = statuses[i % statuses.length];
-                const commissionType = commissionTypes[i % commissionTypes.length];
-                const roomPrice = roomPrices[i % roomPrices.length];
-
-                let commissionAmount = 0;
-                if (status === 'COMPLETED') {
-                    commissionAmount = commissionType === 'ACCOMMODATION' ? 1200 : 600;
-                }
-
-                bookings.push({
-                    id: 'DEMO_B' + (i + 1),
-                    guest_name: names[i],
-                    checkin_date: checkinDate.toISOString().split('T')[0],
-                    checkout_date: checkoutDate.toISOString().split('T')[0],
-                    room_price: roomPrice,
-                    stay_status: status,
-                    commission_amount: commissionAmount,
-                    commission_type: commissionType,
-                    created_at: checkinDate.toISOString()
-                });
-            }
-
-            return bookings;
-        }
-
-        function generateDemoPayouts() {
-            const today = new Date();
-            return [
-                {
-                    id: 'DEMO_P1',
-                    payout_type: 'ACCOMMODATION',
-                    amount: 1200,
-                    payout_status: 'COMPLETED',
-                    notes: '訂房 #B001 住宿金佣金',
-                    created_at: new Date(today.getTime() - 7 * 86400000).toISOString()
-                },
-                {
-                    id: 'DEMO_P2',
-                    payout_type: 'CASH',
-                    amount: 600,
-                    payout_status: 'COMPLETED',
-                    notes: '訂房 #B002 現金佣金',
-                    created_at: new Date(today.getTime() - 14 * 86400000).toISOString()
-                },
-                {
-                    id: 'DEMO_P3',
-                    payout_type: 'ACCOMMODATION',
-                    amount: 2500,
-                    payout_status: 'COMPLETED',
-                    notes: '訂房 #B003 住宿金佣金（含首次獎勵）',
-                    created_at: new Date(today.getTime() - 30 * 86400000).toISOString()
-                },
-                {
-                    id: 'DEMO_P4',
-                    payout_type: 'PAYMENT_COMPLETED',
-                    amount: 600,
-                    payout_status: 'COMPLETED',
-                    notes: '銀行匯款完成',
-                    created_at: new Date(today.getTime() - 10 * 86400000).toISOString()
-                },
-                {
-                    id: 'DEMO_P5',
-                    payout_type: 'CASH',
-                    amount: 1200,
-                    payout_status: 'PENDING',
-                    notes: '訂房 #B005 現金佣金',
-                    created_at: new Date(today.getTime() - 3 * 86400000).toISOString()
-                }
-            ];
-        }
-
-        // ========================================
-        // 登出 & UI
-        // ========================================
         function logout() {
             sessionStorage.clear();
             window.location.href = 'partner-login.html';
         }
 
-        function showLoading() {
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-        }
+        // ========================================
+        // Demo Data
+        // ========================================
+        function generateDemoBookings() {
+            const now = Date.now();
+            const names = ['王**', '陳**', '林**', '張**', '李**', '黃**', '劉**', '蔡**'];
+            const statuses = ['COMPLETED','COMPLETED','COMPLETED','CONFIRMED','PENDING'];
+            const types = ['ACCOMMODATION','CASH'];
+            const prices = [3200,3800,4200,2800,3600];
 
-        function hideLoading() {
-            document.getElementById('loadingOverlay').classList.add('hidden');
-        }
-
-        // Toast 通知系統（取代 alert）
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            toast.textContent = message;
-            container.appendChild(toast);
-
-            // 觸發動畫
-            requestAnimationFrame(() => {
-                toast.classList.add('show');
+            return Array.from({ length: 8 }, (_, i) => {
+                const ci = new Date(now - (i * 7 + Math.floor(Math.random() * 7)) * 86400000);
+                const co = new Date(ci.getTime() + 2 * 86400000);
+                const st = statuses[i % statuses.length];
+                const tp = types[i % types.length];
+                const comm = st === 'COMPLETED' ? (tp === 'ACCOMMODATION' ? 1200 : 600) : 0;
+                return {
+                    id: 'D_B' + (i + 1), guest_name: names[i],
+                    checkin_date: ci.toISOString().split('T')[0],
+                    checkout_date: co.toISOString().split('T')[0],
+                    room_price: prices[i % prices.length],
+                    stay_status: st, commission_amount: comm, commission_type: tp,
+                    created_at: ci.toISOString()
+                };
             });
+        }
 
-            // 自動消失
+        function generateDemoPayouts() {
+            const now = Date.now();
+            const day = 86400000;
+            return [
+                { id: 'D_P1', payout_type: 'ACCOMMODATION', amount: 1200, payout_status: 'COMPLETED', notes: '訂房 #B001', created_at: new Date(now - 7*day).toISOString() },
+                { id: 'D_P2', payout_type: 'CASH', amount: 600, payout_status: 'COMPLETED', notes: '訂房 #B002', created_at: new Date(now - 14*day).toISOString() },
+                { id: 'D_P3', payout_type: 'ACCOMMODATION', amount: 2500, payout_status: 'COMPLETED', notes: '含首次獎勵', created_at: new Date(now - 30*day).toISOString() },
+                { id: 'D_P4', payout_type: 'PAYMENT_COMPLETED', amount: 600, payout_status: 'COMPLETED', notes: '銀行匯款完成', created_at: new Date(now - 10*day).toISOString() },
+                { id: 'D_P5', payout_type: 'CASH', amount: 1200, payout_status: 'PENDING', notes: '訂房 #B005', created_at: new Date(now - 3*day).toISOString() }
+            ];
+        }
+
+        // ========================================
+        // UI
+        // ========================================
+        function showLoading() { document.getElementById('loadingOverlay').classList.remove('hidden'); }
+        function hideLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
+
+        function showToast(message, type = 'info') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast toast-${type}`;
+            t.textContent = message;
+            c.appendChild(t);
+            requestAnimationFrame(() => t.classList.add('show'));
             setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 400);
-            }, 3000);
+                t.classList.remove('show');
+                setTimeout(() => t.remove(), 350);
+            }, 2500);
         }
     </script>
 </body>

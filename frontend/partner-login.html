@@ -223,6 +223,7 @@
                     // 登入成功，儲存登入狀態並跳轉
                     sessionStorage.setItem('partnerCode', partnerCode);
                     sessionStorage.setItem('partnerData', JSON.stringify(result.partner));
+                    sessionStorage.setItem('loginTime', Date.now().toString());
                     
                     // 顯示成功訊息
                     showSuccess('登入成功！正在為您載入個人資料...');
@@ -295,60 +296,40 @@
         
         // 進入演示模式
         function enterDemoMode() {
-            // 設置演示模式標記
             sessionStorage.setItem('partnerCode', 'DEMO_CODE');
             sessionStorage.setItem('demoMode', 'true');
+            sessionStorage.setItem('loginTime', Date.now().toString());
             sessionStorage.setItem('partnerData', JSON.stringify({
                 partner_code: 'DEMO_CODE',
                 name: '演示大使',
-                phone: '1234',
                 level: 'LV2_GUIDE',
                 total_commission_earned: 5680,
-                total_commission_paid: 2000
+                total_commission_paid: 2000,
+                pending_commission: 1200,
+                available_points: 2480,
+                points_used: 1000,
+                commission_preference: 'ACCOMMODATION',
+                total_successful_referrals: 6,
+                yearly_referrals: 6,
+                short_landing_link: '',
+                short_coupon_link: '',
+                total_clicks: 42
             }));
 
-            // 顯示成功訊息
             showSuccess('演示模式已啟用！正在載入演示界面...');
 
-            // 跳轉到個人儀表板
             setTimeout(() => {
-                window.location.href = 'partner-dashboard.html?demo=true';
+                window.location.href = 'partner-dashboard.html';
             }, 1500);
         }
-        
+
         // 檢查是否已登入
         window.addEventListener('load', function() {
             const partnerCode = sessionStorage.getItem('partnerCode');
             if (partnerCode) {
-                // 已登入，直接跳轉到儀表板
                 window.location.href = 'partner-dashboard.html';
             }
         });
-
-        // 進入演示模式
-        function enterDemoMode() {
-            // 模擬登入成功
-            sessionStorage.setItem('partnerCode', 'DEMO_CODE');
-            sessionStorage.setItem('partnerData', JSON.stringify({
-                partner_code: 'DEMO_CODE',
-                name: '演示用戶',
-                phone: '1234',
-                level: 'Bronze',
-                points: 100,
-                total_earnings: 1234.56,
-                recent_earnings: 100.00,
-                referrals: 10,
-                last_login: '2023-10-27T10:00:00Z'
-            }));
-
-            // 顯示成功訊息
-            showSuccess('演示模式已啟用！');
-
-            // 跳轉到個人儀表板
-            setTimeout(() => {
-                window.location.href = 'partner-dashboard.html';
-            }, 1500);
-        }
     </script>
 </body>
 </html>

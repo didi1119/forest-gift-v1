@@ -7,7 +7,7 @@
 
 // ===== 配置 =====
 const SHEETS_ID = '1Vwh5lZH6nNhm-u0t75cEUKiAP1kLIxVHQxHIyvlVNMI';
-const TRACKING_BASE_URL = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+const TRACKING_BASE_URL = 'https://script.google.com/macros/s/AKfycbwHxjSDYpz6iSd3T2_cPORz3gSqlGfi0p3VhC1cOD97DJkBFbhGKhKDS_d0FZ7TA_9N/exec';
 
 // 佣金設定（住宿金）
 const COMMISSION_RATES = {

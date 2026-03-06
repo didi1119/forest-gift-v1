@@ -3,7 +3,7 @@
  * 專門測試 related_booking_ids.trim() 錯誤的修復
  */
 
-const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxWVmkMJUladdBVp56vcISxqCfebXaytT4_SX970OaD7Aq8wg74Kcf_9OxyNEaPA_4W/exec';
+const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwHxjSDYpz6iSd3T2_cPORz3gSqlGfi0p3VhC1cOD97DJkBFbhGKhKDS_d0FZ7TA_9N/exec';
 
 // API 客戶端
 class ApiClient {

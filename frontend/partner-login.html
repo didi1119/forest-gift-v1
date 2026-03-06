@@ -180,7 +180,7 @@
         async function handleLogin(event) {
             event.preventDefault();
 
-            const partnerCode = document.getElementById('partnerCode').value.trim().toUpperCase();
+            const partnerCode = document.getElementById('partnerCode').value.trim();
             const phone = document.getElementById('phone').value.trim();
 
             if (!partnerCode || !phone) {
@@ -257,7 +257,7 @@
         });
 
         document.getElementById('partnerCode').addEventListener('input', function(e) {
-            e.target.value = e.target.value.toUpperCase();
+            
         });
 
         function enterDemoMode() {

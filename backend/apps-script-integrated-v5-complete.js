@@ -3382,10 +3382,10 @@ function maskName(name) {
  */
 function handleVerifyPartnerLogin(data) {
   try {
-    const partnerCode = (data.partner_code || '').trim().toUpperCase();
+    const partnerCodeInput = (data.partner_code || '').trim();
     const phoneLast4 = (data.phone_last4 || '').trim();
 
-    if (!partnerCode || !phoneLast4) {
+    if (!partnerCodeInput || !phoneLast4) {
       return createJsonResponse({
         success: false,
         error: '請提供大使代碼和手機末4碼'
@@ -3399,8 +3399,10 @@ function handleVerifyPartnerLogin(data) {
       });
     }
 
-    // 查找大使
-    const partner = findPartnerByCode(partnerCode);
+    // 查找大使（不分大小寫：嘗試原始、小寫、大寫）
+    let partner = findPartnerByCode(partnerCodeInput);
+    if (!partner) partner = findPartnerByCode(partnerCodeInput.toLowerCase());
+    if (!partner) partner = findPartnerByCode(partnerCodeInput.toUpperCase());
     if (!partner) {
       return createJsonResponse({
         success: false,
@@ -3461,17 +3463,19 @@ function handleVerifyPartnerLogin(data) {
  */
 function handleGetPartnerDashboardData(data) {
   try {
-    const partnerCode = (data.partner_code || '').trim().toUpperCase();
+    const partnerCodeInput = (data.partner_code || '').trim();
 
-    if (!partnerCode) {
+    if (!partnerCodeInput) {
       return createJsonResponse({
         success: false,
         error: 'partner_code is required'
       });
     }
 
-    // 查找大使
-    const partner = findPartnerByCode(partnerCode);
+    // 查找大使（不分大小寫）
+    let partner = findPartnerByCode(partnerCodeInput);
+    if (!partner) partner = findPartnerByCode(partnerCodeInput.toLowerCase());
+    if (!partner) partner = findPartnerByCode(partnerCodeInput.toUpperCase());
     if (!partner) {
       return createJsonResponse({
         success: false,

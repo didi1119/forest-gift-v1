@@ -1,0 +1,8 @@
+{
+  "name": "forest-gift-v1",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "googleapis": "^130.0.0"
+  }
+}

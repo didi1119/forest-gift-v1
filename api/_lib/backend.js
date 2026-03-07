@@ -824,6 +824,31 @@ async function handleCancelPayout(data) {
         created_by: 'SYSTEM'
       });
     }
+  } else if (payout.payout_type === 'CASH_CONVERSION') {
+    // 取消點數轉現金：退回點數、扣回現金
+    const partner = await findPartnerByCode(payout.partner_code);
+    if (partner) {
+      const cashAmount = Math.abs(parseFloat(payout.amount) || 0);
+      // 從 notes 提取原始點數，格式：「點數轉現金：2000 點 → NT$ 1000 (2:1)」
+      const notesMatch = (payout.notes || '').match(/點數轉現金：(\d+)/);
+      const pointsToRestore = notesMatch ? parseInt(notesMatch[1]) : Math.round(cashAmount / 0.5);
+
+      await updateRecord('Partners', partner.partner_code, {
+        available_points: (parseFloat(partner.available_points) || 0) + pointsToRestore,
+        points_used: Math.max(0, (parseFloat(partner.points_used) || 0) - pointsToRestore),
+        pending_commission: Math.max(0, (parseFloat(partner.pending_commission) || 0) - cashAmount)
+      });
+
+      await createRecord('Payouts', {
+        partner_code: payout.partner_code,
+        payout_type: 'POINTS_ADJUSTMENT',
+        amount: pointsToRestore,
+        payout_method: 'POINTS_CONVERSION_REVERSAL',
+        payout_status: 'COMPLETED',
+        notes: `撤銷點數轉現金 #${payoutId}，退回 ${pointsToRestore} 點`,
+        created_by: 'SYSTEM'
+      });
+    }
   }
 
   const updated = await updateRecord('Payouts', payoutId, {

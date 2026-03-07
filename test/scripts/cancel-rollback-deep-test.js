@@ -917,44 +917,41 @@ const testCancelAuditTrail = {
         const finalState = await framework.fetchSheetData();
         const cancelledBooking = finalState.bookings.find(b => b.id === bookingId);
         
-        // 檢查各種審計欄位
+        // 後端透過 notes 記錄取消資訊，格式：[取消於 ISO_DATE] reason
+        const notesContent = cancelledBooking.notes || '';
+        const hasCancelNote = notesContent.includes('取消於');
+
         const auditFields = {
             hasStatus: cancelledBooking.stay_status === 'CANCELLED',
-            hasCancelledAt: !!cancelledBooking.cancelled_at,
-            hasCancelledBy: !!cancelledBooking.cancelled_by,
-            hasCancelReason: !!cancelledBooking.cancel_reason,
-            hasOriginalCommission: !!cancelledBooking.original_commission_amount
+            hasCommissionCancelled: cancelledBooking.commission_status === 'CANCELLED',
+            hasCancelNote: hasCancelNote
         };
-        
+
         // 檢查 Payouts 中的審計記錄
-        const auditPayouts = finalState.payouts.filter(p => 
-            String(p.related_booking_ids || '').includes(bookingId) &&
+        const auditPayouts = finalState.payouts.filter(p =>
+            String(p.related_booking_ids || '').includes(String(bookingId)) &&
             p.payout_type === 'COMMISSION_REVERSAL'
         );
-        
+
         const auditPayout = auditPayouts[0];
         const payoutAudit = {
             hasReversalRecord: auditPayouts.length > 0,
-            hasReversalAmount: !!auditPayout?.amount,
+            hasReversalAmount: auditPayout ? Math.abs(parseFloat(auditPayout.amount || 0)) > 0 : false,
             hasReversalDate: !!auditPayout?.created_at,
-            hasReversalReason: !!auditPayout?.notes
+            hasReversalNotes: !!auditPayout?.notes
         };
-        
-        framework.log('訂房審計欄位:', auditFields);
-        framework.log('Payout審計記錄:', payoutAudit);
-        
+
+        framework.log('訂房審計欄位:', JSON.stringify(auditFields));
+        framework.log('Payout審計記錄:', JSON.stringify(payoutAudit));
+
         const allAuditFields = Object.values(auditFields).every(v => v === true);
         const hasPayoutAudit = payoutAudit.hasReversalRecord;
-        
+
         return {
             success: allAuditFields && hasPayoutAudit,
             bookingAudit: auditFields,
             payoutAudit: payoutAudit,
-            cancelDetails: {
-                time: cancelledBooking.cancelled_at,
-                by: cancelledBooking.cancelled_by,
-                reason: cancelledBooking.cancel_reason
-            }
+            cancelNote: hasCancelNote ? notesContent.match(/\[取消於[^\]]+\].*/)?.[0] : null
         };
     }
 };
@@ -1021,12 +1018,11 @@ const testPartialCancel = {
         const bookingAdjusted = adjustedState.bookings.find(b => b.id === bookingId);
         const partnerAdjusted = adjustedState.partners.find(p => p.partner_code === partnerCode);
         
-        const expectedNewCommission = Math.floor(originalCommission / 2);
-        
+        // 佣金為固定金額制，房價變動不影響佣金
         const validation = {
-            roomPriceAdjusted: bookingAdjusted.room_price === String(parseInt(bookingData.room_price) - partialRefund),
-            commissionAdjusted: Math.abs(bookingAdjusted.commission_amount - expectedNewCommission) < 100,
-            partnerCommissionAdjusted: partnerAdjusted.total_commission_earned < partnerBefore.total_commission_earned + originalCommission
+            roomPriceAdjusted: parseFloat(bookingAdjusted.room_price) === parseInt(bookingData.room_price) - partialRefund,
+            commissionUnchanged: parseFloat(bookingAdjusted.commission_amount) === parseFloat(originalCommission),
+            partnerCommissionCorrect: parseFloat(partnerAdjusted.total_commission_earned) >= parseFloat(partnerBefore.total_commission_earned)
         };
         
         framework.log('部分退款驗證:', validation);

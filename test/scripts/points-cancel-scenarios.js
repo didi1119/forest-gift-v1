@@ -111,51 +111,47 @@ const testUsePointsThenCancel = {
         }
         
         framework.log('步驟 3: 找到相關的 Accommodation_Usage 記錄');
-        const usageRecord = afterUseState.accommodation_usage?.find(u => 
-            u.partner_code === partnerCode && 
-            u.guest_name === 'CANCEL_TEST_USER'
+        // Accommodation_Usage 沒有 guest_name 欄位，用 partner_code + 最新記錄匹配
+        const usageRecords = (afterUseState.accommodation_usage || []).filter(u =>
+            u.partner_code === partnerCode && u.usage_type === 'ROOM_DISCOUNT'
         );
-        
+        const usageRecord = usageRecords[usageRecords.length - 1];
+
         if (!usageRecord) {
             framework.log('警告: 找不到使用記錄');
+        } else {
+            framework.log(`找到使用記錄 ID: ${usageRecord.id}`);
         }
-        
-        framework.log('步驟 4: 模擬取消住宿金使用');
-        // 這裡需要一個取消住宿金使用的 API
-        // 注意：系統沒有 cancel_accommodation_usage API
-        // 這裡只能模擬或跳過
-        framework.log('警告：系統缺少取消住宿金使用的 API');
-        // 直接返回測試結果
-        return {
-            success: true,
-            skipped: true,
-            reason: '系統缺少 cancel_accommodation_usage API',
-            initialPoints,
-            afterUsePoints: partnerAfterUse.available_points
-        };
-        
+
+        framework.log('步驟 4: 呼叫 cancel_accommodation_usage 取消使用');
+        await framework.executeAPIAction('cancel_accommodation_usage', {
+            usage_id: usageRecord?.id || '',
+            partner_code: partnerCode,
+            refund_amount: useAmount,
+            reason: '測試取消住宿金使用'
+        });
+
         await framework.wait(3000);
-        
+
         framework.log('步驟 5: 驗證點數是否正確退回');
         const afterCancelState = await framework.fetchSheetData();
         const partnerAfterCancel = afterCancelState.partners.find(p => p.partner_code === partnerCode);
-        
+
         framework.log(`取消後 - 可用: ${partnerAfterCancel.available_points}, 已使用: ${partnerAfterCancel.points_used}`);
-        
-        if (partnerAfterCancel.available_points !== initialPoints) {
+
+        const pointsRestored = Math.abs(partnerAfterCancel.available_points - initialPoints) < 1;
+        const usedRestored = Math.abs((partnerAfterCancel.points_used || 0) - initialUsed) < 1;
+
+        if (!pointsRestored) {
             framework.log(`⚠️ 點數未完全退回: 預期 ${initialPoints}, 實際 ${partnerAfterCancel.available_points}`);
         }
-        
-        if (partnerAfterCancel.points_used !== initialUsed) {
-            framework.log(`⚠️ 已使用點數未正確更新: 預期 ${initialUsed}, 實際 ${partnerAfterCancel.points_used}`);
-        }
-        
+
         return {
-            success: true,
+            success: pointsRestored,
             initialPoints,
             afterUsePoints: partnerAfterUse.available_points,
             afterCancelPoints: partnerAfterCancel.available_points,
-            correctlyRefunded: partnerAfterCancel.available_points === initialPoints
+            correctlyRefunded: pointsRestored && usedRestored
         };
     }
 };
@@ -195,11 +191,11 @@ const testConvertToCashThenCancel = {
         
         // 找到相關的 Payout 記錄
         const cashPayout = afterConvertState.payouts
-            .filter(p => p.partner_code === partnerCode && p.payout_type === 'POINTS_TO_CASH')
+            .filter(p => p.partner_code === partnerCode && p.payout_type === 'CASH_CONVERSION')
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-        
+
         if (!cashPayout) {
-            framework.log('警告: 找不到轉換記錄');
+            framework.log('警告: 找不到轉換記錄（CASH_CONVERSION）');
         }
         
         framework.log('步驟 3: 取消該筆現金結算');
@@ -328,34 +324,30 @@ const testMultipleUsagePartialCancel = {
         
         framework.log('步驟 3: 取消第2筆使用（800點）');
         const cancelAmount = amounts[1];
-        
-        // 系統沒有 cancel_accommodation_usage API
-        framework.log('警告：無法測試部分取消，系統缺少 API');
-        return {
-            success: true,
-            skipped: true,
-            reason: '系統缺少 cancel_accommodation_usage API',
-            totalUsed,
-            note: '無法測試部分取消'
-        };
-        
+
+        await framework.executeAPIAction('cancel_accommodation_usage', {
+            partner_code: partnerCode,
+            refund_amount: cancelAmount,
+            reason: '測試部分取消第2筆使用'
+        });
+
         await framework.wait(3000);
-        
+
         framework.log('步驟 4: 驗證部分退款');
         const afterPartialCancelState = await framework.fetchSheetData();
         const partnerAfterCancel = afterPartialCancelState.partners.find(p => p.partner_code === partnerCode);
-        
+
         const expectedPoints = initialPoints - totalUsed + cancelAmount;
         framework.log(`部分取消後 - 可用: ${partnerAfterCancel.available_points}, 預期: ${expectedPoints}`);
-        
-        const correctRefund = partnerAfterCancel.available_points === expectedPoints;
-        
+
+        const correctRefund = Math.abs(partnerAfterCancel.available_points - expectedPoints) < 1;
+
         if (!correctRefund) {
             framework.log(`⚠️ 部分退款不正確: 差異 ${partnerAfterCancel.available_points - expectedPoints} 點`);
         }
-        
+
         return {
-            success: true,
+            success: correctRefund,
             totalUsed,
             cancelledAmount: cancelAmount,
             remainingUsed: totalUsed - cancelAmount,

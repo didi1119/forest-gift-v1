@@ -779,8 +779,13 @@
                                 sum + Math.abs(parseFloat(p.amount || 0)), 0);
                             const totalReversal = reversalPayouts.reduce((sum, p) =>
                                 sum + Math.abs(parseFloat(p.amount || 0)), 0);
-                            const totalConverted = cashConversionPayouts.reduce((sum, p) =>
-                                sum + Math.abs(parseFloat(p.points_used || p.amount || 0)), 0);
+                            // CASH_CONVERSION 的 amount 是現金值，實際扣的點數 = amount / 0.5 = amount * 2
+                            const totalConverted = cashConversionPayouts.reduce((sum, p) => {
+                                // 嘗試從 notes 提取原始點數：「點數轉現金：2000 點 → NT$ 1000 (2:1)」
+                                const match = (p.notes || '').match(/點數轉現金：(\d+)/);
+                                const pointsUsed = match ? parseInt(match[1]) : Math.abs(parseFloat(p.amount || 0)) * 2;
+                                return sum + pointsUsed;
+                            }, 0);
 
                             const expectedPoints = totalEarned - totalDebit - totalReversal - totalConverted;
                             const actualPoints = parseFloat(partner.available_points || 0);

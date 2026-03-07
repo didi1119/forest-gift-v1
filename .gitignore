@@ -35,4 +35,6 @@ yarn-error.log*
 # 私密憑證
 credentials.json
 service-account.json
+foresthouse-金鑰.json
+*-金鑰.json
 知音.txt

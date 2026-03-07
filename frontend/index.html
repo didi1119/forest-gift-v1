@@ -775,29 +775,31 @@
                 cardFront.appendChild(spinner);
                 cardFront.appendChild(img);
 
-                // Text overlay? No, keep it pure for "Premium Minimalist".
-                // Only showing minimal badge on hover is handled by CSS if needed, 
-                // but for now we keep the card face pure art.
+                // Return a promise that resolves when the image is ready
+                const imageReady = new Promise((resolve) => {
+                    img.onload = () => {
+                        spinner.remove();
+                        img.classList.remove('opacity-0');
+                        resolve();
+                    };
 
-                img.onload = () => {
-                    spinner.remove();
-                    img.classList.remove('opacity-0');
-                };
-
-                img.onerror = () => {
-                    spinner.remove();
-                    img.style.display = 'none';
-                    const fallback = document.createElement('div');
-                    fallback.className = 'w-full h-full flex flex-col items-center justify-center bg-[#F5F2EB] text-[#1A2F23] p-6 text-center';
-                    fallback.innerHTML = `
-                        <div class="text-3xl font-serif mb-4 opacity-20">✦</div>
-                        <div class="text-xl font-serif font-bold mb-2 tracking-widest">${card.name}</div>
-                        <div class="text-xs uppercase tracking-[0.2em] opacity-60">${card.category}</div>
-                    `;
-                    cardFront.appendChild(fallback);
-                };
+                    img.onerror = () => {
+                        spinner.remove();
+                        img.style.display = 'none';
+                        const fallback = document.createElement('div');
+                        fallback.className = 'w-full h-full flex flex-col items-center justify-center bg-[#F5F2EB] text-[#1A2F23] p-6 text-center';
+                        fallback.innerHTML = `
+                            <div class="text-3xl font-serif mb-4 opacity-20">✦</div>
+                            <div class="text-xl font-serif font-bold mb-2 tracking-widest">${card.name}</div>
+                            <div class="text-xs uppercase tracking-[0.2em] opacity-60">${card.category}</div>
+                        `;
+                        cardFront.appendChild(fallback);
+                        resolve();
+                    };
+                });
 
                 container.classList.add('flipped');
+                return imageReady;
             }
 
             function displayInterpretation() {
@@ -865,8 +867,8 @@
 
                 setTimeout(() => {
                     const firstItem = wrapper.querySelector('.editorial-grid');
-                    if (firstItem) firstItem.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 300);
+                    if (firstItem) firstItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 500);
             }
 
             // Card click handlers
@@ -874,7 +876,7 @@
             const cardWrappers = document.querySelectorAll('#card-reading-area .group');
 
             cardWrappers.forEach(wrapper => {
-                wrapper.addEventListener('click', () => {
+                wrapper.addEventListener('click', async () => {
                     const container = wrapper.querySelector('.card-container');
                     const position = parseInt(wrapper.dataset.position);
 
@@ -883,13 +885,19 @@
                         const card = drawCard();
                         if (card) {
                             drawnCards[0] = card;
-                            displayCard(card, container);
+                            const imageReady = displayCard(card, container);
 
-                            // Reveal interpretation quickly for single card
+                            // Scroll to card area so user sees the flip
                             setTimeout(() => {
-                                displayInterpretation();
-                                resetBtn.classList.remove('hidden');
-                            }, 1000);
+                                wrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 300);
+
+                            // Wait for image to load, then show interpretation
+                            await imageReady;
+                            // Give user 1.5s to appreciate the card image
+                            await new Promise(r => setTimeout(r, 1500));
+                            displayInterpretation();
+                            resetBtn.classList.remove('hidden');
                         }
                     }
                 });

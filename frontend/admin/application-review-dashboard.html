@@ -196,8 +196,7 @@
 
     <!-- Apps Script URL 設定 -->
     <script>
-        // 請更新為您的 Apps Script URL
-        const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+        const APPS_SCRIPT_URL = '/api';
         
         // 全域變數
         let currentApplications = [];
@@ -232,13 +231,10 @@
         async function loadApplications() {
             try {
                 showLoading(true);
-                const response = await fetch(APPS_SCRIPT_URL, {
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=get_applications`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                        action: 'get_applications',
-                        status_filter: currentFilter
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status_filter: currentFilter })
                 });
 
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -265,15 +261,11 @@
 
         // 更新統計資料
         function updateStatistics(result) {
-            const pendingCount = result.data?.filter(app => app.application_status === 'PENDING').length || 0;
-            const approvedCount = result.data?.filter(app => app.application_status === 'APPROVED').length || 0;
-            const rejectedCount = result.data?.filter(app => app.application_status === 'REJECTED').length || 0;
-            const totalCount = result.total_count || result.data?.length || 0;
-
-            document.getElementById('pending-count').textContent = pendingCount;
-            document.getElementById('approved-count').textContent = approvedCount;
-            document.getElementById('rejected-count').textContent = rejectedCount;
-            document.getElementById('total-count').textContent = totalCount;
+            const counts = result.counts || {};
+            document.getElementById('pending-count').textContent = counts.pending || 0;
+            document.getElementById('approved-count').textContent = counts.approved || 0;
+            document.getElementById('rejected-count').textContent = counts.rejected || 0;
+            document.getElementById('total-count').textContent = result.total_count || 0;
         }
 
         // 渲染申請列表
@@ -400,11 +392,10 @@
             const reviewNotes = document.getElementById('review-notes').value;
             
             try {
-                const response = await fetch(APPS_SCRIPT_URL, {
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=review_application`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                        action: 'review_application',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
                         application_id: selectedApplication.id,
                         status: status,
                         review_notes: reviewNotes,
@@ -464,11 +455,10 @@
             }
 
             try {
-                const response = await fetch(APPS_SCRIPT_URL, {
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=promote_to_partner`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                        action: 'promote_to_partner',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
                         application_id: selectedApplication.id,
                         partner_code: partnerCode,
                         coupon_url: couponUrl

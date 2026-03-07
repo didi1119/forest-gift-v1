@@ -1531,6 +1531,176 @@ async function handleGetPartnerDashboardData(data) {
 // 路由函數
 // ========================================
 
+// ========================================
+// 申請管理
+// ========================================
+
+const APPLICATION_SHEET = 'Applications';
+const APPLICATION_HEADERS = DataModels.Application.fields;
+
+async function ensureApplicationsSheet() {
+  const exists = await sheets.sheetExists(APPLICATION_SHEET);
+  if (!exists) {
+    await sheets.createSheet(APPLICATION_SHEET, APPLICATION_HEADERS);
+    console.log('Created Applications sheet');
+  }
+}
+
+async function handleSubmitApplication(data) {
+  await ensureApplicationsSheet();
+
+  if (!data.name || !data.email) {
+    throw new Error('姓名與 Email 為必填欄位');
+  }
+
+  const applicationData = {
+    name: data.name,
+    email: data.email,
+    line_name: data.line_name || '',
+    phone: data.phone || '',
+    message: data.message || '',
+    application_status: 'PENDING',
+    review_notes: '',
+    reviewed_by: '',
+    reviewed_at: '',
+    partner_code_assigned: '',
+    partner_link_sent: false
+  };
+
+  const record = await createRecord(APPLICATION_SHEET, applicationData);
+  return { success: true, message: '申請已成功提交', id: record.id };
+}
+
+async function handleGetApplications(data) {
+  await ensureApplicationsSheet();
+
+  const values = await sheets.getSheetData(APPLICATION_SHEET);
+  if (!values || values.length < 2) {
+    return { success: true, data: [], total_count: 0 };
+  }
+
+  const dataModel = new SheetDataModel(values[0]);
+  const allApps = [];
+
+  for (let i = 1; i < values.length; i++) {
+    const obj = dataModel.rowToObject(values[i]);
+    allApps.push(obj);
+  }
+
+  const statusFilter = data.status_filter || 'ALL';
+  const filtered = statusFilter === 'ALL'
+    ? allApps
+    : allApps.filter(app => app.application_status === statusFilter);
+
+  // Always return counts for all statuses (for dashboard stats)
+  const counts = {
+    pending: allApps.filter(a => a.application_status === 'PENDING').length,
+    approved: allApps.filter(a => a.application_status === 'APPROVED').length,
+    rejected: allApps.filter(a => a.application_status === 'REJECTED').length
+  };
+
+  return { success: true, data: filtered, total_count: allApps.length, counts };
+}
+
+async function handleReviewApplication(data) {
+  await ensureApplicationsSheet();
+
+  const appId = data.application_id;
+  const status = data.status;
+
+  if (!appId) throw new Error('application_id 為必填');
+  if (!status || !['APPROVED', 'REJECTED'].includes(status)) {
+    throw new Error('status 必須為 APPROVED 或 REJECTED');
+  }
+
+  const record = await findRecordById(APPLICATION_SHEET, appId);
+  if (!record) throw new Error('找不到該申請記錄');
+
+  if (record.data.application_status !== 'PENDING') {
+    throw new Error('該申請已審核過，無法重複審核');
+  }
+
+  await updateRecord(APPLICATION_SHEET, appId, {
+    application_status: status,
+    review_notes: data.review_notes || '',
+    reviewed_by: data.reviewed_by || 'admin',
+    reviewed_at: new Date().toISOString()
+  });
+
+  return { success: true, message: `申請已${status === 'APPROVED' ? '核准' : '拒絕'}` };
+}
+
+async function handlePromoteToPartner(data) {
+  await ensureApplicationsSheet();
+
+  const appId = data.application_id;
+  const partnerCode = data.partner_code;
+
+  if (!appId) throw new Error('application_id 為必填');
+  if (!partnerCode) throw new Error('partner_code 為必填');
+
+  const record = await findRecordById(APPLICATION_SHEET, appId);
+  if (!record) throw new Error('找不到該申請記錄');
+
+  if (record.data.application_status !== 'APPROVED') {
+    throw new Error('僅核准的申請可轉為大使');
+  }
+
+  // Check partner code not already taken
+  const existing = await findPartnerByCode(partnerCode);
+  if (existing) throw new Error('大使代碼已被使用: ' + partnerCode);
+
+  // Create partner
+  const baseUrl = GITHUB_PAGES_URL.replace('/frontend/index.html', '');
+  const landingLink = `${baseUrl}/api?dest=landing&pid=${partnerCode}`;
+  const couponLink = `${baseUrl}/api?dest=coupon&pid=${partnerCode}`;
+
+  const partnerData = {
+    partner_code: partnerCode,
+    name: record.data.name || '',
+    email: record.data.email || '',
+    phone: record.data.phone || '',
+    level: 'LV1_INSIDER',
+    level_progress: 0,
+    total_successful_referrals: 0,
+    commission_preference: 'ACCOMMODATION',
+    total_commission_earned: 0,
+    total_commission_paid: 0,
+    pending_commission: 0,
+    coupon_code: '',
+    coupon_url: data.coupon_url || DEFAULT_LINE_COUPON_URL,
+    landing_link: landingLink,
+    coupon_link: couponLink,
+    short_landing_link: '',
+    short_coupon_link: '',
+    available_points: 0,
+    points_used: 0,
+    bank_account: '',
+    bank_code: '',
+    yearly_referrals: 0,
+    notes: `從申請 #${appId} 轉入`,
+    is_active: true,
+    contact_phone: record.data.phone || '',
+    contact_email: record.data.email || ''
+  };
+
+  await createRecord('Partners', partnerData);
+
+  // Update application record
+  await updateRecord(APPLICATION_SHEET, appId, {
+    partner_code_assigned: partnerCode,
+    partner_link_sent: true
+  });
+
+  return {
+    success: true,
+    message: '已成功轉為正式大使',
+    partner_code: partnerCode,
+    landing_link: landingLink,
+    coupon_link: couponLink
+  };
+}
+
 async function route(action, data) {
   const handlers = {
     'create_booking': handleCreateBooking,
@@ -1556,6 +1726,10 @@ async function route(action, data) {
     'batch_cancel': handleBatchCancel,
     'verify_partner_login': handleVerifyPartnerLogin,
     'get_partner_dashboard_data': handleGetPartnerDashboardData,
+    'submit_application': handleSubmitApplication,
+    'get_applications': handleGetApplications,
+    'review_application': handleReviewApplication,
+    'promote_to_partner': handlePromoteToPartner,
   };
 
   const handler = handlers[action];

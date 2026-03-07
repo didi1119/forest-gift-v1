@@ -369,9 +369,9 @@
             // 設定您的 Apps Script URL
             const APPS_SCRIPT_URL = '/api';
             
-            form.addEventListener('submit', function(event) {
-                event.preventDefault(); 
-                
+            form.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
                 const name = document.getElementById('name').value.trim();
                 const email = document.getElementById('email').value.trim();
                 const lineName = document.getElementById('line-name').value.trim();
@@ -384,51 +384,21 @@
                     return;
                 }
 
-                // 顯示載入狀態
                 const submitBtn = form.querySelector('button[type="submit"]');
                 const originalText = submitBtn.textContent;
                 submitBtn.textContent = '提交中...';
                 submitBtn.disabled = true;
 
-                // 使用隱藏表單提交到 Apps Script（避免 CORS 問題）
-                const hiddenForm = document.createElement('form');
-                hiddenForm.method = 'POST';
-                hiddenForm.action = APPS_SCRIPT_URL;
-                hiddenForm.target = 'submission-frame';
-                hiddenForm.style.display = 'none';
+                try {
+                    const response = await fetch(`${APPS_SCRIPT_URL}?action=submit_application`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, line_name: lineName, phone, message })
+                    });
 
-                // 添加表單數據
-                const formData = {
-                    action: 'submit_application',
-                    name: name,
-                    email: email,
-                    line_name: lineName,
-                    phone: phone,
-                    message: message
-                };
+                    const result = await response.json();
 
-                Object.keys(formData).forEach(key => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = formData[key];
-                    hiddenForm.appendChild(input);
-                });
-
-                // 創建隱藏的 iframe 來接收回應
-                let iframe = document.getElementById('submission-frame');
-                if (!iframe) {
-                    iframe = document.createElement('iframe');
-                    iframe.id = 'submission-frame';
-                    iframe.name = 'submission-frame';
-                    iframe.style.display = 'none';
-                    document.body.appendChild(iframe);
-                }
-
-                // 監聽 iframe 載入完成
-                iframe.onload = function() {
-                    setTimeout(() => {
-                        // 顯示成功訊息
+                    if (result.success) {
                         const formContainer = form.parentElement;
                         formContainer.innerHTML = `
                             <div class="text-center p-10 bg-emerald-50 rounded-lg">
@@ -441,20 +411,14 @@
                                 </div>
                             </div>
                         `;
-                    }, 1000);
-                };
-
-                // 錯誤處理
-                iframe.onerror = function() {
-                    alert('提交申請時發生錯誤，請稍後再試。');
+                    } else {
+                        throw new Error(result.error || '提交失敗');
+                    }
+                } catch (error) {
+                    alert('提交申請時發生錯誤：' + error.message);
                     submitBtn.textContent = originalText;
                     submitBtn.disabled = false;
-                };
-
-                // 提交表單
-                document.body.appendChild(hiddenForm);
-                hiddenForm.submit();
-                document.body.removeChild(hiddenForm);
+                }
             });
         });
     </script>

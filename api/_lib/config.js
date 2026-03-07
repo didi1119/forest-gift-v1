@@ -59,6 +59,12 @@ const DataModels = {
     fields: ['id', 'partner_code', 'destination', 'utm_source', 'utm_medium',
       'utm_campaign', 'referrer', 'user_agent', 'ip_address', 'click_time',
       'created_at']
+  },
+  Application: {
+    tableName: 'Applications',
+    fields: ['id', 'name', 'email', 'line_name', 'phone', 'message',
+      'application_status', 'review_notes', 'reviewed_by', 'reviewed_at',
+      'partner_code_assigned', 'partner_link_sent', 'created_at', 'updated_at']
   }
 };
 

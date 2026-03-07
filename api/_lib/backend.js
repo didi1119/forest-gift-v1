@@ -528,7 +528,8 @@ async function handleGetAllData() {
       } else {
         data[sheetName.toLowerCase()] = [];
       }
-    } catch {
+    } catch (err) {
+      console.error(`[handleGetAllData] Error reading ${sheetName}:`, err.message);
       data[sheetName.toLowerCase()] = [];
     }
   }

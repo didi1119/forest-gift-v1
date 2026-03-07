@@ -1,0 +1,27 @@
+# 不需要部署的大型目錄
+cards/
+setup/
+
+# 後端原始碼（已轉換為 api/）
+backend/
+
+# 測試檔案
+test/
+
+# 文件
+docs/
+*.md
+!frontend/**/*.md
+
+# 開發用檔案
+*.xlsx
+*.xlsx_backup
+*.py
+*.txt
+
+# 私密檔案
+*-金鑰.json
+credentials.json
+service-account.json
+.env
+.env.local

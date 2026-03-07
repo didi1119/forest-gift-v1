@@ -2,7 +2,7 @@
 // 系統配置與常數
 // ========================================
 
-const SHEETS_ID = process.env.GOOGLE_SHEETS_ID || '1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4';
+const SHEETS_ID = (process.env.GOOGLE_SHEETS_ID || '1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4').trim();
 const GITHUB_PAGES_URL = process.env.GITHUB_PAGES_URL || 'https://didi1119.github.io/forest-gift-v1/index.html';
 const DEFAULT_LINE_COUPON_URL = process.env.DEFAULT_LINE_COUPON_URL || 'https://lin.ee/q38pqot';
 

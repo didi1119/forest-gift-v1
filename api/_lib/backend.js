@@ -398,7 +398,7 @@ async function handleCreateBooking(data) {
     await updatePartnerReferralStats(data.partner_code, 1);
   }
 
-  return { success: true, message: '訂房記錄建立成功', booking_id: booking.id };
+  return { success: true, message: '訂房記錄建立成功', booking_id: booking.id || booking.ID, data: booking };
 }
 
 async function handleConfirmCheckinCompletion(data) {
@@ -478,6 +478,7 @@ async function handleUseAccommodationPoints(data) {
   };
 
   const booking = await createRecord('Bookings', bookingData);
+  const bookingId = booking.id || booking.ID;
 
   const newAvailablePoints = currentPoints - deductAmount;
   const newPointsUsed = (parseFloat(partner.points_used) || 0) + deductAmount;
@@ -490,7 +491,7 @@ async function handleUseAccommodationPoints(data) {
   await createRecord('Accommodation_Usage', {
     partner_code: partnerCode,
     deduct_amount: deductAmount,
-    related_booking_id: booking.id,
+    related_booking_id: bookingId,
     usage_date: checkinDate,
     usage_type: 'ROOM_DISCOUNT',
     notes: data.notes || '住宿金折抵',
@@ -501,14 +502,14 @@ async function handleUseAccommodationPoints(data) {
     partner_code: partnerCode,
     payout_type: 'POINTS_ADJUSTMENT_DEBIT',
     amount: -deductAmount,
-    related_booking_ids: booking.id.toString(),
+    related_booking_ids: String(bookingId),
     payout_method: 'POINTS_ADJUSTMENT',
     payout_status: 'COMPLETED',
-    notes: `住宿金折抵 - 訂房 #${booking.id}`,
+    notes: `住宿金折抵 - 訂房 #${bookingId}`,
     created_by: 'system'
   });
 
-  return { success: true, message: `成功使用 ${deductAmount} 點住宿金`, booking_id: booking.id };
+  return { success: true, message: `成功使用 ${deductAmount} 點住宿金`, booking_id: bookingId };
 }
 
 async function handleGetAllData() {

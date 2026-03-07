@@ -24,21 +24,32 @@ class TestFramework {
     /**
      * 從 Google Sheets 獲取實時數據
      */
-    async fetchSheetData() {
-        try {
-            this.log('📊 正在獲取 Google Sheets 數據...');
-            const response = await fetch(`${this.config.APPS_SCRIPT_URL}?action=get_all_data`);
-            const data = await response.json();
-            
-            if (data.success) {
-                this.log('✅ 成功獲取 Sheets 數據');
-                return data.data;
-            } else {
-                throw new Error(data.error || '獲取數據失敗');
+    async fetchSheetData(maxRetries = 3) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                this.log('📊 正在獲取 Google Sheets 數據...');
+                const response = await fetch(`${this.config.APPS_SCRIPT_URL}?action=get_all_data`);
+                const data = await response.json();
+
+                if (data.success) {
+                    this.log('✅ 成功獲取 Sheets 數據');
+                    return data.data;
+                } else if (data.error && data.error.includes('Quota exceeded') && attempt < maxRetries) {
+                    this.log(`⚠️ 配額超限，${attempt * 5} 秒後重試 (${attempt}/${maxRetries})...`);
+                    await new Promise(r => setTimeout(r, attempt * 5000));
+                    continue;
+                } else {
+                    throw new Error(data.error || '獲取數據失敗');
+                }
+            } catch (error) {
+                if (error.message && error.message.includes('Quota exceeded') && attempt < maxRetries) {
+                    this.log(`⚠️ 配額超限，${attempt * 5} 秒後重試 (${attempt}/${maxRetries})...`);
+                    await new Promise(r => setTimeout(r, attempt * 5000));
+                    continue;
+                }
+                this.logError('❌ 獲取 Sheets 數據失敗:', error);
+                throw error;
             }
-        } catch (error) {
-            this.logError('❌ 獲取 Sheets 數據失敗:', error);
-            throw error;
         }
     }
 
@@ -46,21 +57,33 @@ class TestFramework {
      * 執行 API 操作
      * 使用 fetch + JSON（同網域，無 CORS 問題）
      */
-    async executeAPIAction(action, params = {}) {
+    async executeAPIAction(action, params = {}, maxRetries = 3) {
         this.log(`🔄 執行 API 操作: ${action}`);
-        try {
-            const url = `${this.config.APPS_SCRIPT_URL}?action=${encodeURIComponent(action)}`;
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(params)
-            });
-            const result = await response.json();
-            this.log(`${result.success ? '✅' : '❌'} API ${action}: ${result.success ? '成功' : result.error}`);
-            return result;
-        } catch (error) {
-            this.logError(`❌ API 操作失敗 (${action}):`, error);
-            throw error;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const url = `${this.config.APPS_SCRIPT_URL}?action=${encodeURIComponent(action)}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(params)
+                });
+                const result = await response.json();
+                if (!result.success && result.error && result.error.includes('Quota exceeded') && attempt < maxRetries) {
+                    this.log(`⚠️ 配額超限，${attempt * 5} 秒後重試 (${attempt}/${maxRetries})...`);
+                    await new Promise(r => setTimeout(r, attempt * 5000));
+                    continue;
+                }
+                this.log(`${result.success ? '✅' : '❌'} API ${action}: ${result.success ? '成功' : result.error}`);
+                return result;
+            } catch (error) {
+                if (error.message && error.message.includes('Quota exceeded') && attempt < maxRetries) {
+                    this.log(`⚠️ 配額超限，${attempt * 5} 秒後重試 (${attempt}/${maxRetries})...`);
+                    await new Promise(r => setTimeout(r, attempt * 5000));
+                    continue;
+                }
+                this.logError(`❌ API 操作失敗 (${action}):`, error);
+                throw error;
+            }
         }
     }
 

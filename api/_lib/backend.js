@@ -153,11 +153,8 @@ async function createRecord(sheetName, data) {
 
   if ((dataModel.hasField('id') || dataModel.hasField('ID')) && !data.id && !data.ID) {
     const newId = generateNextIdFromValues(values, dataModel);
-    if (dataModel.hasField('ID')) {
-      data.ID = newId;
-    } else {
-      data.id = newId;
-    }
+    data.id = newId;
+    data.ID = newId;
   }
 
   const row = dataModel.objectToRow(data);
@@ -761,20 +758,15 @@ async function handleCancelPayout(data) {
   if (['ACCOMMODATION', 'CASH', 'FIRST_REFERRAL_BONUS'].includes(payout.payout_type)) {
     const partner = await findPartnerByCode(payout.partner_code);
     if (partner) {
+      const commissionToDeduct = Math.abs(parseFloat(payout.amount) || 0);
       const currentSuccessful = parseInt(partner.successful_referrals || 0);
       const currentYearly = parseInt(partner.yearly_referrals || 0);
-      const currentAvailablePoints = parseInt(partner.available_points || 0);
+      const currentAvailablePoints = parseFloat(partner.available_points || 0);
       const currentPendingCommission = parseFloat(partner.pending_commission || 0);
 
       const tempSuccessful = Math.max(0, currentSuccessful - 1);
       const tempYearly = Math.max(0, currentYearly - 1);
-      let tempLevel = 'LV1_INSIDER';
-      if (tempYearly >= 10) tempLevel = 'LV3_GUARDIAN';
-      else if (tempYearly >= 4) tempLevel = 'LV2_GUIDE';
-
-      const ACCOMMODATION_RATES = { 'LV1_INSIDER': 1000, 'LV2_GUIDE': 1200, 'LV3_GUARDIAN': 1500 };
-      let commissionToDeduct = ACCOMMODATION_RATES[tempLevel] || 1000;
-      if (tempLevel === 'LV1_INSIDER' && tempSuccessful === 0) commissionToDeduct += 1500;
+      const tempLevel = checkLevelUpgrade(tempYearly);
 
       const partnerUpdates = {
         successful_referrals: tempSuccessful,
@@ -783,45 +775,35 @@ async function handleCancelPayout(data) {
         total_commission_earned: Math.max(0, (partner.total_commission_earned || 0) - commissionToDeduct)
       };
 
-      let remaining = commissionToDeduct;
-      let pointsDeducted = 0;
+      // 根據原始 payout 類型決定從哪裡扣回
+      if (payout.payout_type === 'CASH') {
+        partnerUpdates.pending_commission = Math.max(0, currentPendingCommission - commissionToDeduct);
+      } else {
+        // ACCOMMODATION 或 FIRST_REFERRAL_BONUS — 從住宿金扣回
+        let remaining = commissionToDeduct;
 
-      if (currentAvailablePoints > 0) {
         if (currentAvailablePoints >= remaining) {
-          pointsDeducted = remaining;
           partnerUpdates.available_points = currentAvailablePoints - remaining;
           remaining = 0;
         } else {
-          pointsDeducted = currentAvailablePoints;
           partnerUpdates.available_points = 0;
-          remaining = commissionToDeduct - currentAvailablePoints;
+          remaining -= currentAvailablePoints;
         }
-      }
 
-      if (remaining > 0 && currentPendingCommission > 0) {
-        const cashNeeded = remaining * 0.5;
-        if (currentPendingCommission >= cashNeeded) {
-          partnerUpdates.pending_commission = currentPendingCommission - cashNeeded;
-          remaining = 0;
-        } else {
-          partnerUpdates.pending_commission = 0;
-          remaining = (cashNeeded - currentPendingCommission) * 2;
+        if (remaining > 0) {
+          partnerUpdates.notes = (partner.notes || '') +
+            `\n[${new Date().toISOString()}] 取消結算 #${payoutId} 產生負債 ${remaining} 點`;
+          await createRecord('Payouts', {
+            partner_code: payout.partner_code,
+            payout_type: 'DEBT_RECORD',
+            amount: -remaining,
+            related_booking_ids: payout.related_booking_ids || '',
+            payout_method: 'OTHER',
+            payout_status: 'PENDING',
+            notes: `取消結算 #${payoutId} 產生的負債`,
+            created_by: 'SYSTEM'
+          });
         }
-      }
-
-      if (remaining > 0) {
-        partnerUpdates.notes = (partner.notes || '') +
-          `\n[${new Date().toISOString()}] 取消結算 #${payoutId} 產生負債 ${remaining} 點`;
-        await createRecord('Payouts', {
-          partner_code: payout.partner_code,
-          payout_type: 'DEBT_RECORD',
-          amount: -remaining,
-          related_booking_ids: payout.related_booking_ids || '',
-          payout_method: 'OTHER',
-          payout_status: 'PENDING',
-          notes: `取消結算 #${payoutId} 產生的負債`,
-          created_by: 'SYSTEM'
-        });
       }
 
       await updateRecord('Partners', partner.partner_code, partnerUpdates);
@@ -832,7 +814,7 @@ async function handleCancelPayout(data) {
         related_booking_ids: payout.related_booking_ids || '',
         payout_method: 'OTHER',
         payout_status: 'COMPLETED',
-        notes: `智慧撤銷 Payout #${payoutId}`,
+        notes: `撤銷 Payout #${payoutId}，退回 NT$ ${commissionToDeduct}`,
         created_by: 'SYSTEM'
       });
     }
@@ -1305,58 +1287,50 @@ async function handleRestoreBooking(data) {
 }
 
 async function handlePartialRefund(data) {
-  const { booking_id, new_room_price, reason } = data;
-  if (!booking_id || !new_room_price) throw new Error('需要 booking_id 和 new_room_price');
+  const booking_id = data.booking_id;
+  const reason = data.reason || '';
+  if (!booking_id) throw new Error('需要 booking_id');
 
   const booking = await findRecordById('Bookings', booking_id);
   if (!booking) throw new Error(`找不到訂房: ${booking_id}`);
 
   const oldPrice = parseFloat(booking.data.room_price || 0);
-  const newPrice = parseFloat(new_room_price);
+
+  // 支援 refund_amount（退款金額）或 new_room_price（新房價）
+  let newPrice;
+  if (data.refund_amount !== undefined) {
+    const refundAmount = parseFloat(data.refund_amount);
+    if (refundAmount <= 0) throw new Error('退款金額必須大於 0');
+    newPrice = oldPrice - refundAmount;
+  } else if (data.new_room_price !== undefined) {
+    newPrice = parseFloat(data.new_room_price);
+  } else {
+    throw new Error('需要 refund_amount 或 new_room_price');
+  }
+
   const priceDiff = oldPrice - newPrice;
-  if (priceDiff <= 0) throw new Error('新價格必須低於原價格');
-
-  const partnerResults = await findRecordsByField('Partners', 'partner_code', booking.data.partner_code);
-  if (partnerResults.length === 0) throw new Error(`找不到夥伴: ${booking.data.partner_code}`);
-  const partner = partnerResults[0];
-
-  const oldCommission = parseInt(booking.data.commission_amount || 0);
-  const commissionRate = oldCommission / oldPrice;
-  const newCommission = Math.floor(newPrice * commissionRate);
-  const commissionDiff = oldCommission - newCommission;
+  if (priceDiff <= 0) throw new Error('退款後價格必須低於原價格');
 
   await updateRecord('Bookings', booking_id, {
     room_price: newPrice,
-    commission_amount: newCommission,
-    notes: (booking.data.notes || '') + `\n[部分退款 ${priceDiff} 於 ${new Date().toISOString()}] ${reason || ''}`
+    notes: (booking.data.notes || '') + `\n[部分退款 ${priceDiff} 於 ${new Date().toISOString()}] ${reason}`
   });
 
-  if (booking.data.commission_status === 'CALCULATED') {
-    const partnerUpdates = {};
-    const currentTotal = parseInt(partner.data.total_commission_earned || 0);
-    partnerUpdates.total_commission_earned = Math.max(0, currentTotal - commissionDiff);
-    if (booking.data.commission_type === 'ACCOMMODATION') {
-      partnerUpdates.available_points = Math.max(0, parseInt(partner.data.available_points || 0) - commissionDiff);
-    }
-    if (booking.data.commission_type === 'CASH') {
-      partnerUpdates.pending_commission = Math.max(0, parseInt(partner.data.pending_commission || 0) - commissionDiff);
-    }
-    await updateRecord('Partners', booking.data.partner_code, partnerUpdates);
-  }
-
+  // 佣金為固定金額制，房價變動不影響佣金（佣金已按等級固定計算）
+  // 只記錄退款事件，不調整佣金
   await createRecord('Payouts', {
     partner_code: booking.data.partner_code,
     payout_type: 'PARTIAL_REFUND',
-    amount: -commissionDiff,
+    amount: 0,
     related_booking_ids: booking_id,
     payout_status: 'COMPLETED',
-    notes: `部分退款調整 - 房價: ${oldPrice}->${newPrice}, 佣金: ${oldCommission}->${newCommission}`,
+    notes: `部分退款 - 房價: ${oldPrice} → ${newPrice}，退款 NT$ ${priceDiff}`,
     created_by: data.adjusted_by || 'SYSTEM'
   });
 
   return {
     success: true, message: '部分退款處理成功',
-    data: { old_price: oldPrice, new_price: newPrice, price_diff: priceDiff, old_commission: oldCommission, new_commission: newCommission, commission_diff: commissionDiff }
+    data: { old_price: oldPrice, new_price: newPrice, price_diff: priceDiff }
   };
 }
 
@@ -1403,6 +1377,19 @@ async function handleVerifyPartnerLogin(data) {
   const actualLast4 = contactPhone.slice(-4);
   if (actualLast4 !== phoneLast4) return { success: false, error: '大使代碼或手機號碼不正確' };
 
+  // 計算點擊數
+  let totalClicks = 0;
+  try {
+    const cValues = await sheets.getSheetData('Clicks');
+    if (cValues && cValues.length > 1) {
+      const cModel = new SheetDataModel(cValues[0]);
+      for (let i = 1; i < cValues.length; i++) {
+        const row = cModel.rowToObject(cValues[i]);
+        if (row.partner_code === partner.partner_code) totalClicks++;
+      }
+    }
+  } catch (e) { console.error('Error loading clicks for login:', e); }
+
   return {
     success: true,
     partner: {
@@ -1418,7 +1405,8 @@ async function handleVerifyPartnerLogin(data) {
       total_successful_referrals: parseInt(partner.successful_referrals || partner.total_successful_referrals) || 0,
       yearly_referrals: parseInt(partner.yearly_referrals) || 0,
       short_landing_link: partner.short_landing_link || '',
-      short_coupon_link: partner.short_coupon_link || ''
+      short_coupon_link: partner.short_coupon_link || '',
+      total_clicks: totalClicks
     }
   };
 }

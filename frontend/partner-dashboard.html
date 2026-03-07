@@ -473,7 +473,7 @@
         function updateStatistics() {
             if (!partnerData) return;
 
-            const completed = allBookings.filter(b => b.stay_status === 'COMPLETED').length;
+            const completed = allBookings.filter(b => b.stay_status === 'COMPLETED' && b.booking_source !== 'SELF_USE').length;
             const totalComm = parseFloat(partnerData.total_commission_earned) || 0;
             const available = parseFloat(partnerData.available_points) || 0;
             const pending = parseFloat(partnerData.pending_commission) || 0;

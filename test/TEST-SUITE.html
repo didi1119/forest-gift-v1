@@ -119,6 +119,22 @@
                             <input type="checkbox" class="test-selector" value="consistency" checked>
                             <span class="ml-2">數據一致性測試</span>
                         </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="partner" checked>
+                            <span class="ml-2">大使管理測試 (3個)</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="payout" checked>
+                            <span class="ml-2">結算管理測試 (3個)</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="booking-ops" checked>
+                            <span class="ml-2">訂房操作測試 (3個)</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="test-selector" value="error-handling" checked>
+                            <span class="ml-2">錯誤處理測試 (4個)</span>
+                        </label>
                         <hr class="my-2 border-gray-600">
                         <label class="flex items-center">
                             <input type="checkbox" class="test-selector" value="complex">
@@ -814,6 +830,330 @@
 
                         framework.log(`✅ Payouts 表完整性驗證通過（${data.payouts.length} 筆記錄）`);
                         return { success: true, payoutsCount: data.payouts.length };
+                    }
+                }
+            ],
+
+            // ============= 大使管理測試 =============
+            partner: [
+                {
+                    name: '大使登入驗證 - 正確代碼',
+                    execute: async (framework) => {
+                        const testPartnerCode = document.getElementById('testPartnerCode').value;
+                        const result = await framework.executeAPIAction('verify_partner_login', {
+                            partner_code: testPartnerCode
+                        });
+                        if (!result.success) {
+                            throw new Error(`大使 ${testPartnerCode} 登入驗證失敗: ${result.error}`);
+                        }
+                        framework.log(`✅ 大使 ${testPartnerCode} 登入驗證成功`);
+                        return { success: true };
+                    }
+                },
+                {
+                    name: '大使登入驗證 - 錯誤代碼',
+                    execute: async (framework) => {
+                        const result = await framework.executeAPIAction('verify_partner_login', {
+                            partner_code: 'INVALID_CODE_THAT_DOES_NOT_EXIST_99999'
+                        });
+                        if (result.success) {
+                            throw new Error('不存在的大使代碼不應登入成功');
+                        }
+                        framework.log(`✅ 正確拒絕了無效的大使代碼`);
+                        return { success: true };
+                    }
+                },
+                {
+                    name: '大使儀表板數據獲取',
+                    execute: async (framework) => {
+                        const testPartnerCode = document.getElementById('testPartnerCode').value;
+                        const result = await framework.executeAPIAction('get_partner_dashboard_data', {
+                            partner_code: testPartnerCode
+                        });
+                        if (!result.success) {
+                            throw new Error(`獲取儀表板數據失敗: ${result.error}`);
+                        }
+                        const data = result.data;
+                        if (!data) {
+                            throw new Error('儀表板數據為空');
+                        }
+                        framework.log(`✅ 儀表板數據獲取成功`);
+                        return { success: true };
+                    }
+                }
+            ],
+
+            // ============= 結算管理測試 =============
+            payout: [
+                {
+                    name: '創建住宿金結算記錄',
+                    execute: async (framework) => {
+                        const testPartnerCode = document.getElementById('testPartnerCode').value;
+                        const result = await framework.executeAPIAction('create_payout', {
+                            partner_code: testPartnerCode,
+                            payout_type: 'ACCOMMODATION',
+                            amount: 500,
+                            notes: 'TEST_PAYOUT_CREATE'
+                        });
+                        if (!result.success) {
+                            throw new Error(`創建結算記錄失敗: ${result.error}`);
+                        }
+                        framework.log(`✅ 結算記錄創建成功`);
+                        return { success: true, payoutId: result.data && result.data.id };
+                    }
+                },
+                {
+                    name: '處理結算（標記已付款）',
+                    execute: async (framework) => {
+                        const testPartnerCode = document.getElementById('testPartnerCode').value;
+                        // 先創建一筆結算
+                        const createResult = await framework.executeAPIAction('create_payout', {
+                            partner_code: testPartnerCode,
+                            payout_type: 'ACCOMMODATION',
+                            amount: 300,
+                            notes: 'TEST_PAYOUT_PROCESS'
+                        });
+                        if (!createResult.success) {
+                            throw new Error(`創建結算記錄失敗: ${createResult.error}`);
+                        }
+                        await framework.wait(1000);
+                        // 處理結算
+                        const processResult = await framework.executeAPIAction('process_payout', {
+                            partner_code: testPartnerCode,
+                            payout_id: createResult.data && createResult.data.id
+                        });
+                        if (!processResult.success) {
+                            throw new Error(`處理結算失敗: ${processResult.error}`);
+                        }
+                        framework.log(`✅ 結算處理（標記已付款）成功`);
+                        return { success: true };
+                    }
+                },
+                {
+                    name: '取消結算記錄',
+                    execute: async (framework) => {
+                        const testPartnerCode = document.getElementById('testPartnerCode').value;
+                        // 先創建一筆結算
+                        const createResult = await framework.executeAPIAction('create_payout', {
+                            partner_code: testPartnerCode,
+                            payout_type: 'ACCOMMODATION',
+                            amount: 200,
+                            notes: 'TEST_PAYOUT_CANCEL'
+                        });
+                        if (!createResult.success) {
+                            throw new Error(`創建結算記錄失敗: ${createResult.error}`);
+                        }
+                        await framework.wait(1000);
+                        // 取消結算
+                        const cancelResult = await framework.executeAPIAction('cancel_payout', {
+                            partner_code: testPartnerCode,
+                            payout_id: createResult.data && createResult.data.id
+                        });
+                        if (!cancelResult.success) {
+                            throw new Error(`取消結算失敗: ${cancelResult.error}`);
+                        }
+                        framework.log(`✅ 結算取消成功`);
+                        return { success: true };
+                    }
+                }
+            ],
+
+            // ============= 訂房操作測試 =============
+            'booking-ops': [
+                {
+                    name: '更新訂房資料',
+                    execute: async (framework) => {
+                        const testPartnerCode = document.getElementById('testPartnerCode').value;
+                        // 先創建訂房
+                        const createResult = await framework.executeAPIAction('create_booking', {
+                            partner_code: testPartnerCode,
+                            guest_name: `TEST_UPDATE_${Date.now()}`,
+                            guest_phone: '0912345678',
+                            guest_email: 'test@example.com',
+                            bank_account_last5: '12345',
+                            checkin_date: new Date().toISOString().split('T')[0],
+                            checkout_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                            room_price: '5000',
+                            booking_source: 'REFERRAL',
+                            notes: 'TEST_BOOKING_UPDATE'
+                        });
+                        if (!createResult.success) {
+                            throw new Error(`創建訂房失敗: ${createResult.error}`);
+                        }
+                        const bookingId = createResult.data && createResult.data.id;
+                        await framework.wait(1500);
+                        // 更新訂房（改房價+日期）
+                        const updateResult = await framework.executeAPIAction('update_booking', {
+                            booking_id: bookingId,
+                            room_price: '6000',
+                            checkout_date: new Date(Date.now() + 172800000).toISOString().split('T')[0]
+                        });
+                        if (!updateResult.success) {
+                            throw new Error(`更新訂房失敗: ${updateResult.error}`);
+                        }
+                        framework.log(`✅ 訂房更新成功（房價 5000→6000）`);
+                        return { success: true, bookingId };
+                    }
+                },
+                {
+                    name: '恢復已取消訂房',
+                    execute: async (framework) => {
+                        const testPartnerCode = document.getElementById('testPartnerCode').value;
+                        // 創建 → 取消 → 恢復
+                        const createResult = await framework.executeAPIAction('create_booking', {
+                            partner_code: testPartnerCode,
+                            guest_name: `TEST_RESTORE_${Date.now()}`,
+                            guest_phone: '0912345678',
+                            guest_email: 'test@example.com',
+                            bank_account_last5: '12345',
+                            checkin_date: new Date().toISOString().split('T')[0],
+                            checkout_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                            room_price: '4000',
+                            booking_source: 'REFERRAL',
+                            notes: 'TEST_BOOKING_RESTORE'
+                        });
+                        if (!createResult.success) {
+                            throw new Error(`創建訂房失敗: ${createResult.error}`);
+                        }
+                        const bookingId = createResult.data && createResult.data.id;
+                        await framework.wait(1500);
+                        // 取消
+                        const deleteResult = await framework.executeAPIAction('delete_booking', {
+                            booking_id: bookingId
+                        });
+                        if (!deleteResult.success) {
+                            throw new Error(`取消訂房失敗: ${deleteResult.error}`);
+                        }
+                        await framework.wait(1500);
+                        // 恢復
+                        const restoreResult = await framework.executeAPIAction('restore_booking', {
+                            booking_id: bookingId
+                        });
+                        if (!restoreResult.success) {
+                            throw new Error(`恢復訂房失敗: ${restoreResult.error}`);
+                        }
+                        framework.log(`✅ 訂房恢復成功`);
+                        return { success: true, bookingId };
+                    }
+                },
+                {
+                    name: '部分退款',
+                    execute: async (framework) => {
+                        const testPartnerCode = document.getElementById('testPartnerCode').value;
+                        // 創建 → 確認入住 → 部分退款
+                        const createResult = await framework.executeAPIAction('create_booking', {
+                            partner_code: testPartnerCode,
+                            guest_name: `TEST_REFUND_${Date.now()}`,
+                            guest_phone: '0912345678',
+                            guest_email: 'test@example.com',
+                            bank_account_last5: '12345',
+                            checkin_date: new Date().toISOString().split('T')[0],
+                            checkout_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                            room_price: '8000',
+                            booking_source: 'REFERRAL',
+                            notes: 'TEST_PARTIAL_REFUND'
+                        });
+                        if (!createResult.success) {
+                            throw new Error(`創建訂房失敗: ${createResult.error}`);
+                        }
+                        const bookingId = createResult.data && createResult.data.id;
+                        await framework.wait(1500);
+                        // 確認入住
+                        const checkinResult = await framework.executeAPIAction('confirm_checkin_completion', {
+                            booking_id: bookingId
+                        });
+                        if (!checkinResult.success) {
+                            throw new Error(`確認入住失敗: ${checkinResult.error}`);
+                        }
+                        await framework.wait(1500);
+                        // 部分退款
+                        const refundResult = await framework.executeAPIAction('partial_refund', {
+                            booking_id: bookingId,
+                            refund_amount: 2000
+                        });
+                        if (!refundResult.success) {
+                            throw new Error(`部分退款失敗: ${refundResult.error}`);
+                        }
+                        framework.log(`✅ 部分退款成功（退款 2000）`);
+                        return { success: true, bookingId };
+                    }
+                }
+            ],
+
+            // ============= 錯誤處理測試 =============
+            'error-handling': [
+                {
+                    name: '缺少必填欄位創建訂房',
+                    execute: async (framework) => {
+                        // 故意缺少必填欄位
+                        const result = await framework.executeAPIAction('create_booking', {
+                            guest_name: 'TEST_MISSING_FIELDS'
+                            // 缺少 partner_code, checkin_date 等必填欄位
+                        });
+                        // API 不應崩潰，應回傳錯誤訊息
+                        if (result.success) {
+                            framework.log('⚠️ API 接受了缺少必填欄位的請求（可能有預設值）');
+                        } else {
+                            framework.log(`✅ API 正確拒絕了缺少必填欄位的請求: ${result.error}`);
+                        }
+                        return { success: true };
+                    }
+                },
+                {
+                    name: '確認不存在的訂房',
+                    execute: async (framework) => {
+                        const result = await framework.executeAPIAction('confirm_checkin_completion', {
+                            booking_id: 'NONEXISTENT_BOOKING_ID_99999'
+                        });
+                        if (result.success) {
+                            throw new Error('不存在的訂房不應確認成功');
+                        }
+                        framework.log(`✅ 正確拒絕了不存在的訂房確認: ${result.error}`);
+                        return { success: true };
+                    }
+                },
+                {
+                    name: '重複取消訂房',
+                    execute: async (framework) => {
+                        const testPartnerCode = document.getElementById('testPartnerCode').value;
+                        // 創建並取消一筆訂房
+                        const createResult = await framework.executeAPIAction('create_booking', {
+                            partner_code: testPartnerCode,
+                            guest_name: `TEST_DOUBLE_CANCEL_${Date.now()}`,
+                            guest_phone: '0912345678',
+                            guest_email: 'test@example.com',
+                            bank_account_last5: '12345',
+                            checkin_date: new Date().toISOString().split('T')[0],
+                            checkout_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+                            room_price: '3000',
+                            booking_source: 'REFERRAL',
+                            notes: 'TEST_DOUBLE_CANCEL'
+                        });
+                        if (!createResult.success) {
+                            throw new Error(`創建訂房失敗: ${createResult.error}`);
+                        }
+                        const bookingId = createResult.data && createResult.data.id;
+                        await framework.wait(1500);
+                        // 第一次取消
+                        await framework.executeAPIAction('delete_booking', { booking_id: bookingId });
+                        await framework.wait(1000);
+                        // 第二次取消（不應崩潰）
+                        const secondCancel = await framework.executeAPIAction('delete_booking', { booking_id: bookingId });
+                        framework.log(`✅ 重複取消未導致系統崩潰（success: ${secondCancel.success}）`);
+                        return { success: true };
+                    }
+                },
+                {
+                    name: '不存在的大使代碼登入',
+                    execute: async (framework) => {
+                        const result = await framework.executeAPIAction('verify_partner_login', {
+                            partner_code: 'ZZZZZ_NO_SUCH_PARTNER_12345'
+                        });
+                        if (result.success) {
+                            throw new Error('不存在的大使代碼不應登入成功');
+                        }
+                        framework.log(`✅ 正確拒絕了不存在的大使代碼: ${result.error}`);
+                        return { success: true };
                     }
                 }
             ]

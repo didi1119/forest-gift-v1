@@ -48,118 +48,24 @@ class TestFramework {
 
     /**
      * 執行 API 操作
-     * 使用表單提交方式以避免 CORS 問題
+     * 使用 fetch + JSON（同網域，無 CORS 問題）
      */
     async executeAPIAction(action, params = {}) {
-        return new Promise((resolve, reject) => {
-            try {
-                this.log(`🔄 執行 API 操作: ${action}`);
-                
-                // 創建隱藏的 iframe 來接收響應
-                const iframeName = `testFrame_${Date.now()}`;
-                let iframe = document.getElementById(iframeName);
-                if (!iframe) {
-                    iframe = document.createElement('iframe');
-                    iframe.id = iframeName;
-                    iframe.name = iframeName;
-                    iframe.style.display = 'none';
-                    document.body.appendChild(iframe);
-                }
-                
-                // 監聽 iframe 載入完成
-                let responseReceived = false;
-                const timeout = setTimeout(() => {
-                    if (!responseReceived) {
-                        responseReceived = true;
-                        document.body.removeChild(iframe);
-                        // 對於某些操作，沒有返回值也視為成功（由於跨域限制無法讀取響應）
-                        if (['create_booking', 'update_booking', 'confirm_checkin_completion',
-                             'use_accommodation_points', 'convert_points_to_cash',
-                             'cancel_payout', 'delete_booking', 'create_partner'].includes(action)) {
-                            this.log(`✅ API 操作完成: ${action} (無返回值)`);
-                            resolve({ success: true, data: { id: this.generateTestId() } });
-                        } else {
-                            reject(new Error('API 操作超時'));
-                        }
-                    }
-                }, 5000); // 5秒超時
-                
-                iframe.onload = () => {
-                    if (!responseReceived) {
-                        responseReceived = true;
-                        clearTimeout(timeout);
-                        
-                        try {
-                            // 嘗試讀取 iframe 內容（可能會因為跨域而失敗）
-                            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                            const content = iframeDoc.body.textContent || iframeDoc.body.innerText;
-                            
-                            if (content) {
-                                try {
-                                    const result = JSON.parse(content);
-                                    if (result.success) {
-                                        this.log(`✅ API 操作成功: ${action}`);
-                                        resolve(result);
-                                    } else {
-                                        throw new Error(result.error || 'API 操作失敗');
-                                    }
-                                } catch (parseError) {
-                                    // 如果不是 JSON，可能是成功但沒有返回 JSON
-                                    this.log(`✅ API 操作完成: ${action}`);
-                                    resolve({ success: true, data: { id: this.generateTestId() } });
-                                }
-                            } else {
-                                // 空內容也視為成功
-                                this.log(`✅ API 操作完成: ${action}`);
-                                resolve({ success: true, data: { id: this.generateTestId() } });
-                            }
-                        } catch (accessError) {
-                            // 跨域限制，但操作可能已成功
-                            this.log(`✅ API 操作完成: ${action} (跨域限制)`);
-                            resolve({ success: true, data: { id: this.generateTestId() } });
-                        }
-                        
-                        // 清理 iframe
-                        setTimeout(() => {
-                            if (document.body.contains(iframe)) {
-                                document.body.removeChild(iframe);
-                            }
-                        }, 100);
-                    }
-                };
-                
-                // 創建表單
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = this.config.APPS_SCRIPT_URL;
-                form.target = iframeName;
-                form.style.display = 'none';
-                
-                // 添加表單數據
-                const submitData = {
-                    action: action,
-                    ...params
-                };
-                
-                Object.keys(submitData).forEach(key => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    // 修復：正確處理數值 0，避免被當作 falsy 值而變成空字串
-                    input.value = (submitData[key] !== undefined && submitData[key] !== null) ? submitData[key] : '';
-                    form.appendChild(input);
-                });
-                
-                // 提交表單
-                document.body.appendChild(form);
-                form.submit();
-                document.body.removeChild(form);
-                
-            } catch (error) {
-                this.logError(`❌ API 操作失敗 (${action}):`, error);
-                reject(error);
-            }
-        });
+        this.log(`🔄 執行 API 操作: ${action}`);
+        try {
+            const url = `${this.config.APPS_SCRIPT_URL}?action=${encodeURIComponent(action)}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params)
+            });
+            const result = await response.json();
+            this.log(`${result.success ? '✅' : '❌'} API ${action}: ${result.success ? '成功' : result.error}`);
+            return result;
+        } catch (error) {
+            this.logError(`❌ API 操作失敗 (${action}):`, error);
+            throw error;
+        }
     }
 
     // ============= 2. UI 數據擷取器 =============
@@ -170,17 +76,23 @@ class TestFramework {
     async fetchUIData() {
         try {
             this.log('🖥️ 正在提取 UI 數據...');
-            
+
             // 如果在 iframe 中運行，需要訪問父視窗
             const targetWindow = window.parent || window;
             const targetDocument = targetWindow.document;
-            
+
+            // 檢查是否在管理後台頁面（有相關 DOM 元素）
+            if (!targetDocument.querySelector('#partnersTableBody')) {
+                this.log('⚠️ 非管理後台頁面，跳過 UI 數據比對');
+                return null;
+            }
+
             const uiData = {
                 partners: this.extractPartnersFromUI(targetDocument),
                 bookings: this.extractBookingsFromUI(targetDocument),
                 payouts: this.extractPayoutsFromUI(targetDocument)
             };
-            
+
             this.log('✅ 成功提取 UI 數據');
             return uiData;
         } catch (error) {
@@ -271,8 +183,8 @@ class TestFramework {
             const uiData = await this.fetchUIData();
             
             if (!uiData) {
-                this.log('⚠️ 無法獲取 UI 數據，可能不在管理後台頁面');
-                return { success: false, message: '無法獲取 UI 數據' };
+                this.log('⚠️ 非管理後台頁面，跳過 UI 數據比對');
+                return { success: true, skipped: true, message: '非管理後台頁面，跳過 UI 比對' };
             }
             
             const results = {

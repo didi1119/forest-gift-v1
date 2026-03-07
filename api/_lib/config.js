@@ -3,7 +3,7 @@
 // ========================================
 
 const SHEETS_ID = (process.env.GOOGLE_SHEETS_ID || '1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4').trim();
-const GITHUB_PAGES_URL = process.env.GITHUB_PAGES_URL || 'https://didi1119.github.io/forest-gift-v1/index.html';
+const GITHUB_PAGES_URL = process.env.GITHUB_PAGES_URL || 'https://forest-ambassador.vercel.app/frontend/index.html';
 const DEFAULT_LINE_COUPON_URL = process.env.DEFAULT_LINE_COUPON_URL || 'https://lin.ee/q38pqot';
 
 // 佣金等級對照表

@@ -563,20 +563,47 @@
             }).join('')}</div>`;
         }
 
-        function generateReferralLink() {
+        async function generateReferralLink() {
             if (!partnerData) return;
             const code = partnerData.partner_code;
             const baseUrl = window.location.origin;
 
             let landing = partnerData.short_landing_link;
-            if (!landing) landing = `${baseUrl}${APPS_SCRIPT_URL}?dest=landing&pid=${code}`;
-
             let coupon = partnerData.short_coupon_link;
-            if (!coupon) coupon = `${baseUrl}${APPS_SCRIPT_URL}?dest=coupon&pid=${code}`;
+
+            const landingFull = `${baseUrl}${APPS_SCRIPT_URL}?dest=landing&pid=${code}`;
+            const couponFull = `${baseUrl}${APPS_SCRIPT_URL}?dest=coupon&pid=${code}`;
+
+            // 如果沒有短連結，嘗試透過 reurl.cc 生成
+            if (!landing || !coupon) {
+                document.getElementById('referralLink').value = '短連結生成中...';
+                document.getElementById('couponLink').value = '短連結生成中...';
+
+                if (!landing) landing = await createShortUrl(landingFull);
+                if (!coupon) coupon = await createShortUrl(couponFull);
+            }
 
             document.getElementById('referralLink').value = landing;
             document.getElementById('couponLink').value = coupon;
             document.getElementById('templateLink').textContent = landing;
+        }
+
+        async function createShortUrl(originalUrl) {
+            try {
+                const response = await fetch('https://api.reurl.cc/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'reurl-api-key': '4070ff49d794e43515523b663c974755ecd7b335959e04df8a38b58d65165567c4f5d6'
+                    },
+                    body: JSON.stringify({ url: originalUrl })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.res === 'success' && data.short_url) return data.short_url;
+                }
+            } catch (e) { /* fallback */ }
+            return originalUrl;
         }
 
         // ========================================

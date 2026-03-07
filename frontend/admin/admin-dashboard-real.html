@@ -1260,10 +1260,8 @@
          * @returns {string} - 返回操作區的 HTML 字串
          */
         function generateSmartActions(partner) {
-            // --- 資料計算 (與原版相同，用於判斷按鈕狀態) ---
-            const totalEarned = parseFloat(partner.total_commission_earned) || 0;
-            const totalPaid = parseFloat(partner.total_commission_paid) || 0;
-            const accommodationBalance = totalEarned - totalPaid;
+            // --- 資料計算：使用 available_points（與 calculatePartnerFinancials 一致）---
+            const accommodationBalance = parseFloat(partner.available_points) || 0;
             const pendingCash = parseFloat(partner.pending_commission) || 0;
             const dropdownId = `actions-dropdown-${partner.partner_code}`;
             
@@ -1549,10 +1547,7 @@
                             <div class="font-semibold">${payout.partner_code}</div>
                         </td>
                         <td class="py-4 px-4 text-center">
-                            ${payout.payout_type === 'CASH' ? '現金' : 
-                              payout.payout_type === 'ADJUSTMENT' ? '調整' : 
-                              payout.payout_type === 'POINTS_USAGE' ? '點數折抵' :
-                              payout.payout_type === 'POINTS_REFUND' ? '點數返還' : '住宿金'}
+                            ${getPayoutTypeText(payout.payout_type)}
                         </td>
                         <td class="py-4 px-4 text-center font-semibold">
                             ${payout.amount < 0 ? '-' : ''}$${Math.abs(payout.amount || 0).toLocaleString()}
@@ -1750,6 +1745,30 @@
                 'LV3_GUARDIAN': 'LV3 秘境守護者'
             };
             return texts[level] || level || 'LV1 知音大使';
+        }
+
+        function getPayoutTypeText(type) {
+            const m = {
+                'ACCOMMODATION': '住宿金佣金',
+                'CASH': '現金佣金',
+                'FIRST_REFERRAL_BONUS': '首推獎勵',
+                'POINTS_USAGE': '點數折抵',
+                'POINTS_REFUND': '點數退還',
+                'CASH_CONVERSION': '點數轉現金',
+                'COMMISSION_REVERSAL': '佣金撤銷',
+                'MANUAL_ADJUSTMENT': '手動調整',
+                'PAYMENT_COMPLETED': '支付完成',
+                'BOOKING_RESTORED': '訂房恢復',
+                'PARTIAL_REFUND': '部分退款',
+                'POINTS_ADJUSTMENT': '點數調整',
+                'POINTS_ADJUSTMENT_DEBIT': '點數扣除',
+                'POINTS_CONVERSION_REVERSAL': '轉換撤銷',
+                'DEBT_RECORD': '負債記錄',
+                'LEVEL_ADJUSTMENT': '等級調整',
+                'CASH_ADJUSTMENT': '現金調整',
+                'ADJUSTMENT': '調整'
+            };
+            return m[type] || type || '其他';
         }
 
         function getNextLevelRequirement(level) {
@@ -1962,7 +1981,7 @@
                             </div>
                             <div>
                                 <span class="text-gray-600">結算類型：</span>
-                                <span class="font-medium">${payout.payout_type === 'CASH' ? '現金' : '住宿金'}</span>
+                                <span class="font-medium">${getPayoutTypeText(payout.payout_type)}</span>
                             </div>
                             <div>
                                 <span class="text-gray-600">結算金額：</span>
@@ -3481,15 +3500,7 @@
             }
         }
 
-        // 取得等級文字
-        function getLevelText(level) {
-            const levelMap = {
-                'LV1_INSIDER': 'LV1 森林知音',
-                'LV2_GUIDE': 'LV2 森林嚮導', 
-                'LV3_GUARDIAN': 'LV3 秘境守護者'
-            };
-            return levelMap[level] || level;
-        }
+        // 取得等級文字（已在上方定義，此處刪除重複以避免覆蓋）
 
         function filterBookings() {
             console.log('篩選訂單');
@@ -4188,10 +4199,8 @@
                 return;
             }
 
-            // ✅ 使用正確的 Google Sheets 欄位計算
-            const totalEarned = parseFloat(partner.total_commission_earned) || 0;
-            const totalPaid = parseFloat(partner.total_commission_paid) || 0;
-            const accommodationBalance = totalEarned - totalPaid;
+            // ✅ 使用 available_points 欄位（與 calculatePartnerFinancials 一致）
+            const accommodationBalance = parseFloat(partner.available_points) || 0;
             const pendingCash = parseFloat(partner.pending_commission) || 0;
 
             let modalContent = '';
@@ -4217,9 +4226,9 @@
                             <!-- 餘額顯示 -->
                             <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
                                 <div class="text-sm text-gray-600">大使：${partner.name || partner.partner_code}</div>
-                                <div class="text-2xl font-bold text-blue-700">可用餘額：$${accommodationBalance.toLocaleString()}</div>
+                                <div class="text-2xl font-bold text-blue-700">可用點數：$${accommodationBalance.toLocaleString()}</div>
                                 <div class="text-xs text-gray-500 mt-1">
-                                    累積：$${totalEarned.toLocaleString()} | 已使用：$${totalPaid.toLocaleString()}
+                                    累積：$${(parseFloat(partner.total_commission_earned) || 0).toLocaleString()} | 已使用：$${(parseFloat(partner.points_used) || 0).toLocaleString()}
                                 </div>
                             </div>
                             

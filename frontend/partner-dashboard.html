@@ -713,10 +713,15 @@
         function payoutTypeInfo(type) {
             const m = {
                 'ACCOMMODATION': '住宿金佣金', 'CASH': '現金佣金',
+                'FIRST_REFERRAL_BONUS': '首推獎勵',
                 'POINTS_REFUND': '點數退還', 'CASH_CONVERSION': '點數轉現金',
                 'COMMISSION_REVERSAL': '佣金撤銷', 'MANUAL_ADJUSTMENT': '手動調整',
                 'PAYMENT_COMPLETED': '支付完成', 'BOOKING_RESTORED': '訂房恢復',
-                'PARTIAL_REFUND': '部分退款'
+                'PARTIAL_REFUND': '部分退款',
+                'POINTS_ADJUSTMENT': '點數調整', 'POINTS_ADJUSTMENT_DEBIT': '點數扣除',
+                'POINTS_CONVERSION_REVERSAL': '轉換撤銷',
+                'DEBT_RECORD': '負債記錄', 'LEVEL_ADJUSTMENT': '等級調整',
+                'CASH_ADJUSTMENT': '現金調整'
             };
             return { label: m[type] || type || '其他' };
         }

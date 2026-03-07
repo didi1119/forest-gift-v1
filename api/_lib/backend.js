@@ -573,8 +573,10 @@ async function handlePartnerChange(oldBooking, newData) {
   const newPartnerCode = newData.partner_code;
 
   if (oldBooking.stay_status !== 'COMPLETED') {
-    if (oldPartnerCode) await updatePartnerReferralStats(oldPartnerCode, -1);
-    if (newPartnerCode) await updatePartnerReferralStats(newPartnerCode, 1);
+    if (oldBooking.booking_source !== 'SELF_USE') {
+      if (oldPartnerCode) await updatePartnerReferralStats(oldPartnerCode, -1);
+      if (newPartnerCode) await updatePartnerReferralStats(newPartnerCode, 1);
+    }
     return;
   }
 
@@ -663,6 +665,10 @@ async function handleDeleteBooking(data) {
 
   const booking = await findRecordById('Bookings', bookingId);
   if (!booking) throw new Error('Booking not found');
+
+  if (booking.data.stay_status === 'CANCELLED') {
+    return { success: true, message: '此訂單已經取消過了', booking_id: bookingId };
+  }
 
   if (booking.data.booking_source === 'SELF_USE' && booking.data.partner_code) {
     const partner = await findPartnerByCode(booking.data.partner_code);
@@ -1273,15 +1279,17 @@ async function handleRestoreBooking(data) {
     });
   }
 
-  await createRecord('Payouts', {
-    partner_code: booking.data.partner_code,
-    payout_type: 'BOOKING_RESTORED',
-    amount: 0,
-    related_booking_ids: bookingId,
-    payout_status: 'INFO',
-    notes: `訂房恢復: ${data.reason || ''}`,
-    created_by: data.restored_by || 'SYSTEM'
-  });
+  if (booking.data.partner_code) {
+    await createRecord('Payouts', {
+      partner_code: booking.data.partner_code,
+      payout_type: 'BOOKING_RESTORED',
+      amount: 0,
+      related_booking_ids: bookingId,
+      payout_status: 'INFO',
+      notes: `訂房恢復: ${data.reason || ''}`,
+      created_by: data.restored_by || 'SYSTEM'
+    });
+  }
 
   return { success: true, message: '訂房已恢復' };
 }

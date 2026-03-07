@@ -3,291 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>知音計畫 - 資源中心</title>
+    <title>知音計畫 - 管理員入口</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #FDFBF8; color: #5C544B; }
         h1, h2, h3, .font-serif { font-family: 'Noto Serif TC', serif; }
         .brand-accent { color: #2E4B36; }
-        .brand-card { background-color: #FFFFFF; border: 1px solid #EAE6E1; border-radius: 1.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
-        .resource-card { 
-            transition: all 0.3s ease; 
-            cursor: pointer;
+        .brand-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAE6E1;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
         }
-        .resource-card:hover { 
-            transform: translateY(-4px); 
-            box-shadow: 0 15px 50px rgba(0,0,0,0.1); 
+        .resource-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(16px);
+        }
+        .resource-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .resource-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            position: relative;
+            display: inline-block;
+        }
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #2E4B36, transparent);
         }
     </style>
 </head>
 <body class="antialiased min-h-screen py-8">
     <div class="max-w-6xl mx-auto px-6">
+
         <!-- 頁首 -->
-        <header class="text-center mb-12">
-            <h1 class="text-4xl font-bold brand-accent mb-4">🌲 知音計畫資源中心</h1>
-            <p class="text-lg text-stone-600 mb-6">快速存取重要頁面與工具</p>
-            <div class="flex justify-center">
-                <button onclick="window.history.back()" class="bg-stone-200 text-stone-700 px-4 py-2 rounded-lg hover:bg-stone-300 transition-colors">
-                    ← 返回管理後台
-                </button>
+        <header class="text-center mb-14">
+            <div class="mb-6">
+                <span class="text-5xl">🌲</span>
             </div>
+            <h1 class="text-4xl font-bold brand-accent mb-3">知音計畫・管理員入口</h1>
+            <p class="text-stone-500">所有管理工具與頁面的統一入口</p>
         </header>
 
-        <!-- 主要資源區塊 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            
-            <!-- 申請審核系統 -->
-            <div class="brand-card p-8 resource-card" onclick="openResource('application-review-dashboard.html')">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">📋</span>
-                    </div>
-                    <h3 class="text-xl font-semibold brand-accent mb-3">申請審核系統</h3>
-                    <p class="text-sm text-stone-600 mb-4">管理大使申請與審核流程</p>
-                    <div class="text-xs text-blue-600 bg-blue-50 px-3 py-1 rounded-full inline-block">
-                        申請管理
-                    </div>
-                </div>
-            </div>
+        <!-- ===== 核心管理工具 ===== -->
+        <section class="mb-14">
+            <h2 class="text-2xl font-semibold brand-accent mb-6"><span class="section-title">核心管理</span></h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-            <!-- 佣金管理系統 -->
-            <div class="brand-card p-8 resource-card" onclick="openResource('commission-audit.html')">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">💰</span>
-                    </div>
-                    <h3 class="text-xl font-semibold brand-accent mb-3">佣金審核系統</h3>
-                    <p class="text-sm text-stone-600 mb-4">佣金計算與稽核工具</p>
-                    <div class="text-xs text-green-600 bg-green-50 px-3 py-1 rounded-full inline-block">
-                        財務管理
-                    </div>
-                </div>
-            </div>
-
-            <!-- 結算診斷工具 -->
-            <div class="brand-card p-8 resource-card" onclick="openResource('payouts-diagnostic.html')">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">🔧</span>
-                    </div>
-                    <h3 class="text-xl font-semibold brand-accent mb-3">結算診斷工具</h3>
-                    <p class="text-sm text-stone-600 mb-4">診斷並修復結算問題</p>
-                    <div class="text-xs text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full inline-block">
-                        系統工具
-                    </div>
-                </div>
-            </div>
-
-            <!-- 手動訂房系統 -->
-            <div class="brand-card p-8 resource-card" onclick="openResource('manual-booking.html')">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">📝</span>
-                    </div>
-                    <h3 class="text-xl font-semibold brand-accent mb-3">手動訂房系統</h3>
-                    <p class="text-sm text-stone-600 mb-4">手動登記訂房資料</p>
-                    <div class="text-xs text-purple-600 bg-purple-50 px-3 py-1 rounded-full inline-block">
-                        訂房管理
-                    </div>
-                </div>
-            </div>
-
-            <!-- 入住確認系統 -->
-            <div class="brand-card p-8 resource-card" onclick="openResource('manual-checkin-confirm.html')">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">✅</span>
-                    </div>
-                    <h3 class="text-xl font-semibold brand-accent mb-3">入住確認系統</h3>
-                    <p class="text-sm text-stone-600 mb-4">確認大使推薦入住完成</p>
-                    <div class="text-xs text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full inline-block">
-                        入住確認
-                    </div>
-                </div>
-            </div>
-
-            <!-- 連結生成工具 -->
-            <div class="brand-card p-8 resource-card" onclick="openResource('link-generator-form.html')">
-                <div class="text-center">
-                    <div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-2xl">🔗</span>
-                    </div>
-                    <h3 class="text-xl font-semibold brand-accent mb-3">連結生成工具</h3>
-                    <p class="text-sm text-stone-600 mb-4">為大使生成追蹤連結</p>
-                    <div class="text-xs text-pink-600 bg-pink-50 px-3 py-1 rounded-full inline-block">
-                        行銷工具
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- 前台頁面區塊 -->
-        <div class="mb-12">
-            <h2 class="text-2xl font-semibold brand-accent mb-6 text-center">🌐 前台頁面資源</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                
-                <!-- 主頁 -->
-                <div class="brand-card p-6 resource-card" onclick="openResource('../index.html', true)">
+                <div class="brand-card p-8 resource-card" onclick="go('admin-dashboard-real.html')">
                     <div class="text-center">
-                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-lg">🏠</span>
+                        <div class="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">📊</span>
                         </div>
-                        <h4 class="font-semibold brand-accent mb-2">主頁</h4>
-                        <p class="text-xs text-stone-600">網站首頁</p>
+                        <h3 class="text-lg font-semibold brand-accent mb-2">管理儀表板</h3>
+                        <p class="text-sm text-stone-500">大使、訂房、結算總覽</p>
+                        <span class="mt-3 inline-block text-xs text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">主控台</span>
                     </div>
                 </div>
 
-                <!-- 森林故事 -->
-                <div class="brand-card p-6 resource-card" onclick="openResource('../story.html', true)">
+                <div class="brand-card p-8 resource-card" onclick="go('analytics-dashboard.html')">
                     <div class="text-center">
-                        <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-lg">📖</span>
+                        <div class="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">📈</span>
                         </div>
-                        <h4 class="font-semibold brand-accent mb-2">森林故事</h4>
-                        <p class="text-xs text-stone-600">品牌故事頁面</p>
+                        <h3 class="text-lg font-semibold brand-accent mb-2">數據分析</h3>
+                        <p class="text-sm text-stone-500">績效追蹤與行為洞察</p>
+                        <span class="mt-3 inline-block text-xs text-violet-700 bg-violet-50 px-3 py-1 rounded-full">分析</span>
                     </div>
                 </div>
 
-                <!-- 邀請頁面 -->
-                <div class="brand-card p-6 resource-card" onclick="openResource('../invitation.html', true)">
+                <div class="brand-card p-8 resource-card" onclick="go('application-review-dashboard.html')">
                     <div class="text-center">
-                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-lg">💌</span>
+                        <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">📋</span>
                         </div>
-                        <h4 class="font-semibold brand-accent mb-2">邀請頁面</h4>
-                        <p class="text-xs text-stone-600">大使邀請頁</p>
-                    </div>
-                </div>
-
-                <!-- 森林音樂 -->
-                <div class="brand-card p-6 resource-card" onclick="openResource('../music.html', true)">
-                    <div class="text-center">
-                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-lg">🎵</span>
-                        </div>
-                        <h4 class="font-semibold brand-accent mb-2">森林音樂</h4>
-                        <p class="text-xs text-stone-600">音樂體驗頁</p>
-                    </div>
-                </div>
-
-                <!-- 森林地圖 -->
-                <div class="brand-card p-6 resource-card" onclick="openResource('../inner_map.html', true)">
-                    <div class="text-center">
-                        <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-lg">🗺️</span>
-                        </div>
-                        <h4 class="font-semibold brand-accent mb-2">森林地圖</h4>
-                        <p class="text-xs text-stone-600">互動地圖</p>
-                    </div>
-                </div>
-
-                <!-- 隱私政策 -->
-                <div class="brand-card p-6 resource-card" onclick="openResource('../policy.html', true)">
-                    <div class="text-center">
-                        <div class="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-lg">📄</span>
-                        </div>
-                        <h4 class="font-semibold brand-accent mb-2">隱私政策</h4>
-                        <p class="text-xs text-stone-600">政策條款</p>
+                        <h3 class="text-lg font-semibold brand-accent mb-2">申請審核</h3>
+                        <p class="text-sm text-stone-500">大使申請管理與審核</p>
+                        <span class="mt-3 inline-block text-xs text-blue-700 bg-blue-50 px-3 py-1 rounded-full">審核</span>
                     </div>
                 </div>
 
             </div>
-        </div>
+        </section>
 
-        <!-- 快捷操作區塊 -->
-        <div class="mb-12">
-            <h2 class="text-2xl font-semibold brand-accent mb-6 text-center">⚡ 快捷操作</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
-                <!-- Google Sheets 直達 -->
-                <div class="brand-card p-6 resource-card" onclick="openExternalResource('https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit')">
+        <!-- ===== 訂房與財務 ===== -->
+        <section class="mb-14">
+            <h2 class="text-2xl font-semibold brand-accent mb-6"><span class="section-title">訂房與財務</span></h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <div class="brand-card p-8 resource-card" onclick="go('manual-booking.html')">
                     <div class="text-center">
-                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-lg">📊</span>
+                        <div class="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">📝</span>
                         </div>
-                        <h4 class="font-semibold brand-accent mb-2">Google Sheets</h4>
-                        <p class="text-xs text-stone-600 mb-3">直接開啟資料庫</p>
-                        <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">外部連結</div>
+                        <h3 class="text-lg font-semibold brand-accent mb-2">手動訂房</h3>
+                        <p class="text-sm text-stone-500">登記電話訂房與推薦</p>
+                        <span class="mt-3 inline-block text-xs text-purple-700 bg-purple-50 px-3 py-1 rounded-full">訂房</span>
                     </div>
                 </div>
 
-                <!-- GitHub 專案 -->
-                <div class="brand-card p-6 resource-card" onclick="openExternalResource('https://github.com/didi1119/forest-gift-v1')">
+                <div class="brand-card p-8 resource-card" onclick="go('manual-checkin-confirm.html')">
                     <div class="text-center">
-                        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-lg">🔧</span>
+                        <div class="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">✅</span>
                         </div>
-                        <h4 class="font-semibold brand-accent mb-2">GitHub 專案</h4>
-                        <p class="text-xs text-stone-600 mb-3">原始碼管理</p>
-                        <div class="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">外部連結</div>
+                        <h3 class="text-lg font-semibold brand-accent mb-2">入住確認</h3>
+                        <p class="text-sm text-stone-500">確認入住完成、自動算佣</p>
+                        <span class="mt-3 inline-block text-xs text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full">入住</span>
                     </div>
                 </div>
 
-                <!-- Google Apps Script -->
-                <div class="brand-card p-6 resource-card" onclick="openExternalResource('/api')">
+                <div class="brand-card p-8 resource-card" onclick="go('commission-audit.html')">
                     <div class="text-center">
-                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <span class="text-lg">⚙️</span>
+                        <div class="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">💰</span>
                         </div>
-                        <h4 class="font-semibold brand-accent mb-2">Apps Script API</h4>
-                        <p class="text-xs text-stone-600 mb-3">後端 API 服務</p>
-                        <div class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">外部連結</div>
+                        <h3 class="text-lg font-semibold brand-accent mb-2">佣金稽核</h3>
+                        <p class="text-sm text-stone-500">佣金計算、對帳與審計</p>
+                        <span class="mt-3 inline-block text-xs text-amber-700 bg-amber-50 px-3 py-1 rounded-full">財務</span>
                     </div>
                 </div>
 
             </div>
-        </div>
+        </section>
+
+        <!-- ===== 行銷工具 ===== -->
+        <section class="mb-14">
+            <h2 class="text-2xl font-semibold brand-accent mb-6"><span class="section-title">行銷工具</span></h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <div class="brand-card p-8 resource-card" onclick="go('link-generator-form.html')">
+                    <div class="text-center">
+                        <div class="w-14 h-14 bg-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🔗</span>
+                        </div>
+                        <h3 class="text-lg font-semibold brand-accent mb-2">連結生成器</h3>
+                        <p class="text-sm text-stone-500">產生大使專屬追蹤連結</p>
+                        <span class="mt-3 inline-block text-xs text-pink-700 bg-pink-50 px-3 py-1 rounded-full">行銷</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ===== 前台頁面 ===== -->
+        <section class="mb-14">
+            <h2 class="text-2xl font-semibold brand-accent mb-6"><span class="section-title">前台頁面</span></h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+
+                <div class="brand-card p-5 resource-card" onclick="go('../index.html', true)">
+                    <div class="text-center">
+                        <span class="text-xl mb-2 block">🏠</span>
+                        <h4 class="text-sm font-semibold brand-accent">首頁（抽牌）</h4>
+                    </div>
+                </div>
+
+                <div class="brand-card p-5 resource-card" onclick="go('../story.html', true)">
+                    <div class="text-center">
+                        <span class="text-xl mb-2 block">📖</span>
+                        <h4 class="text-sm font-semibold brand-accent">品牌故事</h4>
+                    </div>
+                </div>
+
+                <div class="brand-card p-5 resource-card" onclick="go('../invitation.html', true)">
+                    <div class="text-center">
+                        <span class="text-xl mb-2 block">💌</span>
+                        <h4 class="text-sm font-semibold brand-accent">邀請頁</h4>
+                    </div>
+                </div>
+
+                <div class="brand-card p-5 resource-card" onclick="go('../partner-login.html', true)">
+                    <div class="text-center">
+                        <span class="text-xl mb-2 block">🔑</span>
+                        <h4 class="text-sm font-semibold brand-accent">大使登入</h4>
+                    </div>
+                </div>
+
+                <div class="brand-card p-5 resource-card" onclick="go('../partner-dashboard.html', true)">
+                    <div class="text-center">
+                        <span class="text-xl mb-2 block">👤</span>
+                        <h4 class="text-sm font-semibold brand-accent">大使儀表板</h4>
+                    </div>
+                </div>
+
+                <div class="brand-card p-5 resource-card" onclick="go('../inner_map.html', true)">
+                    <div class="text-center">
+                        <span class="text-xl mb-2 block">🗺️</span>
+                        <h4 class="text-sm font-semibold brand-accent">內在地圖</h4>
+                    </div>
+                </div>
+
+                <div class="brand-card p-5 resource-card" onclick="go('../music.html', true)">
+                    <div class="text-center">
+                        <span class="text-xl mb-2 block">🎵</span>
+                        <h4 class="text-sm font-semibold brand-accent">森林音樂</h4>
+                    </div>
+                </div>
+
+                <div class="brand-card p-5 resource-card" onclick="go('../../apply.html', true)">
+                    <div class="text-center">
+                        <span class="text-xl mb-2 block">✍️</span>
+                        <h4 class="text-sm font-semibold brand-accent">大使申請</h4>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ===== 開發與測試 ===== -->
+        <section class="mb-14">
+            <h2 class="text-2xl font-semibold brand-accent mb-6"><span class="section-title">開發與測試</span></h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <div class="brand-card p-8 resource-card" onclick="go('../../test/TEST-SUITE.html', true)">
+                    <div class="text-center">
+                        <div class="w-14 h-14 bg-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🧪</span>
+                        </div>
+                        <h3 class="text-lg font-semibold brand-accent mb-2">自動化測試套件</h3>
+                        <p class="text-sm text-stone-500">API 整合測試（26 個測試）</p>
+                        <span class="mt-3 inline-block text-xs text-cyan-700 bg-cyan-50 px-3 py-1 rounded-full">測試</span>
+                    </div>
+                </div>
+
+                <div class="brand-card p-8 resource-card" onclick="openExternal('https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit')">
+                    <div class="text-center">
+                        <div class="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">📗</span>
+                        </div>
+                        <h3 class="text-lg font-semibold brand-accent mb-2">Google Sheets</h3>
+                        <p class="text-sm text-stone-500">後端資料庫直達</p>
+                        <span class="mt-3 inline-block text-xs text-stone-500 bg-stone-100 px-3 py-1 rounded-full">外部</span>
+                    </div>
+                </div>
+
+                <div class="brand-card p-8 resource-card" onclick="openExternal('https://github.com/didi1119/forest-gift-v1')">
+                    <div class="text-center">
+                        <div class="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">🐙</span>
+                        </div>
+                        <h3 class="text-lg font-semibold brand-accent mb-2">GitHub</h3>
+                        <p class="text-sm text-stone-500">原始碼與版本管理</p>
+                        <span class="mt-3 inline-block text-xs text-stone-500 bg-stone-100 px-3 py-1 rounded-full">外部</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
 
         <!-- 頁尾 -->
-        <footer class="text-center text-stone-500 text-sm border-t pt-8">
-            <p>知音計畫資源中心 | 最後更新：<span id="lastUpdate"></span></p>
+        <footer class="text-center text-stone-400 text-xs pt-8 pb-4 border-t border-stone-200">
+            <p>靜謐森林・知音計畫 管理員入口</p>
         </footer>
+
     </div>
 
     <script>
-        // 設定最後更新時間
-        document.getElementById('lastUpdate').textContent = new Date().toLocaleString('zh-TW');
-
-        // 開啟資源頁面
-        function openResource(path, isNewTab = false) {
-            if (isNewTab) {
+        function go(path, newTab = false) {
+            if (newTab) {
                 window.open(path, '_blank');
             } else {
                 window.location.href = path;
             }
         }
 
-        // 開啟外部資源
-        function openExternalResource(url) {
+        function openExternal(url) {
             window.open(url, '_blank');
         }
 
-        // 複製連結功能
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('連結已複製到剪貼簿！');
-            }).catch(err => {
-                console.error('複製失敗:', err);
-            });
-        }
-
-        // 頁面載入完成後的動畫
+        // 入場動畫
         document.addEventListener('DOMContentLoaded', () => {
-            const cards = document.querySelectorAll('.resource-card');
-            cards.forEach((card, index) => {
-                setTimeout(() => {
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateY(20px)';
-                    card.style.transition = 'all 0.5s ease';
-                    
-                    setTimeout(() => {
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
-                    }, 100);
-                }, index * 100);
+            document.querySelectorAll('.resource-card').forEach((card, i) => {
+                setTimeout(() => card.classList.add('visible'), i * 60);
             });
         });
     </script>

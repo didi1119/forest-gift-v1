@@ -156,7 +156,10 @@
             <div class="card p-4 md:p-5 stat-card">
                 <p class="text-xs text-stone-400 mb-1.5">可用住宿金</p>
                 <p class="text-2xl md:text-3xl font-semibold text-[#2E4B36] tabular-nums" id="availablePoints">-</p>
-                <p class="text-[0.65rem] text-stone-400 mt-1">點數餘額</p>
+                <a href="https://line.me/R/ti/p/@478hisen" target="_blank"
+                   class="inline-block mt-2 px-3 py-1.5 text-[0.65rem] font-medium text-white bg-[#06C755] rounded-lg hover:bg-[#05b34c] transition-colors">
+                    使用住宿金 →
+                </a>
             </div>
 
             <!-- Pending Cash -->
@@ -563,12 +566,13 @@
         function generateReferralLink() {
             if (!partnerData) return;
             const code = partnerData.partner_code;
+            const baseUrl = window.location.origin;
 
             let landing = partnerData.short_landing_link;
-            if (!landing) landing = `${APPS_SCRIPT_URL}?dest=landing&pid=${code}`;
+            if (!landing) landing = `${baseUrl}${APPS_SCRIPT_URL}?dest=landing&pid=${code}`;
 
             let coupon = partnerData.short_coupon_link;
-            if (!coupon) coupon = `${APPS_SCRIPT_URL}?dest=coupon&pid=${code}`;
+            if (!coupon) coupon = `${baseUrl}${APPS_SCRIPT_URL}?dest=coupon&pid=${code}`;
 
             document.getElementById('referralLink').value = landing;
             document.getElementById('couponLink').value = coupon;
@@ -665,7 +669,7 @@
         // Helpers
         // ========================================
         function getLevelText(level) {
-            return { 'LV1_INSIDER': 'LV1', 'LV2_GUIDE': 'LV2', 'LV3_GUARDIAN': 'LV3' }[level] || level;
+            return { 'LV1_INSIDER': 'LV1 知音大使', 'LV2_GUIDE': 'LV2 森林嚮導', 'LV3_GUARDIAN': 'LV3 秘境守護者' }[level] || level;
         }
 
         function statusClass(s) {

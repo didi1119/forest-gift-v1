@@ -625,7 +625,11 @@ const testLevelUpgrade = {
         framework.log('步驟 3: 驗證等級是否晉升');
         const afterUpgradeState = await framework.fetchSheetData();
         const upgradedPartner = afterUpgradeState.partners.find(p => p.partner_code === partnerCode);
-        
+
+        if (!upgradedPartner) {
+            throw new Error(`找不到夥伴 ${partnerCode}，可能資料尚未同步`);
+        }
+
         // 根據 COMMISSION-SYSTEM-ARCHITECTURE.md:
         // LV1 → LV2: 年度 4 筆成功推薦
         // LV2 → LV3: 年度 10 筆成功推薦

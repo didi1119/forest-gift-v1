@@ -517,7 +517,10 @@ const testCancelAfterPartnerChange = {
         const state2 = await framework.fetchSheetData();
         const partnerAAfterChange = state2.partners.find(p => p.partner_code === partnerA);
         const partnerBAfterChange = state2.partners.find(p => p.partner_code === partnerB);
-        
+
+        if (!partnerAAfterChange) throw new Error(`找不到夥伴 A (${partnerA})，可能資料尚未同步`);
+        if (!partnerBAfterChange) throw new Error(`找不到夥伴 B (${partnerB})，可能資料尚未同步`);
+
         framework.log('變更後:');
         framework.log(`  A 佣金: ${partnerABefore.total_commission_earned} -> ${partnerAAfterChange.total_commission_earned}`);
         framework.log(`  B 佣金: ${partnerBBefore.total_commission_earned} -> ${partnerBAfterChange.total_commission_earned}`);
@@ -533,7 +536,10 @@ const testCancelAfterPartnerChange = {
         const finalState = await framework.fetchSheetData();
         const partnerAFinal = finalState.partners.find(p => p.partner_code === partnerA);
         const partnerBFinal = finalState.partners.find(p => p.partner_code === partnerB);
-        
+
+        if (!partnerAFinal) throw new Error(`找不到夥伴 A (${partnerA})，可能資料尚未同步`);
+        if (!partnerBFinal) throw new Error(`找不到夥伴 B (${partnerB})，可能資料尚未同步`);
+
         const validation = {
             partnerA: {
                 before: partnerABefore.total_commission_earned,

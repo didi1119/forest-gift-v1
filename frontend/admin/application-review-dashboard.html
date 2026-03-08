@@ -197,14 +197,23 @@
     <!-- Apps Script URL 設定 -->
     <script>
         const APPS_SCRIPT_URL = '/api';
-        
+
         // 全域變數
         let currentApplications = [];
         let currentFilter = 'PENDING';
         let selectedApplication = null;
+        let adminSecret = '';
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
+            // 先嘗試從 sessionStorage 讀取，若無則 prompt
+            adminSecret = sessionStorage.getItem('admin_secret') || '';
+            if (!adminSecret) {
+                adminSecret = prompt('請輸入管理密碼') || '';
+                if (adminSecret) {
+                    sessionStorage.setItem('admin_secret', adminSecret);
+                }
+            }
             loadApplications();
             setupEventListeners();
         });
@@ -234,7 +243,7 @@
                 const response = await fetch(`${APPS_SCRIPT_URL}?action=get_applications`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status_filter: currentFilter })
+                    body: JSON.stringify({ status_filter: currentFilter, admin_secret: adminSecret })
                 });
 
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -312,6 +321,16 @@
                             <span class="font-medium">申請時間：</span>
                             ${app.created_at ? new Date(app.created_at).toLocaleString('zh-TW') : '未知'}
                         </div>
+                        ${app.referral_source ? `
+                        <div>
+                            <span class="font-medium">推薦來源：</span>
+                            ${escapeHtml(app.referral_source)}
+                        </div>` : ''}
+                        ${app.social_profile ? `
+                        <div>
+                            <span class="font-medium">社群帳號：</span>
+                            ${app.social_profile.startsWith('http') ? `<a href="${escapeHtml(app.social_profile)}" target="_blank" class="text-blue-600 hover:underline">${escapeHtml(app.social_profile)}</a>` : escapeHtml(app.social_profile)}
+                        </div>` : ''}
                     </div>
                     
                     ${app.message ? `
@@ -376,6 +395,8 @@
                         <div><strong>Email：</strong>${escapeHtml(selectedApplication.email || '未提供')}</div>
                         <div><strong>LINE：</strong>${escapeHtml(selectedApplication.line_name || '未提供')}</div>
                         <div><strong>電話：</strong>${escapeHtml(selectedApplication.phone || '未提供')}</div>
+                        ${selectedApplication.referral_source ? `<div><strong>推薦來源：</strong>${escapeHtml(selectedApplication.referral_source)}</div>` : ''}
+                        ${selectedApplication.social_profile ? `<div><strong>社群帳號：</strong>${selectedApplication.social_profile.startsWith('http') ? `<a href="${escapeHtml(selectedApplication.social_profile)}" target="_blank" class="text-blue-600 hover:underline">${escapeHtml(selectedApplication.social_profile)}</a>` : escapeHtml(selectedApplication.social_profile)}</div>` : ''}
                         ${selectedApplication.message ? `<div><strong>留言：</strong>${escapeHtml(selectedApplication.message)}</div>` : ''}
                     </div>
                 </div>
@@ -399,7 +420,8 @@
                         application_id: selectedApplication.id,
                         status: status,
                         review_notes: reviewNotes,
-                        reviewed_by: 'admin'
+                        reviewed_by: 'admin',
+                        admin_secret: adminSecret
                     })
                 });
 
@@ -461,7 +483,8 @@
                     body: JSON.stringify({
                         application_id: selectedApplication.id,
                         partner_code: partnerCode,
-                        coupon_url: couponUrl
+                        coupon_url: couponUrl,
+                        admin_secret: adminSecret
                     })
                 });
 
@@ -502,13 +525,15 @@
                 return;
             }
 
-            const headers = ['ID', '姓名', 'Email', 'LINE名稱', '電話', '申請留言', '狀態', '審核備註', '申請時間', '審核時間'];
+            const headers = ['ID', '姓名', 'Email', 'LINE名稱', '電話', '推薦來源', '社群帳號', '申請留言', '狀態', '審核備註', '申請時間', '審核時間'];
             const csvData = currentApplications.map(app => [
                 app.id || '',
                 app.name || '',
                 app.email || '',
                 app.line_name || '',
                 app.phone || '',
+                app.referral_source || '',
+                app.social_profile || '',
                 app.message || '',
                 getStatusText(app.application_status),
                 app.review_notes || '',

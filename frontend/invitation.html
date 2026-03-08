@@ -181,6 +181,14 @@
                     <input type="tel" id="phone" name="phone" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition">
                 </div>
                 <div>
+                    <label for="referral-source" class="block text-sm font-medium text-gray-800 mb-2">您是如何認識我們的？*</label>
+                    <input type="text" id="referral-source" name="referral-source" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition" placeholder="例：朋友 Amy 推薦、IG 看到、曾入住過">
+                </div>
+                <div>
+                    <label for="social-profile" class="block text-sm font-medium text-gray-800 mb-2">社群帳號（選填）</label>
+                    <input type="text" id="social-profile" name="social-profile" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition" placeholder="例：instagram.com/yourname">
+                </div>
+                <div>
                     <label for="message" class="block text-sm font-medium text-gray-800 mb-2">留下任何想告訴我們的話</label>
                     <textarea id="message" name="message" rows="3" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition"></textarea>
                 </div>
@@ -365,24 +373,67 @@
 
             // --- Form Submission Logic ---
             const form = document.getElementById('partner-form');
-            
+
             // 設定您的 Apps Script URL
             const APPS_SCRIPT_URL = '/api';
-            
+
+            // Inline 錯誤提示輔助函數
+            function showFieldError(fieldId, message) {
+                clearFieldError(fieldId);
+                const field = document.getElementById(fieldId);
+                if (!field) return;
+                field.classList.add('border-red-500');
+                const errorDiv = document.createElement('p');
+                errorDiv.className = 'text-red-600 text-xs mt-1 field-error';
+                errorDiv.setAttribute('data-field', fieldId);
+                errorDiv.textContent = message;
+                field.parentElement.appendChild(errorDiv);
+            }
+
+            function clearFieldError(fieldId) {
+                const field = document.getElementById(fieldId);
+                if (field) field.classList.remove('border-red-500');
+                const existing = document.querySelector(`p.field-error[data-field="${fieldId}"]`);
+                if (existing) existing.remove();
+            }
+
+            function clearAllErrors() {
+                document.querySelectorAll('p.field-error').forEach(el => el.remove());
+                document.querySelectorAll('.border-red-500').forEach(el => el.classList.remove('border-red-500'));
+                const formError = document.getElementById('form-error');
+                if (formError) formError.classList.add('hidden');
+            }
+
+            // 在表單上方加入全域錯誤區
+            const formErrorDiv = document.createElement('div');
+            formErrorDiv.id = 'form-error';
+            formErrorDiv.className = 'hidden bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm';
+            form.insertBefore(formErrorDiv, form.firstChild);
+
             form.addEventListener('submit', async function(event) {
                 event.preventDefault();
+                clearAllErrors();
 
                 const name = document.getElementById('name').value.trim();
                 const email = document.getElementById('email').value.trim();
                 const lineName = document.getElementById('line-name').value.trim();
                 const phone = document.getElementById('phone').value.trim();
+                const referralSource = document.getElementById('referral-source').value.trim();
+                const socialProfile = document.getElementById('social-profile').value.trim();
                 const message = document.getElementById('message').value.trim();
                 const terms = document.getElementById('terms').checked;
 
-                if (!name || !email || !terms) {
-                    alert('請填寫所有必填欄位並同意條款。');
-                    return;
+                // 前端驗證
+                let hasError = false;
+                if (!name) { showFieldError('name', '請填寫您的署名'); hasError = true; }
+                if (!email) { showFieldError('email', '請填寫 Email'); hasError = true; }
+                else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showFieldError('email', 'Email 格式不正確'); hasError = true; }
+                if (!referralSource) { showFieldError('referral-source', '請填寫您是如何認識我們的'); hasError = true; }
+                if (!terms) {
+                    showFieldError('terms', '請同意合作條款');
+                    hasError = true;
                 }
+                if (hasError) return;
 
                 const submitBtn = form.querySelector('button[type="submit"]');
                 const originalText = submitBtn.textContent;
@@ -393,7 +444,7 @@
                     const response = await fetch(`${APPS_SCRIPT_URL}?action=submit_application`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name, email, line_name: lineName, phone, message })
+                        body: JSON.stringify({ name, email, line_name: lineName, phone, referral_source: referralSource, social_profile: socialProfile, message })
                     });
 
                     const result = await response.json();
@@ -415,7 +466,9 @@
                         throw new Error(result.error || '提交失敗');
                     }
                 } catch (error) {
-                    alert('提交申請時發生錯誤：' + error.message);
+                    const formError = document.getElementById('form-error');
+                    formError.textContent = '提交申請時發生錯誤：' + error.message;
+                    formError.classList.remove('hidden');
                     submitBtn.textContent = originalText;
                     submitBtn.disabled = false;
                 }

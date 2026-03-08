@@ -1,9 +1,10 @@
 // ========================================
 // 知音計畫後端商業邏輯 — Vercel Serverless 版
 // 從 Google Apps Script 轉換而來
+// 資料層透過 data-adapter 抽象，支援 Sheets / Supabase 切換
 // ========================================
 
-const sheets = require('./sheets');
+const db = require('./data-adapter');
 const {
   SHEETS_ID, GITHUB_PAGES_URL, DEFAULT_LINE_COUPON_URL,
   COMMISSION_RATES, FIRST_REFERRAL_BONUS, LEVEL_REQUIREMENTS, DataModels
@@ -14,164 +15,23 @@ let CALL_DEPTH = 0;
 const MAX_CALL_DEPTH = 5;
 
 // ========================================
-// SheetDataModel — 動態欄位映射（async 版）
+// 通用數據訪問函數（adapter 薄包裝）
 // ========================================
-
-class SheetDataModel {
-  constructor(headers) {
-    this.headers = headers.map(h => String(h).toLowerCase().trim());
-    this.rawHeaders = headers;
-    this.columnMap = {};
-
-    this.headers.forEach((header, index) => {
-      if (header) {
-        this.columnMap[header] = index;
-        this.columnMap[this.rawHeaders[index]] = index;
-      }
-    });
-  }
-
-  getFieldValue(row, fieldName) {
-    const index = this.columnMap[fieldName.toLowerCase()] ?? this.columnMap[fieldName];
-    if (index === undefined) return null;
-    return row[index];
-  }
-
-  setFieldValue(row, fieldName, value) {
-    const index = this.columnMap[fieldName.toLowerCase()] ?? this.columnMap[fieldName];
-    if (index === undefined) {
-      throw new Error(`Field "${fieldName}" not found`);
-    }
-    row[index] = value;
-    return row;
-  }
-
-  rowToObject(row) {
-    const obj = {};
-    this.headers.forEach((header, index) => {
-      if (header) obj[header] = row[index];
-    });
-    return obj;
-  }
-
-  objectToRow(obj) {
-    const row = new Array(this.headers.length);
-    Object.keys(obj).forEach(key => {
-      const index = this.columnMap[key.toLowerCase()] ?? this.columnMap[key];
-      if (index !== undefined) row[index] = obj[key];
-    });
-    return row;
-  }
-
-  hasField(fieldName) {
-    const normalized = fieldName.toLowerCase();
-    return this.columnMap[normalized] !== undefined || this.columnMap[fieldName] !== undefined;
-  }
-}
-
-// ========================================
-// 通用數據訪問函數（async）
-// ========================================
-
-async function getDataModel(sheetName) {
-  const headers = await sheets.getHeaders(sheetName);
-  if (!headers || headers.length === 0) {
-    throw new Error(`Sheet ${sheetName} not found or empty`);
-  }
-  return new SheetDataModel(headers);
-}
 
 async function findRecordsByField(sheetName, fieldName, value) {
-  const values = await sheets.getSheetData(sheetName);
-  if (!values || values.length < 2) return [];
-
-  const dataModel = new SheetDataModel(values[0]);
-  const results = [];
-
-  for (let i = 1; i < values.length; i++) {
-    const fieldValue = dataModel.getFieldValue(values[i], fieldName);
-    if (fieldValue == value) {
-      results.push({
-        rowIndex: i + 1,
-        data: dataModel.rowToObject(values[i])
-      });
-    }
-  }
-  return results;
+  return db.findByField(sheetName, fieldName, value);
 }
 
 async function findRecordById(sheetName, id) {
-  const results = await findRecordsByField(sheetName, 'id', id);
-  return results.length > 0 ? results[0] : null;
+  return db.findById(sheetName, id);
 }
 
 async function updateRecord(sheetName, id, updates) {
-  console.log(`--- updateRecord: ${sheetName}, ID=${id} ---`);
-
-  const values = await sheets.getSheetData(sheetName);
-  if (!values || values.length < 2) throw new Error(`Sheet ${sheetName} not found or empty`);
-
-  const dataModel = new SheetDataModel(values[0]);
-
-  // Partners 表使用 partner_code 作為主鍵
-  let record;
-  if (sheetName === 'Partners') {
-    const results = await findRecordsByField(sheetName, 'partner_code', id);
-    record = results.length > 0 ? results[0] : null;
-  } else {
-    record = await findRecordById(sheetName, id);
-    if (!record && sheetName === 'Payouts') {
-      const results = await findRecordsByField(sheetName, 'ID', id);
-      record = results.length > 0 ? results[0] : null;
-    }
-  }
-
-  if (!record) {
-    throw new Error(`Record with ID ${id} not found in ${sheetName}`);
-  }
-
-  const updatedData = Object.assign({}, record.data, updates, {
-    updated_at: new Date().toISOString()
-  });
-
-  const row = dataModel.objectToRow(updatedData);
-  await sheets.updateRow(sheetName, record.rowIndex, row);
-
-  console.log(`Updated record in ${sheetName}: ID=${id}`);
-  return updatedData;
+  return db.update(sheetName, id, updates);
 }
 
 async function createRecord(sheetName, data) {
-  const values = await sheets.getSheetData(sheetName);
-  if (!values || values.length === 0) throw new Error(`Sheet ${sheetName} not found or empty`);
-
-  const dataModel = new SheetDataModel(values[0]);
-  const timestamp = new Date().toISOString();
-
-  data.created_at = data.created_at || timestamp;
-  data.updated_at = data.updated_at || timestamp;
-
-  if ((dataModel.hasField('id') || dataModel.hasField('ID')) && !data.id && !data.ID) {
-    const newId = generateNextIdFromValues(values, dataModel);
-    data.id = newId;
-    data.ID = newId;
-  }
-
-  const row = dataModel.objectToRow(data);
-  await sheets.appendRow(sheetName, row);
-
-  console.log(`Created new record in ${sheetName}: id=${data.id || data.ID}`);
-  return data;
-}
-
-function generateNextIdFromValues(values, dataModel) {
-  let maxId = 0;
-  for (let i = 1; i < values.length; i++) {
-    let id = parseInt(dataModel.getFieldValue(values[i], 'id'));
-    if (isNaN(id)) id = parseInt(dataModel.getFieldValue(values[i], 'ID'));
-    if (!isNaN(id) && id > maxId) maxId = id;
-  }
-  return maxId + 1;
+  return db.create(sheetName, data);
 }
 
 // ========================================
@@ -202,25 +62,19 @@ async function findPartnerByCodeCaseInsensitive(code) {
 }
 
 async function findRecordsByGuestInfo(guestName, guestPhone, checkinDate) {
-  const values = await sheets.getSheetData('Bookings');
-  if (!values || values.length < 2) return [];
-
-  const dataModel = new SheetDataModel(values[0]);
+  const allRecords = await db.getAllRecords('Bookings');
   const results = [];
 
-  for (let i = 1; i < values.length; i++) {
-    const name = dataModel.getFieldValue(values[i], 'guest_name');
-    const phone = dataModel.getFieldValue(values[i], 'guest_phone');
+  for (const record of allRecords) {
+    const name = record.guest_name;
+    const phone = record.guest_phone;
 
     if (name === guestName && String(phone) === String(guestPhone)) {
       if (checkinDate) {
-        const bookingCheckin = dataModel.getFieldValue(values[i], 'checkin_date');
+        const bookingCheckin = record.checkin_date;
         if (formatDate(bookingCheckin) !== formatDate(checkinDate)) continue;
       }
-      results.push({
-        rowIndex: i + 1,
-        data: dataModel.rowToObject(values[i])
-      });
+      results.push({ data: record });
     }
   }
   return results;
@@ -515,17 +369,8 @@ async function handleGetAllData() {
 
   for (const sheetName of sheetNames) {
     try {
-      const values = await sheets.getSheetData(sheetName);
-      if (values && values.length > 1) {
-        const dataModel = new SheetDataModel(values[0]);
-        const records = [];
-        for (let i = 1; i < values.length; i++) {
-          records.push(dataModel.rowToObject(values[i]));
-        }
-        data[sheetName.toLowerCase()] = records;
-      } else {
-        data[sheetName.toLowerCase()] = [];
-      }
+      const records = await db.getAllRecords(sheetName);
+      data[sheetName.toLowerCase()] = records;
     } catch (err) {
       console.error(`[handleGetAllData] Error reading ${sheetName}:`, err.message);
       data[sheetName.toLowerCase()] = [];
@@ -781,11 +626,9 @@ async function handleCancelPayout(data) {
         total_commission_earned: Math.max(0, (partner.total_commission_earned || 0) - commissionToDeduct)
       };
 
-      // 根據原始 payout 類型決定從哪裡扣回
       if (payout.payout_type === 'CASH') {
         partnerUpdates.pending_commission = Math.max(0, currentPendingCommission - commissionToDeduct);
       } else {
-        // ACCOMMODATION 或 FIRST_REFERRAL_BONUS — 從住宿金扣回
         let remaining = commissionToDeduct;
 
         if (currentAvailablePoints >= remaining) {
@@ -825,11 +668,9 @@ async function handleCancelPayout(data) {
       });
     }
   } else if (payout.payout_type === 'CASH_CONVERSION') {
-    // 取消點數轉現金：退回點數、扣回現金
     const partner = await findPartnerByCode(payout.partner_code);
     if (partner) {
       const cashAmount = Math.abs(parseFloat(payout.amount) || 0);
-      // 從 notes 提取原始點數，格式：「點數轉現金：2000 點 → NT$ 1000 (2:1)」
       const notesMatch = (payout.notes || '').match(/點數轉現金：(\d+)/);
       const pointsToRestore = notesMatch ? parseInt(notesMatch[1]) : Math.round(cashAmount / 0.5);
 
@@ -1143,12 +984,9 @@ async function handleRedirect(req, res) {
 }
 
 async function recordClick(params) {
-  const clicksExists = await sheets.sheetExists('Clicks');
-  if (!clicksExists) {
-    const clickHeaders = ['id', 'partner_code', 'destination', 'utm_source', 'utm_medium',
-      'utm_campaign', 'referrer', 'user_agent', 'ip_address', 'click_time', 'created_at'];
-    await sheets.createSheet('Clicks', clickHeaders);
-  }
+  const clickHeaders = ['id', 'partner_code', 'destination', 'utm_source', 'utm_medium',
+    'utm_campaign', 'referrer', 'user_agent', 'ip_address', 'click_time', 'created_at'];
+  await db.ensureTable('Clicks', clickHeaders);
 
   const clickData = {
     partner_code: params.pid || params.subid || null,
@@ -1186,14 +1024,10 @@ async function updatePartnerClickStats(partnerCode) {
 
 async function handleGetClickStats(params) {
   try {
-    const values = await sheets.getSheetData('Clicks');
-    if (!values || values.length <= 1) {
+    const clicks = await db.getAllRecords('Clicks');
+    if (!clicks || clicks.length === 0) {
       return { success: true, data: { total_clicks: 0, partner_stats: [], destination_stats: {}, recent_clicks: [] } };
     }
-
-    const dataModel = new SheetDataModel(values[0]);
-    const clicks = [];
-    for (let i = 1; i < values.length; i++) clicks.push(dataModel.rowToObject(values[i]));
 
     const stats = {
       total_clicks: clicks.length,
@@ -1329,7 +1163,6 @@ async function handlePartialRefund(data) {
 
   const oldPrice = parseFloat(booking.data.room_price || 0);
 
-  // 支援 refund_amount（退款金額）或 new_room_price（新房價）
   let newPrice;
   if (data.refund_amount !== undefined) {
     const refundAmount = parseFloat(data.refund_amount);
@@ -1349,8 +1182,6 @@ async function handlePartialRefund(data) {
     notes: (booking.data.notes || '') + `\n[部分退款 ${priceDiff} 於 ${new Date().toISOString()}] ${reason}`
   });
 
-  // 佣金為固定金額制，房價變動不影響佣金（佣金已按等級固定計算）
-  // 只記錄退款事件，不調整佣金
   await createRecord('Payouts', {
     partner_code: booking.data.partner_code,
     payout_type: 'PARTIAL_REFUND',
@@ -1413,13 +1244,9 @@ async function handleVerifyPartnerLogin(data) {
   // 計算點擊數
   let totalClicks = 0;
   try {
-    const cValues = await sheets.getSheetData('Clicks');
-    if (cValues && cValues.length > 1) {
-      const cModel = new SheetDataModel(cValues[0]);
-      for (let i = 1; i < cValues.length; i++) {
-        const row = cModel.rowToObject(cValues[i]);
-        if (row.partner_code === partner.partner_code) totalClicks++;
-      }
+    const clicks = await db.getAllRecords('Clicks');
+    for (const click of clicks) {
+      if (click.partner_code === partner.partner_code) totalClicks++;
     }
   } catch (e) { console.error('Error loading clicks for login:', e); }
 
@@ -1457,23 +1284,19 @@ async function handleGetPartnerDashboardData(data) {
   // 1. 訂房記錄
   const bookings = [];
   try {
-    const bValues = await sheets.getSheetData('Bookings');
-    if (bValues && bValues.length > 1) {
-      const bModel = new SheetDataModel(bValues[0]);
-      for (let i = 1; i < bValues.length; i++) {
-        const row = bModel.rowToObject(bValues[i]);
-        if (row.partner_code === partnerCode) {
-          bookings.push({
-            id: row.id, guest_name: maskName(row.guest_name),
-            checkin_date: row.checkin_date, checkout_date: row.checkout_date,
-            room_price: row.room_price, booking_source: row.booking_source,
-            stay_status: row.stay_status, payment_status: row.payment_status,
-            commission_status: row.commission_status, commission_amount: row.commission_amount,
-            commission_type: row.commission_type, is_first_referral_bonus: row.is_first_referral_bonus,
-            first_referral_bonus_amount: row.first_referral_bonus_amount,
-            notes: row.notes, created_at: row.created_at
-          });
-        }
+    const allBookings = await db.getAllRecords('Bookings');
+    for (const row of allBookings) {
+      if (row.partner_code === partnerCode) {
+        bookings.push({
+          id: row.id, guest_name: maskName(row.guest_name),
+          checkin_date: row.checkin_date, checkout_date: row.checkout_date,
+          room_price: row.room_price, booking_source: row.booking_source,
+          stay_status: row.stay_status, payment_status: row.payment_status,
+          commission_status: row.commission_status, commission_amount: row.commission_amount,
+          commission_type: row.commission_type, is_first_referral_bonus: row.is_first_referral_bonus,
+          first_referral_bonus_amount: row.first_referral_bonus_amount,
+          notes: row.notes, created_at: row.created_at
+        });
       }
     }
   } catch (e) { console.error('Error loading bookings:', e); }
@@ -1481,18 +1304,14 @@ async function handleGetPartnerDashboardData(data) {
   // 2. 結算記錄
   const payouts = [];
   try {
-    const pValues = await sheets.getSheetData('Payouts');
-    if (pValues && pValues.length > 1) {
-      const pModel = new SheetDataModel(pValues[0]);
-      for (let i = 1; i < pValues.length; i++) {
-        const row = pModel.rowToObject(pValues[i]);
-        if (row.partner_code === partnerCode) {
-          payouts.push({
-            id: row.id, payout_type: row.payout_type, amount: row.amount,
-            payout_method: row.payout_method, payout_status: row.payout_status,
-            notes: row.notes, created_at: row.created_at
-          });
-        }
+    const allPayouts = await db.getAllRecords('Payouts');
+    for (const row of allPayouts) {
+      if (row.partner_code === partnerCode) {
+        payouts.push({
+          id: row.id, payout_type: row.payout_type, amount: row.amount,
+          payout_method: row.payout_method, payout_status: row.payout_status,
+          notes: row.notes, created_at: row.created_at
+        });
       }
     }
   } catch (e) { console.error('Error loading payouts:', e); }
@@ -1500,17 +1319,13 @@ async function handleGetPartnerDashboardData(data) {
   // 3. 住宿金使用記錄
   const accommodationUsage = [];
   try {
-    const uValues = await sheets.getSheetData('Accommodation_Usage');
-    if (uValues && uValues.length > 1) {
-      const uModel = new SheetDataModel(uValues[0]);
-      for (let i = 1; i < uValues.length; i++) {
-        const row = uModel.rowToObject(uValues[i]);
-        if (row.partner_code === partnerCode) {
-          accommodationUsage.push({
-            id: row.id, deduct_amount: row.deduct_amount, usage_date: row.usage_date,
-            usage_type: row.usage_type, notes: row.notes, created_at: row.created_at
-          });
-        }
+    const allUsage = await db.getAllRecords('Accommodation_Usage');
+    for (const row of allUsage) {
+      if (row.partner_code === partnerCode) {
+        accommodationUsage.push({
+          id: row.id, deduct_amount: row.deduct_amount, usage_date: row.usage_date,
+          usage_type: row.usage_type, notes: row.notes, created_at: row.created_at
+        });
       }
     }
   } catch (e) { console.error('Error loading accommodation usage:', e); }
@@ -1518,13 +1333,9 @@ async function handleGetPartnerDashboardData(data) {
   // 4. 點擊統計
   let totalClicks = 0;
   try {
-    const cValues = await sheets.getSheetData('Clicks');
-    if (cValues && cValues.length > 1) {
-      const cModel = new SheetDataModel(cValues[0]);
-      for (let i = 1; i < cValues.length; i++) {
-        const row = cModel.rowToObject(cValues[i]);
-        if (row.partner_code === partnerCode) totalClicks++;
-      }
+    const allClicks = await db.getAllRecords('Clicks');
+    for (const click of allClicks) {
+      if (click.partner_code === partnerCode) totalClicks++;
     }
   } catch (e) { console.error('Error loading clicks:', e); }
 
@@ -1563,11 +1374,7 @@ const APPLICATION_SHEET = 'Applications';
 const APPLICATION_HEADERS = DataModels.Application.fields;
 
 async function ensureApplicationsSheet() {
-  const exists = await sheets.sheetExists(APPLICATION_SHEET);
-  if (!exists) {
-    await sheets.createSheet(APPLICATION_SHEET, APPLICATION_HEADERS);
-    console.log('Created Applications sheet');
-  }
+  await db.ensureTable(APPLICATION_SHEET, APPLICATION_HEADERS);
 }
 
 async function handleSubmitApplication(data) {
@@ -1577,12 +1384,42 @@ async function handleSubmitApplication(data) {
     throw new Error('姓名與 Email 為必填欄位');
   }
 
+  // 字串清理 & 截斷
+  const name = String(data.name).trim().slice(0, 50);
+  const email = String(data.email).trim().slice(0, 100);
+  const lineName = String(data.line_name || '').trim().slice(0, 50);
+  const phone = String(data.phone || '').trim().slice(0, 20);
+  const message = String(data.message || '').trim().slice(0, 500);
+  const referralSource = String(data.referral_source || '').trim().slice(0, 100);
+  const socialProfile = String(data.social_profile || '').trim().slice(0, 200);
+
+  // Email 格式驗證
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new Error('Email 格式不正確');
+  }
+
+  // 推薦來源必填
+  if (!referralSource) {
+    throw new Error('推薦來源為必填欄位');
+  }
+
+  // 同 email 防重複（檢查是否已有 PENDING 申請）
+  const existingApps = await db.getAllRecords(APPLICATION_SHEET);
+  for (const row of existingApps) {
+    if (row.email && row.email.toLowerCase() === email.toLowerCase() && row.application_status === 'PENDING') {
+      throw new Error('您已有一筆待審核的申請，請耐心等候');
+    }
+  }
+
   const applicationData = {
-    name: data.name,
-    email: data.email,
-    line_name: data.line_name || '',
-    phone: data.phone || '',
-    message: data.message || '',
+    name,
+    email,
+    line_name: lineName,
+    phone,
+    message,
+    referral_source: referralSource,
+    social_profile: socialProfile,
     application_status: 'PENDING',
     review_notes: '',
     reviewed_by: '',
@@ -1598,25 +1435,13 @@ async function handleSubmitApplication(data) {
 async function handleGetApplications(data) {
   await ensureApplicationsSheet();
 
-  const values = await sheets.getSheetData(APPLICATION_SHEET);
-  if (!values || values.length < 2) {
-    return { success: true, data: [], total_count: 0 };
-  }
-
-  const dataModel = new SheetDataModel(values[0]);
-  const allApps = [];
-
-  for (let i = 1; i < values.length; i++) {
-    const obj = dataModel.rowToObject(values[i]);
-    allApps.push(obj);
-  }
+  const allApps = await db.getAllRecords(APPLICATION_SHEET);
 
   const statusFilter = data.status_filter || 'ALL';
   const filtered = statusFilter === 'ALL'
     ? allApps
     : allApps.filter(app => app.application_status === statusFilter);
 
-  // Always return counts for all statuses (for dashboard stats)
   const counts = {
     pending: allApps.filter(a => a.application_status === 'PENDING').length,
     approved: allApps.filter(a => a.application_status === 'APPROVED').length,
@@ -1663,6 +1488,10 @@ async function handlePromoteToPartner(data) {
   if (!appId) throw new Error('application_id 為必填');
   if (!partnerCode) throw new Error('partner_code 為必填');
 
+  if (!/^[A-Za-z0-9]{3,20}$/.test(partnerCode)) {
+    throw new Error('大使代碼只能包含英文字母與數字，3-20 字元');
+  }
+
   const record = await findRecordById(APPLICATION_SHEET, appId);
   if (!record) throw new Error('找不到該申請記錄');
 
@@ -1670,11 +1499,9 @@ async function handlePromoteToPartner(data) {
     throw new Error('僅核准的申請可轉為大使');
   }
 
-  // Check partner code not already taken
   const existing = await findPartnerByCode(partnerCode);
   if (existing) throw new Error('大使代碼已被使用: ' + partnerCode);
 
-  // Create partner
   const baseUrl = GITHUB_PAGES_URL.replace('/frontend/index.html', '');
   const landingLink = `${baseUrl}/api?dest=landing&pid=${partnerCode}`;
   const couponLink = `${baseUrl}/api?dest=coupon&pid=${partnerCode}`;
@@ -1710,7 +1537,6 @@ async function handlePromoteToPartner(data) {
 
   await createRecord('Partners', partnerData);
 
-  // Update application record
   await updateRecord(APPLICATION_SHEET, appId, {
     partner_code_assigned: partnerCode,
     partner_link_sent: true
@@ -1726,6 +1552,21 @@ async function handlePromoteToPartner(data) {
 }
 
 async function route(action, data) {
+  // 公開 action（不需要 admin_secret）
+  const PUBLIC_ACTIONS = new Set([
+    'submit_application',
+    'verify_partner_login',
+    'get_partner_dashboard_data'
+  ]);
+
+  // 管理類 action 需要 admin_secret 驗證
+  if (!PUBLIC_ACTIONS.has(action)) {
+    const adminSecret = process.env.ADMIN_SECRET;
+    if (adminSecret && data.admin_secret !== adminSecret) {
+      throw new Error('未授權的操作');
+    }
+  }
+
   const handlers = {
     'create_booking': handleCreateBooking,
     'update_booking': handleUpdateBooking,

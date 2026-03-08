@@ -14,6 +14,9 @@ const testUsePointsThenCancel = {
         framework.log('步驟 1: 記錄初始點數狀態');
         const initialState = await framework.fetchSheetData();
         const partnerInitial = initialState.partners.find(p => p.partner_code === partnerCode);
+        if (!partnerInitial) {
+            throw new Error(`找不到夥伴 ${partnerCode}，請確認測試大使已建立`);
+        }
         const initialPoints = partnerInitial.available_points || 0;
         const initialUsed = partnerInitial.points_used || 0;
         

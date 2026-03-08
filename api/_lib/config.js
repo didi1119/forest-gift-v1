@@ -63,6 +63,7 @@ const DataModels = {
   Application: {
     tableName: 'Applications',
     fields: ['id', 'name', 'email', 'line_name', 'phone', 'message',
+      'referral_source', 'social_profile',
       'application_status', 'review_notes', 'reviewed_by', 'reviewed_at',
       'partner_code_assigned', 'partner_link_sent', 'created_at', 'updated_at']
   }

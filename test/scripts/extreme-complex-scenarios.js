@@ -186,6 +186,9 @@ const testChainPartnerChanges = {
         
         const state2 = await framework.fetchSheetData();
         const partner0After = state2.partners.find(p => p.partner_code === partnerCodes[0]);
+        if (!partner0After) {
+            throw new Error(`找不到夥伴 ${partnerCodes[0]}，可能資料尚未同步`);
+        }
         framework.log(`  夥伴 A 獲得佣金: ${partner0After.total_commission_earned - partners[0].total_commission_earned}`);
         
         // 步驟 3: 變更到第二個夥伴
@@ -198,6 +201,9 @@ const testChainPartnerChanges = {
         
         const state3 = await framework.fetchSheetData();
         const partner1After = state3.partners.find(p => p.partner_code === partnerCodes[1]);
+        if (!partner1After) {
+            throw new Error(`找不到夥伴 ${partnerCodes[1]}，可能資料尚未同步`);
+        }
         framework.log(`  夥伴 B 現在的總收入: ${partner1After.total_commission_earned}`);
         
         // 步驟 4: 再變更到第三個夥伴

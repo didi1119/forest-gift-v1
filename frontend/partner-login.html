@@ -7,45 +7,66 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --forest-dark: #1A2F23;
+            --forest-medium: #2D4A3E;
+            --forest-light: #4A675A;
+            --forest-faint: #E8ECE9;
+            --paper: #F5F2EB;
+            --gold: #C5A065;
+            --gold-light: #DFC698;
+        }
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background: #FAFAF8;
-            color: #3D3D3D;
+            background: var(--paper);
+            color: var(--forest-dark);
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.4;
         }
         h1, h2, h3, .font-serif {
             font-family: 'Noto Serif TC', serif;
         }
-        .card {
-            background: #FFFFFF;
-            border: 1px solid rgba(0,0,0,0.06);
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
             border-radius: 1.25rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.03);
         }
         .input-field {
             transition: all 0.2s ease;
-            border: 1px solid #E0E0E0;
+            border: 1px solid var(--forest-faint);
+            background: rgba(255,255,255,0.7);
         }
         .input-field:focus {
-            border-color: #2E4B36;
-            box-shadow: 0 0 0 3px rgba(46, 75, 54, 0.08);
+            border-color: var(--forest-medium);
+            box-shadow: 0 0 0 3px rgba(45, 74, 62, 0.08);
         }
         .btn-primary {
-            background: #2E4B36;
+            background: var(--forest-medium);
             transition: all 0.2s ease;
         }
         .btn-primary:hover {
-            background: #3A5D44;
-            box-shadow: 0 4px 16px rgba(46, 75, 54, 0.2);
+            background: var(--forest-light);
+            box-shadow: 0 4px 16px rgba(45, 74, 62, 0.2);
         }
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid #D4D4D4;
-            color: #6B6B6B;
+        .btn-gold {
+            background: var(--gold);
+            color: #fff;
             transition: all 0.2s ease;
         }
-        .btn-secondary:hover {
-            border-color: #2E4B36;
-            color: #2E4B36;
+        .btn-gold:hover {
+            background: var(--gold-light);
+            box-shadow: 0 4px 16px rgba(197, 160, 101, 0.25);
         }
         .msg-error {
             animation: fadeShake 0.4s ease;
@@ -55,26 +76,33 @@
             50% { transform: translateX(4px); }
             100% { opacity: 1; transform: translateX(0); }
         }
+        .coupon-display {
+            color: var(--gold);
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-shadow: 0 0 20px rgba(197, 160, 101, 0.2);
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center py-12 px-4">
     <div class="max-w-md w-full">
         <!-- Logo & Title -->
         <div class="text-center mb-8">
-            <div class="w-12 h-12 bg-[#2E4B36] rounded-xl flex items-center justify-center mx-auto mb-5">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-5" style="background: var(--forest-medium);">
                 <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                 </svg>
             </div>
-            <h1 class="font-serif text-2xl font-semibold text-[#2E4B36] mb-1.5">知音大使</h1>
-            <p class="text-sm text-stone-500 font-light">登入查看您的推薦成果</p>
+            <h1 class="font-serif text-2xl font-semibold mb-1.5" style="color: var(--forest-dark);">知音大使</h1>
+            <p class="text-sm font-light" style="color: var(--forest-light);">登入查看您的推薦成果</p>
         </div>
 
         <!-- Login Card -->
-        <div class="card p-8">
+        <div class="glass-card p-8">
             <form class="space-y-5" onsubmit="handleLogin(event)">
                 <div>
-                    <label for="partnerCode" class="block text-sm font-medium text-stone-600 mb-1.5">
+                    <label for="partnerCode" class="block text-sm font-medium mb-1.5" style="color: var(--forest-light);">
                         大使代碼
                     </label>
                     <input
@@ -88,7 +116,7 @@
                 </div>
 
                 <div>
-                    <label for="phone" class="block text-sm font-medium text-stone-600 mb-1.5">
+                    <label for="phone" class="block text-sm font-medium mb-1.5" style="color: var(--forest-light);">
                         手機號碼後 4 碼
                     </label>
                     <input
@@ -101,7 +129,7 @@
                         class="input-field w-full px-4 py-3 rounded-lg text-sm focus:outline-none"
                         required
                     >
-                    <p class="text-xs text-stone-400 mt-1.5">使用註冊時提供的手機號碼後4碼</p>
+                    <p class="text-xs mt-1.5" style="color: var(--forest-light); opacity: 0.7;">使用註冊時提供的手機號碼後4碼</p>
                 </div>
 
                 <!-- Error / Success Message -->
@@ -122,53 +150,79 @@
                         驗證中...
                     </span>
                 </button>
-
-                <!-- Demo Button -->
-                <button
-                    type="button"
-                    onclick="enterDemoMode()"
-                    class="w-full btn-secondary py-3 px-6 rounded-lg text-sm font-medium"
-                >
-                    演示模式
-                </button>
             </form>
 
             <!-- Footer -->
-            <div class="mt-8 pt-6 border-t border-stone-100">
+            <div class="mt-8 pt-6" style="border-top: 1px solid var(--forest-faint);">
                 <div class="text-center space-y-3">
-                    <p class="text-xs text-stone-500">
-                        首次登入？請聯繫管理員取得您的大使代碼
+                    <p class="text-xs" style="color: var(--forest-light);">
+                        首次登入？請透過官方 LINE@ 申請成為知音大使
                     </p>
-                    <p class="text-xs text-stone-400">
-                        點擊「演示模式」可預覽系統界面，無需真實帳號
-                    </p>
-                    <div class="flex justify-center gap-6 text-xs text-stone-400 pt-1">
-                        <a href="index.html" class="hover:text-[#2E4B36] transition-colors">回到首頁</a>
-                        <a href="mailto:support@example.com" class="hover:text-[#2E4B36] transition-colors">聯繫客服</a>
+                    <div class="flex justify-center gap-6 text-xs pt-1" style="color: var(--forest-light); opacity: 0.7;">
+                        <a href="index.html" class="hover:opacity-100 transition-opacity">回到首頁</a>
+                        <a href="https://line.me/R/ti/p/@478hisen" target="_blank" class="hover:opacity-100 transition-opacity">官方 LINE@</a>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Coupon Code Query -->
+        <div class="glass-card p-6 mt-4">
+            <h3 class="text-sm font-medium mb-4 text-center font-serif" style="color: var(--forest-dark);">專屬優惠碼查詢</h3>
+            <div class="flex gap-2">
+                <input
+                    type="text"
+                    id="couponQueryCode"
+                    placeholder="輸入大使代碼"
+                    class="input-field flex-1 min-w-0 px-4 py-2.5 rounded-lg text-sm focus:outline-none"
+                >
+                <button
+                    onclick="queryCoupon()"
+                    id="couponQueryBtn"
+                    class="btn-gold px-5 py-2.5 rounded-lg text-sm font-medium flex-shrink-0"
+                >
+                    查詢
+                </button>
+            </div>
+            <!-- Coupon Result -->
+            <div id="couponResult" class="hidden mt-4">
+                <div class="text-center py-4 px-3 rounded-xl" style="background: rgba(197, 160, 101, 0.08); border: 1px solid rgba(197, 160, 101, 0.2);">
+                    <p class="text-xs mb-2" style="color: var(--forest-light);">您的專屬優惠碼</p>
+                    <p class="coupon-display font-mono mb-3" id="couponCodeDisplay">-</p>
+                    <button onclick="copyCouponCode()" class="px-4 py-1.5 rounded-lg text-xs font-medium transition-all" style="background: var(--forest-medium); color: #fff;">
+                        複製優惠碼
+                    </button>
+                </div>
+                <p class="text-xs mt-3 text-center leading-relaxed" style="color: var(--forest-light);">
+                    將此優惠碼告知親友，在官方 LINE@ 出示即可享有折扣
+                </p>
+            </div>
+            <div id="couponError" class="hidden mt-3 text-center text-xs" style="color: #DC2626;"></div>
+        </div>
+
         <!-- Feature List -->
-        <div class="mt-6 card p-6">
-            <h3 class="text-sm font-medium text-stone-600 mb-4 text-center">登入後您可以查看</h3>
-            <div class="grid grid-cols-2 gap-3 text-xs text-stone-500">
+        <div class="glass-card mt-4 p-6">
+            <h3 class="text-sm font-medium mb-4 text-center" style="color: var(--forest-light);">登入後您可以查看</h3>
+            <div class="grid grid-cols-2 gap-3 text-xs" style="color: var(--forest-light);">
                 <div class="flex items-center gap-2.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#2E4B36]"></span>
+                    <span class="w-1.5 h-1.5 rounded-full" style="background: var(--forest-medium);"></span>
                     推薦成果統計
                 </div>
                 <div class="flex items-center gap-2.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#2E4B36]"></span>
+                    <span class="w-1.5 h-1.5 rounded-full" style="background: var(--forest-medium);"></span>
                     佣金收益記錄
                 </div>
                 <div class="flex items-center gap-2.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#2E4B36]"></span>
+                    <span class="w-1.5 h-1.5 rounded-full" style="background: var(--forest-medium);"></span>
                     等級進度追蹤
                 </div>
                 <div class="flex items-center gap-2.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#2E4B36]"></span>
+                    <span class="w-1.5 h-1.5 rounded-full" style="background: var(--forest-medium);"></span>
                     專屬推薦連結
+                </div>
+                <div class="flex items-center gap-2.5 col-span-2 justify-center">
+                    <span class="w-1.5 h-1.5 rounded-full" style="background: var(--gold);"></span>
+                    專屬優惠碼分享
                 </div>
             </div>
         </div>
@@ -226,20 +280,100 @@
             }
         }
 
+        async function queryCoupon() {
+            const code = document.getElementById('couponQueryCode').value.trim();
+            if (!code) return;
+
+            const btn = document.getElementById('couponQueryBtn');
+            btn.textContent = '查詢中...';
+            btn.disabled = true;
+
+            document.getElementById('couponResult').classList.add('hidden');
+            document.getElementById('couponError').classList.add('hidden');
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'get_partner_coupon',
+                        partner_code: code
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const couponCode = result.coupon_code || '（請聯繫管理員設定）';
+                    document.getElementById('couponCodeDisplay').textContent = couponCode;
+                    document.getElementById('couponResult').classList.remove('hidden');
+                } else {
+                    const errEl = document.getElementById('couponError');
+                    errEl.textContent = result.error || '查詢失敗';
+                    errEl.classList.remove('hidden');
+                }
+            } catch (error) {
+                const errEl = document.getElementById('couponError');
+                errEl.textContent = '連線失敗，請重試';
+                errEl.classList.remove('hidden');
+            } finally {
+                btn.textContent = '查詢';
+                btn.disabled = false;
+            }
+        }
+
+        function copyCouponCode() {
+            const code = document.getElementById('couponCodeDisplay').textContent;
+            const btn = document.querySelector('#couponResult button');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(() => {
+                    showCopyFeedback(btn);
+                }).catch(() => fallbackCopyCoupon(code, btn));
+            } else {
+                fallbackCopyCoupon(code, btn);
+            }
+        }
+
+        function fallbackCopyCoupon(text, btn) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); showCopyFeedback(btn); }
+            catch { /* ignore */ }
+            document.body.removeChild(ta);
+        }
+
+        function showCopyFeedback(btn) {
+            if (!btn) return;
+            const original = btn.textContent;
+            btn.textContent = '已複製！';
+            setTimeout(() => { btn.textContent = original; }, 1500);
+        }
+
         function showError(message) {
             const el = document.getElementById('errorMessage');
             el.textContent = message;
-            el.className = 'msg-error bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm';
+            el.className = 'msg-error px-4 py-3 rounded-lg text-sm';
+            el.style.background = 'rgba(220, 38, 38, 0.06)';
+            el.style.border = '1px solid rgba(220, 38, 38, 0.15)';
+            el.style.color = '#DC2626';
         }
 
         function hideError() {
-            document.getElementById('errorMessage').className = 'hidden';
+            const el = document.getElementById('errorMessage');
+            el.className = 'hidden';
+            el.style = '';
         }
 
         function showSuccess(message) {
             const el = document.getElementById('errorMessage');
             el.textContent = message;
-            el.className = 'msg-error bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm';
+            el.className = 'msg-error px-4 py-3 rounded-lg text-sm';
+            el.style.background = 'rgba(45, 74, 62, 0.06)';
+            el.style.border = '1px solid rgba(45, 74, 62, 0.15)';
+            el.style.color = 'var(--forest-medium)';
         }
 
         function showLoading(isLoading) {
@@ -255,34 +389,6 @@
         document.getElementById('phone').addEventListener('input', function(e) {
             e.target.value = e.target.value.replace(/\D/g, '');
         });
-
-        document.getElementById('partnerCode').addEventListener('input', function(e) {
-            
-        });
-
-        function enterDemoMode() {
-            sessionStorage.setItem('partnerCode', 'DEMO_CODE');
-            sessionStorage.setItem('demoMode', 'true');
-            sessionStorage.setItem('loginTime', Date.now().toString());
-            sessionStorage.setItem('partnerData', JSON.stringify({
-                partner_code: 'DEMO_CODE',
-                name: '演示大使',
-                level: 'LV2_GUIDE',
-                total_commission_earned: 5680,
-                total_commission_paid: 2000,
-                pending_commission: 1200,
-                available_points: 2480,
-                points_used: 1000,
-                commission_preference: 'ACCOMMODATION',
-                total_successful_referrals: 6,
-                yearly_referrals: 6,
-                short_landing_link: '',
-                short_coupon_link: '',
-                total_clicks: 42
-            }));
-            showSuccess('正在載入演示界面...');
-            setTimeout(() => { window.location.href = 'partner-dashboard.html'; }, 1000);
-        }
 
         window.addEventListener('load', function() {
             if (sessionStorage.getItem('partnerCode')) {

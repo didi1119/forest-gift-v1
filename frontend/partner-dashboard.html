@@ -8,17 +8,38 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --forest-dark: #1A2F23;
+            --forest-medium: #2D4A3E;
+            --forest-light: #4A675A;
+            --forest-faint: #E8ECE9;
+            --paper: #F5F2EB;
+            --gold: #C5A065;
+            --gold-light: #DFC698;
+        }
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background: #FAFAF8;
-            color: #3D3D3D;
+            background: var(--paper);
+            color: var(--forest-dark);
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.4;
         }
         h1, h2, h3, .font-serif {
             font-family: 'Noto Serif TC', serif;
         }
-        .card {
-            background: #FFFFFF;
-            border: 1px solid rgba(0,0,0,0.06);
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
             border-radius: 1.25rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.03);
         }
@@ -30,13 +51,13 @@
         }
         .progress-track {
             height: 4px;
-            background: #F0F0F0;
+            background: var(--forest-faint);
             border-radius: 2px;
             overflow: hidden;
         }
         .progress-fill {
             height: 100%;
-            background: #2E4B36;
+            background: linear-gradient(90deg, var(--forest-medium), var(--gold));
             border-radius: 2px;
             transition: width 0.8s ease;
         }
@@ -50,13 +71,12 @@
             letter-spacing: 0.02em;
         }
         .badge-level {
-            background: #2E4B36;
+            background: var(--forest-medium);
             color: #fff;
         }
-        .badge-demo {
-            background: #F5F5F4;
-            color: #78716C;
-            border: 1px solid #E7E5E4;
+        .badge-lv3 {
+            background: var(--gold);
+            color: #fff;
         }
         /* Toast */
         .toast-wrap {
@@ -79,21 +99,48 @@
             opacity: 0;
             transition: all 0.35s ease;
             max-width: 320px;
-            border: 1px solid rgba(0,0,0,0.06);
-            background: #fff;
-            color: #3D3D3D;
+            border: 1px solid rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(8px);
+            color: var(--forest-dark);
         }
         .toast.show { transform: translateX(0); opacity: 1; }
-        .toast-success { border-left: 3px solid #2E4B36; }
+        .toast-success { border-left: 3px solid var(--forest-medium); }
         .toast-error { border-left: 3px solid #DC2626; }
-        .toast-info { border-left: 3px solid #6B7280; }
+        .toast-info { border-left: 3px solid var(--forest-light); }
         /* Payout row */
         .payout-row { transition: background 0.15s ease; }
-        .payout-row:hover { background: #FAFAF8; }
-        /* Level card indicator */
+        .payout-row:hover { background: rgba(232, 236, 233, 0.4); }
+        /* Level card */
         .level-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .level-dot-active { background: #2E4B36; }
-        .level-dot-inactive { background: #E5E7EB; }
+        .level-dot-active { background: var(--forest-medium); }
+        .level-dot-inactive { background: var(--forest-faint); }
+        /* Gold accent */
+        .gold-text {
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(197, 160, 101, 0.2);
+        }
+        .coupon-code-display {
+            color: var(--gold);
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+        /* Level reward card */
+        .level-reward-card {
+            border: 1px solid rgba(197, 160, 101, 0.25);
+            background: rgba(197, 160, 101, 0.06);
+            border-radius: 0.75rem;
+            padding: 1rem;
+        }
+        /* LV3 special card */
+        .lv3-card {
+            background: var(--forest-dark);
+            color: #fff;
+            border-radius: 0.75rem;
+            padding: 1rem 1.25rem;
+        }
+        .lv3-card h3 { color: var(--gold); }
     </style>
 </head>
 <body class="min-h-screen">
@@ -101,10 +148,10 @@
     <div class="toast-wrap" id="toastContainer"></div>
 
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-white/90 flex items-center justify-center z-50">
+    <div id="loadingOverlay" class="fixed inset-0 flex items-center justify-center z-50" style="background: rgba(245, 242, 235, 0.9);">
         <div class="text-center">
-            <div class="w-8 h-8 border-2 border-stone-200 border-t-[#2E4B36] rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-sm text-stone-500 font-light">載入數據中...</p>
+            <div class="w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-4" style="border-color: var(--forest-faint); border-top-color: var(--forest-medium);"></div>
+            <p class="text-sm font-light" style="color: var(--forest-light);">載入數據中...</p>
         </div>
     </div>
 
@@ -113,23 +160,22 @@
         <header class="mb-6 md:mb-8">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div class="flex items-center gap-3.5">
-                    <div class="w-10 h-10 bg-[#2E4B36] rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: var(--forest-medium);">
                         <span class="text-white text-sm font-semibold" id="userInitial">K</span>
                     </div>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2.5 flex-wrap">
-                            <h1 class="text-base md:text-lg font-medium text-stone-800 truncate" id="partnerName">知音大使</h1>
+                            <h1 class="text-base md:text-lg font-medium truncate" id="partnerName">知音大使</h1>
                             <span class="badge badge-level" id="partnerLevel">--</span>
-                            <span id="demoTag" class="badge badge-demo hidden">DEMO</span>
                         </div>
-                        <p class="text-xs text-stone-400 mt-0.5">代碼 <span class="font-mono" id="partnerCode">-</span></p>
+                        <p class="text-xs mt-0.5" style="color: var(--forest-light);">代碼 <span class="font-mono" id="partnerCode">-</span></p>
                     </div>
                 </div>
                 <div class="flex gap-2.5">
-                    <button onclick="refreshData()" class="px-4 py-2 text-xs font-medium text-stone-600 border border-stone-200 rounded-lg hover:border-stone-300 transition-colors">
+                    <button onclick="refreshData()" class="px-4 py-2 text-xs font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint);">
                         重新載入
                     </button>
-                    <button onclick="logout()" class="px-4 py-2 text-xs font-medium text-stone-400 border border-stone-200 rounded-lg hover:text-stone-600 hover:border-stone-300 transition-colors">
+                    <button onclick="logout()" class="px-4 py-2 text-xs font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint); opacity: 0.7;">
                         登出
                     </button>
                 </div>
@@ -139,77 +185,93 @@
         <!-- Stats Grid (6 cards) -->
         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
             <!-- Successful Referrals -->
-            <div class="card p-4 md:p-5 stat-card">
-                <p class="text-xs text-stone-400 mb-1.5">推薦成功</p>
-                <p class="text-2xl md:text-3xl font-semibold text-stone-800 tabular-nums" id="totalReferrals">-</p>
-                <p class="text-[0.65rem] text-stone-400 mt-1">已完成入住</p>
+            <div class="glass-card p-4 md:p-5 stat-card">
+                <p class="text-xs mb-1.5" style="color: var(--forest-light);">推薦成功</p>
+                <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="totalReferrals">-</p>
+                <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">已完成入住</p>
             </div>
 
             <!-- Total Commission -->
-            <div class="card p-4 md:p-5 stat-card">
-                <p class="text-xs text-stone-400 mb-1.5">累積佣金</p>
-                <p class="text-2xl md:text-3xl font-semibold text-stone-800 tabular-nums" id="totalCommission">-</p>
-                <p class="text-[0.65rem] text-stone-400 mt-1">總收益</p>
+            <div class="glass-card p-4 md:p-5 stat-card">
+                <p class="text-xs mb-1.5" style="color: var(--forest-light);">累積佣金</p>
+                <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="totalCommission">-</p>
+                <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">總收益</p>
             </div>
 
             <!-- Available Points -->
-            <div class="card p-4 md:p-5 stat-card">
-                <p class="text-xs text-stone-400 mb-1.5">可用住宿金</p>
-                <p class="text-2xl md:text-3xl font-semibold text-[#2E4B36] tabular-nums" id="availablePoints">-</p>
+            <div class="glass-card p-4 md:p-5 stat-card">
+                <p class="text-xs mb-1.5" style="color: var(--forest-light);">可用住宿金</p>
+                <p class="text-2xl md:text-3xl font-semibold tabular-nums" style="color: var(--forest-medium);" id="availablePoints">-</p>
                 <a href="https://line.me/R/ti/p/@478hisen" target="_blank"
-                   class="inline-block mt-2 px-3 py-1.5 text-[0.65rem] font-medium text-white bg-[#06C755] rounded-lg hover:bg-[#05b34c] transition-colors">
+                   class="inline-block mt-2 px-3 py-1.5 text-[0.65rem] font-medium text-white rounded-lg transition-all"
+                   style="background: var(--gold);"
+                   onmouseover="this.style.background='var(--gold-light)'"
+                   onmouseout="this.style.background='var(--gold)'">
                     使用住宿金 →
                 </a>
             </div>
 
             <!-- Pending Cash -->
-            <div class="card p-4 md:p-5 stat-card">
-                <p class="text-xs text-stone-400 mb-1.5">待結算現金</p>
-                <p class="text-2xl md:text-3xl font-semibold text-stone-800 tabular-nums" id="pendingCash">-</p>
-                <p class="text-[0.65rem] text-stone-400 mt-1">尚未撥付</p>
+            <div class="glass-card p-4 md:p-5 stat-card">
+                <p class="text-xs mb-1.5" style="color: var(--forest-light);">待結算現金</p>
+                <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="pendingCash">-</p>
+                <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">尚未撥付</p>
             </div>
 
             <!-- Points Used -->
-            <div class="card p-4 md:p-5 stat-card">
-                <p class="text-xs text-stone-400 mb-1.5">已使用點數</p>
-                <p class="text-2xl md:text-3xl font-semibold text-stone-800 tabular-nums" id="pointsUsed">-</p>
-                <p class="text-[0.65rem] text-stone-400 mt-1">累計折抵</p>
+            <div class="glass-card p-4 md:p-5 stat-card">
+                <p class="text-xs mb-1.5" style="color: var(--forest-light);">已使用點數</p>
+                <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="pointsUsed">-</p>
+                <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">累計折抵</p>
             </div>
 
             <!-- Level Progress -->
-            <div class="card p-4 md:p-5 stat-card">
-                <p class="text-xs text-stone-400 mb-1.5">升級進度</p>
-                <p class="text-2xl md:text-3xl font-semibold text-stone-800 tabular-nums" id="levelProgress">-</p>
-                <p class="text-[0.65rem] text-stone-400 mt-1" id="nextLevelText">下一等級</p>
+            <div class="glass-card p-4 md:p-5 stat-card">
+                <p class="text-xs mb-1.5" style="color: var(--forest-light);">升級進度</p>
+                <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="levelProgress">-</p>
+                <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);" id="nextLevelText">下一等級</p>
                 <div class="progress-track mt-2.5">
                     <div class="progress-fill" id="levelProgressBar" style="width: 0%"></div>
                 </div>
             </div>
         </div>
 
+        <!-- Next Level Preview (dynamic) -->
+        <div id="nextLevelPreview" class="hidden glass-card p-5 md:p-6 mb-6 md:mb-8">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="text-lg">✨</span>
+                <h2 class="text-sm font-medium" style="color: var(--forest-dark);" id="nextLevelTitle">距離升級還差 N 筆推薦</h2>
+            </div>
+            <div class="level-reward-card">
+                <p class="text-xs font-medium mb-2 gold-text" id="nextLevelName">下一等級</p>
+                <ul class="text-xs space-y-1.5" style="color: var(--forest-light);" id="nextLevelRewards">
+                </ul>
+            </div>
+        </div>
+
         <!-- Charts -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 mb-6 md:mb-8">
-            <div class="card p-5 md:p-6">
-                <h2 class="text-sm font-medium text-stone-600 mb-4">推薦績效趨勢</h2>
+            <div class="glass-card p-5 md:p-6">
+                <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">推薦績效趨勢</h2>
                 <div style="position: relative; height: 200px;">
                     <canvas id="performanceChart"></canvas>
                 </div>
-                <p class="text-[0.65rem] text-stone-400 mt-3 text-center">近 6 個月</p>
+                <p class="text-[0.65rem] mt-3 text-center" style="color: var(--forest-light); opacity: 0.7;">近 6 個月</p>
             </div>
 
-            <div class="card p-5 md:p-6">
-                <h2 class="text-sm font-medium text-stone-600 mb-4">佣金類型分佈</h2>
+            <div class="glass-card p-5 md:p-6">
+                <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">佣金類型分佈</h2>
                 <div style="position: relative; height: 200px;">
                     <canvas id="commissionChart"></canvas>
                 </div>
-                <div class="mt-3 flex justify-between text-xs text-stone-500">
+                <div class="mt-3 flex justify-between text-xs" style="color: var(--forest-light);">
                     <span class="flex items-center gap-1.5">
-                        <span class="w-2.5 h-2.5 rounded-sm bg-[#2E4B36]"></span>
-                        住宿金 <span id="accommodationTotal" class="font-medium text-stone-700">-</span>
+                        <span class="w-2.5 h-2.5 rounded-sm" style="background: var(--forest-medium);"></span>
+                        住宿金 <span class="font-medium" id="accommodationTotal">-</span>
                     </span>
                     <span class="flex items-center gap-1.5">
-                        <span class="w-2.5 h-2.5 rounded-sm bg-[#94A3B8]"></span>
-                        現金 <span id="cashTotal" class="font-medium text-stone-700">-</span>
+                        <span class="w-2.5 h-2.5 rounded-sm" style="background: var(--gold);"></span>
+                        現金 <span class="font-medium" id="cashTotal">-</span>
                     </span>
                 </div>
             </div>
@@ -218,38 +280,50 @@
         <!-- Records & Tools -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 mb-6 md:mb-8">
             <!-- Recent Bookings -->
-            <div class="card p-5 md:p-6">
+            <div class="glass-card p-5 md:p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-sm font-medium text-stone-600">推薦記錄</h2>
-                    <button onclick="exportBookings()" class="text-xs text-stone-400 hover:text-stone-600 transition-colors">
+                    <h2 class="text-sm font-medium" style="color: var(--forest-light);">推薦記錄</h2>
+                    <button onclick="exportBookings()" class="text-xs transition-colors" style="color: var(--forest-light); opacity: 0.6;">
                         匯出
                     </button>
                 </div>
                 <div id="recentBookings" class="space-y-2.5">
-                    <p class="text-center py-8 text-xs text-stone-400">載入中...</p>
+                    <p class="text-center py-8 text-xs" style="color: var(--forest-light);">載入中...</p>
                 </div>
             </div>
 
             <!-- Referral Tools -->
-            <div class="card p-5 md:p-6">
-                <h2 class="text-sm font-medium text-stone-600 mb-4">推薦工具</h2>
+            <div class="glass-card p-5 md:p-6">
+                <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">推薦工具</h2>
 
                 <!-- Click Stats -->
-                <div class="flex items-center justify-between py-2.5 mb-4 border-b border-stone-100">
-                    <div class="text-xs text-stone-500">
-                        連結點擊 <span class="font-medium text-stone-700" id="totalClicks">-</span>
+                <div class="flex items-center justify-between py-2.5 mb-4" style="border-bottom: 1px solid var(--forest-faint);">
+                    <div class="text-xs" style="color: var(--forest-light);">
+                        連結點擊 <span class="font-medium" style="color: var(--forest-dark);" id="totalClicks">-</span>
                     </div>
-                    <div class="text-xs text-stone-500">
-                        轉換率 <span class="font-medium text-stone-700" id="conversionRate">-</span>
+                    <div class="text-xs" style="color: var(--forest-light);">
+                        轉換率 <span class="font-medium" style="color: var(--forest-dark);" id="conversionRate">-</span>
                     </div>
+                </div>
+
+                <!-- Coupon Code Display -->
+                <div id="couponCodeSection" class="mb-4 hidden">
+                    <label class="block text-xs mb-1.5" style="color: var(--forest-light);">專屬優惠碼</label>
+                    <div class="flex items-center gap-2 p-3 rounded-lg" style="background: rgba(197, 160, 101, 0.08); border: 1px solid rgba(197, 160, 101, 0.2);">
+                        <span class="coupon-code-display font-mono flex-1" id="dashboardCouponCode">-</span>
+                        <button onclick="copyDashboardCoupon()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-all" style="background: var(--forest-medium);">
+                            複製
+                        </button>
+                    </div>
+                    <p class="text-[0.65rem] mt-1.5" style="color: var(--forest-light); opacity: 0.7;">親友在 LINE@ 輸入此碼即可享折扣</p>
                 </div>
 
                 <!-- Referral Link -->
                 <div class="mb-3.5">
-                    <label class="block text-xs text-stone-400 mb-1.5">推薦連結</label>
+                    <label class="block text-xs mb-1.5" style="color: var(--forest-light);">推薦連結</label>
                     <div class="flex">
-                        <input type="text" id="referralLink" class="flex-1 min-w-0 px-3 py-2 border border-stone-200 rounded-l-lg bg-stone-50 text-xs text-stone-600 truncate focus:outline-none" readonly value="載入中...">
-                        <button onclick="copyReferralLink()" class="px-3.5 py-2 bg-[#2E4B36] text-white rounded-r-lg text-xs hover:bg-[#3A5D44] transition-colors flex-shrink-0">
+                        <input type="text" id="referralLink" class="flex-1 min-w-0 px-3 py-2 border rounded-l-lg text-xs truncate focus:outline-none" style="border-color: var(--forest-faint); background: rgba(255,255,255,0.5); color: var(--forest-dark);" readonly value="載入中...">
+                        <button onclick="copyReferralLink()" class="px-3.5 py-2 text-white rounded-r-lg text-xs transition-colors flex-shrink-0" style="background: var(--forest-medium);">
                             複製
                         </button>
                     </div>
@@ -257,10 +331,10 @@
 
                 <!-- Coupon Link -->
                 <div class="mb-4">
-                    <label class="block text-xs text-stone-400 mb-1.5">優惠券連結</label>
+                    <label class="block text-xs mb-1.5" style="color: var(--forest-light);">優惠券連結</label>
                     <div class="flex">
-                        <input type="text" id="couponLink" class="flex-1 min-w-0 px-3 py-2 border border-stone-200 rounded-l-lg bg-stone-50 text-xs text-stone-600 truncate focus:outline-none" readonly value="載入中...">
-                        <button onclick="copyCouponLink()" class="px-3.5 py-2 bg-stone-600 text-white rounded-r-lg text-xs hover:bg-stone-700 transition-colors flex-shrink-0">
+                        <input type="text" id="couponLink" class="flex-1 min-w-0 px-3 py-2 border rounded-l-lg text-xs truncate focus:outline-none" style="border-color: var(--forest-faint); background: rgba(255,255,255,0.5); color: var(--forest-dark);" readonly value="載入中...">
+                        <button onclick="copyCouponLink()" class="px-3.5 py-2 text-white rounded-r-lg text-xs transition-colors flex-shrink-0" style="background: var(--forest-medium);">
                             複製
                         </button>
                     </div>
@@ -268,21 +342,25 @@
 
                 <!-- Template -->
                 <div class="mb-4">
-                    <label class="block text-xs text-stone-400 mb-1.5">推薦文案</label>
-                    <div class="bg-stone-50 border border-stone-100 p-3 rounded-lg text-xs text-stone-600 leading-relaxed" id="referralTemplate">
-                        發現森林中的秘密住宿體驗！透過我的專屬連結預訂，享受獨特的森林療癒之旅，還有機會獲得專屬森林禮物。<br><br>立即預訂：<span class="text-[#2E4B36] font-medium break-all" id="templateLink">[連結]</span>
+                    <label class="block text-xs mb-1.5" style="color: var(--forest-light);">推薦文案</label>
+                    <div class="p-3 rounded-lg text-xs leading-relaxed" style="background: rgba(255,255,255,0.5); border: 1px solid var(--forest-faint); color: var(--forest-light);" id="referralTemplate">
+                        發現森林中的秘密住宿體驗！透過我的專屬連結預訂，享受獨特的森林療癒之旅，還有機會獲得專屬森林禮物。<br><br>立即預訂：<span class="font-medium break-all" style="color: var(--forest-medium);" id="templateLink">[連結]</span>
                     </div>
-                    <button onclick="copyTemplate()" class="mt-2 text-xs text-stone-400 hover:text-stone-600 transition-colors">
+                    <button onclick="copyTemplate()" class="mt-2 text-xs transition-colors" style="color: var(--forest-light); opacity: 0.6;">
                         複製文案
                     </button>
                 </div>
 
                 <!-- Share -->
                 <div class="grid grid-cols-2 gap-2.5">
-                    <button onclick="shareToLine()" class="py-2 text-xs font-medium text-stone-600 border border-stone-200 rounded-lg hover:border-[#06C755] hover:text-[#06C755] transition-colors">
+                    <button onclick="shareToLine()" class="py-2 text-xs font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint);"
+                        onmouseover="this.style.borderColor='var(--forest-medium)';this.style.color='var(--forest-medium)'"
+                        onmouseout="this.style.borderColor='var(--forest-faint)';this.style.color='var(--forest-light)'">
                         LINE 分享
                     </button>
-                    <button onclick="shareToFacebook()" class="py-2 text-xs font-medium text-stone-600 border border-stone-200 rounded-lg hover:border-[#1877F2] hover:text-[#1877F2] transition-colors">
+                    <button onclick="shareToFacebook()" class="py-2 text-xs font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint);"
+                        onmouseover="this.style.borderColor='var(--forest-medium)';this.style.color='var(--forest-medium)'"
+                        onmouseout="this.style.borderColor='var(--forest-faint)';this.style.color='var(--forest-light)'">
                         Facebook
                     </button>
                 </div>
@@ -290,52 +368,62 @@
         </div>
 
         <!-- Payout History -->
-        <div class="card p-5 md:p-6 mb-6 md:mb-8">
-            <h2 class="text-sm font-medium text-stone-600 mb-4">結算記錄</h2>
+        <div class="glass-card p-5 md:p-6 mb-6 md:mb-8">
+            <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">結算記錄</h2>
             <div id="payoutHistory">
-                <p class="text-center py-8 text-xs text-stone-400">載入中...</p>
+                <p class="text-center py-8 text-xs" style="color: var(--forest-light);">載入中...</p>
             </div>
         </div>
 
-        <!-- Level Guide -->
-        <div class="card p-5 md:p-6 mb-8">
-            <h2 class="text-sm font-medium text-stone-600 mb-5">等級制度</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                <div class="text-center py-4">
+        <!-- Level Guide (Redesigned with full rewards) -->
+        <div class="glass-card p-5 md:p-6 mb-8">
+            <h2 class="text-sm font-medium mb-5 font-serif" style="color: var(--forest-dark);">等級制度與專屬禮遇</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+                <!-- LV1 -->
+                <div class="py-4 px-4 rounded-xl" style="background: rgba(255,255,255,0.5); border: 1px solid var(--forest-faint);">
                     <div class="flex justify-center gap-1.5 mb-3">
                         <span class="level-dot level-dot-active"></span>
                         <span class="level-dot level-dot-inactive"></span>
                         <span class="level-dot level-dot-inactive"></span>
                     </div>
-                    <h3 class="text-sm font-medium text-stone-700 mb-2">LV1 知音大使</h3>
-                    <div class="text-xs text-stone-500 space-y-1">
-                        <p>每筆 1,000 住宿金 / 500 現金</p>
+                    <h3 class="text-sm font-medium text-center mb-3" style="color: var(--forest-dark);">LV1 知音大使</h3>
+                    <div class="text-xs space-y-1.5" style="color: var(--forest-light);">
+                        <p>每筆 <strong style="color: var(--forest-dark);">$1,000</strong> 住宿金 / <strong style="color: var(--forest-dark);">$500</strong> 現金</p>
                         <p>0 - 3 筆成功推薦</p>
-                        <p class="text-[#2E4B36] font-medium">首次推薦 +1,500 住宿金</p>
+                        <p class="font-medium" style="color: var(--gold);">首次推薦 +$1,500 住宿金</p>
                     </div>
                 </div>
-                <div class="text-center py-4">
+                <!-- LV2 -->
+                <div class="py-4 px-4 rounded-xl" style="background: rgba(255,255,255,0.5); border: 1px solid var(--forest-faint);">
                     <div class="flex justify-center gap-1.5 mb-3">
                         <span class="level-dot level-dot-active"></span>
                         <span class="level-dot level-dot-active"></span>
                         <span class="level-dot level-dot-inactive"></span>
                     </div>
-                    <h3 class="text-sm font-medium text-stone-700 mb-2">LV2 森林嚮導</h3>
-                    <div class="text-xs text-stone-500 space-y-1">
-                        <p>每筆 1,200 住宿金 / 600 現金</p>
+                    <h3 class="text-sm font-medium text-center mb-3" style="color: var(--forest-dark);">LV2 森林嚮導</h3>
+                    <div class="text-xs space-y-1.5" style="color: var(--forest-light);">
+                        <p>每筆 <strong style="color: var(--forest-dark);">$1,200</strong> 住宿金 / <strong style="color: var(--forest-dark);">$600</strong> 現金</p>
                         <p>年度 4 - 9 筆成功推薦</p>
+                        <p class="font-medium" style="color: var(--gold);">晉升賀禮：靜謐森林特色紀念品</p>
+                        <p>「森友故事」專欄主角機會</p>
+                        <p class="text-[0.65rem]" style="opacity: 0.7;">保級：次年 3 組即可延續</p>
                     </div>
                 </div>
-                <div class="text-center py-4">
+                <!-- LV3 (Dark card with gold text) -->
+                <div class="lv3-card">
                     <div class="flex justify-center gap-1.5 mb-3">
-                        <span class="level-dot level-dot-active"></span>
-                        <span class="level-dot level-dot-active"></span>
-                        <span class="level-dot level-dot-active"></span>
+                        <span class="level-dot" style="background: var(--gold);"></span>
+                        <span class="level-dot" style="background: var(--gold);"></span>
+                        <span class="level-dot" style="background: var(--gold);"></span>
                     </div>
-                    <h3 class="text-sm font-medium text-stone-700 mb-2">LV3 秘境守護者</h3>
-                    <div class="text-xs text-stone-500 space-y-1">
-                        <p>每筆 1,500 住宿金 / 750 現金</p>
+                    <h3 class="text-sm font-medium text-center mb-3">LV3 秘境守護者</h3>
+                    <div class="text-xs space-y-1.5" style="color: rgba(255,255,255,0.75);">
+                        <p>每筆 <strong style="color: var(--gold);">$1,500</strong> 住宿金 / <strong style="color: var(--gold);">$750</strong> 現金</p>
                         <p>年度 10+ 筆成功推薦</p>
+                        <p class="font-medium" style="color: var(--gold);">晉升賀禮：「守護者之息」客製香水</p>
+                        <p style="color: var(--gold-light);">年度免費住一晚（平日）</p>
+                        <p>延遲退房・新品優先體驗</p>
+                        <p class="text-[0.65rem]" style="opacity: 0.6;">保級：次年 6 組即可延續</p>
                     </div>
                 </div>
             </div>
@@ -374,10 +462,6 @@
                 return;
             }
 
-            if (sessionStorage.getItem('demoMode') === 'true') {
-                document.getElementById('demoTag').classList.remove('hidden');
-            }
-
             const cached = sessionStorage.getItem('partnerData');
             if (cached) {
                 try {
@@ -392,55 +476,28 @@
         // ========================================
         async function loadPartnerData() {
             const partnerCode = sessionStorage.getItem('partnerCode');
-            const isDemoMode = sessionStorage.getItem('demoMode') === 'true';
 
             try {
-                if (isDemoMode) {
-                    await new Promise(r => setTimeout(r, 600));
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'get_partner_dashboard_data',
+                        partner_code: partnerCode
+                    })
+                });
 
-                    partnerData = {
-                        partner_code: 'DEMO_CODE',
-                        name: '演示大使',
-                        level: 'LV2_GUIDE',
-                        total_commission_earned: 5680,
-                        total_commission_paid: 2000,
-                        pending_commission: 1200,
-                        available_points: 2480,
-                        points_used: 1000,
-                        commission_preference: 'ACCOMMODATION',
-                        total_successful_referrals: 6,
-                        yearly_referrals: 6,
-                        short_landing_link: '',
-                        short_coupon_link: '',
-                        total_clicks: 42
-                    };
+                const result = await response.json();
 
-                    allBookings = generateDemoBookings();
-                    allPayouts = generateDemoPayouts();
+                if (result.success) {
+                    partnerData = result.partner;
+                    allBookings = result.bookings || [];
+                    allPayouts = result.payouts || [];
+                    sessionStorage.setItem('partnerData', JSON.stringify(partnerData));
                     displayAllData();
                     initCharts();
                 } else {
-                    const response = await fetch(APPS_SCRIPT_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({
-                            action: 'get_partner_dashboard_data',
-                            partner_code: partnerCode
-                        })
-                    });
-
-                    const result = await response.json();
-
-                    if (result.success) {
-                        partnerData = result.partner;
-                        allBookings = result.bookings || [];
-                        allPayouts = result.payouts || [];
-                        sessionStorage.setItem('partnerData', JSON.stringify(partnerData));
-                        displayAllData();
-                        initCharts();
-                    } else {
-                        throw new Error(result.error || '載入數據失敗');
-                    }
+                    throw new Error(result.error || '載入數據失敗');
                 }
             } catch (error) {
                 console.error('載入數據失敗:', error);
@@ -458,8 +515,16 @@
             const name = partnerData.name || '知音大使';
             document.getElementById('partnerName').textContent = name;
             document.getElementById('partnerCode').textContent = partnerData.partner_code || '-';
-            document.getElementById('partnerLevel').textContent = getLevelText(partnerData.level);
             document.getElementById('userInitial').textContent = name.charAt(0);
+
+            const level = partnerData.level;
+            const levelEl = document.getElementById('partnerLevel');
+            levelEl.textContent = getLevelText(level);
+            if (level === 'LV3_GUARDIAN') {
+                levelEl.className = 'badge badge-lv3';
+            } else {
+                levelEl.className = 'badge badge-level';
+            }
         }
 
         function displayAllData() {
@@ -468,6 +533,49 @@
             displayRecentBookings();
             displayPayoutHistory();
             generateReferralLink();
+            displayCouponCode();
+            displayNextLevelPreview();
+        }
+
+        function displayCouponCode() {
+            if (!partnerData || !partnerData.coupon_code) return;
+            document.getElementById('dashboardCouponCode').textContent = partnerData.coupon_code;
+            document.getElementById('couponCodeSection').classList.remove('hidden');
+        }
+
+        function displayNextLevelPreview() {
+            if (!partnerData) return;
+            const yearly = parseInt(partnerData.yearly_referrals) || 0;
+            const level = partnerData.level || 'LV1_INSIDER';
+            const previewEl = document.getElementById('nextLevelPreview');
+
+            if (level === 'LV3_GUARDIAN' || yearly >= 10) {
+                previewEl.classList.add('hidden');
+                return;
+            }
+
+            previewEl.classList.remove('hidden');
+
+            if (yearly < 4) {
+                const remaining = 4 - yearly;
+                document.getElementById('nextLevelTitle').textContent = `距離升級還差 ${remaining} 筆推薦`;
+                document.getElementById('nextLevelName').textContent = 'LV2 森林嚮導 獨有禮遇';
+                document.getElementById('nextLevelRewards').innerHTML = `
+                    <li>回饋升級至 $1,200 住宿金 / $600 現金</li>
+                    <li>靜謐森林特色紀念品</li>
+                    <li>「森友故事」專欄主角機會</li>
+                `;
+            } else {
+                const remaining = 10 - yearly;
+                document.getElementById('nextLevelTitle').textContent = `距離升級還差 ${remaining} 筆推薦`;
+                document.getElementById('nextLevelName').textContent = 'LV3 秘境守護者 獨有禮遇';
+                document.getElementById('nextLevelRewards').innerHTML = `
+                    <li>回饋升級至 $1,500 住宿金 / $750 現金</li>
+                    <li>「守護者之息」客製香水</li>
+                    <li>每年免費住一晚（平日）</li>
+                    <li>延遲退房・新品優先體驗</li>
+                `;
+            }
         }
 
         function updateStatistics() {
@@ -490,7 +598,7 @@
             document.getElementById('levelProgress').textContent = progress.current + ' / ' + progress.target;
             document.getElementById('nextLevelText').textContent = progress.nextLevel;
 
-            const pct = progress.target === '∞' ? 100 : Math.min(100, (progress.current / progress.target) * 100);
+            const pct = progress.target === '\u221E' ? 100 : Math.min(100, (progress.current / progress.target) * 100);
             document.getElementById('levelProgressBar').style.width = pct + '%';
 
             document.getElementById('totalClicks').textContent = clicks;
@@ -499,7 +607,7 @@
         }
 
         function calcLevelProgress(yearly) {
-            if (yearly >= 10) return { current: yearly, target: '∞', nextLevel: '已達最高等級' };
+            if (yearly >= 10) return { current: yearly, target: '\u221E', nextLevel: '已達最高等級' };
             if (yearly >= 4) return { current: yearly, target: 10, nextLevel: 'LV3 秘境守護者' };
             return { current: yearly, target: 4, nextLevel: 'LV2 森林嚮導' };
         }
@@ -508,7 +616,7 @@
             const el = document.getElementById('recentBookings');
 
             if (!allBookings.length) {
-                el.innerHTML = '<p class="text-center py-8 text-xs text-stone-400">暫無推薦記錄</p>';
+                el.innerHTML = '<p class="text-center py-8 text-xs" style="color: var(--forest-light);">暫無推薦記錄</p>';
                 return;
             }
 
@@ -516,14 +624,14 @@
                 const cls = statusClass(b.stay_status);
                 const comm = parseFloat(b.commission_amount) || 0;
                 return `
-                    <div class="flex items-center justify-between py-2.5 border-b border-stone-50 last:border-0">
+                    <div class="flex items-center justify-between py-2.5 last:border-0" style="border-bottom: 1px solid var(--forest-faint);">
                         <div class="min-w-0 mr-3">
-                            <p class="text-sm text-stone-700 truncate">${b.guest_name}</p>
-                            <p class="text-[0.65rem] text-stone-400">${fmtDate(b.checkin_date)} - ${fmtDate(b.checkout_date)}</p>
+                            <p class="text-sm truncate">${escHtml(b.guest_name)}</p>
+                            <p class="text-[0.65rem]" style="color: var(--forest-light);">${fmtDate(b.checkin_date)} - ${fmtDate(b.checkout_date)}</p>
                         </div>
                         <div class="text-right flex-shrink-0">
                             <span class="badge ${cls.bg} ${cls.text}">${cls.label}</span>
-                            <p class="text-xs mt-0.5 ${comm > 0 ? 'text-[#2E4B36] font-medium' : 'text-stone-400'}">
+                            <p class="text-xs mt-0.5 ${comm > 0 ? 'font-medium' : ''}" style="color: ${comm > 0 ? 'var(--forest-medium)' : 'var(--forest-light)'};">
                                 ${comm > 0 ? '$' + comm.toLocaleString() : '--'}
                             </p>
                         </div>
@@ -535,26 +643,26 @@
             const el = document.getElementById('payoutHistory');
 
             if (!allPayouts || !allPayouts.length) {
-                el.innerHTML = '<p class="text-center py-8 text-xs text-stone-400">暫無結算記錄</p>';
+                el.innerHTML = '<p class="text-center py-8 text-xs" style="color: var(--forest-light);">暫無結算記錄</p>';
                 return;
             }
 
             const sorted = [...allPayouts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-            el.innerHTML = `<div class="divide-y divide-stone-50">${sorted.map(p => {
+            el.innerHTML = `<div>${sorted.map(p => {
                 const info = payoutTypeInfo(p.payout_type);
                 const amt = parseFloat(p.amount) || 0;
                 const isNeg = ['COMMISSION_REVERSAL'].includes(p.payout_type);
                 const stInfo = payoutStatusInfo(p.payout_status);
 
                 return `
-                    <div class="payout-row flex items-center justify-between py-3 px-1 rounded-lg">
+                    <div class="payout-row flex items-center justify-between py-3 px-1 rounded-lg" style="border-bottom: 1px solid var(--forest-faint);">
                         <div class="min-w-0 mr-3">
-                            <p class="text-sm text-stone-700">${info.label}</p>
-                            <p class="text-[0.65rem] text-stone-400">${fmtDate(p.created_at)}${p.notes ? ' · ' + truncate(p.notes, 20) : ''}</p>
+                            <p class="text-sm">${escHtml(info.label)}</p>
+                            <p class="text-[0.65rem]" style="color: var(--forest-light);">${fmtDate(p.created_at)}${p.notes ? ' \u00B7 ' + escHtml(truncate(p.notes, 20)) : ''}</p>
                         </div>
                         <div class="text-right flex-shrink-0">
-                            <p class="text-sm font-medium tabular-nums ${isNeg ? 'text-red-600' : 'text-[#2E4B36]'}">
+                            <p class="text-sm font-medium tabular-nums" style="color: ${isNeg ? '#DC2626' : 'var(--forest-medium)'};">
                                 ${isNeg ? '-' : '+'}$${Math.abs(amt).toLocaleString()}
                             </p>
                             <span class="badge ${stInfo.cls}">${stInfo.text}</span>
@@ -574,7 +682,6 @@
             const landingFull = `${baseUrl}${APPS_SCRIPT_URL}?dest=landing&pid=${code}`;
             const couponFull = `${baseUrl}${APPS_SCRIPT_URL}?dest=coupon&pid=${code}`;
 
-            // 如果沒有短連結，嘗試透過 reurl.cc 生成
             if (!landing || !coupon) {
                 document.getElementById('referralLink').value = '短連結生成中...';
                 document.getElementById('couponLink').value = '短連結生成中...';
@@ -637,13 +744,13 @@
                     datasets: [{
                         label: '推薦數',
                         data: counts,
-                        borderColor: '#2E4B36',
-                        backgroundColor: 'rgba(46,75,54,0.06)',
+                        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--forest-medium').trim(),
+                        backgroundColor: 'rgba(45,74,62,0.06)',
                         tension: 0.4,
                         fill: true,
                         borderWidth: 2,
                         pointRadius: 3,
-                        pointBackgroundColor: '#2E4B36'
+                        pointBackgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--forest-medium').trim()
                     }]
                 },
                 options: {
@@ -651,7 +758,7 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#F5F5F4' } },
+                        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(232,236,233,0.6)' } },
                         x: { grid: { display: false } }
                     }
                 }
@@ -672,13 +779,16 @@
             document.getElementById('accommodationTotal').textContent = '$' + accComm.toLocaleString();
             document.getElementById('cashTotal').textContent = '$' + cashComm.toLocaleString();
 
+            const forestMedium = getComputedStyle(document.documentElement).getPropertyValue('--forest-medium').trim();
+            const gold = getComputedStyle(document.documentElement).getPropertyValue('--gold').trim();
+
             charts.comm = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['住宿金', '現金'],
                     datasets: [{
                         data: [accComm || 0, cashComm || 0],
-                        backgroundColor: ['#2E4B36', '#94A3B8'],
+                        backgroundColor: [forestMedium, gold],
                         borderWidth: 0,
                         spacing: 2
                     }]
@@ -746,12 +856,18 @@
             return s && s.length > n ? s.slice(0, n) + '...' : s;
         }
 
+        function escHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
         // ========================================
         // Actions
         // ========================================
         function copyReferralLink() { copyText(document.getElementById('referralLink').value, '推薦連結已複製'); }
         function copyCouponLink() { copyText(document.getElementById('couponLink').value, '優惠券連結已複製'); }
         function copyTemplate() { copyText(document.getElementById('referralTemplate').textContent, '推薦文案已複製'); }
+        function copyDashboardCoupon() { copyText(document.getElementById('dashboardCouponCode').textContent, '優惠碼已複製'); }
 
         function copyText(text, msg) {
             if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -774,7 +890,7 @@
 
         function shareToLine() {
             const link = document.getElementById('referralLink').value;
-            window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(link)}&text=${encodeURIComponent('發現森林中的秘密住宿體驗！' + link)}`, '_blank');
+            window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(link)}&text=${encodeURIComponent('\u767C\u73FE\u68EE\u6797\u4E2D\u7684\u79D8\u5BC6\u4F4F\u5BBF\u9AD4\u9A57\uFF01' + link)}`, '_blank');
         }
 
         function shareToFacebook() {
@@ -811,45 +927,6 @@
         function logout() {
             sessionStorage.clear();
             window.location.href = 'partner-login.html';
-        }
-
-        // ========================================
-        // Demo Data
-        // ========================================
-        function generateDemoBookings() {
-            const now = Date.now();
-            const names = ['王**', '陳**', '林**', '張**', '李**', '黃**', '劉**', '蔡**'];
-            const statuses = ['COMPLETED','COMPLETED','COMPLETED','CONFIRMED','PENDING'];
-            const types = ['ACCOMMODATION','CASH'];
-            const prices = [3200,3800,4200,2800,3600];
-
-            return Array.from({ length: 8 }, (_, i) => {
-                const ci = new Date(now - (i * 7 + Math.floor(Math.random() * 7)) * 86400000);
-                const co = new Date(ci.getTime() + 2 * 86400000);
-                const st = statuses[i % statuses.length];
-                const tp = types[i % types.length];
-                const comm = st === 'COMPLETED' ? (tp === 'ACCOMMODATION' ? 1200 : 600) : 0;
-                return {
-                    id: 'D_B' + (i + 1), guest_name: names[i],
-                    checkin_date: ci.toISOString().split('T')[0],
-                    checkout_date: co.toISOString().split('T')[0],
-                    room_price: prices[i % prices.length],
-                    stay_status: st, commission_amount: comm, commission_type: tp,
-                    created_at: ci.toISOString()
-                };
-            });
-        }
-
-        function generateDemoPayouts() {
-            const now = Date.now();
-            const day = 86400000;
-            return [
-                { id: 'D_P1', payout_type: 'ACCOMMODATION', amount: 1200, payout_status: 'COMPLETED', notes: '訂房 #B001', created_at: new Date(now - 7*day).toISOString() },
-                { id: 'D_P2', payout_type: 'CASH', amount: 600, payout_status: 'COMPLETED', notes: '訂房 #B002', created_at: new Date(now - 14*day).toISOString() },
-                { id: 'D_P3', payout_type: 'ACCOMMODATION', amount: 2500, payout_status: 'COMPLETED', notes: '含首次獎勵', created_at: new Date(now - 30*day).toISOString() },
-                { id: 'D_P4', payout_type: 'PAYMENT_COMPLETED', amount: 600, payout_status: 'COMPLETED', notes: '銀行匯款完成', created_at: new Date(now - 10*day).toISOString() },
-                { id: 'D_P5', payout_type: 'CASH', amount: 1200, payout_status: 'PENDING', notes: '訂房 #B005', created_at: new Date(now - 3*day).toISOString() }
-            ];
         }
 
         // ========================================

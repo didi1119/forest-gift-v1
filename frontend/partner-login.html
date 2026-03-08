@@ -76,13 +76,6 @@
             50% { transform: translateX(4px); }
             100% { opacity: 1; transform: translateX(0); }
         }
-        .coupon-display {
-            color: var(--gold);
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-shadow: 0 0 20px rgba(197, 160, 101, 0.2);
-        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center py-12 px-4">
@@ -166,40 +159,6 @@
             </div>
         </div>
 
-        <!-- Coupon Code Query -->
-        <div class="glass-card p-6 mt-4">
-            <h3 class="text-sm font-medium mb-4 text-center font-serif" style="color: var(--forest-dark);">專屬優惠碼查詢</h3>
-            <div class="flex gap-2">
-                <input
-                    type="text"
-                    id="couponQueryCode"
-                    placeholder="輸入大使代碼"
-                    class="input-field flex-1 min-w-0 px-4 py-2.5 rounded-lg text-sm focus:outline-none"
-                >
-                <button
-                    onclick="queryCoupon()"
-                    id="couponQueryBtn"
-                    class="btn-gold px-5 py-2.5 rounded-lg text-sm font-medium flex-shrink-0"
-                >
-                    查詢
-                </button>
-            </div>
-            <!-- Coupon Result -->
-            <div id="couponResult" class="hidden mt-4">
-                <div class="text-center py-4 px-3 rounded-xl" style="background: rgba(197, 160, 101, 0.08); border: 1px solid rgba(197, 160, 101, 0.2);">
-                    <p class="text-xs mb-2" style="color: var(--forest-light);">您的專屬優惠碼</p>
-                    <p class="coupon-display font-mono mb-3" id="couponCodeDisplay">-</p>
-                    <button onclick="copyCouponCode()" class="px-4 py-1.5 rounded-lg text-xs font-medium transition-all" style="background: var(--forest-medium); color: #fff;">
-                        複製優惠碼
-                    </button>
-                </div>
-                <p class="text-xs mt-3 text-center leading-relaxed" style="color: var(--forest-light);">
-                    將此優惠碼告知親友，在官方 LINE@ 出示即可享有折扣
-                </p>
-            </div>
-            <div id="couponError" class="hidden mt-3 text-center text-xs" style="color: #DC2626;"></div>
-        </div>
-
         <!-- Feature List -->
         <div class="glass-card mt-4 p-6">
             <h3 class="text-sm font-medium mb-4 text-center" style="color: var(--forest-light);">登入後您可以查看</h3>
@@ -219,10 +178,6 @@
                 <div class="flex items-center gap-2.5">
                     <span class="w-1.5 h-1.5 rounded-full" style="background: var(--forest-medium);"></span>
                     專屬推薦連結
-                </div>
-                <div class="flex items-center gap-2.5 col-span-2 justify-center">
-                    <span class="w-1.5 h-1.5 rounded-full" style="background: var(--gold);"></span>
-                    專屬優惠碼分享
                 </div>
             </div>
         </div>
@@ -278,78 +233,6 @@
             } finally {
                 showLoading(false);
             }
-        }
-
-        async function queryCoupon() {
-            const code = document.getElementById('couponQueryCode').value.trim();
-            if (!code) return;
-
-            const btn = document.getElementById('couponQueryBtn');
-            btn.textContent = '查詢中...';
-            btn.disabled = true;
-
-            document.getElementById('couponResult').classList.add('hidden');
-            document.getElementById('couponError').classList.add('hidden');
-
-            try {
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                        action: 'get_partner_coupon',
-                        partner_code: code
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    const couponCode = result.coupon_code || '（請聯繫管理員設定）';
-                    document.getElementById('couponCodeDisplay').textContent = couponCode;
-                    document.getElementById('couponResult').classList.remove('hidden');
-                } else {
-                    const errEl = document.getElementById('couponError');
-                    errEl.textContent = result.error || '查詢失敗';
-                    errEl.classList.remove('hidden');
-                }
-            } catch (error) {
-                const errEl = document.getElementById('couponError');
-                errEl.textContent = '連線失敗，請重試';
-                errEl.classList.remove('hidden');
-            } finally {
-                btn.textContent = '查詢';
-                btn.disabled = false;
-            }
-        }
-
-        function copyCouponCode() {
-            const code = document.getElementById('couponCodeDisplay').textContent;
-            const btn = document.querySelector('#couponResult button');
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(code).then(() => {
-                    showCopyFeedback(btn);
-                }).catch(() => fallbackCopyCoupon(code, btn));
-            } else {
-                fallbackCopyCoupon(code, btn);
-            }
-        }
-
-        function fallbackCopyCoupon(text, btn) {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.cssText = 'position:fixed;opacity:0';
-            document.body.appendChild(ta);
-            ta.select();
-            try { document.execCommand('copy'); showCopyFeedback(btn); }
-            catch { /* ignore */ }
-            document.body.removeChild(ta);
-        }
-
-        function showCopyFeedback(btn) {
-            if (!btn) return;
-            const original = btn.textContent;
-            btn.textContent = '已複製！';
-            setTimeout(() => { btn.textContent = original; }, 1500);
         }
 
         function showError(message) {

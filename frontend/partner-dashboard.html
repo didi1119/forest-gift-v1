@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>知音大使 - 個人儀表板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -141,6 +141,73 @@
             padding: 1rem 1.25rem;
         }
         .lv3-card h3 { color: var(--gold); }
+
+        /* ====== Bottom Navigation ====== */
+        .compact-header {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: rgba(245, 242, 235, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(232, 236, 233, 0.6);
+        }
+        .tab-content-area {
+            padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 40;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(232, 236, 233, 0.6);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .nav-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 8px 0 6px;
+            flex: 1;
+            font-size: 0.625rem;
+            color: var(--forest-light);
+            opacity: 0.55;
+            transition: all 0.2s ease;
+            position: relative;
+            cursor: pointer;
+            border: none;
+            background: none;
+        }
+        .nav-tab.active {
+            color: var(--gold);
+            opacity: 1;
+        }
+        .nav-tab.active::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 25%;
+            right: 25%;
+            height: 2px;
+            background: var(--gold);
+            border-radius: 0 0 2px 2px;
+        }
+        .nav-tab svg {
+            width: 22px;
+            height: 22px;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -155,159 +222,130 @@
         </div>
     </div>
 
-    <div class="max-w-5xl mx-auto px-4 py-5 md:py-8">
-        <!-- Header -->
-        <header class="mb-6 md:mb-8">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div class="flex items-center gap-3.5">
-                    <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: var(--forest-medium);">
-                        <span class="text-white text-sm font-semibold" id="userInitial">K</span>
+    <!-- Compact Sticky Header -->
+    <header class="compact-header">
+        <div class="max-w-5xl mx-auto px-4 py-3">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: var(--forest-medium);">
+                    <span class="text-white text-xs font-semibold" id="userInitial">K</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h1 class="text-sm font-medium truncate" id="partnerName">知音大使</h1>
+                        <span class="badge badge-level" id="partnerLevel">--</span>
                     </div>
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-2.5 flex-wrap">
-                            <h1 class="text-base md:text-lg font-medium truncate" id="partnerName">知音大使</h1>
-                            <span class="badge badge-level" id="partnerLevel">--</span>
+                    <p class="text-[0.65rem] mt-0.5" style="color: var(--forest-light);">代碼 <span class="font-mono" id="partnerCode">-</span></p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tab Content Area -->
+    <div class="tab-content-area">
+        <div class="max-w-5xl mx-auto px-4 py-4">
+
+            <!-- ======== Tab 1: 總覽 ======== -->
+            <div id="tab-overview" class="tab-panel active">
+                <!-- Stats Grid (6 cards, 2x3) -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-5">
+                    <div class="glass-card p-4 md:p-5 stat-card">
+                        <p class="text-xs mb-1.5" style="color: var(--forest-light);">推薦成功</p>
+                        <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="totalReferrals">-</p>
+                        <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">已完成入住</p>
+                    </div>
+                    <div class="glass-card p-4 md:p-5 stat-card">
+                        <p class="text-xs mb-1.5" style="color: var(--forest-light);">累積佣金</p>
+                        <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="totalCommission">-</p>
+                        <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">總收益</p>
+                    </div>
+                    <div class="glass-card p-4 md:p-5 stat-card">
+                        <p class="text-xs mb-1.5" style="color: var(--forest-light);">可用住宿金</p>
+                        <p class="text-2xl md:text-3xl font-semibold tabular-nums" style="color: var(--forest-medium);" id="availablePoints">-</p>
+                        <a href="https://line.me/R/ti/p/@478hisen" target="_blank"
+                           class="inline-block mt-2 px-3 py-1.5 text-[0.65rem] font-medium text-white rounded-lg transition-all"
+                           style="background: var(--gold);"
+                           onmouseover="this.style.background='var(--gold-light)'"
+                           onmouseout="this.style.background='var(--gold)'">
+                            使用住宿金 →
+                        </a>
+                    </div>
+                    <div class="glass-card p-4 md:p-5 stat-card">
+                        <p class="text-xs mb-1.5" style="color: var(--forest-light);">待結算現金</p>
+                        <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="pendingCash">-</p>
+                        <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">尚未撥付</p>
+                    </div>
+                    <div class="glass-card p-4 md:p-5 stat-card">
+                        <p class="text-xs mb-1.5" style="color: var(--forest-light);">已使用點數</p>
+                        <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="pointsUsed">-</p>
+                        <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">累計折抵</p>
+                    </div>
+                    <div class="glass-card p-4 md:p-5 stat-card">
+                        <p class="text-xs mb-1.5" style="color: var(--forest-light);">升級進度</p>
+                        <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="levelProgress">-</p>
+                        <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);" id="nextLevelText">下一等級</p>
+                        <div class="progress-track mt-2.5">
+                            <div class="progress-fill" id="levelProgressBar" style="width: 0%"></div>
                         </div>
-                        <p class="text-xs mt-0.5" style="color: var(--forest-light);">代碼 <span class="font-mono" id="partnerCode">-</span></p>
                     </div>
                 </div>
-                <div class="flex gap-2.5">
-                    <button onclick="refreshData()" class="px-4 py-2 text-xs font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint);">
-                        重新載入
-                    </button>
-                    <button onclick="logout()" class="px-4 py-2 text-xs font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint); opacity: 0.7;">
-                        登出
-                    </button>
-                </div>
-            </div>
-        </header>
 
-        <!-- Stats Grid (6 cards) -->
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
-            <!-- Successful Referrals -->
-            <div class="glass-card p-4 md:p-5 stat-card">
-                <p class="text-xs mb-1.5" style="color: var(--forest-light);">推薦成功</p>
-                <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="totalReferrals">-</p>
-                <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">已完成入住</p>
-            </div>
-
-            <!-- Total Commission -->
-            <div class="glass-card p-4 md:p-5 stat-card">
-                <p class="text-xs mb-1.5" style="color: var(--forest-light);">累積佣金</p>
-                <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="totalCommission">-</p>
-                <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">總收益</p>
-            </div>
-
-            <!-- Available Points -->
-            <div class="glass-card p-4 md:p-5 stat-card">
-                <p class="text-xs mb-1.5" style="color: var(--forest-light);">可用住宿金</p>
-                <p class="text-2xl md:text-3xl font-semibold tabular-nums" style="color: var(--forest-medium);" id="availablePoints">-</p>
-                <a href="https://line.me/R/ti/p/@478hisen" target="_blank"
-                   class="inline-block mt-2 px-3 py-1.5 text-[0.65rem] font-medium text-white rounded-lg transition-all"
-                   style="background: var(--gold);"
-                   onmouseover="this.style.background='var(--gold-light)'"
-                   onmouseout="this.style.background='var(--gold)'">
-                    使用住宿金 →
-                </a>
-            </div>
-
-            <!-- Pending Cash -->
-            <div class="glass-card p-4 md:p-5 stat-card">
-                <p class="text-xs mb-1.5" style="color: var(--forest-light);">待結算現金</p>
-                <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="pendingCash">-</p>
-                <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">尚未撥付</p>
-            </div>
-
-            <!-- Points Used -->
-            <div class="glass-card p-4 md:p-5 stat-card">
-                <p class="text-xs mb-1.5" style="color: var(--forest-light);">已使用點數</p>
-                <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="pointsUsed">-</p>
-                <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);">累計折抵</p>
-            </div>
-
-            <!-- Level Progress -->
-            <div class="glass-card p-4 md:p-5 stat-card">
-                <p class="text-xs mb-1.5" style="color: var(--forest-light);">升級進度</p>
-                <p class="text-2xl md:text-3xl font-semibold tabular-nums" id="levelProgress">-</p>
-                <p class="text-[0.65rem] mt-1" style="color: var(--forest-light);" id="nextLevelText">下一等級</p>
-                <div class="progress-track mt-2.5">
-                    <div class="progress-fill" id="levelProgressBar" style="width: 0%"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Next Level Preview (dynamic) -->
-        <div id="nextLevelPreview" class="hidden glass-card p-5 md:p-6 mb-6 md:mb-8">
-            <div class="flex items-center gap-3 mb-3">
-                <span class="text-lg">✨</span>
-                <h2 class="text-sm font-medium" style="color: var(--forest-dark);" id="nextLevelTitle">距離升級還差 N 筆推薦</h2>
-            </div>
-            <div class="level-reward-card">
-                <p class="text-xs font-medium mb-2 gold-text" id="nextLevelName">下一等級</p>
-                <ul class="text-xs space-y-1.5" style="color: var(--forest-light);" id="nextLevelRewards">
-                </ul>
-            </div>
-        </div>
-
-        <!-- Charts -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 mb-6 md:mb-8">
-            <div class="glass-card p-5 md:p-6">
-                <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">推薦績效趨勢</h2>
-                <div style="position: relative; height: 200px;">
-                    <canvas id="performanceChart"></canvas>
-                </div>
-                <p class="text-[0.65rem] mt-3 text-center" style="color: var(--forest-light); opacity: 0.7;">近 6 個月</p>
-            </div>
-
-            <div class="glass-card p-5 md:p-6">
-                <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">佣金類型分佈</h2>
-                <div style="position: relative; height: 200px;">
-                    <canvas id="commissionChart"></canvas>
-                </div>
-                <div class="mt-3 flex justify-between text-xs" style="color: var(--forest-light);">
-                    <span class="flex items-center gap-1.5">
-                        <span class="w-2.5 h-2.5 rounded-sm" style="background: var(--forest-medium);"></span>
-                        住宿金 <span class="font-medium" id="accommodationTotal">-</span>
-                    </span>
-                    <span class="flex items-center gap-1.5">
-                        <span class="w-2.5 h-2.5 rounded-sm" style="background: var(--gold);"></span>
-                        現金 <span class="font-medium" id="cashTotal">-</span>
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Records & Tools -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5 mb-6 md:mb-8">
-            <!-- Recent Bookings -->
-            <div class="glass-card p-5 md:p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-sm font-medium" style="color: var(--forest-light);">推薦記錄</h2>
-                    <button onclick="exportBookings()" class="text-xs transition-colors" style="color: var(--forest-light); opacity: 0.6;">
-                        匯出
-                    </button>
-                </div>
-                <div id="recentBookings" class="space-y-2.5">
-                    <p class="text-center py-8 text-xs" style="color: var(--forest-light);">載入中...</p>
-                </div>
-            </div>
-
-            <!-- Referral Tools -->
-            <div class="glass-card p-5 md:p-6">
-                <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">推薦工具</h2>
-
-                <!-- Click Stats -->
-                <div class="flex items-center justify-between py-2.5 mb-4" style="border-bottom: 1px solid var(--forest-faint);">
-                    <div class="text-xs" style="color: var(--forest-light);">
-                        連結點擊 <span class="font-medium" style="color: var(--forest-dark);" id="totalClicks">-</span>
+                <!-- Next Level Preview -->
+                <div id="nextLevelPreview" class="hidden glass-card p-5 md:p-6 mb-5">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="text-lg">✨</span>
+                        <h2 class="text-sm font-medium" style="color: var(--forest-dark);" id="nextLevelTitle">距離升級還差 N 筆推薦</h2>
                     </div>
-                    <div class="text-xs" style="color: var(--forest-light);">
-                        轉換率 <span class="font-medium" style="color: var(--forest-dark);" id="conversionRate">-</span>
+                    <div class="level-reward-card">
+                        <p class="text-xs font-medium mb-2 gold-text" id="nextLevelName">下一等級</p>
+                        <ul class="text-xs space-y-1.5" style="color: var(--forest-light);" id="nextLevelRewards"></ul>
+                    </div>
+                </div>
+
+                <!-- Charts (2 cols on lg) -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
+                    <div class="glass-card p-5 md:p-6">
+                        <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">推薦績效趨勢</h2>
+                        <div style="position: relative; height: 200px;">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                        <p class="text-[0.65rem] mt-3 text-center" style="color: var(--forest-light); opacity: 0.7;">近 6 個月</p>
+                    </div>
+                    <div class="glass-card p-5 md:p-6">
+                        <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">佣金類型分佈</h2>
+                        <div style="position: relative; height: 200px;">
+                            <canvas id="commissionChart"></canvas>
+                        </div>
+                        <div class="mt-3 flex justify-between text-xs" style="color: var(--forest-light);">
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-sm" style="background: var(--forest-medium);"></span>
+                                住宿金 <span class="font-medium" id="accommodationTotal">-</span>
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-sm" style="background: var(--gold);"></span>
+                                現金 <span class="font-medium" id="cashTotal">-</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======== Tab 2: 推薦 ======== -->
+            <div id="tab-referral" class="tab-panel">
+                <!-- Click Stats + Conversion -->
+                <div class="glass-card p-5 md:p-6 mb-4">
+                    <h2 class="text-sm font-medium mb-3" style="color: var(--forest-light);">推薦數據</h2>
+                    <div class="flex items-center justify-between py-2.5" style="border-bottom: 1px solid var(--forest-faint);">
+                        <div class="text-xs" style="color: var(--forest-light);">
+                            連結點擊 <span class="font-medium" style="color: var(--forest-dark);" id="totalClicks">-</span>
+                        </div>
+                        <div class="text-xs" style="color: var(--forest-light);">
+                            轉換率 <span class="font-medium" style="color: var(--forest-dark);" id="conversionRate">-</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Coupon Code Display -->
-                <div id="couponCodeSection" class="mb-4 hidden">
+                <div id="couponCodeSection" class="glass-card p-5 md:p-6 mb-4 hidden">
                     <label class="block text-xs mb-1.5" style="color: var(--forest-light);">專屬優惠碼</label>
                     <div class="flex items-center gap-2 p-3 rounded-lg" style="background: rgba(197, 160, 101, 0.08); border: 1px solid rgba(197, 160, 101, 0.2);">
                         <span class="coupon-code-display font-mono flex-1" id="dashboardCouponCode">-</span>
@@ -319,7 +357,7 @@
                 </div>
 
                 <!-- Referral Link -->
-                <div class="mb-3.5">
+                <div class="glass-card p-5 md:p-6 mb-4">
                     <label class="block text-xs mb-1.5" style="color: var(--forest-light);">推薦連結</label>
                     <div class="flex">
                         <input type="text" id="referralLink" class="flex-1 min-w-0 px-3 py-2 border rounded-l-lg text-xs truncate focus:outline-none" style="border-color: var(--forest-faint); background: rgba(255,255,255,0.5); color: var(--forest-dark);" readonly value="載入中...">
@@ -330,7 +368,7 @@
                 </div>
 
                 <!-- Coupon Link -->
-                <div class="mb-4">
+                <div class="glass-card p-5 md:p-6 mb-4">
                     <label class="block text-xs mb-1.5" style="color: var(--forest-light);">優惠券連結</label>
                     <div class="flex">
                         <input type="text" id="couponLink" class="flex-1 min-w-0 px-3 py-2 border rounded-l-lg text-xs truncate focus:outline-none" style="border-color: var(--forest-faint); background: rgba(255,255,255,0.5); color: var(--forest-dark);" readonly value="載入中...">
@@ -341,7 +379,7 @@
                 </div>
 
                 <!-- Template -->
-                <div class="mb-4">
+                <div class="glass-card p-5 md:p-6 mb-4">
                     <label class="block text-xs mb-1.5" style="color: var(--forest-light);">推薦文案</label>
                     <div class="p-3 rounded-lg text-xs leading-relaxed" style="background: rgba(255,255,255,0.5); border: 1px solid var(--forest-faint); color: var(--forest-light);" id="referralTemplate">
                         發現森林中的秘密住宿體驗！透過我的專屬連結預訂，享受獨特的森林療癒之旅，還有機會獲得專屬森林禮物。<br><br>立即預訂：<span class="font-medium break-all" style="color: var(--forest-medium);" id="templateLink">[連結]</span>
@@ -351,84 +389,150 @@
                     </button>
                 </div>
 
-                <!-- Share -->
-                <div class="grid grid-cols-2 gap-2.5">
-                    <button onclick="shareToLine()" class="py-2 text-xs font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint);"
-                        onmouseover="this.style.borderColor='var(--forest-medium)';this.style.color='var(--forest-medium)'"
-                        onmouseout="this.style.borderColor='var(--forest-faint)';this.style.color='var(--forest-light)'">
-                        LINE 分享
-                    </button>
-                    <button onclick="shareToFacebook()" class="py-2 text-xs font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint);"
-                        onmouseover="this.style.borderColor='var(--forest-medium)';this.style.color='var(--forest-medium)'"
-                        onmouseout="this.style.borderColor='var(--forest-faint)';this.style.color='var(--forest-light)'">
-                        Facebook
-                    </button>
+                <!-- Share Buttons -->
+                <div class="glass-card p-5 md:p-6">
+                    <h2 class="text-sm font-medium mb-3" style="color: var(--forest-light);">分享</h2>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <button onclick="shareToLine()" class="py-2.5 text-xs font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint);"
+                            onmouseover="this.style.borderColor='var(--forest-medium)';this.style.color='var(--forest-medium)'"
+                            onmouseout="this.style.borderColor='var(--forest-faint)';this.style.color='var(--forest-light)'">
+                            LINE 分享
+                        </button>
+                        <button onclick="shareToFacebook()" class="py-2.5 text-xs font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint);"
+                            onmouseover="this.style.borderColor='var(--forest-medium)';this.style.color='var(--forest-medium)'"
+                            onmouseout="this.style.borderColor='var(--forest-faint)';this.style.color='var(--forest-light)'">
+                            Facebook
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Payout History -->
-        <div class="glass-card p-5 md:p-6 mb-6 md:mb-8">
-            <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">結算記錄</h2>
-            <div id="payoutHistory">
-                <p class="text-center py-8 text-xs" style="color: var(--forest-light);">載入中...</p>
-            </div>
-        </div>
+            <!-- ======== Tab 3: 記錄 ======== -->
+            <div id="tab-records" class="tab-panel">
+                <!-- Referral Records -->
+                <div class="glass-card p-5 md:p-6 mb-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-sm font-medium" style="color: var(--forest-light);">推薦記錄</h2>
+                        <button onclick="exportBookings()" class="text-xs transition-colors" style="color: var(--forest-light); opacity: 0.6;">
+                            匯出
+                        </button>
+                    </div>
+                    <div id="recentBookings" class="space-y-2.5">
+                        <p class="text-center py-8 text-xs" style="color: var(--forest-light);">載入中...</p>
+                    </div>
+                </div>
 
-        <!-- Level Guide (Redesigned with full rewards) -->
-        <div class="glass-card p-5 md:p-6 mb-8">
-            <h2 class="text-sm font-medium mb-5 font-serif" style="color: var(--forest-dark);">等級制度與專屬禮遇</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
-                <!-- LV1 -->
-                <div class="py-4 px-4 rounded-xl" style="background: rgba(255,255,255,0.5); border: 1px solid var(--forest-faint);">
-                    <div class="flex justify-center gap-1.5 mb-3">
-                        <span class="level-dot level-dot-active"></span>
-                        <span class="level-dot level-dot-inactive"></span>
-                        <span class="level-dot level-dot-inactive"></span>
-                    </div>
-                    <h3 class="text-sm font-medium text-center mb-3" style="color: var(--forest-dark);">LV1 知音大使</h3>
-                    <div class="text-xs space-y-1.5" style="color: var(--forest-light);">
-                        <p>每筆 <strong style="color: var(--forest-dark);">$1,000</strong> 住宿金 / <strong style="color: var(--forest-dark);">$500</strong> 現金</p>
-                        <p>0 - 3 筆成功推薦</p>
-                        <p class="font-medium" style="color: var(--gold);">首次推薦 +$1,500 住宿金</p>
-                    </div>
-                </div>
-                <!-- LV2 -->
-                <div class="py-4 px-4 rounded-xl" style="background: rgba(255,255,255,0.5); border: 1px solid var(--forest-faint);">
-                    <div class="flex justify-center gap-1.5 mb-3">
-                        <span class="level-dot level-dot-active"></span>
-                        <span class="level-dot level-dot-active"></span>
-                        <span class="level-dot level-dot-inactive"></span>
-                    </div>
-                    <h3 class="text-sm font-medium text-center mb-3" style="color: var(--forest-dark);">LV2 森林嚮導</h3>
-                    <div class="text-xs space-y-1.5" style="color: var(--forest-light);">
-                        <p>每筆 <strong style="color: var(--forest-dark);">$1,200</strong> 住宿金 / <strong style="color: var(--forest-dark);">$600</strong> 現金</p>
-                        <p>年度 4 - 9 筆成功推薦</p>
-                        <p class="font-medium" style="color: var(--gold);">晉升賀禮：靜謐森林特色紀念品</p>
-                        <p>「森友故事」專欄主角機會</p>
-                        <p class="text-[0.65rem]" style="opacity: 0.7;">保級：次年 3 組即可延續</p>
-                    </div>
-                </div>
-                <!-- LV3 (Dark card with gold text) -->
-                <div class="lv3-card">
-                    <div class="flex justify-center gap-1.5 mb-3">
-                        <span class="level-dot" style="background: var(--gold);"></span>
-                        <span class="level-dot" style="background: var(--gold);"></span>
-                        <span class="level-dot" style="background: var(--gold);"></span>
-                    </div>
-                    <h3 class="text-sm font-medium text-center mb-3">LV3 秘境守護者</h3>
-                    <div class="text-xs space-y-1.5" style="color: rgba(255,255,255,0.75);">
-                        <p>每筆 <strong style="color: var(--gold);">$1,500</strong> 住宿金 / <strong style="color: var(--gold);">$750</strong> 現金</p>
-                        <p>年度 10+ 筆成功推薦</p>
-                        <p class="font-medium" style="color: var(--gold);">晉升賀禮：「守護者之息」客製香水</p>
-                        <p style="color: var(--gold-light);">年度免費住一晚（平日）</p>
-                        <p>延遲退房・新品優先體驗</p>
-                        <p class="text-[0.65rem]" style="opacity: 0.6;">保級：次年 6 組即可延續</p>
+                <!-- Payout History -->
+                <div class="glass-card p-5 md:p-6">
+                    <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">結算記錄</h2>
+                    <div id="payoutHistory">
+                        <p class="text-center py-8 text-xs" style="color: var(--forest-light);">載入中...</p>
                     </div>
                 </div>
             </div>
+
+            <!-- ======== Tab 4: 我的 ======== -->
+            <div id="tab-profile" class="tab-panel">
+                <!-- Level Guide -->
+                <div class="glass-card p-5 md:p-6 mb-4">
+                    <h2 class="text-sm font-medium mb-5 font-serif" style="color: var(--forest-dark);">等級制度與專屬禮遇</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+                        <!-- LV1 -->
+                        <div class="py-4 px-4 rounded-xl" style="background: rgba(255,255,255,0.5); border: 1px solid var(--forest-faint);">
+                            <div class="flex justify-center gap-1.5 mb-3">
+                                <span class="level-dot level-dot-active"></span>
+                                <span class="level-dot level-dot-inactive"></span>
+                                <span class="level-dot level-dot-inactive"></span>
+                            </div>
+                            <h3 class="text-sm font-medium text-center mb-3" style="color: var(--forest-dark);">LV1 知音大使</h3>
+                            <div class="text-xs space-y-1.5" style="color: var(--forest-light);">
+                                <p>每筆 <strong style="color: var(--forest-dark);">$1,000</strong> 住宿金 / <strong style="color: var(--forest-dark);">$500</strong> 現金</p>
+                                <p>0 - 3 筆成功推薦</p>
+                                <p class="font-medium" style="color: var(--gold);">首次推薦 +$1,500 住宿金</p>
+                            </div>
+                        </div>
+                        <!-- LV2 -->
+                        <div class="py-4 px-4 rounded-xl" style="background: rgba(255,255,255,0.5); border: 1px solid var(--forest-faint);">
+                            <div class="flex justify-center gap-1.5 mb-3">
+                                <span class="level-dot level-dot-active"></span>
+                                <span class="level-dot level-dot-active"></span>
+                                <span class="level-dot level-dot-inactive"></span>
+                            </div>
+                            <h3 class="text-sm font-medium text-center mb-3" style="color: var(--forest-dark);">LV2 森林嚮導</h3>
+                            <div class="text-xs space-y-1.5" style="color: var(--forest-light);">
+                                <p>每筆 <strong style="color: var(--forest-dark);">$1,200</strong> 住宿金 / <strong style="color: var(--forest-dark);">$600</strong> 現金</p>
+                                <p>年度 4 - 9 筆成功推薦</p>
+                                <p class="font-medium" style="color: var(--gold);">晉升賀禮：靜謐森林特色紀念品</p>
+                                <p>「森友故事」專欄主角機會</p>
+                                <p class="text-[0.65rem]" style="opacity: 0.7;">保級：次年 3 組即可延續</p>
+                            </div>
+                        </div>
+                        <!-- LV3 -->
+                        <div class="lv3-card">
+                            <div class="flex justify-center gap-1.5 mb-3">
+                                <span class="level-dot" style="background: var(--gold);"></span>
+                                <span class="level-dot" style="background: var(--gold);"></span>
+                                <span class="level-dot" style="background: var(--gold);"></span>
+                            </div>
+                            <h3 class="text-sm font-medium text-center mb-3">LV3 秘境守護者</h3>
+                            <div class="text-xs space-y-1.5" style="color: rgba(255,255,255,0.75);">
+                                <p>每筆 <strong style="color: var(--gold);">$1,500</strong> 住宿金 / <strong style="color: var(--gold);">$750</strong> 現金</p>
+                                <p>年度 10+ 筆成功推薦</p>
+                                <p class="font-medium" style="color: var(--gold);">晉升賀禮：「守護者之息」客製香水</p>
+                                <p style="color: var(--gold-light);">年度免費住一晚（平日）</p>
+                                <p>延遲退房・新品優先體驗</p>
+                                <p class="text-[0.65rem]" style="opacity: 0.6;">保級：次年 6 組即可延續</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reload + Logout -->
+                <div class="glass-card p-5 md:p-6 mb-4">
+                    <button onclick="refreshData()" class="w-full py-3 text-sm font-medium border rounded-lg transition-colors mb-3" style="color: var(--forest-medium); border-color: var(--forest-faint);">
+                        重新載入數據
+                    </button>
+                    <button onclick="logout()" class="w-full py-3 text-sm font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint); opacity: 0.7;">
+                        登出
+                    </button>
+                </div>
+
+                <!-- Version -->
+                <p class="text-center text-[0.65rem] py-4" style="color: var(--forest-light); opacity: 0.5;">知音大使 v2.0</p>
+            </div>
+
         </div>
     </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="flex max-w-5xl mx-auto">
+            <button class="nav-tab active" onclick="switchTab('tab-overview', this)">
+                <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                </svg>
+                <span>總覽</span>
+            </button>
+            <button class="nav-tab" onclick="switchTab('tab-referral', this)">
+                <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                </svg>
+                <span>推薦</span>
+            </button>
+            <button class="nav-tab" onclick="switchTab('tab-records', this)">
+                <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                </svg>
+                <span>記錄</span>
+            </button>
+            <button class="nav-tab" onclick="switchTab('tab-profile', this)">
+                <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                </svg>
+                <span>我的</span>
+            </button>
+        </div>
+    </nav>
 
     <script>
         const APPS_SCRIPT_URL = '/api';
@@ -438,6 +542,23 @@
         let allBookings = [];
         let allPayouts = [];
         let charts = {};
+
+        // ========================================
+        // Tab Switching
+        // ========================================
+        function switchTab(tabId, tabEl) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            tabEl.classList.add('active');
+
+            window.scrollTo({ top: 0 });
+
+            if (tabId === 'tab-overview') {
+                Object.values(charts).forEach(c => { if (c && c.resize) c.resize(); });
+            }
+        }
 
         // ========================================
         // Init

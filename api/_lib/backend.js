@@ -1552,28 +1552,6 @@ async function handleGetPartnerDashboardData(data) {
 }
 
 // ========================================
-// 優惠碼查詢
-// ========================================
-
-async function handleGetPartnerCoupon(data) {
-  const partnerCodeInput = (data.partner_code || '').trim();
-  if (!partnerCodeInput) return { success: false, error: '請提供大使代碼' };
-
-  const partner = await findPartnerByCodeCaseInsensitive(partnerCodeInput);
-  if (!partner) return { success: false, error: '找不到此大使代碼' };
-
-  const baseUrl = GITHUB_PAGES_URL.replace(/\/[^/]*$/, '');
-  const couponUrl = partner.short_coupon_link || partner.coupon_link || `${baseUrl}/api?dest=coupon&pid=${partner.partner_code}`;
-
-  return {
-    success: true,
-    coupon_code: partner.coupon_code || '',
-    coupon_url: couponUrl,
-    partner_name: partner.name || partner.partner_name || ''
-  };
-}
-
-// ========================================
 // 路由函數
 // ========================================
 
@@ -1772,7 +1750,7 @@ async function route(action, data) {
     'batch_cancel': handleBatchCancel,
     'verify_partner_login': handleVerifyPartnerLogin,
     'get_partner_dashboard_data': handleGetPartnerDashboardData,
-    'get_partner_coupon': handleGetPartnerCoupon,
+
     'submit_application': handleSubmitApplication,
     'get_applications': handleGetApplications,
     'review_application': handleReviewApplication,

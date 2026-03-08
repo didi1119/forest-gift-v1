@@ -28,7 +28,8 @@ class TestFramework {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 this.log('📊 正在獲取 Google Sheets 數據...');
-                const response = await fetch(`${this.config.APPS_SCRIPT_URL}?action=get_all_data`);
+                const adminParam = this.config.ADMIN_SECRET ? `&admin_secret=${encodeURIComponent(this.config.ADMIN_SECRET)}` : '';
+                const response = await fetch(`${this.config.APPS_SCRIPT_URL}?action=get_all_data${adminParam}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -62,10 +63,14 @@ class TestFramework {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 const url = `${this.config.APPS_SCRIPT_URL}?action=${encodeURIComponent(action)}`;
+                const bodyWithSecret = { ...params };
+                if (this.config.ADMIN_SECRET) {
+                    bodyWithSecret.admin_secret = this.config.ADMIN_SECRET;
+                }
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(params)
+                    body: JSON.stringify(bodyWithSecret)
                 });
                 const result = await response.json();
                 if (!result.success && result.error && result.error.includes('Quota exceeded') && attempt < maxRetries) {

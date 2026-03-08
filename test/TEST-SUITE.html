@@ -61,6 +61,13 @@
                     </div>
 
                     <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Admin Secret</label>
+                        <input type="password" id="adminSecret"
+                               placeholder="輸入 admin_secret（Vercel 環境變數）"
+                               class="w-full px-3 py-2 border rounded text-sm">
+                    </div>
+
+                    <div class="mb-4">
                         <label class="block text-sm font-medium mb-2">測試大使代碼</label>
                         <input type="text" id="testPartnerCode"
                                value="gg"
@@ -1209,6 +1216,7 @@
                 // Get configuration
                 const config = {
                     APPS_SCRIPT_URL: document.getElementById('appsScriptUrl').value,
+                    ADMIN_SECRET: document.getElementById('adminSecret').value,
                     TEST_PREFIX: 'TEST_',
                     CLEANUP_AFTER: document.getElementById('cleanupAfter').checked,
                     VERBOSE_LOG: document.getElementById('detailedLog').checked,

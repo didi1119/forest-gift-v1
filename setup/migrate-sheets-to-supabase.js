@@ -56,7 +56,8 @@ function convertTypes(record, tableName) {
   const numericFields = [
     'room_price', 'commission_amount', 'first_referral_bonus_amount',
     'amount', 'deduct_amount', 'total_commission_earned', 'total_commission_paid',
-    'pending_commission', 'available_points', 'points_used', 'total_commission'
+    'pending_commission', 'available_points', 'points_used', 'total_commission',
+    'original_commission_amount', 'original_room_price'
   ];
   const intFields = [
     'level_progress', 'total_successful_referrals', 'total_referrals',
@@ -65,14 +66,22 @@ function convertTypes(record, tableName) {
   const boolFields = ['is_active'];
 
   for (const field of numericFields) {
-    if (record[field] !== undefined && record[field] !== null && record[field] !== '') {
-      record[field] = parseFloat(record[field]) || 0;
+    if (record[field] !== undefined) {
+      if (record[field] === null || record[field] === '') {
+        record[field] = 0;
+      } else {
+        record[field] = parseFloat(record[field]) || 0;
+      }
     }
   }
 
   for (const field of intFields) {
-    if (record[field] !== undefined && record[field] !== null && record[field] !== '') {
-      record[field] = parseInt(record[field]) || 0;
+    if (record[field] !== undefined) {
+      if (record[field] === null || record[field] === '') {
+        record[field] = 0;
+      } else {
+        record[field] = parseInt(record[field]) || 0;
+      }
     }
   }
 
@@ -96,26 +105,76 @@ function convertTypes(record, tableName) {
 }
 
 /**
- * 分批 upsert 到 Supabase
+ * 取得 Supabase 表的有效欄位，過濾掉表中不存在的欄位
+ */
+const validColumnsCache = {};
+async function getValidColumns(table) {
+  if (validColumnsCache[table]) return validColumnsCache[table];
+  const { data, error } = await supabase.from(table).select('*').limit(0);
+  if (error) {
+    // 備用：插一筆空的看哪些欄位存在
+    console.log(`  Warning: cannot detect columns for ${table}, skipping filter`);
+    return null;
+  }
+  // 用 RPC 取欄位名
+  const { data: cols } = await supabase.rpc('get_columns', { tbl: table }).catch(() => ({ data: null }));
+  return null; // 用另一種方式
+}
+
+function filterRecord(record, knownBadColumns) {
+  const filtered = {};
+  for (const [key, val] of Object.entries(record)) {
+    if (!knownBadColumns.has(key)) {
+      filtered[key] = val;
+    }
+  }
+  return filtered;
+}
+
+/**
+ * 分批 upsert 到 Supabase（自動偵測並移除不存在的欄位）
  */
 async function batchUpsert(table, records, conflictColumn) {
   let inserted = 0;
+  const badColumns = new Set();
+
   for (let i = 0; i < records.length; i += BATCH_SIZE) {
-    const batch = records.slice(i, i + BATCH_SIZE);
+    const batch = records.slice(i, i + BATCH_SIZE).map(r => filterRecord(r, badColumns));
     const { error } = await supabase
       .from(table)
       .upsert(batch, { onConflict: conflictColumn || 'id' });
 
     if (error) {
+      // 檢查是否是欄位不存在的錯誤
+      const colMatch = error.message.match(/Could not find the '([^']+)' column/);
+      if (colMatch) {
+        badColumns.add(colMatch[1]);
+        console.log(`  自動移除不存在的欄位: ${colMatch[1]}`);
+        // 重試這個 batch
+        i -= BATCH_SIZE;
+        continue;
+      }
+
       console.error(`  Error upserting batch ${i}-${i + batch.length} to ${table}:`, error.message);
-      // 嘗試逐筆插入以找出問題
+      // 逐筆插入
       for (const record of batch) {
+        const cleaned = filterRecord(record, badColumns);
         const { error: singleError } = await supabase
           .from(table)
-          .upsert(record, { onConflict: conflictColumn || 'id' });
+          .upsert(cleaned, { onConflict: conflictColumn || 'id' });
         if (singleError) {
-          console.error(`  Failed record:`, JSON.stringify(record).slice(0, 200));
-          console.error(`  Error:`, singleError.message);
+          const colMatch2 = singleError.message.match(/Could not find the '([^']+)' column/);
+          if (colMatch2) {
+            badColumns.add(colMatch2[1]);
+            console.log(`  自動移除不存在的欄位: ${colMatch2[1]}`);
+            // 重試這筆
+            const retryCleaned = filterRecord(record, badColumns);
+            const { error: retryError } = await supabase
+              .from(table)
+              .upsert(retryCleaned, { onConflict: conflictColumn || 'id' });
+            if (!retryError) { inserted++; continue; }
+          }
+          console.error(`  Failed record id=${record.id}:`, singleError.message);
         } else {
           inserted++;
         }
@@ -123,6 +182,10 @@ async function batchUpsert(table, records, conflictColumn) {
     } else {
       inserted += batch.length;
     }
+  }
+
+  if (badColumns.size > 0) {
+    console.log(`  已忽略的欄位: ${[...badColumns].join(', ')}`);
   }
   return inserted;
 }
@@ -164,12 +227,29 @@ async function migrate() {
       // 2. 型別轉換
       const converted = records.map(r => convertTypes(r, table));
 
-      // 3. 決定 conflict column
+      // 3. 去重（Sheets 可能有重複 ID）
       const conflictColumn = table === 'partners' ? 'partner_code' : 'id';
+      const seen = new Set();
+      const deduped = [];
+      for (const r of converted) {
+        const key = table === 'partners' ? r.partner_code : r.id;
+        if (key !== undefined && key !== null && key !== '') {
+          if (seen.has(key)) {
+            console.log(`  跳過重複 ${conflictColumn}=${key}`);
+            continue;
+          }
+          seen.add(key);
+        }
+        deduped.push(r);
+      }
+      if (deduped.length < converted.length) {
+        console.log(`  去重: ${converted.length} → ${deduped.length} 筆`);
+      }
+      const finalRecords = deduped;
 
       // 4. Upsert 到 Supabase
       console.log(`  寫入 ${table}...`);
-      const inserted = await batchUpsert(table, converted, conflictColumn);
+      const inserted = await batchUpsert(table, finalRecords, conflictColumn);
       console.log(`  成功寫入 ${inserted} 筆`);
 
       // 5. 驗證筆數

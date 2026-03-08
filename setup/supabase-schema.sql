@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   first_referral_bonus_amount NUMERIC DEFAULT 0,
   manually_confirmed_by TEXT DEFAULT '',
   manually_confirmed_at TEXT DEFAULT '',
+  original_commission_amount NUMERIC DEFAULT 0,
   notes TEXT DEFAULT '',
   created_at TEXT DEFAULT '',
   updated_at TEXT DEFAULT ''

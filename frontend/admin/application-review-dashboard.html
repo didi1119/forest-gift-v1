@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>申請審核管理後台 - 靜謐森林知音計畫</title>
+    <script src="admin-auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
     <style>
@@ -202,18 +203,10 @@
         let currentApplications = [];
         let currentFilter = 'PENDING';
         let selectedApplication = null;
-        let adminSecret = '';
+        let adminSecret = window.__adminSecret || '';
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 先嘗試從 sessionStorage 讀取，若無則 prompt
-            adminSecret = sessionStorage.getItem('admin_secret') || '';
-            if (!adminSecret) {
-                adminSecret = prompt('請輸入管理密碼') || '';
-                if (adminSecret) {
-                    sessionStorage.setItem('admin_secret', adminSecret);
-                }
-            }
             loadApplications();
             setupEventListeners();
         });

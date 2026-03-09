@@ -241,26 +241,25 @@
 
 <body class="antialiased">
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-20 relative z-10">
+    <!-- Add Hero Image Background Wrapper -->
+    <div class="absolute top-0 left-0 w-full h-[75vh] sm:h-[85vh] bg-cover bg-center z-0"
+        style="background-image: url('images/hero-cabin.png');">
+        <div class="absolute inset-0 bg-gradient-to-b from-[#1A2F23]/50 via-[#1A2F23]/60 to-[#F5F2EB]"></div>
+    </div>
 
-        <header class="text-center mb-16 sm:mb-24 section-fade-in relative">
-            <!-- Decorative vertical line -->
-            <div
-                class="absolute -top-16 sm:-top-24 left-1/2 -translate-x-1/2 w-px h-16 sm:h-24 bg-gradient-to-b from-transparent to-[#1A2F23]/20">
-            </div>
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 relative z-10">
 
-            <h1 class="text-4xl sm:text-7xl font-bold tracking-tight text-[#1A2F23] mb-6 font-serif">
-                靜謐<span class="text-[#4A675A] opacity-80">森林</span>
+        <header class="text-center mb-16 sm:mb-24 section-fade-in relative text-[#F5F2EB]">
+            <h1 class="text-4xl sm:text-6xl font-bold tracking-tight mb-8 font-serif leading-tight drop-shadow-lg">
+                來自森林的邀請：<br>找回平靜的 5 分鐘練習
             </h1>
 
-            <div class="w-12 h-[0.5px] bg-[#1A2F23]/40 mx-auto mb-6"></div>
+            <div class="w-12 h-[1px] bg-[#F5F2EB]/50 mx-auto mb-8"></div>
 
-            <h2 class="text-xs sm:text-base font-serif text-[#1A2F23] mb-8 tracking-[0.3em] uppercase opacity-60">The
-                Sanctuary Gift</h2>
-
-            <p class="max-w-md mx-auto text-base sm:text-lg text-stone-600 leading-relaxed font-serif italic">
-                「在聲音與寂靜的縫隙間，我們種下了一座森林。」
-            </p>
+            <h2
+                class="text-sm sm:text-lg font-serif mb-12 tracking-[0.2em] opacity-90 max-w-2xl mx-auto drop-shadow-md">
+                完成心靈指引，領取「靜謐森林」專屬住宿優惠驚喜。
+            </h2>
 
             <!-- 推薦來源（僅後台追蹤用，前台不顯示） -->
             <div id="referral-note" class="hidden"><span id="referrer-name"></span></div>
@@ -269,7 +268,8 @@
         <main class="space-y-16 sm:space-y-24">
 
             <!-- Gift 1: Music -->
-            <section id="gift-music" class="section-fade-in">
+            <section id="gift-music" class="section-fade-in hidden">
+                <!-- Affiliate Mode Toggle: Remove 'hidden' class to restore -->
                 <div class="glass-card p-10 sm:p-14 text-center relative overflow-hidden">
                     <div
                         class="absolute -top-4 -right-4 p-8 opacity-[0.03] text-7xl sm:text-9xl font-serif z-0 select-none pointer-events-none">
@@ -336,12 +336,12 @@
                         <p class="text-[#4A675A] font-serif italic text-lg mb-8 opacity-80">Mapping Your Inner World.
                         </p>
                         <p class="text-stone-600 max-w-xl mx-auto mb-10 leading-relaxed text-sm font-light">
-                            這不只是一份手冊，而是一場為期七天的紙上儀式。<br>
-                            透過書寫與對話，為迷惘的心，繪製出一張清晰的導航圖。
+                            忙碌時，我們常在別人的期待裡走失。<br>
+                            這是一份為期七天的紙上練習，不需要長篇大論，只需每天給自己五分鐘，透過書寫與對話，在迷惘的心中繪製出一張清晰的導航圖。
                         </p>
                         <a href="inner_map.html" class="btn-mystic inline-flex items-center gap-3 group/btn"
                             onclick="trackEvent('inner_map_click', { page: 'index_old' })">
-                            <span class="text-xs tracking-[0.2em] uppercase">Start Mapping</span>
+                            <span class="text-xs tracking-[0.2em] uppercase">開啟練習</span>
                             <span
                                 class="text-sm transition-transform duration-500 group-hover/btn:translate-x-2">→</span>
                         </a>
@@ -421,7 +421,8 @@
             </section>
 
             <!-- Gift 4: Story -->
-            <section id="gift-story" class="section-fade-in py-6 sm:py-0">
+            <section id="gift-story" class="section-fade-in py-6 sm:py-0 hidden">
+                <!-- Affiliate Mode Toggle: Remove 'hidden' class to restore -->
                 <div class="glass-card p-10 sm:p-14 text-center relative overflow-hidden">
                     <!-- Fixed overlap: moved 04 to right corner like Gift 3 -->
                     <div
@@ -452,9 +453,12 @@
                     <!-- The Golden Ticket Container (Refined) -->
                     <div
                         class="relative bg-[#1A2F23] rounded-2xl p-8 sm:p-12 overflow-hidden shadow-2xl hover:shadow-[0_20px_50px_rgba(26,47,35,0.4)] transition-shadow duration-700">
-                        <!-- Background Decor (Subtle & Organic) -->
+                        <!-- Background Decor (Realistic Indoor Bed Scene) -->
+                        <div class="absolute inset-0 bg-cover bg-center z-0 opacity-50 hover:opacity-60 transition-opacity duration-700 mix-blend-overlay"
+                            style="background-image: url('images/cta-bed.png');">
+                        </div>
                         <div
-                            class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay">
+                            class="absolute inset-0 bg-gradient-to-t from-[#0F1D15] via-[#1A2F23]/90 to-[#1A2F23]/60 z-0">
                         </div>
 
 
@@ -466,23 +470,23 @@
                                     Final Invitation</span>
                             </div>
 
-                            <h3 class="text-2xl sm:text-5xl font-serif text-[#F5F2EB] mb-6 leading-tight tracking-wide">
-                                準備好踏上<br class="sm:hidden">
+                            <h3
+                                class="text-2xl sm:text-4xl font-serif text-[#F5F2EB] mb-6 leading-tight tracking-wide drop-shadow-md">
+                                準備好出發去森林<br class="sm:hidden">
                                 <span class="italic text-[#C5A065] relative inline-block mt-2 sm:mt-0">
-                                    真實的森林之旅
+                                    住一晚了嗎？
                                     <svg class="absolute -bottom-2 left-0 w-full h-2 text-[#C5A065]/40"
                                         viewBox="0 0 100 10" preserveAspectRatio="none">
                                         <path d="M0 5 Q 50 10 100 5" stroke="currentColor" stroke-width="2"
                                             fill="none" />
                                     </svg>
                                 </span>
-                                了嗎？
                             </h3>
 
                             <p
-                                class="text-[#F5F2EB]/70 mb-12 max-w-xl mx-auto leading-loose font-serif text-base sm:text-lg tracking-wide">
-                                當您完成了這四份心靈禮物的體驗，<br class="hidden sm:block">或許會發現內心對於更深度的寧靜有了渴望。<br>
-                                我們在森林深處，等待您的到來。
+                                class="text-[#F5F2EB]/90 mb-12 max-w-xl mx-auto leading-loose font-serif text-base sm:text-lg tracking-wide drop-shadow-sm">
+                                從線上平靜，到真實的森林棲息。<br class="hidden sm:block">
+                                靜謐森林小屋已為你準備好床墊與星空。
                             </p>
 
                             <button id="line-coupon-btn"
@@ -494,7 +498,7 @@
                                     class="absolute inset-0 -translate-x-full group-hover/cta:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-[rgba(197,160,101,0.1)] to-transparent skew-x-12">
                                 </div>
                                 <span
-                                    class="tracking-[0.3em] font-serif text-[#DFC698] text-xs sm:text-sm uppercase group-hover/cta:text-[#F5F2EB] transition-colors duration-300">領取專屬信物</span>
+                                    class="tracking-[0.3em] font-serif text-[#DFC698] text-xs sm:text-sm uppercase group-hover/cta:text-[#F5F2EB] transition-colors duration-300">領取專屬住宿驚喜</span>
                                 <svg class="w-4 h-4 sm:w-5 sm:h-5 text-[#C5A065] group-hover/cta:translate-x-1 transition-transform duration-300"
                                     fill="none" stroke="currentColor" viewBox="0 0 24 24"
                                     xmlns="http://www.w3.org/2000/svg">
@@ -866,6 +870,13 @@
                                 <div class="max-w-3xl mx-auto bg-[#1A2F23]/5 p-8 rounded-sm text-center">
                                     <h6 class="font-bold text-[#4A675A] mb-4 tracking-widest text-xs uppercase">指引路徑 (The Path)</h6>
                                     <p class="font-serif text-lg leading-loose text-[#1A2F23]">${card.path}</p>
+                                    
+                                    <!-- Random Ending Phrase Add-on -->
+                                    <div class="mt-8 pt-6 border-t border-[#1A2F23]/10">
+                                        <p class="font-serif text-sm leading-relaxed text-[#1A2F23]/70 italic">
+                                            ${Math.random() > 0.5 ? '「如果這份指引觸動了你，或許代表你的心正渴望一場真正的休息。」' : '「願這份指引，陪你度過下一個需要勇氣的時刻。」'}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         `;

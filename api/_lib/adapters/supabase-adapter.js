@@ -135,6 +135,40 @@ async function create(tableName, data) {
 }
 
 /**
+ * Upsert 記錄（依 onConflict 欄位）→ {...}
+ * 用於 Partners（PK = partner_code）避免 duplicate key
+ */
+async function upsert(tableName, data, onConflictColumn) {
+  const client = getClient();
+  const table = getTableName(tableName);
+  const timestamp = new Date().toISOString();
+
+  data.updated_at = timestamp;
+  data.created_at = data.created_at || timestamp;
+
+  const insertData = { ...data };
+  delete insertData.id;
+  delete insertData.ID;
+
+  const normalized = {};
+  for (const [key, val] of Object.entries(insertData)) {
+    normalized[key.toLowerCase()] = val;
+  }
+
+  const { data: result, error } = await client
+    .from(table)
+    .upsert(normalized, { onConflict: onConflictColumn })
+    .select()
+    .single();
+
+  if (error) throw new Error(`upsert(${tableName}): ${error.message}`);
+
+  result.ID = result.id || result[onConflictColumn];
+  console.log(`Upserted record in ${tableName}: ${onConflictColumn}=${normalized[onConflictColumn]}`);
+  return result;
+}
+
+/**
  * 更新記錄 → {...}
  */
 async function update(tableName, id, updates) {
@@ -211,6 +245,7 @@ module.exports = {
   findByField,
   findById,
   create,
+  upsert,
   update,
   ensureTable,
   getFields

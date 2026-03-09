@@ -190,6 +190,21 @@ async function update(tableName, id, updates) {
 }
 
 /**
+ * Upsert 記錄（Sheets 用：查找後 update 或 create）→ {...}
+ */
+async function upsert(tableName, data, onConflictColumn) {
+  const col = onConflictColumn || 'id';
+  const conflictValue = data[col] || data[col.toLowerCase()];
+  if (conflictValue) {
+    const existing = await findByField(tableName, col, conflictValue);
+    if (existing.length > 0) {
+      return update(tableName, conflictValue, data);
+    }
+  }
+  return create(tableName, data);
+}
+
+/**
  * 確保表存在（Sheets 特有）
  */
 async function ensureTable(tableName, fields) {
@@ -216,6 +231,7 @@ module.exports = {
   findByField,
   findById,
   create,
+  upsert,
   update,
   ensureTable,
   getFields

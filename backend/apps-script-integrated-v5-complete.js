@@ -1396,9 +1396,14 @@ function handleCancelPayout(data) {
     }
 
     // 處理佣金類型的取消（ACCOMMODATION, CASH, FIRST_REFERRAL_BONUS）
-    if (payout.payout_type === 'ACCOMMODATION' ||
-      payout.payout_type === 'CASH' ||
-      payout.payout_type === 'FIRST_REFERRAL_BONUS') {
+    // 重要守衛：只有與訂房關聯的 Payout 才觸發智慧取消（修改等級/點數/推薦數）
+    // 沒有 related_booking_ids 的 Payout（如手動建立的純記帳記錄）只做狀態取消
+    const hasRelatedBooking = payout.related_booking_ids && String(payout.related_booking_ids).trim() !== '';
+
+    if (hasRelatedBooking &&
+      (payout.payout_type === 'ACCOMMODATION' ||
+        payout.payout_type === 'CASH' ||
+        payout.payout_type === 'FIRST_REFERRAL_BONUS')) {
 
       const partner = findPartnerByCode(payout.partner_code);
       if (partner) {
@@ -1782,6 +1787,25 @@ function handleUpdatePartner(data) {
       });
 
       Logger.log(`Partner ${partnerCode} level changed from ${oldLevel} to ${data.partner_level}`);
+    }
+
+    // 如果變更住宿金點數，創建審計記錄（颲止點數變動無跡可查）
+    if (data.available_points !== undefined) {
+      const newPoints = parseFloat(data.available_points);
+      const oldPoints = parseFloat(partner.available_points || 0);
+      const diff = newPoints - oldPoints;
+      if (Math.abs(diff) > 0.01) {
+        createRecord('Payouts', {
+          partner_code: partnerCode,
+          payout_type: 'POINTS_ADJUSTMENT',
+          amount: diff,
+          payout_method: 'MANUAL_ADJUSTMENT',
+          payout_status: 'COMPLETED',
+          notes: data.adjustment_reason || `手動調整住宿金點數 ${diff > 0 ? '+' : ''}${diff}（${oldPoints} → ${newPoints}）`,
+          created_by: data.updated_by || 'admin'
+        });
+        Logger.log(`Partner ${partnerCode} available_points adjusted: ${oldPoints} → ${newPoints} (diff: ${diff})`);
+      }
     }
 
     // 如果變更佣金偏好，記錄
@@ -3320,8 +3344,8 @@ function getAllCompletedReferralBookings(partnerCode) {
   for (let i = 1; i < values.length; i++) {
     const booking = dataModel.rowToObject(values[i]);
     if (booking.partner_code === partnerCode &&
-        booking.booking_source === 'REFERRAL' &&
-        booking.stay_status === 'COMPLETED') {
+      booking.booking_source === 'REFERRAL' &&
+      booking.stay_status === 'COMPLETED') {
       bookings.push(booking);
     }
   }
@@ -3339,7 +3363,7 @@ function findBookingsInHighLevelPeriod(partnerCode, cancellationDate, highLevel)
   // 這些訂房可能享受了「不應該有的」高等級佣金
   return allBookings.filter(b => {
     return new Date(b.created_at) > new Date(cancellationDate) &&
-           b.stay_status !== 'CANCELLED';
+      b.stay_status !== 'CANCELLED';
   });
 }
 

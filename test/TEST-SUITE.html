@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,18 +11,40 @@
             font-family: 'Noto Sans TC', -apple-system, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        .test-pass { background: #10b981; }
-        .test-fail { background: #ef4444; }
+
+        .test-pass {
+            background: #10b981;
+        }
+
+        .test-fail {
+            background: #ef4444;
+        }
+
         .test-running {
             background: #fbbf24;
             animation: pulse 1.5s infinite;
         }
-        .test-pending { background: #6b7280; }
-        .test-skipped { background: #f59e0b; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
+
+        .test-pending {
+            background: #6b7280;
         }
+
+        .test-skipped {
+            background: #f59e0b;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
         .console-log {
             font-family: 'Courier New', monospace;
             font-size: 11px;
@@ -33,11 +56,13 @@
             padding: 12px;
             border-radius: 8px;
         }
+
         .progress-bar {
             transition: width 0.3s ease;
         }
     </style>
 </head>
+
 <body class="min-h-screen p-6">
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
@@ -55,23 +80,19 @@
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium mb-2">Apps Script URL</label>
-                        <input type="text" id="appsScriptUrl"
-                               value="/api"
-                               class="w-full px-3 py-2 border rounded text-sm">
+                        <input type="text" id="appsScriptUrl" value="/api"
+                            class="w-full px-3 py-2 border rounded text-sm">
                     </div>
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium mb-2">Admin Secret</label>
-                        <input type="password" id="adminSecret"
-                               placeholder="輸入 admin_secret（Vercel 環境變數）"
-                               class="w-full px-3 py-2 border rounded text-sm">
+                        <input type="password" id="adminSecret" placeholder="輸入 admin_secret（Vercel 環境變數）"
+                            class="w-full px-3 py-2 border rounded text-sm">
                     </div>
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium mb-2">測試大使代碼</label>
-                        <input type="text" id="testPartnerCode"
-                               value="gg"
-                               class="w-full px-3 py-2 border rounded">
+                        <input type="text" id="testPartnerCode" value="gg" class="w-full px-3 py-2 border rounded">
                     </div>
 
                     <div class="mb-4">
@@ -166,15 +187,15 @@
             <!-- Control Buttons -->
             <div class="mt-6 flex gap-4">
                 <button onclick="startTests()" id="startBtn"
-                        class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white font-bold py-3 px-6 rounded-lg hover:from-green-700 hover:to-green-800 transition">
+                    class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white font-bold py-3 px-6 rounded-lg hover:from-green-700 hover:to-green-800 transition">
                     開始測試
                 </button>
                 <button onclick="stopTests()" id="stopBtn" disabled
-                        class="flex-1 bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition disabled:opacity-50">
+                    class="flex-1 bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition disabled:opacity-50">
                     停止測試
                 </button>
                 <button onclick="exportReport()"
-                        class="flex-1 bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition">
+                    class="flex-1 bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition">
                     匯出報告
                 </button>
             </div>
@@ -187,7 +208,8 @@
                 <span id="progressText">0 / 0</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-6">
-                <div id="progressBar" class="progress-bar h-6 rounded-full bg-gradient-to-r from-green-500 to-blue-500" style="width: 0%"></div>
+                <div id="progressBar" class="progress-bar h-6 rounded-full bg-gradient-to-r from-green-500 to-blue-500"
+                    style="width: 0%"></div>
             </div>
             <div class="mt-4 grid grid-cols-5 gap-4 text-center text-sm">
                 <div>
@@ -758,46 +780,107 @@
 
                         for (const partner of partnersToCheck) {
                             // 計算預期點數（從 Payouts 表計算）
-                            const accommodationPayouts = data.payouts.filter(p =>
+                            // 只計算狀態非 CANCELLED 的 Payout
+                            const partnerPayouts = data.payouts.filter(p =>
                                 p.partner_code === partner.partner_code &&
-                                p.payout_type === 'ACCOMMODATION'
+                                p.payout_status !== 'CANCELLED'
                             );
 
-                            const debitPayouts = data.payouts.filter(p =>
-                                p.partner_code === partner.partner_code &&
+                            // 增加點數：ACCOMMODATION（含首次獎勵/等級補發）
+                            // 關鍵：只計算有 related_booking_ids 的記錄（由 confirm_checkin 產生）
+                            // create_payout API 建立的純記帳 Payout 不影響 available_points
+                            const accommodationPayouts = partnerPayouts.filter(p =>
+                                p.payout_type === 'ACCOMMODATION' &&
+                                p.related_booking_ids && String(p.related_booking_ids).trim() !== ''
+                            );
+
+                            // 增加點數：手動調整（正數部分）
+                            const positiveAdjustmentPayouts = partnerPayouts.filter(p =>
+                                p.payout_type === 'POINTS_ADJUSTMENT' &&
+                                parseFloat(p.amount || 0) > 0
+                            );
+
+                            // 增加點數：退款返還（取消 SELF_USE 訂房或取消住宿金使用）
+                            const refundPayouts = partnerPayouts.filter(p =>
+                                p.payout_type === 'POINTS_REFUND'
+                            );
+
+                            // 減少點數：使用住宿金折抵
+                            const debitPayouts = partnerPayouts.filter(p =>
                                 p.payout_type === 'POINTS_ADJUSTMENT_DEBIT'
                             );
 
-                            const reversalPayouts = data.payouts.filter(p =>
-                                p.partner_code === partner.partner_code &&
-                                p.payout_type === 'COMMISSION_REVERSAL' &&
-                                (p.notes || '').includes('住宿金')
+                            // 減少點數：部分退款佣金調整
+                            const partialRefundPayouts = partnerPayouts.filter(p =>
+                                p.payout_type === 'PARTIAL_REFUND'
                             );
 
-                            // 新增：計算點數轉現金操作
-                            const cashConversionPayouts = data.payouts.filter(p =>
-                                p.partner_code === partner.partner_code &&
+                            // 減少點數：手動調整（負數部分）
+                            const negativeAdjustmentPayouts = partnerPayouts.filter(p =>
+                                p.payout_type === 'POINTS_ADJUSTMENT' &&
+                                parseFloat(p.amount || 0) < 0
+                            );
+
+                            // 減少點數：COMMISSION_REVERSAL
+                            // 關鍵：只計算「住宿金佣金」的撤銷，到 Bookings 表查 commission_type
+                            // CASH 佣金的撤銷影響 pending_commission，不影響 available_points
+                            const reversalPayouts = partnerPayouts.filter(p => {
+                                if (p.payout_type !== 'COMMISSION_REVERSAL') return false;
+                                const bookingId = (p.related_booking_ids || '').toString().trim();
+                                if (!bookingId) return false;
+                                const relatedBooking = data.bookings.find(b =>
+                                    b.id == bookingId || String(b.id) === bookingId
+                                );
+                                // 找到訂房：只有 ACCOMMODATION 佣金撤銷才影響 available_points
+                                if (relatedBooking) {
+                                    return relatedBooking.commission_type === 'ACCOMMODATION';
+                                }
+                                // 找不到訂房（可能已被清除）：用 notes 內容檢查，傳統 fallback
+                                return (p.notes || '').includes('住宿金');
+                            });
+
+                            // 減少點數：點數轉現金
+                            const cashConversionPayouts = partnerPayouts.filter(p =>
                                 p.payout_type === 'CASH_CONVERSION'
                             );
 
                             const totalEarned = accommodationPayouts.reduce((sum, p) =>
                                 sum + parseFloat(p.amount || 0), 0);
+                            const totalPositiveAdj = positiveAdjustmentPayouts.reduce((sum, p) =>
+                                sum + parseFloat(p.amount || 0), 0);
+                            const totalRefund = refundPayouts.reduce((sum, p) =>
+                                sum + Math.abs(parseFloat(p.amount || 0)), 0);
                             const totalDebit = debitPayouts.reduce((sum, p) =>
+                                sum + Math.abs(parseFloat(p.amount || 0)), 0);
+                            const totalPartialRefund = partialRefundPayouts.reduce((sum, p) =>
+                                sum + Math.abs(parseFloat(p.amount || 0)), 0);
+                            const totalNegativeAdj = negativeAdjustmentPayouts.reduce((sum, p) =>
                                 sum + Math.abs(parseFloat(p.amount || 0)), 0);
                             const totalReversal = reversalPayouts.reduce((sum, p) =>
                                 sum + Math.abs(parseFloat(p.amount || 0)), 0);
-                            // CASH_CONVERSION 的 amount 是現金值，實際扣的點數 = amount / 0.5 = amount * 2
+                            // CASH_CONVERSION 的 amount 是現金值，實際扣的點數 = amount * 2
                             const totalConverted = cashConversionPayouts.reduce((sum, p) => {
-                                // 嘗試從 notes 提取原始點數：「點數轉現金：2000 點 → NT$ 1000 (2:1)」
                                 const match = (p.notes || '').match(/點數轉現金：(\d+)/);
                                 const pointsUsed = match ? parseInt(match[1]) : Math.abs(parseFloat(p.amount || 0)) * 2;
                                 return sum + pointsUsed;
                             }, 0);
 
-                            const expectedPoints = totalEarned - totalDebit - totalReversal - totalConverted;
+                            const expectedPoints = totalEarned + totalPositiveAdj + totalRefund
+                                - totalDebit - totalPartialRefund - totalNegativeAdj - totalReversal - totalConverted;
                             const actualPoints = parseFloat(partner.available_points || 0);
 
                             const diff = Math.abs(expectedPoints - actualPoints);
+
+                            framework.log(`${partner.partner_code} 計算明細:
+  住宿金入帳: +${totalEarned} (${accommodationPayouts.length}筆)
+  正向手動調整: +${totalPositiveAdj} (${positiveAdjustmentPayouts.length}筆)
+  退款返還: +${totalRefund} (${refundPayouts.length}筆)
+  住宿金折抵: -${totalDebit} (${debitPayouts.length}筆)
+  部分退款調整: -${totalPartialRefund} (${partialRefundPayouts.length}筆)
+  負向手動調整: -${totalNegativeAdj} (${negativeAdjustmentPayouts.length}筆)
+  佣金撤銷(ACCOMMODATION): -${totalReversal} (${reversalPayouts.length}筆)
+  點數轉現金: -${totalConverted} (${cashConversionPayouts.length}筆)
+  =>預期: ${expectedPoints}, 實際: ${actualPoints}, 差異: ${diff}`);
 
                             if (diff > 0.01) { // 允許小數點誤差
                                 inconsistencies.push({
@@ -1529,4 +1612,5 @@
         }
     </script>
 </body>
+
 </html>

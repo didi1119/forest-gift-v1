@@ -606,7 +606,11 @@ async function handleCancelPayout(data) {
     return { success: false, error: 'Payout already cancelled' };
   }
 
-  if (['ACCOMMODATION', 'CASH', 'FIRST_REFERRAL_BONUS'].includes(payout.payout_type)) {
+  const hasRelatedBooking = payout.related_booking_ids && String(payout.related_booking_ids).trim() !== '';
+
+  // 只有與訂房關聯的佣金 Payout 才觸發智慧取消（修改等級/點數/推薦數）
+  // 沒有 related_booking_ids 的純記帳 Payout 只做狀態取消
+  if (hasRelatedBooking && ['ACCOMMODATION', 'CASH', 'FIRST_REFERRAL_BONUS'].includes(payout.payout_type)) {
     const partner = await findPartnerByCode(payout.partner_code);
     if (partner) {
       const commissionToDeduct = Math.abs(parseFloat(payout.amount) || 0);

@@ -62,14 +62,12 @@
         }
 
         .glass-card {
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.9);
             border-radius: 1.5rem;
             box-shadow:
                 0 4px 6px -1px rgba(0, 0, 0, 0.02),
-                0 20px 40px -4px rgba(26, 47, 35, 0.04),
+                0 20px 40px -4px rgba(26, 47, 35, 0.06),
                 inset 0 0 0 1px rgba(255, 255, 255, 0.5);
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -218,6 +216,20 @@
             opacity: 0.5;
             margin: 2rem 0;
         }
+
+        @keyframes spin-slow {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .animate-spin-slow {
+            animation: spin-slow 30s linear infinite;
+        }
     </style>
 </head>
 
@@ -287,10 +299,7 @@
                 <div
                     class="glass-card p-0 sm:pr-14 flex flex-col md:flex-row items-center gap-16 relative overflow-hidden group transition-all duration-700 hover:shadow-soft">
 
-                    <!-- Ambient Background Glow -->
-                    <div
-                        class="absolute top-1/2 right-0 -translate-y-1/2 w-2/3 h-2/3 bg-[#4A675A] opacity-[0.03] blur-3xl rounded-full -z-10 pointer-events-none">
-                    </div>
+                    <!-- Ambient Background Glow - 移除 blur 效能問題 -->
 
                     <!-- Image Section -->
                     <div class="w-full md:w-1/2 relative h-80 md:h-[30rem] overflow-hidden">
@@ -439,12 +448,7 @@
                         <div
                             class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay">
                         </div>
-                        <div
-                            class="absolute top-0 right-0 w-64 h-64 bg-[#C5A065] opacity-[0.05] rounded-full blur-[100px] pointer-events-none">
-                        </div>
-                        <div
-                            class="absolute bottom-0 left-0 w-64 h-64 bg-[#4A675A] opacity-[0.1] rounded-full blur-[80px] pointer-events-none">
-                        </div>
+
 
                         <!-- Ticket Content -->
                         <div class="relative z-10 text-center">

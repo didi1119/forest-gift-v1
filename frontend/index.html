@@ -230,6 +230,12 @@
         .animate-spin-slow {
             animation: spin-slow 30s linear infinite;
         }
+
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
     </style>
 </head>
 
@@ -269,9 +275,14 @@
                     class="glass-card p-8 sm:p-20 flex flex-col md:flex-row items-center gap-16 relative overflow-hidden transition-all duration-700 hover:shadow-soft">
                     <div class="absolute top-0 right-0 p-8 opacity-[0.03] text-9xl font-serif z-0 select-none">01</div>
                     <div class="flex-shrink-0 relative z-10">
-                        <div class="w-40 h-40 rounded-full flex items-center justify-center border border-[#C5A065]/20 animate-spin-slow"
-                            style="animation-duration: 30s;">
-                            <span class="text-5xl text-[#1A2F23]/80 font-serif">♪</span>
+                        <div class="w-40 h-40 rounded-full flex items-center justify-center border border-[#C5A065]/30 animate-spin-slow relative"
+                            style="animation-duration: 40s;">
+                            <!-- Elegant Abstract Sound Wave / Vinyl Grooves -->
+                            <div class="absolute inset-2 border border-[#C5A065]/10 rounded-full"></div>
+                            <div class="absolute inset-6 border border-[#C5A065]/20 rounded-full"></div>
+                            <div class="absolute inset-10 border border-[#C5A065]/10 rounded-full"></div>
+                            <span
+                                class="text-3xl text-[#C5A065] font-serif font-light tracking-widest italic tracking-[0.2em]">O1</span>
                         </div>
                     </div>
                     <div class="flex-1 text-center md:text-left z-10">
@@ -452,10 +463,10 @@
 
                         <!-- Ticket Content -->
                         <div class="relative z-10 text-center">
-                            <div class="mb-8">
+                            <div class="mb-10">
                                 <span
-                                    class="inline-block py-1 px-3 border border-[#C5A065]/30 rounded-full text-[#C5A065] text-[0.65rem] tracking-[0.3em] uppercase font-bold bg-[#1A2F23]/50 backdrop-blur-sm">Exclusive
-                                    Invitation</span>
+                                    class="inline-block py-2 px-6 border border-[#C5A065]/40 rounded-full text-[#C5A065] text-[0.65rem] tracking-[0.4em] uppercase font-serif bg-[#1A2F23]/80 shadow-[inset_0_0_20px_rgba(197,160,101,0.05)]">The
+                                    Final Invitation</span>
                             </div>
 
                             <h3 class="text-3xl sm:text-5xl font-serif text-[#F5F2EB] mb-6 leading-tight tracking-wide">
@@ -478,11 +489,21 @@
                             </p>
 
                             <button id="line-coupon-btn"
-                                class="btn-mystic inline-flex items-center gap-3 px-10 py-4 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-transform duration-300 rounded-full"
+                                class="btn-mystic inline-flex items-center justify-center gap-6 px-12 py-5 shadow-2xl hover:shadow-[0_20px_40px_rgba(197,160,101,0.15)] hover:-translate-y-1 transition-all duration-500 rounded-full relative overflow-hidden group/cta"
                                 onclick="goToLineCoupon()"
-                                style="background: linear-gradient(135deg, #F5F2EB 0%, #E0D8C8 100%); color: #1A2F23; border: 1px solid rgba(255,255,255,0.5);">
-                                <span class="tracking-[0.2em] font-bold text-sm uppercase">領取專屬優惠</span>
-                                <span class="text-lg animate-bounce">🎁</span>
+                                style="background: linear-gradient(135deg, #1A2F23 0%, #0F1D15 100%); border: 1px solid rgba(197,160,101,0.3);">
+                                <!-- Foil shine effect -->
+                                <div
+                                    class="absolute inset-0 -translate-x-full group-hover/cta:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-[rgba(197,160,101,0.1)] to-transparent skew-x-12">
+                                </div>
+                                <span
+                                    class="tracking-[0.3em] font-serif text-[#DFC698] text-sm uppercase group-hover/cta:text-[#F5F2EB] transition-colors duration-300">領取專屬信物</span>
+                                <svg class="w-5 h-5 text-[#C5A065] group-hover/cta:translate-x-1 transition-transform duration-300"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                        d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                </svg>
                             </button>
 
                             <p class="mt-8 text-[0.6rem] uppercase tracking-[0.3em] text-[#F5F2EB]/30 font-serif">Let

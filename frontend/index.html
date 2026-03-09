@@ -304,46 +304,47 @@
 
             <!-- Gift 2: E-book -->
             <section id="gift-ebook" class="section-fade-in">
-                <div class="glass-card p-10 sm:p-14 text-center relative overflow-hidden">
+                <div
+                    class="glass-card py-10 px-6 sm:py-12 sm:px-10 text-center relative overflow-hidden max-w-2xl mx-auto">
+                    <!-- Subtle background number -->
                     <div
-                        class="absolute -top-4 -right-4 p-8 opacity-[0.03] text-7xl sm:text-9xl font-serif z-0 select-none pointer-events-none">
-                        02</div>
-                    <div class="relative z-10">
-                        <!-- Minimalist compass star ornament -->
-                        <div class="mx-auto mb-8 w-16 h-16 sm:w-20 sm:h-20 relative flex items-center justify-center">
-                            <!-- Cross axes -->
+                        class="absolute -top-4 -right-4 p-8 opacity-[0.02] text-7xl sm:text-9xl font-serif z-0 select-none pointer-events-none">
+                        02
+                    </div>
+
+                    <div class="relative z-10 flex flex-col items-center">
+                        <!-- Smaller, refined compass star ornament -->
+                        <div class="mb-6 w-12 h-12 relative flex items-center justify-center opacity-80">
                             <div
-                                class="absolute w-px h-full bg-gradient-to-b from-transparent via-[#C5A065]/40 to-transparent">
+                                class="absolute w-px h-full bg-gradient-to-b from-transparent via-[#C5A065]/50 to-transparent">
                             </div>
                             <div
-                                class="absolute h-px w-full bg-gradient-to-r from-transparent via-[#C5A065]/40 to-transparent">
+                                class="absolute h-px w-full bg-gradient-to-r from-transparent via-[#C5A065]/50 to-transparent">
                             </div>
-                            <!-- Diagonal axes -->
-                            <div
-                                class="absolute w-px h-full bg-gradient-to-b from-transparent via-[#C5A065]/20 to-transparent rotate-45">
-                            </div>
-                            <div
-                                class="absolute w-px h-full bg-gradient-to-b from-transparent via-[#C5A065]/20 to-transparent -rotate-45">
-                            </div>
-                            <!-- Center dot -->
-                            <div class="w-2 h-2 rounded-full bg-[#C5A065]/40"></div>
+                            <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/60"></div>
                         </div>
-                        <div class="mb-4">
+
+                        <div class="mb-3">
                             <span class="text-[0.6rem] font-bold tracking-[0.3em] text-[#C5A065] uppercase">Gift
                                 Two</span>
                         </div>
-                        <h3 class="text-3xl sm:text-4xl font-serif font-bold text-[#1A2F23] mb-4">內在地圖</h3>
-                        <p class="text-[#4A675A] font-serif italic text-lg mb-8 opacity-80">Mapping Your Inner World.
+
+                        <h3 class="text-2xl sm:text-3xl font-serif font-bold text-[#1A2F23] mb-3">內在地圖</h3>
+
+                        <p class="text-[#4A675A] font-serif italic text-base mb-6 opacity-80">Mapping Your Inner World.
                         </p>
-                        <p class="text-stone-600 max-w-xl mx-auto mb-10 leading-relaxed text-sm font-light">
-                            忙碌時，我們常在別人的期待裡走失。<br>
-                            這是一份為期七天的紙上練習，不需要長篇大論，只需每天給自己五分鐘，透過書寫與對話，在迷惘的心中繪製出一張清晰的導航圖。
+
+                        <p class="text-stone-600 max-w-sm mx-auto mb-8 leading-relaxed text-sm font-light">
+                            忙碌時，我們常在別人的期待裡走失。<br><br>
+                            每天五分鐘的紙上練習，<br>
+                            為迷惘的心，繪製清晰的導航圖。
                         </p>
-                        <a href="inner_map.html" class="btn-mystic inline-flex items-center gap-3 group/btn"
+
+                        <a href="inner_map.html" class="btn-mystic inline-flex items-center gap-3 group/btn px-6 py-2.5"
                             onclick="trackEvent('inner_map_click', { page: 'index_old' })">
                             <span class="text-xs tracking-[0.2em] uppercase">開啟練習</span>
                             <span
-                                class="text-sm transition-transform duration-500 group-hover/btn:translate-x-2">→</span>
+                                class="text-sm transition-transform duration-500 group-hover/btn:translate-x-1">→</span>
                         </a>
                     </div>
                 </div>

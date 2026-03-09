@@ -396,7 +396,7 @@ async function handleUpdateBooking(data) {
     const oldBooking = oldBookingResult.data;
 
     delete data.action; delete data.booking_id; delete data.id;
-    delete data.created_at; delete data._internal_call;
+    delete data.created_at; delete data._internal_call; delete data.admin_secret;
 
     const changes = analyzeBookingChanges(oldBooking, data);
 
@@ -565,7 +565,7 @@ async function handleDeleteBooking(data) {
           related_booking_ids: bookingId,
           payout_method: 'OTHER',
           payout_status: 'COMPLETED',
-          notes: `取消訂單 ${bookingId}，撤銷佣金 NT$ ${commissionAmount}`,
+          notes: `取消訂單 ${bookingId}，撤銷${booking.data.commission_type === 'ACCOMMODATION' ? '住宿金' : '現金'}佣金 NT$ ${commissionAmount}`,
           created_by: 'system'
         });
       }
@@ -940,13 +940,8 @@ async function handleCreatePartner(data) {
   if (!partnerData.partner_name) throw new Error('Partner name is required');
   if (!partnerData.contact_phone) throw new Error('Contact phone is required');
 
-  // 先查 Supabase（此路徑走 findByField，會直接查 Supabase）
   const existing = await findPartnerByCode(partnerData.partner_code);
-  if (existing) {
-    // 已存在就 update（讓測試的 ensureTestPartner 正常回傳 success）
-    const updated = await updateRecord('Partners', partnerData.partner_code, partnerData);
-    return { success: true, message: 'Partner already exists, updated', partner_code: updated.partner_code, data: updated };
-  }
+  if (existing) throw new Error('Partner code already exists');
 
   const partner = await createRecord('Partners', partnerData);
   return { success: true, message: 'Partner created successfully', partner_code: partner.partner_code, data: partner };

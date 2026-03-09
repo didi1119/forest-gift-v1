@@ -940,12 +940,15 @@ async function handleCreatePartner(data) {
   if (!partnerData.partner_name) throw new Error('Partner name is required');
   if (!partnerData.contact_phone) throw new Error('Contact phone is required');
 
-  // 用 upsert 取代 existing check + create，避免 Supabase unique constraint 報錯
-  // 若 partner_code 已存在則更新，否則新增
-  const partner = db.upsert
-    ? await db.upsert('Partners', partnerData, 'partner_code')
-    : await createRecord('Partners', partnerData);
+  // 先查 Supabase（此路徑走 findByField，會直接查 Supabase）
+  const existing = await findPartnerByCode(partnerData.partner_code);
+  if (existing) {
+    // 已存在就 update（讓測試的 ensureTestPartner 正常回傳 success）
+    const updated = await updateRecord('Partners', partnerData.partner_code, partnerData);
+    return { success: true, message: 'Partner already exists, updated', partner_code: updated.partner_code, data: updated };
+  }
 
+  const partner = await createRecord('Partners', partnerData);
   return { success: true, message: 'Partner created successfully', partner_code: partner.partner_code, data: partner };
 }
 

@@ -4827,46 +4827,59 @@ ${landingUrl}
                 bank_code: document.getElementById('linkgen_bankCode').value.trim(),
                 bank_branch: document.getElementnkBranch').value.trim(),
                 bank_account_naElementById('linkgen_bankAccountName').value.trim(),
-                bank_account_number: document.getElen_bankAccountNumber').value.trim()
+                bank_account_number: document.getElementById('linkgen_bankAccountNumber').value.trim()
             };
-顯示結果
+            
+            // 顯示結果
             document.getElementById('linkgen_landingLink').textContent = landingUrl;
-           mentById('linkgen_couponLink').textContent = trackedCoupo  document.getElementById('linkgen_shareTemplate').textContent = shareText;
-
+            document.getElementById('linkgen_couponLink').textContent = trackedCouponUrl;
+            document.getElementById('linkgen_shareTemplate').textContent = shareText;
+            
             showSuccessMessage('✅ 連結生成成功！');
-
+            
             // 滾動到結果區域
-            document.getElementById('linkgen_resultSection').scrollIntoView({ behavior: 'smooth'    // 儲存到 Google Sheets
+            document.getElementById('linkgen_resultSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 儲存到資料庫
         async function savePartnerToSheets() {
             if (!linkgenGeneratedData) {
                 showErrorMessage('請先生成連結');
                 return;
             }
-
+            
             try {
                 // 使用 fetch + JSON 送到後端
-                cons fetch(APPS_SCRIPT_URL, {
+                const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(linkgenGeneratedData)
-                }).then(r            if (saveResult.success === false) {
-                    throw new Error(saveResult.error || '儲存失敗');
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || '儲存失敗');
                 }
-
-                showSuccessMessage('✅ 資料已成功儲存！');
-
+                
+                showSuccessMessage('✅ 資料已儲存到資料庫！');
+                
                 // 更新本地的夥伴列表
                 if (linkgenGeneratedData && linkgenGeneratedData.partner_code) {
+                    // 將新夥伴加入本地數據
                     const newPartner = {
-                        partner_code: linkgenGener_code,
+                        partner_code: linkgenGeneratedData.partner_code,
                         name: linkgenGeneratedData.name,
                         email: linkgenGeneratedData.email,
+                        // 其他必要欄位...
                     };
-                    allDatnewPartner);
+                    allData.partners.push(newPartner);
+                    // 已移除：連結生成器現在使用 iframe，不需要更新下拉選單
+                    // loadPartnersForLinkGen();
                 }
-
+                
             } catch (error) {
-          ror('儲存失敗:', error);
+                console.error('儲存失敗:', error);
                 showErrorMessage('❌ 儲存失敗：' + error.message);
             }
         }

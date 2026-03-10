@@ -302,61 +302,112 @@
                 </div>
             </section>
 
-            <!-- Gift 2: E-book -->
+            <!-- Gift 1 (in this version): Inner Map -->
             <section id="gift-ebook" class="section-fade-in">
-                <div
-                    class="glass-card py-10 px-6 sm:py-12 sm:px-10 text-center relative overflow-hidden max-w-2xl mx-auto">
-                    <!-- Subtle background number -->
+                <div class="glass-card relative overflow-hidden max-w-3xl mx-auto">
+                    <!-- Background number -->
                     <div
-                        class="absolute -top-4 -right-4 p-8 opacity-[0.02] text-7xl sm:text-9xl font-serif z-0 select-none pointer-events-none">
-                        02
-                    </div>
+                        class="absolute -top-2 -right-2 opacity-[0.03] text-[7rem] font-serif z-0 select-none pointer-events-none leading-none text-[#1A2F23]">
+                        01</div>
 
-                    <div class="relative z-10 flex flex-col items-center">
-                        <!-- Smaller, refined compass star ornament -->
-                        <div class="mb-6 w-12 h-12 relative flex items-center justify-center opacity-80">
-                            <div
-                                class="absolute w-px h-full bg-gradient-to-b from-transparent via-[#C5A065]/50 to-transparent">
-                            </div>
-                            <div
-                                class="absolute h-px w-full bg-gradient-to-r from-transparent via-[#C5A065]/50 to-transparent">
-                            </div>
-                            <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/60"></div>
-                        </div>
-
-                        <div class="mb-3">
-                            <span class="text-[0.6rem] font-bold tracking-[0.3em] text-[#C5A065] uppercase">Gift
-                                Two</span>
-                        </div>
-
-                        <h3 class="text-2xl sm:text-3xl font-serif font-bold text-[#1A2F23] mb-3">內在地圖</h3>
-
-                        <p class="text-[#4A675A] font-serif italic text-base mb-6 opacity-80">Mapping Your Inner World.
-                        </p>
-
-                        <p class="text-stone-600 max-w-sm mx-auto mb-8 leading-relaxed text-sm font-light">
-                            忙碌時，我們常在別人的期待裡走失。<br><br>
-                            每天五分鐘的紙上練習，<br>
-                            為迷惘的心，繪製清晰的導航圖。
-                        </p>
-
-                        <a href="inner_map.html" class="btn-mystic inline-flex items-center gap-3 group/btn px-6 py-2.5"
-                            onclick="trackEvent('inner_map_click', { page: 'index_old' })">
-                            <span class="text-xs tracking-[0.2em] uppercase">開啟練習</span>
+                    <div class="relative z-10 flex flex-col sm:flex-row">
+                        <!-- Left: Text Column -->
+                        <div class="flex-1 p-8 sm:p-10 sm:pr-0 flex flex-col justify-center">
                             <span
-                                class="text-sm transition-transform duration-500 group-hover/btn:translate-x-1">→</span>
-                        </a>
+                                class="text-[0.6rem] font-bold tracking-[0.35em] text-[#C5A065] uppercase block mb-5">Gift
+                                One</span>
+
+                            <!-- Compass mark -->
+                            <div class="mb-5 w-10 h-10 relative flex items-center justify-center">
+                                <div
+                                    class="absolute w-px h-full bg-gradient-to-b from-transparent via-[#C5A065]/60 to-transparent">
+                                </div>
+                                <div
+                                    class="absolute h-px w-full bg-gradient-to-r from-transparent via-[#C5A065]/60 to-transparent">
+                                </div>
+                                <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/70"></div>
+                            </div>
+
+                            <h3 class="text-2xl sm:text-3xl font-serif font-bold text-[#1A2F23] mb-3 leading-tight">內在地圖
+                            </h3>
+                            <p class="font-serif italic text-sm text-[#4A675A] mb-5 opacity-80">Mapping Your Inner World
+                            </p>
+
+                            <p class="text-stone-600 text-sm font-light leading-relaxed mb-7">
+                                忙碌時，我們常在別人的期待裡走失。<br><br>
+                                每天五分鐘的紙上練習，<br>
+                                為迷惘的心，繪製清晰的導航圖。
+                            </p>
+
+                            <a href="inner_map.html"
+                                class="btn-mystic self-start inline-flex items-center gap-3 group/btn px-6 py-2.5"
+                                onclick="trackEvent('inner_map_click', { page: 'index_ab' })">
+                                <span class="text-xs tracking-[0.2em] uppercase">開啟練習</span>
+                                <span
+                                    class="text-sm transition-transform duration-500 group-hover/btn:translate-x-1">→</span>
+                            </a>
+                        </div>
+
+                        <!-- Right: 7-day visual -->
+                        <div
+                            class="sm:w-52 bg-[#1A2F23]/[0.03] border-t border-[#1A2F23]/5 sm:border-t-0 sm:border-l flex flex-col items-center justify-center gap-5 p-8">
+                            <p class="text-[0.55rem] tracking-[0.3em] text-[#C5A065] uppercase font-bold">7 Days</p>
+                            <div class="flex flex-col gap-2.5 items-center">
+                                <!-- 7 day dots -->
+                                <div class="flex gap-2">
+                                    <div
+                                        class="w-5 h-5 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                    <div
+                                        class="w-5 h-5 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                    <div
+                                        class="w-5 h-5 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                    <div
+                                        class="w-5 h-5 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <div
+                                        class="w-5 h-5 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                    <div
+                                        class="w-5 h-5 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                    <div
+                                        class="w-5 h-5 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- thin vertical lines suggesting notebook -->
+                            <div class="w-16 flex flex-col gap-1.5 mt-2 opacity-30">
+                                <div class="h-px bg-[#1A2F23]"></div>
+                                <div class="h-px bg-[#1A2F23]"></div>
+                                <div class="h-px bg-[#1A2F23]"></div>
+                                <div class="h-px bg-[#1A2F23]"></div>
+                                <div class="h-px bg-[#1A2F23]"></div>
+                            </div>
+                            <p class="text-[0.55rem] tracking-[0.2em] text-[#1A2F23]/40 uppercase">Practice</p>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Gift 3: Oracle Cards -->
+            <!-- Gift 2 (in this version): Oracle Cards -->
             <section id="gift-oracle" class="section-fade-in py-10 sm:py-20">
                 <div class="max-w-6xl mx-auto relative px-4">
                     <!-- Subtle Background Number -->
                     <div
                         class="absolute -top-12 sm:-top-20 left-1/2 -translate-x-1/2 text-[8rem] sm:text-[12rem] text-[#1A2F23] opacity-[0.02] font-serif select-none pointer-events-none">
-                        03</div>
+                        02</div>
 
                     <div class="text-center mb-10 sm:mb-16 relative z-10">
                         <span

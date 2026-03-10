@@ -1707,7 +1707,7 @@
         }
 
         // 統一的 iframe 表單提交函數（避免 CORS 問題）
-        function submitToBackendViaForm(data) {
+        async function submitToBackendViaForm(data) {
             // 創建隱藏的 iframe 來接收回應
             let iframe = document.getElementById('hiddenFrame');
             if (!iframe) {
@@ -3494,7 +3494,7 @@
                 console.log('📤 刪除訂房 - 發送數據:', deleteData);
                 
                 // 使用統一的 iframe 表單提交函數
-                submitToBackendViaForm(deleteData);
+                await submitToBackendViaForm(deleteData);
                 
                 // 給後端一些時間處理
                 await new Promise(resolve => setTimeout(resolve, 1500));
@@ -3786,7 +3786,7 @@
                 console.log('📤 手動訂房 - 發送數據:', submitData);
                 
                 // 直接透過 Fetch 送出
-                submitToBackendViaForm(submitData);
+                await submitToBackendViaForm(submitData);
                 console.log('📡 手動訂房 - 表單已提交');
                 
                 // 延時處理結果（因為無法讀取iframe內容）
@@ -4848,7 +4848,7 @@
                 console.log('轉換現金 - 提交數據:', formData);
                 
                 // 直接透過 Fetch 送出
-                submitToBackendViaForm(submitData);
+                await submitToBackendViaForm(submitData);
                 
                 // 延時處理結果
                 setTimeout(() => {
@@ -5296,7 +5296,7 @@
 
             try {
                 // 直接透過 Fetch 送出
-                submitToBackendViaForm(submitData);
+                await submitToBackendViaForm(submitData);
 
                 // 延時處理結果（模擬成功，因為無法讀取iframe內容）
                 setTimeout(() => {
@@ -5477,7 +5477,7 @@
                 console.log('🚀 準備更新夥伴佣金（使用正確欄位）:', updateData);
 
                 // 使用 form 提交方式避免 CORS 問題
-                submitToBackendViaForm(updateData);
+                await submitToBackendViaForm(updateData);
                 
                 // 給後端時間處理
                 await new Promise(resolve => setTimeout(resolve, 2000));
@@ -5805,7 +5805,7 @@
                     }
                     
                     // 直接透過 Fetch 送出
-                submitToBackendViaForm(submitData);
+                await submitToBackendViaForm(submitData);
                     
                     setTimeout(() => {
                         // 立即更新前端數據

@@ -247,17 +247,18 @@
         <div class="absolute inset-0 bg-gradient-to-b from-[#1A2F23]/50 via-[#1A2F23]/60 to-[#F5F2EB]"></div>
     </div>
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-32 relative z-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-32 relative z-10">
 
         <header class="text-center mb-16 sm:mb-24 section-fade-in relative text-[#F5F2EB]">
-            <h1 class="text-4xl sm:text-6xl font-bold tracking-tight mb-8 font-serif leading-tight drop-shadow-lg">
+            <h1
+                class="text-3xl sm:text-6xl font-bold tracking-tight mb-6 sm:mb-8 font-serif leading-tight drop-shadow-lg">
                 來自森林的邀請：<br>找回平靜的 5 分鐘練習
             </h1>
 
             <div class="w-12 h-[1px] bg-[#F5F2EB]/50 mx-auto mb-8"></div>
 
             <h2
-                class="text-sm sm:text-lg font-serif mb-12 tracking-[0.2em] opacity-90 max-w-2xl mx-auto drop-shadow-md">
+                class="text-xs sm:text-lg font-serif mb-8 sm:mb-12 tracking-[0.15em] sm:tracking-[0.2em] opacity-90 max-w-2xl mx-auto drop-shadow-md leading-relaxed">
                 完成心靈指引，領取「靜謐森林」專屬住宿優惠驚喜。
             </h2>
 
@@ -265,7 +266,7 @@
             <div id="referral-note" class="hidden"><span id="referrer-name"></span></div>
         </header>
 
-        <main class="space-y-16 sm:space-y-24">
+        <main class="space-y-10 sm:space-y-24">
 
             <!-- Gift 1: Music -->
             <section id="gift-music" class="section-fade-in hidden">
@@ -346,11 +347,48 @@
                                 <span
                                     class="text-sm transition-transform duration-500 group-hover/btn:translate-x-1">→</span>
                             </a>
+
+                            <!-- Mobile-only: inline 7 dots (visible only on mobile) -->
+                            <div
+                                class="flex sm:hidden items-center gap-2 mt-6 pt-5 border-t border-[#1A2F23]/10 w-full">
+                                <span class="text-[0.5rem] tracking-[0.25em] text-[#C5A065] uppercase mr-2">7
+                                    Days</span>
+                                <div class="flex gap-1.5">
+                                    <div
+                                        class="w-4 h-4 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1 h-1 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                    <div
+                                        class="w-4 h-4 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1 h-1 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                    <div
+                                        class="w-4 h-4 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1 h-1 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                    <div
+                                        class="w-4 h-4 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1 h-1 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                    <div
+                                        class="w-4 h-4 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1 h-1 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                    <div
+                                        class="w-4 h-4 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1 h-1 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                    <div
+                                        class="w-4 h-4 rounded-full border border-[#1A2F23]/20 flex items-center justify-center">
+                                        <div class="w-1 h-1 rounded-full bg-[#C5A065]/40"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Right: 7-day visual -->
+                        <!-- Right: 7-day visual — hidden on mobile to save space -->
                         <div
-                            class="sm:w-52 bg-[#1A2F23]/[0.03] border-t border-[#1A2F23]/5 sm:border-t-0 sm:border-l flex flex-col items-center justify-center gap-5 p-8">
+                            class="hidden sm:flex sm:w-52 bg-[#1A2F23]/[0.03] border-t border-[#1A2F23]/5 sm:border-t-0 sm:border-l flex-col items-center justify-center gap-5 p-8">
                             <p class="text-[0.55rem] tracking-[0.3em] text-[#C5A065] uppercase font-bold">7 Days</p>
                             <div class="flex flex-col gap-2.5 items-center">
                                 <!-- 7 day dots -->
@@ -402,7 +440,7 @@
             </section>
 
             <!-- Gift 2 (in this version): Oracle Cards -->
-            <section id="gift-oracle" class="section-fade-in py-10 sm:py-20">
+            <section id="gift-oracle" class="section-fade-in py-6 sm:py-20">
                 <div class="max-w-6xl mx-auto relative px-4">
                     <!-- Subtle Background Number -->
                     <div
@@ -412,8 +450,8 @@
                     <div class="text-center mb-10 sm:mb-16 relative z-10">
                         <span
                             class="text-[0.6rem] font-bold tracking-[0.4em] text-[#C5A065] uppercase block mb-4">指引</span>
-                        <h3 class="text-3xl sm:text-4xl font-serif text-[#1A2F23] mb-6 tracking-wide">森林的指引</h3>
-                        <p class="text-stone-500 font-serif italic text-lg opacity-80 mb-8">
+                        <h3 class="text-2xl sm:text-4xl font-serif text-[#1A2F23] mb-4 sm:mb-6 tracking-wide">森林的指引</h3>
+                        <p class="text-stone-500 font-serif italic text-base sm:text-lg opacity-80 mb-6 sm:mb-8">
                             一場與潛意識的靜謐對話
                         </p>
                         <div

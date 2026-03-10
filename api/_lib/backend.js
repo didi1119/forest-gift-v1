@@ -377,7 +377,8 @@ async function handleGetAllData() {
     }
   }
 
-  return { success: true, data };
+  const backend = process.env.DATA_BACKEND || 'sheets';
+  return { success: true, backend, data };
 }
 
 async function handleUpdateBooking(data) {

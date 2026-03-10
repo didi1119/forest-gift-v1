@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +21,9 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -28,18 +31,25 @@
             background-color: #FDFBF8;
             color: #5C544B;
         }
-        h1, h2, h3, .font-serif {
+
+        h1,
+        h2,
+        h3,
+        .font-serif {
             font-family: 'Noto Serif TC', serif;
         }
+
         .brand-accent {
             color: #2E4B36;
         }
+
         .brand-card {
             background-color: #FFFFFF;
             border: 1px solid #EAE6E1;
             border-radius: 1.5rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
         }
+
         .tab-button {
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
@@ -49,20 +59,25 @@
             border: 1px solid #E5E7EB;
             transition: all 0.2s;
         }
+
         .tab-button:hover {
             background-color: #F3F4F6;
         }
+
         .tab-button.active {
             background-color: #2E4B36;
             color: #FFFFFF;
             border-color: #2E4B36;
         }
+
         .tab-content {
             display: block;
         }
+
         .tab-content.hidden {
             display: none;
         }
+
         .loading-spinner {
             border: 2px solid #f3f3f3;
             border-top: 2px solid #2E4B36;
@@ -73,11 +88,17 @@
             display: inline-block;
             margin-right: 8px;
         }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
-        
+
         /* 新版聯盟夥伴列表樣式 */
         .kpi-item {
             padding: 0.5rem;
@@ -92,18 +113,20 @@
                 border-right: 1px solid #F3F4F6;
             }
         }
-        
+
         @media (max-width: 1023px) {
             .kpi-divider {
                 border-bottom: 1px solid #F3F4F6;
                 padding-bottom: 1rem;
             }
+
             .kpi-divider:last-child {
                 border-bottom: none;
             }
         }
     </style>
 </head>
+
 <body class="antialiased min-h-screen py-12">
     <div class="max-w-7xl mx-auto px-6">
         <!-- 403 錯誤提示區域 -->
@@ -118,11 +141,11 @@
                         偵測到 403 權限錯誤，確認入住和編輯功能可能無法正常運作。
                     </p>
                     <div class="mt-3 flex space-x-3">
-                        <button onclick="window.open('./google-apps-script-fix.html', '_blank')" 
+                        <button onclick="window.open('./google-apps-script-fix.html', '_blank')"
                             class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-800 bg-red-100 border border-red-300 rounded-md hover:bg-red-200">
                             🔧 修復指南
                         </button>
-                        <button onclick="hideErrorBanner()" 
+                        <button onclick="hideErrorBanner()"
                             class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 bg-white border border-red-300 rounded-md hover:bg-red-50">
                             隱藏提示
                         </button>
@@ -130,7 +153,7 @@
                 </div>
             </div>
         </div>
-        
+
         <header class="text-center mb-12">
             <h1 class="text-4xl font-bold brand-accent mb-4">知音大使管理後台</h1>
             <p class="text-lg text-stone-600">即時監控所有知音大使的推廣成效</p>
@@ -202,10 +225,12 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="font-serif text-2xl font-semibold brand-accent">聯盟夥伴列表</h2>
                     <div class="flex space-x-4">
-                        <button onclick="exportPartnersData()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <button onclick="exportPartnersData()"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
                             📥 匯出數據
                         </button>
-                        <button onclick="refreshData()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                        <button onclick="refreshData()"
+                            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
                             🔄 重新載入
                         </button>
                     </div>
@@ -224,8 +249,10 @@
                                 <option value="payout_pending">結算待付現金</option>
                                 <option value="export_selected">匯出選中資料</option>
                             </select>
-                            <button onclick="executeBatchAction()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">執行</button>
-                            <button onclick="clearSelection()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">取消選擇</button>
+                            <button onclick="executeBatchAction()"
+                                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">執行</button>
+                            <button onclick="clearSelection()"
+                                class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">取消選擇</button>
                         </div>
                     </div>
                 </div>
@@ -256,10 +283,12 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="font-serif text-2xl font-semibold brand-accent">訂單管理</h2>
                     <div class="flex space-x-4">
-                        <button onclick="openManualBookingModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                        <button onclick="openManualBookingModal()"
+                            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
                             ➕ 手動登記訂房
                         </button>
-                        <a href="manual-checkin-confirm.html" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <a href="manual-checkin-confirm.html" target="_blank"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
                             ✅ 確認入住完成
                         </a>
                     </div>
@@ -274,7 +303,8 @@
                         <option value="COMPLETED">已完成</option>
                         <option value="CANCELLED">已取消</option>
                     </select>
-                    <input type="text" id="searchBooking" placeholder="搜尋房客或大使代碼" class="p-2 border rounded flex-1" onkeyup="filterBookings()">
+                    <input type="text" id="searchBooking" placeholder="搜尋房客或大使代碼" class="p-2 border rounded flex-1"
+                        onkeyup="filterBookings()">
                 </div>
 
                 <div class="overflow-x-auto">
@@ -309,13 +339,16 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="font-serif text-2xl font-semibold brand-accent">結算管理</h2>
                     <div class="flex space-x-3">
-                        <button onclick="diagnoseSheetFields()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                        <button onclick="diagnoseSheetFields()"
+                            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
                             🔧 診斷欄位問題
                         </button>
-                        <button onclick="diagnosePayout()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700">
+                        <button onclick="diagnosePayout()"
+                            class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700">
                             🔧 診斷結算問題
                         </button>
-                        <button onclick="generatePayoutReport()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+                        <button onclick="generatePayoutReport()"
+                            class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
                             生成結算報表
                         </button>
                     </div>
@@ -349,7 +382,7 @@
         <!-- 數據分析標籤內容 -->
         <div id="content-analytics" class="tab-content hidden">
             <div class="space-y-8">
-                
+
                 <!-- 核心指標概覽 -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div class="brand-card p-6 text-center">
@@ -385,7 +418,8 @@
                         <div class="mt-4">
                             <div class="flex justify-between text-sm text-stone-600 mb-2">
                                 <span>排序方式：</span>
-                                <select id="performanceSort" onchange="updateAmbassadorChart()" class="text-xs border rounded px-2 py-1">
+                                <select id="performanceSort" onchange="updateAmbassadorChart()"
+                                    class="text-xs border rounded px-2 py-1">
                                     <option value="conversion">轉換率</option>
                                     <option value="clicks">點擊數</option>
                                     <option value="commission">佣金總額</option>
@@ -525,14 +559,16 @@
                         </table>
                     </div>
                 </div>
-                
+
                 <!-- 快速連結 -->
                 <div class="brand-card p-6">
                     <div class="flex justify-center space-x-4">
-                        <a href="resources.html" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                        <a href="resources.html" target="_blank"
+                            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
                             🌲 資源中心
                         </a>
-                        <button onclick="exportAnalyticsReport()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <button onclick="exportAnalyticsReport()"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
                             匯出分析報表
                         </button>
                     </div>
@@ -543,8 +579,8 @@
         <!-- 連結生成器標籤內容 -->
         <div id="content-linkgen" class="tab-content hidden">
             <iframe src="link-generator-form.html"
-                    style="width: 100%; height: calc(100vh - 200px); border: none; border-radius: 1.5rem; background: white;"
-                    title="連結生成器">
+                style="width: 100%; height: calc(100vh - 200px); border: none; border-radius: 1.5rem; background: white;"
+                title="連結生成器">
             </iframe>
         </div>
 
@@ -553,20 +589,45 @@
             <div class="brand-card p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div>
-                        <h2 class="text-2xl font-serif font-semibold brand-accent">資料庫 資料庫</h2>
-                        <p class="text-sm text-stone-500 mt-1">直接查看和編輯系統資料</p>
+                        <h2 id="database-tab-title" class="text-2xl font-serif font-semibold brand-accent">系統資料庫</h2>
+                        <p id="database-tab-desc" class="text-sm text-stone-500 mt-1">直接查看和編輯系統資料</p>
                     </div>
-                    <a href="https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit"
-                       target="_blank"
-                       class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 text-sm">
-                        在新分頁開啟
+                    <a id="database-tab-link"
+                        href="https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit"
+                        target="_blank"
+                        class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 text-sm">
+                        在 Google Sheets 開啟
                     </a>
                 </div>
-                <div class="bg-stone-50 rounded-xl overflow-hidden" style="height: calc(100vh - 300px);">
-                    <iframe src="https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit?rm=minimal"
-                            style="width: 100%; height: 100%; border: none;"
-                            title="資料庫 資料庫">
+                <div id="database-tab-content-container"
+                    class="bg-stone-50 rounded-xl overflow-hidden flex flex-col items-center justify-center relative"
+                    style="height: calc(100vh - 300px);">
+                    <iframe id="database-tab-iframe"
+                        src="https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit?rm=minimal"
+                        style="width: 100%; height: 100%; border: none;" title="系統資料庫">
                     </iframe>
+                    <div id="supabase-placeholder"
+                        class="hidden text-center p-12 w-full h-full flex flex-col items-center justify-center bg-stone-100">
+                        <svg class="w-16 h-16 text-emerald-500 mb-4" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4">
+                            </path>
+                        </svg>
+                        <h3 class="text-2xl font-medium text-stone-800 mb-2">系統已連接至 Supabase</h3>
+                        <p class="text-stone-500 mb-6 max-w-md">目前的資料庫後端已設置為 Supabase。為了保護資料安全並獲得最佳管理體驗，請直接登入 Supabase
+                            控制台進行管理。</p>
+                        <a href="https://supabase.com/dashboard" target="_blank"
+                            class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-6 rounded-lg shadow-md transition-colors inline-flex items-center">
+                            前往 Supabase 控制台
+                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
+                                </path>
+                            </svg>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -575,7 +636,7 @@
     <script>
         // Apps Script API 配置
         const APPS_SCRIPT_URL = '/api';
-        
+
         // 🎯 標準化的 Booking 欄位定義（與 資料庫 完全對應）
         const BOOKING_FIELDS = {
             // 欄位順序必須與 資料庫 完全一致
@@ -607,7 +668,7 @@
                 'restored_at',                  // Y列 - 恢復時間
                 'restored_by'                   // Z列 - 恢復操作者
             ],
-            
+
             // 欄位預設值
             DEFAULTS: {
                 commission_status: 'NOT_ELIGIBLE',
@@ -619,32 +680,32 @@
                 manually_confirmed_at: '',
                 notes: ''
             },
-            
+
             // 必填欄位
             REQUIRED: ['guest_name', 'guest_phone', 'checkin_date', 'checkout_date', 'room_price'],
-            
+
             // 數字欄位
             NUMERIC: ['room_price', 'commission_amount', 'first_referral_bonus_amount']
         };
-        
+
         // 🔧 統一的 Booking 數據處理函數
         const BookingDataManager = {
-            
+
             // 驗證 booking 數據是否符合標準格式
             validateBooking(booking) {
                 if (!booking || typeof booking !== 'object') {
                     return { valid: false, errors: ['數據不存在或格式錯誤'] };
                 }
-                
+
                 const errors = [];
-                
+
                 // 檢查必填欄位
                 BOOKING_FIELDS.REQUIRED.forEach(field => {
                     if (!booking[field] || String(booking[field]).trim() === '') {
                         errors.push(`缺少必填欄位: ${field}`);
                     }
                 });
-                
+
                 // 檢查數字欄位
                 BOOKING_FIELDS.NUMERIC.forEach(field => {
                     if (booking[field] !== undefined && booking[field] !== null && booking[field] !== '') {
@@ -654,12 +715,12 @@
                         }
                     }
                 });
-                
+
                 // 檢查日期格式
                 if (booking.checkin_date && booking.checkout_date) {
                     const checkinDate = new Date(booking.checkin_date);
                     const checkoutDate = new Date(booking.checkout_date);
-                    
+
                     if (isNaN(checkinDate.getTime())) {
                         errors.push(`入住日期格式錯誤: ${booking.checkin_date}`);
                     }
@@ -670,17 +731,17 @@
                         errors.push('退房日期必須晚於入住日期');
                     }
                 }
-                
+
                 return {
                     valid: errors.length === 0,
                     errors: errors
                 };
             },
-            
+
             // 標準化 booking 數據格式
             normalizeBooking(rawBooking) {
                 const normalized = {};
-                
+
                 // 按照標準欄位順序處理數據
                 BOOKING_FIELDS.FIELD_ORDER.forEach(field => {
                     if (rawBooking.hasOwnProperty(field)) {
@@ -691,22 +752,22 @@
                         normalized[field] = null;
                     }
                 });
-                
+
                 // 數字欄位特殊處理
                 BOOKING_FIELDS.NUMERIC.forEach(field => {
                     if (normalized[field] !== null && normalized[field] !== undefined) {
                         normalized[field] = Number(normalized[field]) || 0;
                     }
                 });
-                
+
                 // 布林欄位特殊處理
                 if (normalized.is_first_referral_bonus !== null) {
                     normalized.is_first_referral_bonus = Boolean(normalized.is_first_referral_bonus);
                 }
-                
+
                 return normalized;
             },
-            
+
             // 創建新 booking 的標準格式（用於手動新增）
             createNewBooking(formData) {
                 const booking = {
@@ -732,48 +793,48 @@
                     notes: formData.notes?.trim() || ''
                     // created_at 和 updated_at 由後端自動生成
                 };
-                
+
                 return this.normalizeBooking(booking);
             },
-            
+
             // 更新 booking 的標準格式（用於編輯）
             updateBooking(existingBooking, updateData) {
                 const updated = { ...existingBooking };
-                
+
                 // 只更新提供的欄位
                 Object.keys(updateData).forEach(key => {
                     if (BOOKING_FIELDS.FIELD_ORDER.includes(key)) {
                         updated[key] = updateData[key];
                     }
                 });
-                
+
                 // 自動更新 updated_at（由後端處理，這裡標記）
                 updated._needsTimestampUpdate = true;
-                
+
                 return this.normalizeBooking(updated);
             },
-            
+
             // 創建標準化的 URLSearchParams（確保按照正確順序發送數據）
             createOrderedParams(data) {
                 const params = new URLSearchParams();
-                
+
                 // 首先添加 action（如果存在）
                 if (data.action) {
                     params.append('action', data.action);
                 }
-                
+
                 // 然後添加 booking_id（如果存在）
                 if (data.booking_id !== undefined) {
                     params.append('booking_id', data.booking_id);
                 }
-                
+
                 // 按照 BOOKING_FIELDS.FIELD_ORDER 的順序添加欄位
                 BOOKING_FIELDS.FIELD_ORDER.forEach(fieldName => {
                     if (data.hasOwnProperty(fieldName) && data[fieldName] !== undefined) {
                         params.append(fieldName, data[fieldName] !== null ? data[fieldName] : '');
                     }
                 });
-                
+
                 // 添加其他非標準欄位
                 Object.keys(data).forEach(key => {
                     if (key !== 'action' && key !== 'booking_id' && !BOOKING_FIELDS.FIELD_ORDER.includes(key)) {
@@ -782,7 +843,7 @@
                         }
                     }
                 });
-                
+
                 return params;
             },
 
@@ -791,18 +852,18 @@
                 if (!bookings || bookings.length === 0) {
                     return { hasIssues: false, issues: [] };
                 }
-                
+
                 const issues = [];
                 const firstBooking = bookings[0];
-                
+
                 // 檢查欄位映射問題
                 const actualFields = Object.keys(firstBooking);
                 const expectedFields = BOOKING_FIELDS.FIELD_ORDER;
-                
+
                 if (actualFields.length !== expectedFields.length) {
                     issues.push(`欄位數量不匹配：實際 ${actualFields.length} 個，期望 ${expectedFields.length} 個`);
                 }
-                
+
                 // 檢查欄位順序和名稱
                 actualFields.forEach((actualField, index) => {
                     const expectedField = expectedFields[index];
@@ -810,7 +871,7 @@
                         issues.push(`欄位 ${index} 不匹配：得到 "${actualField}"，期望 "${expectedField}"`);
                     }
                 });
-                
+
                 // 檢查數據類型問題
                 BOOKING_FIELDS.NUMERIC.forEach(field => {
                     if (firstBooking[field] !== undefined && firstBooking[field] !== null) {
@@ -820,7 +881,7 @@
                         }
                     }
                 });
-                
+
                 // 檢查日期格式
                 ['checkin_date', 'checkout_date'].forEach(field => {
                     if (firstBooking[field]) {
@@ -832,7 +893,7 @@
                         }
                     }
                 });
-                
+
                 return {
                     hasIssues: issues.length > 0,
                     issues: issues,
@@ -840,19 +901,19 @@
                 };
             }
         };
-        
+
         // 檢查 Apps Script 連線狀態
         async function checkAppsScriptConnection() {
             try {
                 console.log('🔍 檢查 Apps Script 連線...');
                 const testUrl = `${APPS_SCRIPT_URL}?action=test`;
-                
+
                 // 嘗試使用 fetch
                 const response = await fetch(testUrl, {
                     method: 'GET',
                     mode: 'no-cors' // 避免 CORS 問題
                 });
-                
+
                 console.log('✅ Apps Script 連線測試完成');
                 return true;
             } catch (error) {
@@ -865,7 +926,7 @@
                 return false;
             }
         }
-        
+
         // 全域變數
         let allData = {
             partners: [],
@@ -873,7 +934,7 @@
             payouts: [],
             clicks: []
         };
-        
+
         // 資料快取控制
         let dataCache = {
             lastFetchTime: null,
@@ -890,23 +951,23 @@
                 console.log('⏳ 數據正在載入中，避免重複請求');
                 return;
             }
-            
+
             // 檢查快取是否有效
             const now = Date.now();
-            if (!forceRefresh && dataCache.lastFetchTime && 
-                (now - dataCache.lastFetchTime) < dataCache.cacheTimeout && 
+            if (!forceRefresh && dataCache.lastFetchTime &&
+                (now - dataCache.lastFetchTime) < dataCache.cacheTimeout &&
                 dataCache.isDataLoaded) {
-                console.log('✅ 使用快取數據，上次更新：', 
+                console.log('✅ 使用快取數據，上次更新：',
                     Math.round((now - dataCache.lastFetchTime) / 1000), '秒前');
                 return;
             }
-            
+
             try {
                 dataCache.isFetching = true;
                 showLoadingSpinner('載入數據中...');
                 console.log('🔄 開始載入真實數據...');
                 console.log('🌐 請求 URL:', APPS_SCRIPT_URL);
-                
+
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     headers: {
@@ -914,17 +975,17 @@
                     },
                     body: 'action=get_dashboard_data'
                 });
-                
+
                 console.log('📡 收到回應:', response.status, response.statusText);
                 console.log('📡 回應類型:', response.headers.get('content-type'));
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
                 }
-                
+
                 const result = await response.text();
                 console.log('📄 原始回應內容:', result);
-                
+
                 let data;
                 try {
                     data = JSON.parse(result);
@@ -933,9 +994,9 @@
                     console.error('原始內容:', result);
                     throw new Error('回應格式不正確: ' + parseError.message);
                 }
-                
+
                 console.log('解析後的數據:', data);
-                
+
                 if (data.success) {
                     // 合併數據而不是覆蓋，確保所有陣列都存在
                     allData = {
@@ -950,7 +1011,34 @@
                     console.log('- Bookings:', allData.bookings?.length || 0);
                     console.log('- Payouts:', allData.payouts?.length || 0);
                     console.log('- Clicks:', allData.clicks?.length || 0);
-                    
+
+                    // 根據後端設定動態切換資料庫分頁的顯示內容
+                    if (data.backend) {
+                        const iframeContainer = document.getElementById('database-tab-iframe');
+                        const supabasePlaceholder = document.getElementById('supabase-placeholder');
+                        const databaseLink = document.getElementById('database-tab-link');
+
+                        if (data.backend === 'supabase') {
+                            if (iframeContainer) iframeContainer.classList.add('hidden');
+                            if (supabasePlaceholder) supabasePlaceholder.classList.remove('hidden');
+                            if (databaseLink) {
+                                databaseLink.href = 'https://supabase.com/dashboard';
+                                databaseLink.textContent = '在 Supabase 開啟';
+                                databaseLink.classList.remove('bg-green-600', 'hover:bg-green-700');
+                                databaseLink.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+                            }
+                        } else {
+                            if (iframeContainer) iframeContainer.classList.remove('hidden');
+                            if (supabasePlaceholder) supabasePlaceholder.classList.add('hidden');
+                            if (databaseLink) {
+                                databaseLink.href = 'https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit';
+                                databaseLink.textContent = '在 Google Sheets 開啟';
+                                databaseLink.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                                databaseLink.classList.add('bg-green-600', 'hover:bg-green-700');
+                            }
+                        }
+                    }
+
                     // 詳細診斷 Bookings 資料結構
                     if (allData.bookings && allData.bookings.length > 0) {
                         console.log('🔍 Bookings 資料結構診斷:');
@@ -958,19 +1046,19 @@
                         const actualFields = Object.keys(firstBooking);
                         console.log('  實際欄位數量:', actualFields.length);
                         console.log('  實際欄位順序:', actualFields);
-                        
+
                         // 特別檢查每個欄位的值
                         console.log('  每個欄位的詳細資訊:');
                         actualFields.forEach((field, index) => {
                             const value = firstBooking[field];
                             const valueType = typeof value;
-                            const valueStr = value === null ? 'null' : 
-                                           value === undefined ? 'undefined' :
-                                           value === '' ? '(空字串)' :
-                                           String(value).substring(0, 30);
+                            const valueStr = value === null ? 'null' :
+                                value === undefined ? 'undefined' :
+                                    value === '' ? '(空字串)' :
+                                        String(value).substring(0, 30);
                             console.log(`    [${index}] "${field}" = ${valueStr} (${valueType})`);
                         });
-                        
+
                         // 檢查是否有重複的 id/ID
                         const hasLowerId = actualFields.includes('id');
                         const hasUpperId = actualFields.includes('ID');
@@ -979,7 +1067,7 @@
                             console.log('    id 位置:', actualFields.indexOf('id'));
                             console.log('    ID 位置:', actualFields.indexOf('ID'));
                         }
-                        
+
                         // 檢查第一個欄位
                         if (actualFields[0] !== 'id') {
                             console.error('  ❌ 第一個欄位不是 "id"，而是:', actualFields[0]);
@@ -987,14 +1075,14 @@
                                 console.warn('    是大寫 ID！需要檢查 資料庫 或後端處理');
                             }
                         }
-                        
+
                         console.log('  第一筆資料範例:', firstBooking);
-                        
+
                         // 比對期望的欄位
                         const expectedFields = BOOKING_FIELDS.FIELD_ORDER;
                         console.log('  期望欄位數量:', expectedFields.length);
                         console.log('  期望欄位順序:', expectedFields);
-                        
+
                         // 顯示差異
                         console.log('  欄位差異分析:');
                         actualFields.forEach((field, index) => {
@@ -1002,19 +1090,19 @@
                                 console.log(`    索引 ${index}: 實際="${field}" vs 期望="${expectedFields[index]}"`);
                             }
                         });
-                        
+
                         // 特別檢查 BOOKING_FIELDS.FIELD_ORDER 的內容
                         console.log('⚠️ BOOKING_FIELDS.FIELD_ORDER 完整內容:');
                         BOOKING_FIELDS.FIELD_ORDER.forEach((field, index) => {
                             console.log(`    [${index}] = "${field}"`);
                         });
-                        
+
                         // 檢查是否有人修改了 FIELD_ORDER
                         if (BOOKING_FIELDS.FIELD_ORDER[0] !== 'id') {
                             console.error('❌ 錯誤：FIELD_ORDER[0] 不是 "id"，而是:', BOOKING_FIELDS.FIELD_ORDER[0]);
                         }
                     }
-                    
+
                     // 檢查 Payouts 數據結構
                     if (allData.payouts && allData.payouts.length > 0) {
                         console.log('Payouts 數據結構檢查:');
@@ -1028,30 +1116,30 @@
                             });
                         });
                     }
-                    
+
                     showSuccessMessage(`成功載入 ${allData.partners?.length || 0} 位夥伴的資料！`);
-                    
+
                     // 更新快取狀態
                     dataCache.lastFetchTime = Date.now();
                     dataCache.isDataLoaded = true;
                 } else {
                     throw new Error(data.error || '載入數據失敗');
                 }
-                
+
                 hideLoadingSpinner();
-                
+
             } catch (error) {
                 console.error('❌ 載入真實數據失敗:', error);
                 console.error('錯誤詳情:', {
                     message: error.message,
                     stack: error.stack
                 });
-                
+
                 hideLoadingSpinner();
-                
+
                 // 更詳細的錯誤訊息
                 let errorMsg = '載入真實數據失敗: ' + error.message;
-                
+
                 if (error.message.includes('403')) {
                     errorMsg += '\n⚠️ Google Apps Script 權限問題！';
                     showAppsScriptFixModal();
@@ -1059,9 +1147,9 @@
                 } else if (error.message.includes('Failed to fetch')) {
                     errorMsg += '\n網路連線問題，請確認網路狀態。';
                 }
-                
+
                 showErrorMessage(errorMsg);
-                
+
                 // 使用模擬數據作為備用方案
                 loadMockData();
                 console.log('🔄 已切換到模擬數據模式');
@@ -1123,7 +1211,7 @@
         // 顯示夥伴列表 (全新卡片式設計)
         function displayPartners(partners) {
             const container = document.getElementById('partnersContainer');
-            
+
             if (!partners || partners.length === 0) {
                 container.innerHTML = `
                     <div class="text-center py-12 text-stone-500">
@@ -1148,27 +1236,27 @@
                 // 住宿金相關
                 availablePoints: parseFloat(partner.available_points) || 0,
                 pointsUsed: parseFloat(partner.points_used) || 0,
-                
+
                 // 現金相關
                 pendingCash: parseFloat(partner.pending_commission) || 0,
                 totalPaid: parseFloat(partner.total_commission_paid) || 0,
-                
+
                 // 統計資料
                 totalEarned: parseFloat(partner.total_commission_earned) || 0,
-                
+
                 // 績效指標
                 successfulReferrals: partner.successful_referrals || partner.total_successful_referrals || 0,
                 yearlyReferrals: partner.yearly_referrals || partner.level_progress || 0,
-                
+
                 // 等級資訊
                 level: partner.partner_level || partner.level || 'LV1_INSIDER',
                 name: partner.partner_name || partner.name || '未設定姓名',
                 code: partner.partner_code
             };
-            
+
             return financials;
         }
-        
+
         /**
          * 生成單個夥伴的卡片 HTML (V5 - 財務重點版)
          * @param {object} partner - 從後端獲取的夥伴資料物件
@@ -1265,7 +1353,7 @@
             const accommodationBalance = parseFloat(partner.available_points) || 0;
             const pendingCash = parseFloat(partner.pending_commission) || 0;
             const dropdownId = `actions-dropdown-${partner.partner_code}`;
-            
+
             // --- 邏輯一：動態生成「使用點數」按鈕 ---
             // 根據是否有可用點數，決定按鈕是可點擊還是禁用狀態。
             let usePointsButtonHTML = '';
@@ -1317,7 +1405,7 @@
         // 顯示訂單列表
         function displayBookings(bookings) {
             const table = document.getElementById('bookingsTable');
-            
+
             if (!bookings || bookings.length === 0) {
                 table.innerHTML = `
                     <tr>
@@ -1333,7 +1421,7 @@
             const dataIssues = BookingDataManager.detectDataIssues(bookings);
             if (dataIssues.hasIssues) {
                 console.error('❌ BookingDataManager 偵測到數據格式問題:', dataIssues.issues);
-                
+
                 // 顯示錯誤提示
                 table.innerHTML = `
                     <tr>
@@ -1369,7 +1457,7 @@
             });
 
             console.log('🔧 已標準化 ' + normalizedBookings.length + ' 筆訂房數據');
-            
+
             // 檢查數據完整性（基於標準化後的數據）
             if (normalizedBookings.length > 0) {
                 console.log('第一筆標準化後數據:', normalizedBookings[0]);
@@ -1383,13 +1471,13 @@
                 const expectedCommission = partner ? calculateExpectedCommission(partnerLevel, booking.room_price) : null;
                 const isCheckoutPassed = booking.checkout_date && new Date(booking.checkout_date) < new Date();
                 const canConfirmStay = booking.stay_status !== 'COMPLETED' && isCheckoutPassed;
-                
+
                 // 檢查是否為自用訂單
                 const isSelfUse = booking.booking_source === 'SELF_USE';
-                const rowClass = isSelfUse ? 
-                    'border-b hover:bg-purple-50 bg-gradient-to-r from-purple-50/30 to-pink-50/30' : 
+                const rowClass = isSelfUse ?
+                    'border-b hover:bg-purple-50 bg-gradient-to-r from-purple-50/30 to-pink-50/30' :
                     'border-b hover:bg-stone-50';
-                
+
                 return `
                     <tr class="${rowClass}">
                         <td class="py-4 px-4">
@@ -1426,20 +1514,20 @@
                                     </div>
                                     <div class="font-bold text-green-600 text-lg">
                                         ${(() => {
-                                            // 改進正則表達式以匹配 "實付 NT$xxx" 格式
-                                            const match = booking.notes.match(/實付\s*(?:NT\$|NT\s*\$|\$)?[\s]*([0-9,]+)/);
-                                            if (match) {
-                                                return `NT$ ${match[1]}`;
-                                            }
-                                            // 如果沒有匹配到，嘗試從折抵金額計算
-                                            const discountMatch = booking.notes.match(/折抵\s*(?:NT\$|NT\s*\$|\$)?[\s]*([0-9,]+)/);
-                                            if (discountMatch) {
-                                                const discount = parseFloat(discountMatch[1].replace(/,/g, ''));
-                                                const netPrice = (booking.room_price || 0) - discount;
-                                                return `NT$ ${Math.max(0, netPrice).toLocaleString()}`;
-                                            }
-                                            return 'NT$ 0';
-                                        })()}
+                            // 改進正則表達式以匹配 "實付 NT$xxx" 格式
+                            const match = booking.notes.match(/實付\s*(?:NT\$|NT\s*\$|\$)?[\s]*([0-9,]+)/);
+                            if (match) {
+                                return `NT$ ${match[1]}`;
+                            }
+                            // 如果沒有匹配到，嘗試從折抵金額計算
+                            const discountMatch = booking.notes.match(/折抵\s*(?:NT\$|NT\s*\$|\$)?[\s]*([0-9,]+)/);
+                            if (discountMatch) {
+                                const discount = parseFloat(discountMatch[1].replace(/,/g, ''));
+                                const netPrice = (booking.room_price || 0) - discount;
+                                return `NT$ ${Math.max(0, netPrice).toLocaleString()}`;
+                            }
+                            return 'NT$ 0';
+                        })()}
                                     </div>
                                 </div>
                             ` : `
@@ -1511,7 +1599,7 @@
         // 顯示結算列表
         function displayPayouts(payouts) {
             const table = document.getElementById('payoutsTable');
-            
+
             if (!payouts || payouts.length === 0) {
                 table.innerHTML = `
                     <tr>
@@ -1532,16 +1620,16 @@
                     partner_code: payout.partner_code,
                     amount: payout.amount
                 });
-                
+
                 // 生成來源描述
                 const sourceInfo = generatePayoutSourceDescription(payout);
-                
+
                 // 檢查是否為點數使用類型
                 const isPointsUsage = payout.payout_type === 'POINTS_USAGE';
-                const rowClass = isPointsUsage ? 
-                    'border-b hover:bg-purple-50 bg-gradient-to-r from-purple-50/30 to-pink-50/30' : 
+                const rowClass = isPointsUsage ?
+                    'border-b hover:bg-purple-50 bg-gradient-to-r from-purple-50/30 to-pink-50/30' :
                     'border-b hover:bg-stone-50';
-                
+
                 return `
                     <tr class="${rowClass}">
                         <td class="py-4 px-4">
@@ -1600,7 +1688,7 @@
             const totalClicks = allData.clicks.length;
             const completedBookings = allData.bookings.filter(b => b.stay_status === 'COMPLETED').length;
             const totalPayouts = allData.partners.reduce((sum, p) => sum + (p.pending_cash || p.pending_commission || 0), 0);
-            
+
             const completionRate = totalClicks > 0 ? ((completedBookings / totalClicks) * 100).toFixed(1) : '0.0';
 
             document.getElementById('totalPartners').textContent = totalPartners;
@@ -1613,7 +1701,7 @@
         // 顯示最近活動
         function displayRecentActivity() {
             const container = document.getElementById('recentActivity');
-            
+
             // 模擬最近活動
             const activities = [
                 { text: '系統已載入真實數據', time: '剛剛' },
@@ -1632,11 +1720,11 @@
         function updateCurrentTabDisplay() {
             const activeTab = document.querySelector('.tab-button.active');
             if (!activeTab) return;
-            
+
             const tabName = activeTab.id.replace('tab-', '');
             console.log(`🔄 更新 ${tabName} 顯示`);
-            
-            switch(tabName) {
+
+            switch (tabName) {
                 case 'overview':
                     updateStats();
                     displayRecentActivity();
@@ -1654,12 +1742,12 @@
         }
 
         // 刷新特定類型的數據（從後端重新載入）
-        window.refreshDataAsync = async function(dataType) {
+        window.refreshDataAsync = async function (dataType) {
             try {
                 console.log(`🔄 刷新 ${dataType} 數據...`);
                 const response = await fetch(`${APPS_SCRIPT_URL}?action=get_all_data`);
                 const newData = await response.json();
-                
+
                 if (newData.success && newData.data) {
                     // 更新特定類型的數據
                     if (dataType === 'bookings' && newData.data.bookings) {
@@ -1689,20 +1777,20 @@
                 iframe.id = 'hiddenFrame';
                 iframe.style.display = 'none';
                 // 添加錯誤處理來忽略 403 錯誤
-                iframe.onerror = function() {
+                iframe.onerror = function () {
                     // 忽略 iframe 載入錯誤（預期的 403 重定向）
                     return true;
                 };
                 document.body.appendChild(iframe);
             }
-            
+
             // 設定 iframe 載入處理器來忽略錯誤
-            iframe.onload = function() {
+            iframe.onload = function () {
                 // 忽略載入事件，避免觸發錯誤
             };
-            
+
             // 創建表單
-            
+
             // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
             const payload = {};
             for (const [key, value] of new URLSearchParams(params).entries()) {
@@ -1716,32 +1804,32 @@
                 },
                 body: JSON.stringify(payload)
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if(data.status === 'success' || data.success) {
-                    // Success handling is usually already present in the UI via reload or reload triggers 
-                    if(typeof loadRealData === 'function') loadRealData();
-                } else {
-                    console.error('Operation failed:', data);
-                    alert('操作失敗：' + (data.message || '未知錯誤'));
-                }
-            })
-            .catch(error => {
-                console.error('Error during fetch:', error);
-                alert('網路錯誤，請稍後再試');
-            });
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success' || data.success) {
+                        // Success handling is usually already present in the UI via reload or reload triggers 
+                        if (typeof loadRealData === 'function') loadRealData();
+                    } else {
+                        console.error('Operation failed:', data);
+                        alert('操作失敗：' + (data.message || '未知錯誤'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error during fetch:', error);
+                    alert('網路錯誤，請稍後再試');
+                });
 
-            
+
             // 清理表單元素
             setTimeout(() => {
                 document.body.removeChild(form);
             }, 1000);
-            
+
             console.log('📤 表單已提交:', data);
         }
 
@@ -1861,28 +1949,28 @@
                 spinner.style.display = 'none';
             }
         }
-        
+
         function showSuccessMessage(message) {
             console.log('✅ Success:', message);
             // 創建成功提示
             const toast = createToast(message, 'success');
             document.body.appendChild(toast);
         }
-        
+
         function showErrorMessage(message) {
             console.error('❌ Error:', message);
             // 創建錯誤提示
             const toast = createToast(message, 'error');
             document.body.appendChild(toast);
         }
-        
+
         function createToast(message, type) {
             const toast = document.createElement('div');
             const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
-            
+
             toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
             toast.textContent = message;
-            
+
             // 3秒後自動消失
             setTimeout(() => {
                 toast.style.opacity = '0';
@@ -1892,12 +1980,12 @@
                     }
                 }, 300);
             }, 3000);
-            
+
             return toast;
         }
 
         // 功能按鈕
-        window.refreshData = function() {
+        window.refreshData = function () {
             console.log('🔄 強制重新載入所有數據');
             loadRealData(true).then(() => {  // 強制重新載入
                 // 更新當前顯示的標籤
@@ -1909,7 +1997,7 @@
             });
         }
 
-        window.exportPartnersData = function() {
+        window.exportPartnersData = function () {
             const data = allData.partners.map(p => ({
                 '夥伴代碼': p.partner_code,
                 '姓名': p.name,
@@ -1919,19 +2007,19 @@
                 '可用點數': parseFloat(p.available_points) || 0,
                 '待支付現金': p.pending_cash || p.pending_commission || 0
             }));
-            
+
             downloadCSV(data, '夥伴數據.csv');
         }
 
         function downloadCSV(data, filename) {
             if (data.length === 0) return;
-            
+
             const headers = Object.keys(data[0]);
             const csvContent = [
                 headers.join(','),
                 ...data.map(row => headers.map(header => row[header]).join(','))
             ].join('\n');
-            
+
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -1946,25 +2034,25 @@
                 alert('找不到結算記錄');
                 return;
             }
-            
+
             createPayoutDetailsModal(payout);
         }
-        
+
         // 創建結算詳情模態框
         function createPayoutDetailsModal(payout) {
             // 找到相關的夥伴信息
             const partner = allData.partners.find(p => p.partner_code === payout.partner_code) || {};
-            
+
             // 找到相關的訂房記錄
             const relatedBookings = allData.bookings.filter(booking => {
-                return booking.partner_code === payout.partner_code && 
-                       booking.commission_status === 'CALCULATED';
+                return booking.partner_code === payout.partner_code &&
+                    booking.commission_status === 'CALCULATED';
             });
-            
+
             const modal = document.createElement('div');
             modal.id = 'payoutDetailsModal';
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            
+
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-6">
@@ -2079,36 +2167,36 @@
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(modal);
         }
 
-        window.generatePayoutReport = function() {
+        window.generatePayoutReport = function () {
             createPayoutReportModal();
         }
 
         // 查看夥伴詳情
-        window.viewPartnerDetails = async function(partnerCode) {
+        window.viewPartnerDetails = async function (partnerCode) {
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到夥伴資料');
                 return;
             }
-            
+
             // 創建模態框顯示詳細資訊
             const modal = createPartnerModal(partner);
             document.body.appendChild(modal);
         }
-        
+
         // 創建夥伴詳情模態框
         function createPartnerModal(partner) {
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
             modal.id = 'partnerModal';
-            
+
             const bookings = allData.bookings.filter(b => b.partner_code === partner.partner_code);
             const totalRevenue = bookings.reduce((sum, b) => sum + (b.room_price || 0), 0);
-            
+
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-4">
@@ -2289,12 +2377,12 @@
                                         </thead>
                                         <tbody>
                                             ${bookings.map(booking => {
-                                                const statusClass = getStatusClass(booking.stay_status);
-                                                const statusText = getStatusText(booking.stay_status);
-                                                const partnerLevel = partner.partner_level || partner.level || 'LV1_INSIDER';
-                                                const expectedCommission = calculateExpectedCommission(partnerLevel, booking.room_price);
-                                                const bookingIndex = allData.bookings.findIndex(b => b === booking);
-                                                return `
+                const statusClass = getStatusClass(booking.stay_status);
+                const statusText = getStatusText(booking.stay_status);
+                const partnerLevel = partner.partner_level || partner.level || 'LV1_INSIDER';
+                const expectedCommission = calculateExpectedCommission(partnerLevel, booking.room_price);
+                const bookingIndex = allData.bookings.findIndex(b => b === booking);
+                return `
                                                     <tr class="border-b hover:bg-gray-50">
                                                         <td class="p-2">
                                                             <div class="font-medium">${booking.guest_name}</div>
@@ -2331,7 +2419,7 @@
                                                         </td>
                                                     </tr>
                                                 `;
-                                            }).join('')}
+            }).join('')}
                                         </tbody>
                                     </table>
                                 </div>
@@ -2377,32 +2465,32 @@
                     </div>
                 </div>
             `;
-            
+
             return modal;
         }
-        
+
         // 編輯夥伴資料
-        window.editPartner = function(partnerCode) {
+        window.editPartner = function (partnerCode) {
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到夥伴資料');
                 return;
             }
-            
+
             // 關閉詳情模態框
             closeModal('partnerModal');
-            
+
             // 創建編輯模態框
             const modal = createEditPartnerModal(partner);
             document.body.appendChild(modal);
         }
-        
+
         // 創建編輯夥伴模態框
         function createEditPartnerModal(partner) {
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
             modal.id = 'editPartnerModal';
-            
+
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-4">
@@ -2494,14 +2582,14 @@
                     </form>
                 </div>
             `;
-            
+
             return modal;
         }
-        
+
         // 儲存夥伴編輯
         async function savePartnerEdit(partnerCode) {
             showSuccessMessage('儲存功能開發中，資料暫時保存在本地');
-            
+
             // 更新本地數據（實際應該發送到後端）
             const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
             if (partnerIndex !== -1) {
@@ -2517,11 +2605,11 @@
                     bank_account_name: document.getElementById('editBankAccountName').value,
                     bank_account_number: document.getElementById('editBankAccountNumber').value
                 };
-                
+
                 // 重新顯示列表
                 displayPartners(allData.partners);
             }
-            
+
             closeModal('editPartnerModal');
         }
 
@@ -2530,15 +2618,15 @@
         function viewPayoutDetails(payoutId) {
             console.log('🔍 查找結算記錄 ID:', payoutId);
             console.log('所有 payouts 數據:', allData.payouts);
-            
+
             if (!allData.payouts || allData.payouts.length === 0) {
                 showErrorMessage('系統中無任何結算記錄');
                 return;
             }
-            
+
             // 嘗試多種匹配方式
             let payout = allData.payouts.find(p => p.id == payoutId);
-            
+
             if (!payout) {
                 // 嘗試索引匹配
                 const payoutIndex = parseInt(payoutId);
@@ -2547,20 +2635,20 @@
                     console.log('✅ 通過索引找到結算記錄:', payout);
                 }
             }
-            
+
             if (!payout) {
                 console.error('❌ 找不到結算記錄，ID:', payoutId);
                 console.error('可用的 payout IDs:', allData.payouts.map(p => p.id));
                 showErrorMessage(`找不到結算記錄 (ID: ${payoutId})。請重新載入數據後再試。`);
                 return;
             }
-            
+
             console.log('✅ 找到結算記錄:', payout);
             createPayoutDetailsModal(payout);
         }
-        
+
         // 關閉模態框
-        window.closeModal = function(modalId) {
+        window.closeModal = function (modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.remove();
@@ -2571,7 +2659,7 @@
         function showDatabaseFixAlert() {
             // 避免重複顯示
             if (document.getElementById('dbFixAlert')) return;
-            
+
             const alertDiv = document.createElement('div');
             alertDiv.id = 'dbFixAlert';
             alertDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50 max-w-md';
@@ -2609,7 +2697,7 @@
 
                 const result = await response.text();
                 const data = JSON.parse(result);
-                
+
                 if (data.success) {
                     alert('✅ 診斷完成！請到 Google Apps Script 控制台查看詳細日誌。');
                 } else {
@@ -2714,7 +2802,7 @@
         // 複製標題到剪貼板
         async function copyHeadersToClipboard() {
             const headers = 'id\tpartner_code\tguest_name\tguest_phone\tguest_email\tcheckin_date\tcheckout_date\troom_price\tbooking_source\tstay_status\tpayment_status\tcommission_status\tcommission_amount\tcommission_type\tis_first_referral_bonus\tfirst_referral_bonus_amount\tmanually_confirmed_by\tmanually_confirmed_at\tnotes\tcreated_at\tupdated_at';
-            
+
             try {
                 await navigator.clipboard.writeText(headers);
                 alert('✅ 標題已複製到剪貼板！您可以在 資料庫 中選擇 A1:U1 範圍後貼上。');
@@ -2758,18 +2846,18 @@
                 'LV2_GUIDE': { accommodation: 1200, cash: 600 },
                 'LV3_GUARDIAN': { accommodation: 1500, cash: 750 }
             };
-            
+
             return commissionRates[level] || { accommodation: 0, cash: 0 };
         }
 
         // 確認入住完成
-        window.confirmStayCompletion = async function(bookingIndex) {
+        window.confirmStayCompletion = async function (bookingIndex) {
             const booking = allData.bookings[bookingIndex];
             if (!booking) {
                 alert('找不到訂房記錄');
                 return;
             }
-            
+
             console.log('🔍 開始確認入住流程，訂房索引:', bookingIndex);
             console.log('訂房資料:', booking);
 
@@ -2783,7 +2871,7 @@
 
             const partnerLevel = partner.partner_level || partner.level || 'LV1_INSIDER';
             const expectedCommission = calculateExpectedCommission(partnerLevel, booking.room_price);
-            
+
             // 簡化流程：統一先給住宿金，後續可以自行轉換為現金
             const confirmed = confirm(`確認 ${booking.guest_name} 完成入住？\n\n推薦大使：${booking.partner_code} (${partner.name})\n佣金：$${expectedCommission.accommodation} 住宿金\n\n（大使後續可自行決定是否轉換為現金）`);
 
@@ -2801,7 +2889,7 @@
             try {
                 console.log('🔍 準備確認入住的訂房資料:', booking);
                 console.log('🔍 佣金資料:', commissionData);
-                
+
                 // 使用 BookingDataManager 標準化 booking 數據
                 const normalizedBooking = BookingDataManager.normalizeBooking(booking);
                 console.log('🔧 標準化後的訂房資料:', normalizedBooking);
@@ -2819,11 +2907,11 @@
                 // 準備提交到後端的數據
                 const submitData = {
                     action: 'confirm_checkin_completion',
-                    booking_id: normalizedBooking.id || '', 
+                    booking_id: normalizedBooking.id || '',
                     // 包含完整的標準化 booking 數據用於識別和更新
                     ...updatedBooking
                 };
-                
+
                 console.log('📤 發送到後端的標準化資料:', submitData);
 
                 // 使用 BookingDataManager 創建標準化參數
@@ -2834,79 +2922,79 @@
                 console.log('📤 請求內容:', formData.toString());
 
                 // 使用表單提交避免 CORS 問題
-                
-            // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
-            const payload = {};
-            for (const [key, value] of new URLSearchParams(params).entries()) {
-                payload[key] = value;
-            }
 
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
+                const payload = {};
+                for (const [key, value] of new URLSearchParams(params).entries()) {
+                    payload[key] = value;
                 }
-                return response.json();
-            })
-            .then(data => {
-                if(data.status === 'success' || data.success) {
-                    // Success handling is usually already present in the UI via reload or reload triggers 
-                    if(typeof loadRealData === 'function') loadRealData();
-                } else {
-                    console.error('Operation failed:', data);
-                    alert('操作失敗：' + (data.message || '未知錯誤'));
-                }
-            })
-            .catch(error => {
-                console.error('Error during fetch:', error);
-                alert('網路錯誤，請稍後再試');
-            });
+
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success' || data.success) {
+                            // Success handling is usually already present in the UI via reload or reload triggers 
+                            if (typeof loadRealData === 'function') loadRealData();
+                        } else {
+                            console.error('Operation failed:', data);
+                            alert('操作失敗：' + (data.message || '未知錯誤'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during fetch:', error);
+                        alert('網路錯誤，請稍後再試');
+                    });
 
                 document.body.removeChild(form);
-                
+
                 console.log('📡 表單已提交，使用隱藏 iframe 接收回應');
-                
+
                 // 視為成功，因為表單提交無法獲得詳細回應
                 const responseData = { success: true };
-                
+
                 if (responseData.success === false) {
                     throw new Error(responseData.error || '確認入住失敗');
                 }
-                
+
                 // 立即更新前端數據
                 console.log('🔄 確認入住完成，更新前端數據...', booking.guest_name, booking.guest_phone);
-                
+
                 // 由於 booking.id 為空，使用 guest_name + guest_phone 來找到對應記錄
-                const bookingIndex = allData.bookings.findIndex(b => 
-                    b.guest_name === booking.guest_name && 
+                const bookingIndex = allData.bookings.findIndex(b =>
+                    b.guest_name === booking.guest_name &&
                     String(b.guest_phone) === String(booking.guest_phone) &&
                     b.checkin_date === booking.checkin_date
                 );
                 console.log('📍 根據姓名+電話+入住日期找到訂房索引:', bookingIndex);
-                
+
                 if (bookingIndex !== -1) {
                     const oldStatus = allData.bookings[bookingIndex].stay_status;
                     allData.bookings[bookingIndex].stay_status = 'COMPLETED';
                     allData.bookings[bookingIndex].updated_at = new Date().toISOString();
                     console.log('✅ 已更新訂房狀態:', oldStatus, '→ COMPLETED');
-                    
+
                     if (commissionData) {
                         allData.bookings[bookingIndex].commission_amount = commissionData.commission_amount;
                         allData.bookings[bookingIndex].commission_type = commissionData.commission_type;
                         allData.bookings[bookingIndex].commission_status = 'CALCULATED';
                         console.log('已更新佣金資訊:', commissionData);
                     }
-                    
+
                     // 立即刷新顯示
                     console.log('🔄 重新顯示訂房列表...');
                     displayBookings(allData.bookings);
-                    
+
                     showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
                 } else {
                     console.error('❌ 找不到對應的訂房記錄');
@@ -2921,11 +3009,11 @@
                 }
             } catch (error) {
                 console.error('❌ 更新訂房狀態失敗:', error);
-                
+
                 if (error.message.includes('403')) {
                     // 403 錯誤特殊處理
                     showErrorMessage(`❌ Google Apps Script 權限錯誤 (403)\n\n可能原因：\n1. Apps Script 部署權限設定不正確\n2. 需要重新授權應用程式\n3. 部署 URL 已過期\n\n請按照以下步驟修復：\n1. 前往 Google Apps Script 控制台\n2. 重新部署應用程式\n3. 設定執行身分為「我」\n4. 設定存取權限為「任何人」\n5. 更新前端的 APPS_SCRIPT_URL`);
-                    
+
                     // 提供快速連結到修復指南
                     const fixGuideBtn = document.createElement('button');
                     fixGuideBtn.textContent = '🔧 查看修復指南';
@@ -2933,7 +3021,7 @@
                     fixGuideBtn.onclick = () => {
                         window.open('./google-apps-script-fix.html', '_blank');
                     };
-                    
+
                     // 如果有錯誤顯示區域，添加按鈕
                     const errorDisplay = document.querySelector('.error-message');
                     if (errorDisplay) {
@@ -3066,7 +3154,7 @@
         }
 
         // 編輯訂單
-        window.editBooking = function(bookingIndex) {
+        window.editBooking = function (bookingIndex) {
             const booking = allData.bookings[bookingIndex];
             if (!booking) {
                 alert('找不到訂房記錄');
@@ -3084,16 +3172,16 @@
                 if (!dateStr) return '';
                 const date = new Date(dateStr);
                 if (isNaN(date.getTime())) return dateStr;
-                return date.getFullYear() + '-' + 
-                       String(date.getMonth() + 1).padStart(2, '0') + '-' + 
-                       String(date.getDate()).padStart(2, '0');
+                return date.getFullYear() + '-' +
+                    String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(date.getDate()).padStart(2, '0');
             };
-            
+
             const modal = document.createElement('div');
             modal.id = 'editBookingModal';
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            
-            const partnersOptions = allData.partners.map(partner => 
+
+            const partnersOptions = allData.partners.map(partner =>
                 `<option value="${partner.partner_code}" ${booking.partner_code === partner.partner_code ? 'selected' : ''}>
                     ${partner.partner_code} - ${partner.partner_name || partner.name || '未設定'} (${getLevelText(partner.partner_level || partner.level)})
                 </option>`
@@ -3250,7 +3338,7 @@
         function getPartnerInfoHtml(partnerCode) {
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) return '<p class="text-gray-500">無推薦大使</p>';
-            
+
             const partnerLevel = partner.partner_level || partner.level || 'LV1_INSIDER';
             const expectedCommission = calculateExpectedCommission(partnerLevel, 0);
             return `
@@ -3266,10 +3354,10 @@
         // 獲取佣金預覽HTML
         function getCommissionPreviewHtml(booking) {
             if (!booking.partner_code) return '<p class="text-sm text-gray-500">無佣金</p>';
-            
+
             const partner = allData.partners.find(p => p.partner_code === booking.partner_code);
             if (!partner) return '<p class="text-sm text-gray-500">大使不存在</p>';
-            
+
             const expectedCommission = calculateExpectedCommission(partner.partner_level || partner.level, booking.room_price || 0);
             return `
                 <div class="text-sm">
@@ -3284,13 +3372,13 @@
         function updatePartnerInfo() {
             const partnerCode = document.getElementById('edit_partner_code').value;
             const infoDiv = document.getElementById('editPartnerInfo');
-            
+
             if (partnerCode) {
                 infoDiv.innerHTML = getPartnerInfoHtml(partnerCode);
             } else {
                 infoDiv.innerHTML = '<p class="text-gray-500">無推薦大使</p>';
             }
-            
+
             // 同時更新佣金預覽
             updateCommissionPreview();
         }
@@ -3300,18 +3388,18 @@
             const partnerCode = document.getElementById('edit_partner_code').value;
             const roomPrice = parseFloat(document.getElementById('edit_room_price').value) || 0;
             const previewDiv = document.getElementById('commissionPreview');
-            
+
             if (!partnerCode) {
                 previewDiv.innerHTML = '<p class="text-sm text-gray-500">無佣金</p>';
                 return;
             }
-            
+
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 previewDiv.innerHTML = '<p class="text-sm text-gray-500">大使不存在</p>';
                 return;
             }
-            
+
             const partnerLevel = partner.partner_level || partner.level || 'LV1_INSIDER';
             const expectedCommission = calculateExpectedCommission(partnerLevel, roomPrice);
             previewDiv.innerHTML = `
@@ -3328,20 +3416,20 @@
             try {
                 // 優先使用 id 查找，如果找不到再試試作為索引
                 let existingBooking = allData.bookings.find(b => b.id == bookingIdentifier);
-                
+
                 // 如果用 id 找不到，並且 identifier 是有效的索引，則使用索引
-                if (!existingBooking && typeof bookingIdentifier === 'number' && 
+                if (!existingBooking && typeof bookingIdentifier === 'number' &&
                     bookingIdentifier >= 0 && bookingIdentifier < allData.bookings.length) {
                     existingBooking = allData.bookings[bookingIdentifier];
                 }
-                    
+
                 if (!existingBooking) {
                     console.error('找不到訂房記錄，bookingIdentifier:', bookingIdentifier);
                     console.error('所有訂房記錄:', allData.bookings);
                     showErrorMessage('找不到訂房記錄');
                     return;
                 }
-                
+
                 // 收集編輯表單的原始資料
                 const rawUpdateData = {
                     guest_name: document.getElementById('edit_guest_name').value.trim(),
@@ -3374,7 +3462,7 @@
                 // 準備提交到後端的數據（包含 action 和識別符）
                 // 修復：由於資料庫 ID 欄位可能為空，使用複合查找方式
                 console.log('編輯訂房 - 原始訂房資料 ID:', existingBooking.id);
-                
+
                 const submitData = {
                     action: 'update_booking',
                     // 傳遞 ID（如果有的話）和查找必要資訊
@@ -3388,62 +3476,62 @@
                 // 使用 BookingDataManager 創建標準化參數
                 const params = BookingDataManager.createOrderedParams(submitData);
                 console.log('📤 編輯訂房 - 按標準順序發送的參數:', params.toString());
-                
-                console.log('📤 編輯訂房 - 發送數據:', submitData);
-                
-                // 使用表單提交避免 CORS 問題
-                
-            // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
-            const payload = {};
-            for (const [key, value] of new URLSearchParams(params).entries()) {
-                payload[key] = value;
-            }
 
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                console.log('📤 編輯訂房 - 發送數據:', submitData);
+
+                // 使用表單提交避免 CORS 問題
+
+                // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
+                const payload = {};
+                for (const [key, value] of new URLSearchParams(params).entries()) {
+                    payload[key] = value;
                 }
-                return response.json();
-            })
-            .then(data => {
-                if(data.status === 'success' || data.success) {
-                    // Success handling is usually already present in the UI via reload or reload triggers 
-                    if(typeof loadRealData === 'function') loadRealData();
-                } else {
-                    console.error('Operation failed:', data);
-                    alert('操作失敗：' + (data.message || '未知錯誤'));
-                }
-            })
-            .catch(error => {
-                console.error('Error during fetch:', error);
-                alert('網路錯誤，請稍後再試');
-            });
+
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success' || data.success) {
+                            // Success handling is usually already present in the UI via reload or reload triggers 
+                            if (typeof loadRealData === 'function') loadRealData();
+                        } else {
+                            console.error('Operation failed:', data);
+                            alert('操作失敗：' + (data.message || '未知錯誤'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during fetch:', error);
+                        alert('網路錯誤，請稍後再試');
+                    });
 
                 document.body.removeChild(form);
-                
+
                 console.log('📡 編輯訂房 - 表單已提交，使用隱藏 iframe 接收回應');
-                
+
                 // 視為成功，因為表單提交無法獲得詳細回應
                 const responseData = { success: true };
-                
+
                 if (responseData.success === false) {
                     throw new Error(responseData.error || '後端更新失敗');
                 }
-                
+
                 // 立即更新前端數據
                 // 使用原始姓名和電話找到正確的記錄進行更新
-                const updateIndex = allData.bookings.findIndex(b => 
-                    b.guest_name === existingBooking.guest_name && 
+                const updateIndex = allData.bookings.findIndex(b =>
+                    b.guest_name === existingBooking.guest_name &&
                     String(b.guest_phone) === String(existingBooking.guest_phone)
                 );
-                
+
                 if (updateIndex !== -1) {
                     // 使用標準化後的完整 booking 數據更新本地記錄
                     allData.bookings[updateIndex] = {
@@ -3459,15 +3547,15 @@
                         loadRealData();
                     }, 2000);
                 }
-                
+
                 showSuccessMessage('✅ 訂單更新成功！');
                 closeModal('editBookingModal');
-                
+
                 // 重新顯示更新後的訂單列表
                 setTimeout(() => {
                     displayBookings(allData.bookings);
                 }, 500);
-                
+
             } catch (error) {
                 console.error('更新訂單失敗:', error);
                 alert('❌ 更新失敗：' + error.message);
@@ -3475,7 +3563,7 @@
         }
 
         // 刪除訂單
-        window.deleteBooking = async function(bookingIndex) {
+        window.deleteBooking = async function (bookingIndex) {
             const booking = allData.bookings[bookingIndex];
             if (!booking) {
                 alert('找不到訂房記錄');
@@ -3483,7 +3571,7 @@
             }
 
             const confirmMessage = `⚠️ 確定要刪除以下訂房嗎？\n\n房客：${booking.guest_name}\n入住期間：${booking.checkin_date} ~ ${booking.checkout_date}\n${booking.partner_code ? `推薦大使：${booking.partner_code}` : '無推薦大使'}\n\n刪除後將無法復原！`;
-            
+
             if (!confirm(confirmMessage)) {
                 return;
             }
@@ -3494,11 +3582,11 @@
                     if (!dateStr) return '';
                     const date = new Date(dateStr);
                     if (isNaN(date.getTime())) return dateStr;
-                    return date.getFullYear() + '-' + 
-                           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
-                           String(date.getDate()).padStart(2, '0');
+                    return date.getFullYear() + '-' +
+                        String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(date.getDate()).padStart(2, '0');
                 };
-                
+
                 // 使用 form 提交方式避免 CORS 問題
                 const deleteData = {
                     action: 'delete_booking',
@@ -3507,29 +3595,29 @@
                     guest_phone: booking.guest_phone,
                     checkin_date: formatDateForBackend(booking.checkin_date)
                 };
-                
+
                 console.log('📤 刪除訂房 - 發送數據:', deleteData);
-                
+
                 // 使用統一的 iframe 表單提交函數
                 submitToBackendViaForm(deleteData);
-                
+
                 // 給後端一些時間處理
                 await new Promise(resolve => setTimeout(resolve, 1500));
-                
+
                 // 立即更新前端數據
                 console.log('🗑️ 刪除請求已發送，更新前端數據...', booking.guest_name);
-                    
+
                 // 從前端數據中移除該記錄
-                const bookingIndexToRemove = allData.bookings.findIndex(b => 
-                    b.guest_name === booking.guest_name && 
+                const bookingIndexToRemove = allData.bookings.findIndex(b =>
+                    b.guest_name === booking.guest_name &&
                     String(b.guest_phone) === String(booking.guest_phone) &&
                     b.checkin_date === booking.checkin_date
                 );
-                
+
                 if (bookingIndexToRemove !== -1) {
                     allData.bookings.splice(bookingIndexToRemove, 1);
                     console.log('✅ 已從前端數據移除記錄');
-                    
+
                     // 立即刷新顯示
                     displayBookings(allData.bookings);
                     showSuccessMessage('✅ 訂單已成功刪除！');
@@ -3538,7 +3626,7 @@
                     console.error('❌ 找不到要刪除的記錄');
                     showSuccessMessage('✅ 刪除請求已發送，請重新載入查看結果');
                 }
-                
+
             } catch (error) {
                 console.error('刪除訂單失敗:', error);
                 alert('❌ 刪除失敗：' + error.message);
@@ -3552,7 +3640,7 @@
         }
 
         // 開啟手動訂房模態框
-        window.openManualBookingModal = function() {
+        window.openManualBookingModal = function () {
             createManualBookingModal();
         }
 
@@ -3561,7 +3649,7 @@
             const modal = document.createElement('div');
             modal.id = 'manualBookingModal';
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
-            
+
             modal.innerHTML = `
                 <div class="bg-white rounded-lg max-w-4xl w-full max-h-[95vh] overflow-y-auto">
                     <!-- 標題列 -->
@@ -3679,9 +3767,9 @@
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(modal);
-            
+
             // 初始化表單
             initializeManualBookingForm();
         }
@@ -3691,7 +3779,7 @@
             // 設定預設日期
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('modal_checkin_date').value = today;
-            
+
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             document.getElementById('modal_checkout_date').value = tomorrow.toISOString().split('T')[0];
@@ -3710,15 +3798,15 @@
             }
 
             // 設定大使選擇監聽器
-            partnerSelect.addEventListener('change', function() {
+            partnerSelect.addEventListener('change', function () {
                 const selectedCode = this.value;
                 const partnerInfoEl = document.getElementById('modal_partner_info');
-                
+
                 if (selectedCode === '') {
                     partnerInfoEl.classList.add('hidden');
                     return;
                 }
-                
+
                 const partner = allData.partners.find(p => p.partner_code === selectedCode);
                 if (partner) {
                     // 顯示大使詳細資訊
@@ -3746,7 +3834,7 @@
             });
 
             // 設定表單提交事件
-            document.getElementById('manualBookingForm').addEventListener('submit', async function(e) {
+            document.getElementById('manualBookingForm').addEventListener('submit', async function (e) {
                 e.preventDefault();
                 await submitManualBooking();
             });
@@ -3801,52 +3889,52 @@
 
             try {
                 console.log('📤 手動訂房 - 發送數據:', submitData);
-                
-                // 使用 form 提交避免 CORS 問題
-                
-            // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
-            const payload = {};
-            for (const [key, value] of new URLSearchParams(params).entries()) {
-                payload[key] = value;
-            }
 
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                // 使用 form 提交避免 CORS 問題
+
+                // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
+                const payload = {};
+                for (const [key, value] of new URLSearchParams(params).entries()) {
+                    payload[key] = value;
                 }
-                return response.json();
-            })
-            .then(data => {
-                if(data.status === 'success' || data.success) {
-                    // Success handling is usually already present in the UI via reload or reload triggers 
-                    if(typeof loadRealData === 'function') loadRealData();
-                } else {
-                    console.error('Operation failed:', data);
-                    alert('操作失敗：' + (data.message || '未知錯誤'));
-                }
-            })
-            .catch(error => {
-                console.error('Error during fetch:', error);
-                alert('網路錯誤，請稍後再試');
-            });
+
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success' || data.success) {
+                            // Success handling is usually already present in the UI via reload or reload triggers 
+                            if (typeof loadRealData === 'function') loadRealData();
+                        } else {
+                            console.error('Operation failed:', data);
+                            alert('操作失敗：' + (data.message || '未知錯誤'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during fetch:', error);
+                        alert('網路錯誤，請稍後再試');
+                    });
 
                 console.log('📡 手動訂房 - 表單已提交');
-                
+
                 // 延時處理結果（因為無法讀取iframe內容）
                 setTimeout(async () => {
                     // 顯示成功訊息
                     showSuccessMessage('✅ 訂房記錄處理中...');
-                    
+
                     // 關閉模態框
                     closeModal('manualBookingModal');
-                    
+
                     // 重新載入所有數據並切換到訂單管理頁
                     try {
                         await loadRealData();
@@ -3858,10 +3946,10 @@
                         console.error('載入數據失敗:', error);
                         showSuccessMessage('✅ 訂房已登記，請手動重新載入頁面查看');
                     }
-                    
+
                     submitButton.textContent = originalText;
                     submitButton.disabled = false;
-                    
+
                     // 清理表單
                     if (form && form.parentNode) {
                         document.body.removeChild(form);
@@ -3871,7 +3959,7 @@
             } catch (error) {
                 console.error('登記失敗:', error);
                 alert('❌ 登記失敗：' + error.message);
-                
+
                 submitButton.textContent = originalText;
                 submitButton.disabled = false;
             }
@@ -3892,7 +3980,7 @@
             const modal = document.createElement('div');
             modal.id = 'appsScriptFixModal';
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
-            
+
             modal.innerHTML = `
                 <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                     <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
@@ -3957,10 +4045,10 @@
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(modal);
         }
-        
+
         // 重試連接
         function retryConnection() {
             closeModal('appsScriptFixModal');
@@ -3981,7 +4069,7 @@
             const method = payout.payout_method || '';
             const notes = payout.notes || '';
             const relatedBookings = payout.related_booking_ids;
-            
+
             // 1. 手動調整的結算
             // 確保 notes 是字串才執行 includes
             const notesStr = String(notes || '');
@@ -3992,7 +4080,7 @@
                     detail: notes || '管理者手動調整佣金'
                 };
             }
-            
+
             // 2. 來自房客入住完成的佣金
             // 修復：確保 relatedBookings 是字串才呼叫 trim()
             const bookingsStr = relatedBookings ? relatedBookings.toString() : '';
@@ -4000,32 +4088,32 @@
                 // 嘗試找到相關的訂房記錄
                 const bookingIds = bookingsStr.split(',');
                 let guestInfo = '';
-                
+
                 if (allData && allData.bookings) {
-                    const relatedBooking = allData.bookings.find(b => 
+                    const relatedBooking = allData.bookings.find(b =>
                         bookingIds.some(id => b.id == id.trim())
                     );
-                    
+
                     if (relatedBooking) {
                         guestInfo = `房客: ${relatedBooking.guest_name}`;
                         if (relatedBooking.guest_phone) {
                             // 只顯示電話的後4位
                             const phone = relatedBooking.guest_phone.toString();
-                            const maskedPhone = phone.length > 4 ? 
-                                phone.slice(0, -4).replace(/./g, '*') + phone.slice(-4) : 
+                            const maskedPhone = phone.length > 4 ?
+                                phone.slice(0, -4).replace(/./g, '*') + phone.slice(-4) :
                                 phone;
                             guestInfo += ` (${maskedPhone})`;
                         }
                     }
                 }
-                
+
                 return {
                     text: '🏨 房客入住完成',
                     class: 'bg-green-100 text-green-800',
                     detail: guestInfo || `訂房ID: ${bookingIds[0]}`
                 };
             }
-            
+
             // 3. 系統自動計算的佣金
             if (method === 'AUTO_CALCULATION' || payout.payout_type === 'ACCOMMODATION') {
                 return {
@@ -4034,7 +4122,7 @@
                     detail: '基於訂房自動計算佣金'
                 };
             }
-            
+
             // 4. 結算撤銷或調整
             if (payout.payout_type === 'ADJUSTMENT_REVERSAL' || notes.includes('撤銷') || notes.includes('取消')) {
                 return {
@@ -4043,7 +4131,7 @@
                     detail: '結算撤銷或金額調整'
                 };
             }
-            
+
             // 5. 預設情況
             return {
                 text: '一般結算',
@@ -4053,11 +4141,11 @@
         }
 
         // 診斷 資料庫 欄位結構
-        window.diagnoseSheetFields = function() {
+        window.diagnoseSheetFields = function () {
             const modal = document.createElement('div');
             modal.id = 'sheetFieldsDiagnosticModal';
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            
+
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-6">
@@ -4147,27 +4235,27 @@
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(modal);
         }
 
         // 診斷結算問題
-        window.diagnosePayout = function() {
+        window.diagnosePayout = function () {
             console.log('🔧 開始診斷結算問題...');
-            
+
             const modal = document.createElement('div');
             modal.id = 'diagnosticModal';
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
-            
+
             let diagnosticResults = [];
-            
+
             // 檢查 allData
             if (!allData) {
                 diagnosticResults.push('❌ allData 未初始化');
             } else {
                 diagnosticResults.push('✅ allData 已初始化');
             }
-            
+
             // 檢查 payouts 陣列
             if (!allData.payouts) {
                 diagnosticResults.push('❌ allData.payouts 不存在');
@@ -4175,13 +4263,13 @@
                 diagnosticResults.push('❌ allData.payouts 不是陣列');
             } else {
                 diagnosticResults.push(`✅ allData.payouts 是陣列，長度: ${allData.payouts.length}`);
-                
+
                 if (allData.payouts.length > 0) {
                     diagnosticResults.push('Payouts 結構分析:');
                     allData.payouts.forEach((payout, index) => {
                         diagnosticResults.push(`  ${index}: ID=${payout.id || 'undefined'}, partner=${payout.partner_code}, amount=${payout.amount}, status=${payout.payout_status}`);
                     });
-                    
+
                     // 檢查 ID 問題
                     const withoutId = allData.payouts.filter(p => !p.id || p.id === '');
                     if (withoutId.length > 0) {
@@ -4189,7 +4277,7 @@
                     }
                 }
             }
-            
+
             modal.innerHTML = `
                 <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                     <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
@@ -4230,12 +4318,12 @@
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(modal);
         }
 
         // ========== 點數轉換功能 ==========
-        
+
         // 使用住宿金折抵
         // 🎯 統一的夥伴操作彈出視窗
         async function showPartnerActionsModal(partnerCode, type) {
@@ -4250,13 +4338,13 @@
             const pendingCash = parseFloat(partner.pending_commission) || 0;
 
             let modalContent = '';
-            
+
             if (type === 'accommodation') {
                 if (accommodationBalance <= 0) {
                     showErrorMessage('該大使目前沒有住宿金餘額');
                     return;
                 }
-                
+
                 modalContent = `
                     <div class="bg-white rounded-lg max-w-md w-full">
                         <div class="px-6 py-4 border-b flex justify-between items-center bg-blue-50">
@@ -4297,7 +4385,7 @@
                     showErrorMessage('該大使目前沒有待結算現金');
                     return;
                 }
-                
+
                 modalContent = `
                     <div class="bg-white rounded-lg max-w-md w-full">
                         <div class="px-6 py-4 border-b flex justify-between items-center bg-green-50">
@@ -4343,25 +4431,25 @@
 
         async function useAccommodationPoints(partnerCode) {
             closeModal('partnerActionsModal'); // 先關閉操作選單
-            
+
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到夥伴資料');
                 return;
             }
-            
+
             // 使用正確的欄位
             const availablePoints = parseFloat(partner.available_points) || 0;
             const totalEarned = parseFloat(partner.total_commission_earned) || 0;
             const pointsUsed = parseFloat(partner.points_used) || 0;
-            
+
             console.log(`🔍 使用住宿金調試 - ${partnerCode}:`, {
                 totalEarned,
                 pointsUsed,
                 availablePoints,
                 partner: partner
             });
-            
+
             if (availablePoints <= 0) {
                 showErrorMessage('該大使目前沒有可用點數');
                 return;
@@ -4533,13 +4621,13 @@
         // 提交住宿金折抵
         async function submitUsePoints(event, partnerCode) {
             event.preventDefault();
-            
+
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到夥伴資料');
                 return;
             }
-            
+
             const amount = parseFloat(document.getElementById('use_amount').value);
             const guestName = document.getElementById('use_guest_name').value;
             const guestPhone = document.getElementById('use_guest_phone').value;
@@ -4547,7 +4635,7 @@
             const checkoutDate = document.getElementById('use_checkout_date').value;
             const roomPrice = parseFloat(document.getElementById('use_room_price').value) || 0;
             const notes = document.getElementById('use_notes').value;
-            
+
             // 驗證金額 - 使用正確的欄位
             const availablePoints = parseFloat(partner.available_points) || 0;
             if (amount <= 0) {
@@ -4558,7 +4646,7 @@
                 showErrorMessage(`折抵金額不能超過可用點數 $${availablePoints.toLocaleString()}`);
                 return;
             }
-            
+
             try {
                 // 使用新的 use_accommodation_points action
                 const submitData = {
@@ -4573,50 +4661,50 @@
                     deduct_amount: amount,  // 後端期望的參數名稱是 deduct_amount
                     notes: notes || ''
                 };
-                
+
                 console.log('🏨 提交住宿金折抵請求:', submitData);
-                
+
                 // 使用表單提交避免 CORS
-                
-            // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
-            const payload = {};
-            for (const [key, value] of new URLSearchParams(params).entries()) {
-                payload[key] = value;
-            }
 
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
+                const payload = {};
+                for (const [key, value] of new URLSearchParams(params).entries()) {
+                    payload[key] = value;
                 }
-                return response.json();
-            })
-            .then(data => {
-                if(data.status === 'success' || data.success) {
-                    // Success handling is usually already present in the UI via reload or reload triggers 
-                    if(typeof loadRealData === 'function') loadRealData();
-                } else {
-                    console.error('Operation failed:', data);
-                    alert('操作失敗：' + (data.message || '未知錯誤'));
-                }
-            })
-            .catch(error => {
-                console.error('Error during fetch:', error);
-                alert('網路錯誤，請稍後再試');
-            });
 
-                
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success' || data.success) {
+                            // Success handling is usually already present in the UI via reload or reload triggers 
+                            if (typeof loadRealData === 'function') loadRealData();
+                        } else {
+                            console.error('Operation failed:', data);
+                            alert('操作失敗：' + (data.message || '未知錯誤'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during fetch:', error);
+                        alert('網路錯誤，請稍後再試');
+                    });
+
+
                 console.log('📤 已提交住宿金折抵請求');
-                
+
                 // 等待後端處理（稍微延長時間確保處理完成）
                 await new Promise(resolve => setTimeout(resolve, 2500));
-                
+
                 // 立即更新前端數據（後端已處理所有邏輯）
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                 if (partnerIndex !== -1) {
@@ -4624,7 +4712,7 @@
                     allData.partners[partnerIndex].available_points = availablePoints - amount;
                     allData.partners[partnerIndex].points_used = (parseFloat(allData.partners[partnerIndex].points_used) || 0) + amount;
                     // total_commission_earned 不變
-                    
+
                     const newBalance = availablePoints - amount;
                     console.log('✅ 前端數據更新完成:', {
                         partner: partnerCode,
@@ -4633,15 +4721,15 @@
                         accommodation_balance: newBalance
                     });
                 }
-                
+
                 // 清理表單
                 document.body.removeChild(form);
-                
+
                 const newBalance = availablePoints - amount;
                 showSuccessMessage(`✅ 成功使用 $${amount.toLocaleString()} 住宿金！\n剩餘餘額：$${newBalance.toLocaleString()}`);
                 closeModal('usePointsModal');
                 displayPartners(allData.partners);
-                
+
             } catch (error) {
                 console.error('使用住宿金失敗:', error);
                 showErrorMessage('❌ 使用失敗：' + error.message);
@@ -4653,22 +4741,22 @@
             const roomPrice = parseFloat(document.getElementById('use_room_price')?.value) || 0;
             const discount = parseFloat(document.getElementById('use_amount')?.value) || 0;
             const netPrice = Math.max(0, roomPrice - discount);
-            
+
             // 計算節省百分比
             const savingsPercentage = roomPrice > 0 ? Math.round((discount / roomPrice) * 100) : 0;
-            
+
             // 更新顯示
             const originalPriceEl = document.getElementById('display_original_price');
             const discountEl = document.getElementById('display_discount');
             const netPriceEl = document.getElementById('display_net_price');
             const savingsPercentageEl = document.getElementById('savings_percentage');
-            
+
             if (originalPriceEl) originalPriceEl.textContent = `NT$ ${roomPrice.toLocaleString()}`;
             if (discountEl) discountEl.textContent = `-NT$ ${discount.toLocaleString()}`;
             if (netPriceEl) netPriceEl.textContent = `NT$ ${netPrice.toLocaleString()}`;
             if (savingsPercentageEl) savingsPercentageEl.textContent = `${savingsPercentage}%`;
         }
-        
+
         // 設定快速金額
         function setQuickAmount(inputId, amount, max) {
             const input = document.getElementById(inputId);
@@ -4683,19 +4771,19 @@
         function validateUseAmount(input, maxAmount) {
             const value = parseFloat(input.value);
             const warningDiv = input.parentNode.querySelector('.amount-warning');
-            
+
             // 移除既有警告
             if (warningDiv) {
                 warningDiv.remove();
             }
-            
+
             if (value > maxAmount) {
                 input.value = maxAmount;
                 const warning = document.createElement('div');
                 warning.className = 'amount-warning text-xs text-red-600 mt-1';
                 warning.textContent = `金額已調整為最大可用值: $${maxAmount.toLocaleString()}`;
                 input.parentNode.appendChild(warning);
-                
+
                 setTimeout(() => {
                     if (warning.parentNode) {
                         warning.remove();
@@ -4712,30 +4800,30 @@
         // 點數轉現金
         async function convertPointsToCash(partnerCode) {
             closeModal('partnerActionsModal'); // 先關閉操作選單
-            
+
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到夥伴資料');
                 return;
             }
-            
+
             // 使用正確的欄位
             const availablePoints = parseFloat(partner.available_points) || 0;
             const totalEarned = parseFloat(partner.total_commission_earned) || 0;
             const pointsUsed = parseFloat(partner.points_used) || 0;
-            
+
             console.log(`🔍 轉換現金調試 - ${partnerCode}:`, {
                 totalEarned,
                 pointsUsed,
                 availablePoints,
                 partner: partner
             });
-            
+
             if (availablePoints <= 0) {
                 showErrorMessage('該大使目前沒有可用住宿金餘額');
                 return;
             }
-            
+
             createPointsToCashModal(partner, availablePoints);
         }
 
@@ -4743,11 +4831,11 @@
         function createPointsToCashModal(partner, availablePoints) {
             // ✅ 使用傳入的正確餘額參數
             const exchangeRate = 0.5; // 點數轉現金比例 (50%)
-            
+
             const modal = document.createElement('div');
             modal.id = 'pointsToCashModal';
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            
+
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
                     <div class="flex justify-between items-start mb-6">
@@ -4825,7 +4913,7 @@
                     </form>
                 </div>
             `;
-            
+
             document.body.appendChild(modal);
         }
 
@@ -4839,16 +4927,16 @@
         function updateConvertedCashDisplay() {
             const pointsInput = document.getElementById('points_to_convert');
             const cashDisplay = document.getElementById('cash_amount_display');
-            
+
             if (!pointsInput || !cashDisplay) {
                 console.error('找不到點數輸入或現金顯示元素');
                 return;
             }
-            
+
             const points = parseFloat(pointsInput.value) || 0;
             const exchangeRate = 0.5; // 轉換比例：1點 = 0.5元
             const cashAmount = Math.floor(points * exchangeRate);
-            
+
             cashDisplay.textContent = `NT$ ${cashAmount.toLocaleString()}`;
             console.log(`更新現金顯示: ${points} 點 → NT$ ${cashAmount}`);
         }
@@ -4872,17 +4960,17 @@
                 const notes = document.getElementById('conversion_notes').value.trim();
                 const exchangeRate = 0.5;
                 const cashAmount = Math.floor(points * exchangeRate);
-                
+
                 if (points <= 0) {
                     showErrorMessage('請輸入有效的轉換點數');
                     return;
                 }
-                
+
                 if (!notes) {
                     showErrorMessage('請填寫轉換說明');
                     return;
                 }
-                
+
                 const formData = {
                     action: 'convert_points_to_cash',
                     partner_code: partnerCode,
@@ -4891,33 +4979,33 @@
                     exchange_rate: exchangeRate,
                     notes: notes
                 };
-                
+
                 console.log('轉換現金 - 提交數據:', formData);
-                
+
                 // 使用 form 提交避免 CORS 問題
                 console.log('📤 正在提交到 Google Apps Script...');
-                
+
                 submitToBackendViaForm(formData);
-                
+
                 // 給後端時間處理
                 await new Promise(resolve => setTimeout(resolve, 2000));
-                
+
                 console.log('✅ 轉換現金請求已發送（使用 form 提交）');
-                
+
                 // ✅ 更新前端數據
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
                 if (partnerIndex !== -1) {
                     const partner = allData.partners[partnerIndex];
-                    
+
                     // 更新正確的欄位
                     partner.available_points = (parseFloat(partner.available_points) || 0) - points;
                     partner.points_used = (parseFloat(partner.points_used) || 0) + points;
                     // total_commission_earned 不變
-                    
+
                     // 更新待結算現金：增加 pending_commission
                     const currentPending = parseFloat(partner.pending_commission) || 0;
                     partner.pending_commission = currentPending + cashAmount;
-                    
+
                     console.log('✅ 轉換現金前端數據更新:', {
                         partner: partnerCode,
                         points_used: points,
@@ -4926,13 +5014,13 @@
                         pending_commission: partner.pending_commission
                     });
                 }
-                
+
                 showSuccessMessage('✅ 成功轉換 ' + points.toLocaleString() + ' 點為 NT$ ' + cashAmount.toLocaleString() + '！');
                 closeModal('pointsToCashModal');
-                
+
                 // 即時更新當前顯示
                 updateCurrentTabDisplay();
-                
+
             } catch (error) {
                 console.error('點數轉換失敗:', error);
                 showErrorMessage('❌ 轉換失敗：' + error.message);
@@ -4981,7 +5069,7 @@
             const select = document.getElementById('linkgen_partner_select');
             const selectedValue = select.value;
             const nameDiv = document.getElementById('linkgen_new_partner_name');
-            
+
             if (selectedValue === 'new') {
                 // 顯示姓名輸入欄位
                 nameDiv.classList.remove('hidden');
@@ -5021,11 +5109,11 @@
         async function generatePartnerLinks() {
             const select = document.getElementById('linkgen_partner_select');
             const selectedValue = select.value;
-            
+
             let partnerName = '';
             const partnerCode = document.getElementById('linkgen_partnerCode').value.trim();
             const couponUrl = document.getElementById('linkgen_couponUrl').value.trim();
-            
+
             if (selectedValue === 'new') {
                 partnerName = document.getElementById('linkgen_partnerName').value.trim();
                 if (!partnerName) {
@@ -5039,24 +5127,24 @@
                 showErrorMessage('請選擇夥伴或新增夥伴');
                 return;
             }
-            
+
             if (!partnerCode) {
                 showErrorMessage('請填寫夥伴代碼');
                 return;
             }
-            
+
             if (!couponUrl) {
                 showErrorMessage('請提供專屬優惠券連結');
                 return;
             }
-            
+
             // 顯示結果區域
             document.getElementById('linkgen_resultSection').classList.remove('hidden');
-            
+
             // 生成連結
             const landingUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=landing`;
             const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
-            
+
             // 生成分享範本
             const shareText = `🌲 來自靜謐森林的特別邀請
 
@@ -5070,7 +5158,7 @@ ${landingUrl}
 期待你也能在這裡，找到屬於自己的那份安靜。
 
 —— ${partnerName} 真誠推薦 ❤️`;
-            
+
             // 保存生成的資料
             linkgenGeneratedData = {
                 action: 'create_partner',
@@ -5087,14 +5175,14 @@ ${landingUrl}
                 bank_account_name: document.getElementById('linkgen_bankAccountName').value.trim(),
                 bank_account_number: document.getElementById('linkgen_bankAccountNumber').value.trim()
             };
-            
+
             // 顯示結果
             document.getElementById('linkgen_landingLink').textContent = landingUrl;
             document.getElementById('linkgen_couponLink').textContent = trackedCouponUrl;
             document.getElementById('linkgen_shareTemplate').textContent = shareText;
-            
+
             showSuccessMessage('✅ 連結生成成功！');
-            
+
             // 滾動到結果區域
             document.getElementById('linkgen_resultSection').scrollIntoView({ behavior: 'smooth' });
         }
@@ -5105,48 +5193,48 @@ ${landingUrl}
                 showErrorMessage('請先生成連結');
                 return;
             }
-            
+
             try {
                 // 使用表單提交方式
-                
-            // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
-            const payload = {};
-            for (const [key, value] of new URLSearchParams(params).entries()) {
-                payload[key] = value;
-            }
 
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
+                const payload = {};
+                for (const [key, value] of new URLSearchParams(params).entries()) {
+                    payload[key] = value;
                 }
-                return response.json();
-            })
-            .then(data => {
-                if(data.status === 'success' || data.success) {
-                    // Success handling is usually already present in the UI via reload or reload triggers 
-                    if(typeof loadRealData === 'function') loadRealData();
-                } else {
-                    console.error('Operation failed:', data);
-                    alert('操作失敗：' + (data.message || '未知錯誤'));
-                }
-            })
-            .catch(error => {
-                console.error('Error during fetch:', error);
-                alert('網路錯誤，請稍後再試');
-            });
 
-                
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success' || data.success) {
+                            // Success handling is usually already present in the UI via reload or reload triggers 
+                            if (typeof loadRealData === 'function') loadRealData();
+                        } else {
+                            console.error('Operation failed:', data);
+                            alert('操作失敗：' + (data.message || '未知錯誤'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during fetch:', error);
+                        alert('網路錯誤，請稍後再試');
+                    });
+
+
                 // 延時處理結果
                 setTimeout(() => {
                     showSuccessMessage('✅ 資料已儲存到 資料庫！');
-                    
+
                     // 不要立即重新載入數據，避免403錯誤
                     // 只更新本地的夥伴列表
                     if (linkgenGeneratedData && linkgenGeneratedData.partner_code) {
@@ -5161,10 +5249,10 @@ ${landingUrl}
                         // 已移除：連結生成器現在使用 iframe，不需要更新下拉選單
                         // loadPartnersForLinkGen();
                     }
-                    
+
                     document.body.removeChild(form);
                 }, 2000);
-                
+
             } catch (error) {
                 console.error('儲存失敗:', error);
                 showErrorMessage('❌ 儲存失敗：' + error.message);
@@ -5175,7 +5263,7 @@ ${landingUrl}
         function copyLinkText(elementId) {
             const element = document.getElementById(elementId);
             const text = element.textContent || element.innerText;
-            
+
             navigator.clipboard.writeText(text).then(() => {
                 showSuccessMessage('✅ 已複製到剪貼簿');
             }).catch(err => {
@@ -5190,28 +5278,28 @@ ${landingUrl}
         }
 
         // 隱藏錯誤橫幅
-        window.hideErrorBanner = function() {
+        window.hideErrorBanner = function () {
             document.getElementById('script-error-banner').classList.add('hidden');
         }
-        
+
         // 顯示 403 錯誤橫幅
         function show403ErrorBanner() {
             document.getElementById('script-error-banner').classList.remove('hidden');
         }
-        
+
         // 檢測 403 錯誤
         function detect403Error() {
             // 監聽網路錯誤
-            window.addEventListener('unhandledrejection', function(event) {
+            window.addEventListener('unhandledrejection', function (event) {
                 if (event.reason && event.reason.message && event.reason.message.includes('403')) {
                     console.error('❌ 偵測到 403 錯誤');
                     show403ErrorBanner();
                 }
             });
-            
+
             // 監聽 console 錯誤
             const originalConsoleError = console.error;
-            console.error = function(...args) {
+            console.error = function (...args) {
                 const message = args.join(' ');
                 if (message.includes('403') || message.includes('Forbidden')) {
                     show403ErrorBanner();
@@ -5219,19 +5307,19 @@ ${landingUrl}
                 originalConsoleError.apply(console, args);
             };
         }
-        
+
         // 頁面載入時執行
         document.addEventListener('DOMContentLoaded', async () => {
             // 啟動 403 錯誤檢測
             detect403Error();
-            
+
             // 先檢查 Apps Script 連線
             const isConnected = await checkAppsScriptConnection();
-            
+
             if (!isConnected) {
                 // 顯示橫幅錯誤提示
                 show403ErrorBanner();
-                
+
                 // 顯示右上角錯誤提示（保留原有功能）
                 const alertDiv = document.createElement('div');
                 alertDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50';
@@ -5241,19 +5329,19 @@ ${landingUrl}
                 `;
                 document.body.appendChild(alertDiv);
             }
-            
+
             showTab('overview');
             // 已移除：連結生成器現在使用 iframe，不需要自動載入夥伴列表
             // setTimeout(() => {
             //     loadPartnersForLinkGen();
             // }, 1000);
         });
-        
+
         // 修復數據映射問題
         async function fixDataMapping() {
             try {
                 console.log('🔧 開始診斷 資料庫 欄位對應...');
-                
+
                 // 顯示診斷中提示
                 const table = document.getElementById('bookingsTable');
                 table.innerHTML = `
@@ -5268,7 +5356,7 @@ ${landingUrl}
                         </td>
                     </tr>
                 `;
-                
+
                 // 先獲取原始數據進行分析
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
@@ -5277,14 +5365,14 @@ ${landingUrl}
                     },
                     body: 'action=get_dashboard_data'
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const result = await response.text();
                 console.log('📥 診斷用數據回應:', result);
-                
+
                 // 嘗試解析並分析數據結構
                 let rawData;
                 try {
@@ -5305,10 +5393,10 @@ ${landingUrl}
                     `;
                     return;
                 }
-                
+
                 // 顯示診斷結果
                 showDataDiagnosisModal(rawData);
-                
+
             } catch (error) {
                 console.error('❌ 診斷失敗:', error);
                 const table = document.getElementById('bookingsTable');
@@ -5330,36 +5418,36 @@ ${landingUrl}
                 `;
             }
         }
-        
+
         // 顯示數據診斷模態框
         function showDataDiagnosisModal(rawData) {
             const modal = document.createElement('div');
             modal.id = 'dataDiagnosisModal';
             modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            
+
             let diagnosisContent = '';
-            
+
             if (rawData && rawData.bookings && rawData.bookings.length > 0) {
                 const firstBooking = rawData.bookings[0];
                 const fieldCount = Object.keys(firstBooking).length;
-                
+
                 // 定義正確的欄位順序（基於用戶提供的實際欄位）
                 const expectedFields = [
-                    'id', 'partner_code', 'guest_name', 'guest_phone', 'guest_email', 
-                    'bank_account_last5', 'checkin_date', 'checkout_date', 'room_price', 
-                    'booking_source', 'stay_status', 'payment_status', 'commission_status', 
-                    'commission_amount', 'commission_type', 'is_first_referral_bonus', 
-                    'first_referral_bonus_amount', 'manually_confirmed_by', 'manually_confirmed_at', 
+                    'id', 'partner_code', 'guest_name', 'guest_phone', 'guest_email',
+                    'bank_account_last5', 'checkin_date', 'checkout_date', 'room_price',
+                    'booking_source', 'stay_status', 'payment_status', 'commission_status',
+                    'commission_amount', 'commission_type', 'is_first_referral_bonus',
+                    'first_referral_bonus_amount', 'manually_confirmed_by', 'manually_confirmed_at',
                     'notes', 'created_at', 'updated_at'
                 ];
-                
+
                 // 分析數據映射
                 const actualFields = Object.keys(firstBooking);
                 const mappingAnalysis = actualFields.map((actualField, index) => {
                     const expectedField = expectedFields[index];
                     const value = firstBooking[actualField];
                     const isCorrect = actualField === expectedField;
-                    
+
                     return {
                         index,
                         actual: actualField,
@@ -5369,21 +5457,21 @@ ${landingUrl}
                         problem: !isCorrect ? `應該是 ${expectedField}` : null
                     };
                 });
-                
+
                 diagnosisContent = `
                     <h4 class="font-bold mb-3">欄位映射分析：</h4>
                     <div class="bg-gray-50 p-3 rounded text-xs max-h-60 overflow-y-auto mb-4">
                         <div class="font-bold text-blue-600 mb-2">實際欄位數量: ${fieldCount} | 期望欄位數量: ${expectedFields.length}</div>
                         <div class="grid gap-1">
-                            ${mappingAnalysis.map(item => 
-                                `<div class="flex items-center space-x-2 ${item.isCorrect ? 'text-green-700' : 'text-red-700'}">
+                            ${mappingAnalysis.map(item =>
+                    `<div class="flex items-center space-x-2 ${item.isCorrect ? 'text-green-700' : 'text-red-700'}">
                                     <span class="font-mono w-8">[${item.index}]</span>
                                     <span class="w-24 ${item.isCorrect ? 'bg-green-100' : 'bg-red-100'} px-1 rounded">${item.actual}</span>
                                     ${item.isCorrect ? '✅' : '❌'}
                                     ${!item.isCorrect ? `<span class="text-xs">(${item.problem})</span>` : ''}
                                     <span class="text-gray-600 truncate max-w-32">${item.value.substring(0, 30)}${item.value.length > 30 ? '...' : ''}</span>
                                 </div>`
-                            ).join('')}
+                ).join('')}
                         </div>
                     </div>
                     
@@ -5393,9 +5481,9 @@ ${landingUrl}
                             <div class="text-red-600">❌ 有 ${mappingAnalysis.filter(item => !item.isCorrect).length} 個欄位映射錯誤</div>
                             <div class="bg-red-50 p-2 rounded text-xs">
                                 <strong>錯誤詳情：</strong><br>
-                                ${mappingAnalysis.filter(item => !item.isCorrect).map(item => 
-                                    `• 位置 ${item.index}: 得到 "${item.actual}"，期望 "${item.expected}"`
-                                ).join('<br>')}
+                                ${mappingAnalysis.filter(item => !item.isCorrect).map(item =>
+                    `• 位置 ${item.index}: 得到 "${item.actual}"，期望 "${item.expected}"`
+                ).join('<br>')}
                             </div>
                         ` : '<div class="text-green-600">✅ 所有欄位映射正確</div>'}
                         
@@ -5415,7 +5503,7 @@ ${landingUrl}
             } else {
                 diagnosisContent = '<div class="text-red-600">❌ 無法獲取有效的訂房數據或數據為空</div>';
             }
-            
+
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-6">
@@ -5460,7 +5548,7 @@ ${landingUrl}
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(modal);
         }
 
@@ -5472,14 +5560,14 @@ ${landingUrl}
         function updateSelection() {
             const checkboxes = document.querySelectorAll('.partner-selector:checked');
             selectedPartners.clear();
-            
+
             checkboxes.forEach(cb => {
                 selectedPartners.add(cb.dataset.partnerCode);
             });
-            
+
             const toolbar = document.getElementById('batchToolbar');
             const countSpan = document.getElementById('selectedCount');
-            
+
             if (selectedPartners.size > 0) {
                 toolbar.classList.remove('hidden');
                 countSpan.textContent = selectedPartners.size;
@@ -5488,14 +5576,14 @@ ${landingUrl}
             }
         }
 
-        window.clearSelection = function() {
+        window.clearSelection = function () {
             document.querySelectorAll('.partner-selector').forEach(cb => cb.checked = false);
             selectedPartners.clear();
             document.getElementById('batchToolbar').classList.add('hidden');
         }
 
         // 執行批量操作
-        window.executeBatchAction = async function() {
+        window.executeBatchAction = async function () {
             const operation = document.getElementById('batchOperation').value;
             if (!operation || selectedPartners.size === 0) {
                 showErrorMessage('請選擇操作和夥伴');
@@ -5507,7 +5595,7 @@ ${landingUrl}
 
             try {
                 const results = [];
-                
+
                 for (const partnerCode of selectedPartners) {
                     switch (operation) {
                         case 'convert_all':
@@ -5521,13 +5609,13 @@ ${landingUrl}
                             break;
                     }
                 }
-                
+
                 showSuccessMessage(`✅ 批量操作完成！成功處理 ${selectedPartners.size} 位夥伴`);
                 clearSelection();
-                
+
                 // 重新載入數據
                 setTimeout(() => loadRealData().then(() => displayPartners(allData.partners)), 1000);
-                
+
             } catch (error) {
                 console.error('批量操作失敗:', error);
                 showErrorMessage('❌ 批量操作失敗：' + error.message);
@@ -5537,19 +5625,19 @@ ${landingUrl}
         // 管理下拉選單切換
         function toggleManagementDropdown(partnerCode) {
             const dropdown = document.getElementById(`management-${partnerCode}`);
-            
+
             // 關閉其他下拉選單
             document.querySelectorAll('[id^="management-"]').forEach(d => {
                 if (d.id !== `management-${partnerCode}`) {
                     d.classList.add('hidden');
                 }
             });
-            
+
             dropdown.classList.toggle('hidden');
         }
 
         // 點擊外部關閉下拉選單
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             if (!event.target.closest('[id^="management-"]') && !event.target.closest('button[onclick*="toggleManagementDropdown"]')) {
                 document.querySelectorAll('[id^="management-"]').forEach(d => d.classList.add('hidden'));
             }
@@ -5571,7 +5659,7 @@ ${landingUrl}
             }
 
             const cashAmount = Math.floor(accommodationPoints * 0.5);
-            
+
             if (!batchMode) {
                 // 單一操作顯示確認對話框
                 const confirmed = confirm(`轉換確認 - ${partner.name || partner.partner_code}
@@ -5583,45 +5671,45 @@ ${landingUrl}
 轉換後將在下月15日前轉帳給夥伴
 
 確定要轉換嗎？`);
-                
+
                 if (!confirmed) return;
             }
 
             try {
                 // 使用 form 提交避免 CORS 問題
-                
-            // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
-            const payload = {};
-            for (const [key, value] of new URLSearchParams(params).entries()) {
-                payload[key] = value;
-            }
 
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
+                const payload = {};
+                for (const [key, value] of new URLSearchParams(params).entries()) {
+                    payload[key] = value;
                 }
-                return response.json();
-            })
-            .then(data => {
-                if(data.status === 'success' || data.success) {
-                    // Success handling is usually already present in the UI via reload or reload triggers 
-                    if(typeof loadRealData === 'function') loadRealData();
-                } else {
-                    console.error('Operation failed:', data);
-                    alert('操作失敗：' + (data.message || '未知錯誤'));
-                }
-            })
-            .catch(error => {
-                console.error('Error during fetch:', error);
-                alert('網路錯誤，請稍後再試');
-            });
+
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success' || data.success) {
+                            // Success handling is usually already present in the UI via reload or reload triggers 
+                            if (typeof loadRealData === 'function') loadRealData();
+                        } else {
+                            console.error('Operation failed:', data);
+                            alert('操作失敗：' + (data.message || '未知錯誤'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during fetch:', error);
+                        alert('網路錯誤，請稍後再試');
+                    });
 
 
                 // 延時處理結果（模擬成功，因為無法讀取iframe內容）
@@ -5673,14 +5761,14 @@ ${landingUrl}
 待支付金額：NT$ ${pendingAmount.toLocaleString()}
 
 確定已轉帳完成，要標記為「已結算」嗎？`);
-                
+
                 if (!confirmed) return;
             }
 
             try {
                 // 創建新的結算記錄
                 console.log('🎯 創建結算記錄:', { partnerCode, pendingAmount });
-                
+
                 const submitData = {
                     action: 'create_payout',
                     partner_code: partnerCode,
@@ -5694,41 +5782,41 @@ ${landingUrl}
                 console.log('🚀 準備創建結算記錄:', submitData);
 
                 // 使用表單提交避免 CORS
-                
-            // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
-            const payload = {};
-            for (const [key, value] of new URLSearchParams(params).entries()) {
-                payload[key] = value;
-            }
 
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
+                const payload = {};
+                for (const [key, value] of new URLSearchParams(params).entries()) {
+                    payload[key] = value;
                 }
-                return response.json();
-            })
-            .then(data => {
-                if(data.status === 'success' || data.success) {
-                    // Success handling is usually already present in the UI via reload or reload triggers 
-                    if(typeof loadRealData === 'function') loadRealData();
-                } else {
-                    console.error('Operation failed:', data);
-                    alert('操作失敗：' + (data.message || '未知錯誤'));
-                }
-            })
-            .catch(error => {
-                console.error('Error during fetch:', error);
-                alert('網路錯誤，請稍後再試');
-            });
 
-                
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success' || data.success) {
+                            // Success handling is usually already present in the UI via reload or reload triggers 
+                            if (typeof loadRealData === 'function') loadRealData();
+                        } else {
+                            console.error('Operation failed:', data);
+                            alert('操作失敗：' + (data.message || '未知錯誤'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during fetch:', error);
+                        alert('網路錯誤，請稍後再試');
+                    });
+
+
                 // 等待處理完成
                 await new Promise(resolve => setTimeout(resolve, 1500));
 
@@ -5764,19 +5852,19 @@ ${landingUrl}
             document.getElementById(`commission-edit-${partnerCode}`).classList.add('hidden');
         }
 
-        window.saveCommissionEdit = async function(partnerCode) {
+        window.saveCommissionEdit = async function (partnerCode) {
             // 獲取現有夥伴數據
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到夥伴資料');
                 return;
             }
-            
+
             // 記錄原始值（使用正確的欄位）
             const oldAvailablePoints = parseFloat(partner.available_points) || 0;
             const oldPointsUsed = parseFloat(partner.points_used) || 0;
             const oldPendingCash = parseFloat(partner.pending_commission) || 0;
-            
+
             // 獲取新值（使用正確的欄位）
             const availablePoints = parseFloat(document.getElementById(`edit-available-points-${partnerCode}`).value) || 0;
             const pointsUsed = parseFloat(document.getElementById(`edit-points-used-${partnerCode}`).value) || 0;
@@ -5792,7 +5880,7 @@ ${landingUrl}
                 showErrorMessage('金額不能為負數');
                 return;
             }
-            
+
             // 計算調整金額（新值 - 舊值）
             const pointsAdjustment = availablePoints - oldAvailablePoints;
             const cashAdjustment = pendingCash - oldPendingCash;
@@ -5812,10 +5900,10 @@ ${landingUrl}
 
                 // 使用 form 提交方式避免 CORS 問題
                 submitToBackendViaForm(updateData);
-                
+
                 // 給後端時間處理
                 await new Promise(resolve => setTimeout(resolve, 2000));
-                
+
                 console.log('✅ 佣金調整請求已發送');
 
                 // 🎯 更新本地數據（使用正確的欄位）
@@ -5839,22 +5927,22 @@ ${landingUrl}
                     notes: `手動調整累積佣金 ${adjustmentText}`, // 簡潔的說明
                     created_at: new Date().toISOString()
                 };
-                
+
                 // 檢查是否已存在相同的調整記錄（避免重複）
-                const existingRecord = allData.payouts.find(p => 
-                    p.partner_code === partnerCode && 
+                const existingRecord = allData.payouts.find(p =>
+                    p.partner_code === partnerCode &&
                     p.payout_type === 'ADJUSTMENT' &&
                     p.notes && p.notes.includes(adjustmentText) &&
                     Math.abs(new Date(p.created_at).getTime() - new Date().getTime()) < 5000 // 5秒內
                 );
-                
+
                 if (!existingRecord) {
                     allData.payouts.push(tempAdjustmentRecord);
                 }
 
                 showSuccessMessage('✅ 佣金資訊已更新，調整記錄已保存');
                 closeModal('partnerModal');
-                
+
                 // 即時更新當前顯示
                 updateCurrentTabDisplay();
 
@@ -5887,7 +5975,7 @@ ${landingUrl}
 住宿金：${accommodationPoints.toLocaleString()} 點
 
 確定要轉回住宿金嗎？`);
-            
+
             if (!confirmed) return;
 
             try {
@@ -5902,41 +5990,41 @@ ${landingUrl}
                     notes: `🔄 現金轉回住宿金：NT$ ${pendingCash} → ${accommodationPoints} 點`
                 };
 
-                
-            // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
-            const payload = {};
-            for (const [key, value] of new URLSearchParams(params).entries()) {
-                payload[key] = value;
-            }
 
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
+                const payload = {};
+                for (const [key, value] of new URLSearchParams(params).entries()) {
+                    payload[key] = value;
                 }
-                return response.json();
-            })
-            .then(data => {
-                if(data.status === 'success' || data.success) {
-                    // Success handling is usually already present in the UI via reload or reload triggers 
-                    if(typeof loadRealData === 'function') loadRealData();
-                } else {
-                    console.error('Operation failed:', data);
-                    alert('操作失敗：' + (data.message || '未知錯誤'));
-                }
-            })
-            .catch(error => {
-                console.error('Error during fetch:', error);
-                alert('網路錯誤，請稍後再試');
-            });
 
-                
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success' || data.success) {
+                            // Success handling is usually already present in the UI via reload or reload triggers 
+                            if (typeof loadRealData === 'function') loadRealData();
+                        } else {
+                            console.error('Operation failed:', data);
+                            alert('操作失敗：' + (data.message || '未知錯誤'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during fetch:', error);
+                        alert('網路錯誤，請稍後再試');
+                    });
+
+
                 // 等待處理完成
                 await new Promise(resolve => setTimeout(resolve, 1500));
                 document.body.removeChild(form);
@@ -5954,7 +6042,7 @@ ${landingUrl}
                 showSuccessMessage(`✅ 轉換完成！NT$ ${pendingCash.toLocaleString()} → ${accommodationPoints.toLocaleString()} 住宿金點數`);
                 displayPartners(allData.partners);
                 closeModal('partnerActionsModal');
-                
+
                 // 延遲重新載入
                 setTimeout(() => loadRealData().then(() => displayPartners(allData.partners)), 2000);
 
@@ -5980,7 +6068,7 @@ ${landingUrl}
 • 無法登入管理介面
 
 此操作可復原。確定要停用嗎？`);
-            
+
             if (!confirmed) return;
 
             try {
@@ -6000,30 +6088,30 @@ ${landingUrl}
         }
 
         // ========== 備用函數定義 (防止外部JS載入失敗) ==========
-        
+
         // 備用：管理住宿金點數 (如果 commission-management.js 載入失敗)
         if (typeof manageAccommodationPoints === 'undefined') {
-            window.manageAccommodationPoints = function(partnerCode) {
+            window.manageAccommodationPoints = function (partnerCode) {
                 const partner = allData.partners.find(p => p.partner_code === partnerCode);
                 if (!partner) {
                     showErrorMessage('找不到夥伴資料');
                     return;
                 }
-                
+
                 createAccommodationPointsModal(partner);
             };
-            
+
             // 完整的住宿金點數管理模態框
-            window.createAccommodationPointsModal = function(partner) {
+            window.createAccommodationPointsModal = function (partner) {
                 // 使用現有欄位：住宿金 = total_commission_earned, 已使用 = total_commission_paid
                 const availablePoints = partner.total_commission_earned || 0;
                 const usedPoints = partner.total_commission_paid || 0;
                 const totalPoints = availablePoints + usedPoints;
-                
+
                 const modal = document.createElement('div');
                 modal.id = 'accommodationPointsModal';
                 modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-                
+
                 modal.innerHTML = `
                     <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
                         <div class="flex justify-between items-start mb-6">
@@ -6114,74 +6202,74 @@ ${landingUrl}
                         </div>
                     </div>
                 `;
-                
+
                 document.body.appendChild(modal);
             };
-            
+
             // 設定抵扣金額
-            window.setDeductAmount = function(amount) {
+            window.setDeductAmount = function (amount) {
                 document.getElementById('deduct_amount').value = amount;
             };
-            
+
             // 處理點數抵扣
-            window.processPointsDeduction = async function(partnerCode) {
+            window.processPointsDeduction = async function (partnerCode) {
                 try {
                     const deductAmount = parseFloat(document.getElementById('deduct_amount').value) || 0;
                     const checkinDate = document.getElementById('checkin_date').value;
                     const relatedBookingId = document.getElementById('related_booking_id').value.trim();
                     const notes = document.getElementById('deduction_notes').value.trim();
-                    
+
                     if (deductAmount <= 0) {
                         showErrorMessage('請輸入有效的抵扣金額');
                         return;
                     }
-                    
+
                     if (!checkinDate) {
                         showErrorMessage('請選擇入住日期');
                         return;
                     }
-                    
+
                     if (!notes) {
                         showErrorMessage('請填寫抵扣說明');
                         return;
                     }
-                    
+
                     // 使用 form 提交避免 CORS 問題
-                    
-            // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
-            const payload = {};
-            for (const [key, value] of new URLSearchParams(params).entries()) {
-                payload[key] = value;
-            }
 
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if(data.status === 'success' || data.success) {
-                    // Success handling is usually already present in the UI via reload or reload triggers 
-                    if(typeof loadRealData === 'function') loadRealData();
-                } else {
-                    console.error('Operation failed:', data);
-                    alert('操作失敗：' + (data.message || '未知錯誤'));
-                }
-            })
-            .catch(error => {
-                console.error('Error during fetch:', error);
-                alert('網路錯誤，請稍後再試');
-            });
+                    // 轉換為 fetch 發送 JSON 給 Supabase (由腳本替換)
+                    const payload = {};
+                    for (const [key, value] of new URLSearchParams(params).entries()) {
+                        payload[key] = value;
+                    }
 
-                    
+                    fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.status === 'success' || data.success) {
+                                // Success handling is usually already present in the UI via reload or reload triggers 
+                                if (typeof loadRealData === 'function') loadRealData();
+                            } else {
+                                console.error('Operation failed:', data);
+                                alert('操作失敗：' + (data.message || '未知錯誤'));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error during fetch:', error);
+                            alert('網路錯誤，請稍後再試');
+                        });
+
+
                     setTimeout(() => {
                         // 立即更新前端數據
                         const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
@@ -6192,50 +6280,50 @@ ${landingUrl}
                             partner.total_commission_earned = Math.max(0, currentPoints - deductAmount);
                             partner.total_commission_paid = (partner.total_commission_paid || 0) + deductAmount;
                         }
-                        
+
                         showSuccessMessage(`✅ 成功抵扣 ${deductAmount.toLocaleString()} 住宿金點數！`);
                         closeModal('accommodationPointsModal');
-                        
+
                         // 重新顯示夥伴列表
                         if (typeof displayPartners === 'function') {
                             displayPartners(allData.partners);
                         }
-                        
+
                         // 清理表單
                         if (form && form.parentNode) {
                             document.body.removeChild(form);
                         }
                     }, 1000);
-                    
+
                 } catch (error) {
                     console.error('點數抵扣失敗:', error);
                     showErrorMessage('❌ 抵扣失敗：' + error.message);
                 }
             };
         }
-        
+
         // 備用：快速編輯佣金
         if (typeof quickEditCommission === 'undefined') {
-            window.quickEditCommission = function(partnerCode) {
+            window.quickEditCommission = function (partnerCode) {
                 const partner = allData.partners.find(p => p.partner_code === partnerCode);
                 if (!partner) {
                     showErrorMessage('找不到夥伴資料');
                     return;
                 }
-                
+
                 showErrorMessage('佣金編輯功能正在維護中，請稍後再試');
             };
         }
-        
+
         // 備用：創建夥伴結算
         if (typeof createPartnerPayout === 'undefined') {
-            window.createPartnerPayout = function(partnerCode) {
+            window.createPartnerPayout = function (partnerCode) {
                 const partner = allData.partners.find(p => p.partner_code === partnerCode);
                 if (!partner) {
                     showErrorMessage('找不到夥伴資料');
                     return;
                 }
-                
+
                 showErrorMessage('手動結算功能正在維護中，請使用其他結算方式');
             };
         }
@@ -6243,7 +6331,7 @@ ${landingUrl}
         /**
          * 新版聯盟夥伴列表的下拉選單互動函數
          */
-        
+
         /**
          * 輔助函式一：切換下拉選單的顯示/隱藏
          * @param {string} dropdownId - 要操作的下拉選單的 ID
@@ -6252,14 +6340,14 @@ ${landingUrl}
         function toggleActionsDropdown(dropdownId, event) {
             event.stopPropagation(); // 阻止點擊事件向上冒泡，以免立刻被下一步的 document click 關閉
             const dropdown = document.getElementById(dropdownId);
-            
+
             // 先關閉頁面上所有其他的下拉選單
             document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => {
                 if (d.id !== dropdownId) {
                     d.classList.add('hidden');
                 }
             });
-            
+
             // 切換當前點擊的選單
             dropdown.classList.toggle('hidden');
         }
@@ -6268,16 +6356,16 @@ ${landingUrl}
          * 輔助函式二：監聽整個頁面的點擊事件
          * 說明：當使用者點擊頁面任何非選單區域時，自動關閉所有已開啟的下拉選單。
          */
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             // 如果點擊的目標不是下拉選單按鈕，就關閉所有選單
             if (!event.target.closest('button[onclick*="toggleActionsDropdown"]')) {
-                 document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => d.classList.add('hidden'));
+                document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => d.classList.add('hidden'));
             }
         });
 
         // ===== 數據分析功能 =====
         let analyticsCharts = {};
-        
+
         // 載入分析數據（使用真實數據）
         function loadAnalyticsData() {
             try {
@@ -6292,39 +6380,39 @@ ${landingUrl}
                     }
                     return;
                 }
-                
+
                 updateAnalyticsMetrics();
-                
+
                 // 只在圖表尚未初始化時才初始化
                 if (!analyticsCharts.ambassadorPerformance && !analyticsCharts.levelDistribution && !analyticsCharts.giftClick) {
                     initializeAnalyticsCharts();
                 }
-                
+
                 updateAllAnalyticsCharts();
                 updateAnalyticsDetailedTable();
-                
+
             } catch (error) {
                 console.error('載入分析數據失敗:', error);
             }
         }
-        
+
         // 更新核心指標
         function updateAnalyticsMetrics() {
             // 計算整體轉換率（假設點擊數據暫時為0，未來實現）
             const totalBookings = allData.bookings.length;
             const completedBookings = allData.bookings.filter(b => b.stay_status === 'COMPLETED').length;
             const conversionRate = totalBookings > 0 ? ((completedBookings / totalBookings) * 100).toFixed(1) : '0.0';
-            
+
             // 計算平均佣金
             const totalCommission = allData.bookings
                 .filter(b => b.stay_status === 'COMPLETED')
                 .reduce((sum, b) => sum + (parseFloat(b.commission_amount) || 0), 0);
             const avgCommission = completedBookings > 0 ? Math.round(totalCommission / completedBookings) : 0;
-            
+
             // 找出最佳大使
             const partnerStats = calculateAnalyticsPartnerStats();
             const topAmbassador = partnerStats.length > 0 ? partnerStats[0] : { conversionRate: 0, name: '-' };
-            
+
             // 更新顯示
             document.getElementById('totalConversionRate').textContent = conversionRate + '%';
             document.getElementById('avgCommissionPerBooking').textContent = '$' + avgCommission;
@@ -6338,15 +6426,15 @@ ${landingUrl}
             return allData.partners.map(partner => {
                 const partnerBookings = allData.bookings.filter(b => b.partner_code === partner.partner_code);
                 const completedBookings = partnerBookings.filter(b => b.stay_status === 'COMPLETED').length;
-                
+
                 return {
                     ...partner,
                     bookings: partnerBookings.length,
                     completed: completedBookings,
                     conversionRate: partnerBookings.length > 0 ? (completedBookings / partnerBookings.length) * 100 : 0,
-                    avgOrderValue: completedBookings > 0 ? 
+                    avgOrderValue: completedBookings > 0 ?
                         partnerBookings.filter(b => b.stay_status === 'COMPLETED')
-                                     .reduce((sum, b) => sum + (parseFloat(b.room_price) || 0), 0) / completedBookings : 0
+                            .reduce((sum, b) => sum + (parseFloat(b.room_price) || 0), 0) / completedBookings : 0
                 };
             }).sort((a, b) => b.conversionRate - a.conversionRate);
         }
@@ -6407,12 +6495,12 @@ ${landingUrl}
             if (ctx3) {
                 analyticsCharts.giftClick = new Chart(ctx3, {
                     type: 'pie',
-                    data: { 
+                    data: {
                         labels: ['聲音的風景', '文字的羅盤', '森林的指引', '獨家的故事'],
-                        datasets: [{ 
-                            data: [0, 0, 0, 0], 
+                        datasets: [{
+                            data: [0, 0, 0, 0],
                             backgroundColor: ['#2E4B36', '#4B7C4B', '#8B5CF6', '#F59E0B']
-                        }] 
+                        }]
                     },
                     options: {
                         responsive: true,
@@ -6420,7 +6508,7 @@ ${landingUrl}
                         plugins: {
                             tooltip: {
                                 callbacks: {
-                                    label: function(context) {
+                                    label: function (context) {
                                         return context.label + ': 開發中';
                                     }
                                 }
@@ -6441,10 +6529,10 @@ ${landingUrl}
         // 更新大使圖表
         function updateAnalyticsAmbassadorChart() {
             if (!analyticsCharts.ambassadorPerformance) return;
-            
+
             const sortBy = document.getElementById('performanceSort')?.value || 'conversion';
             const partnerStats = calculateAnalyticsPartnerStats();
-            
+
             let sortedStats;
             switch (sortBy) {
                 case 'conversion':
@@ -6459,9 +6547,9 @@ ${landingUrl}
                 default:
                     sortedStats = partnerStats;
             }
-            
+
             const top5 = sortedStats.slice(0, 5);
-            
+
             analyticsCharts.ambassadorPerformance.data.labels = top5.map(p => p.partner_code);
             analyticsCharts.ambassadorPerformance.data.datasets[0].data = top5.map(p => {
                 switch (sortBy) {
@@ -6477,25 +6565,25 @@ ${landingUrl}
         // 更新等級分佈圖表
         function updateAnalyticsLevelChart() {
             if (!analyticsCharts.levelDistribution) return;
-            
+
             const levelCounts = {
                 'LV1_INSIDER': allData.partners.filter(p => p.level === 'LV1_INSIDER').length,
                 'LV2_GUIDE': allData.partners.filter(p => p.level === 'LV2_GUIDE').length,
                 'LV3_GUARDIAN': allData.partners.filter(p => p.level === 'LV3_GUARDIAN').length
             };
-            
+
             analyticsCharts.levelDistribution.data.datasets[0].data = [
                 levelCounts.LV1_INSIDER,
                 levelCounts.LV2_GUIDE,
                 levelCounts.LV3_GUARDIAN
             ];
             analyticsCharts.levelDistribution.update();
-            
+
             // 更新計數顯示
             const lv1El = document.getElementById('lv1Count');
             const lv2El = document.getElementById('lv2Count');
             const lv3El = document.getElementById('lv3Count');
-            
+
             if (lv1El) lv1El.textContent = levelCounts.LV1_INSIDER + ' 人';
             if (lv2El) lv2El.textContent = levelCounts.LV2_GUIDE + ' 人';
             if (lv3El) lv3El.textContent = levelCounts.LV3_GUARDIAN + ' 人';
@@ -6506,25 +6594,25 @@ ${landingUrl}
             const totalBookings = allData.bookings.length;
             const checkedIn = allData.bookings.filter(b => b.stay_status === 'CHECKED_IN' || b.stay_status === 'COMPLETED').length;
             const completed = allData.bookings.filter(b => b.stay_status === 'COMPLETED').length;
-            
+
             const funnelClicksEl = document.getElementById('funnelClicks');
             const funnelBookingsEl = document.getElementById('funnelBookings');
             const funnelCheckedInEl = document.getElementById('funnelCheckedIn');
             const funnelCompletedEl = document.getElementById('funnelCompleted');
-            
+
             if (funnelClicksEl) funnelClicksEl.textContent = '開發中';
             if (funnelBookingsEl) funnelBookingsEl.textContent = totalBookings;
             if (funnelCheckedInEl) funnelCheckedInEl.textContent = checkedIn;
             if (funnelCompletedEl) funnelCompletedEl.textContent = completed;
-            
+
             // 計算轉換率
             const checkinRate = totalBookings > 0 ? ((checkedIn / totalBookings) * 100).toFixed(1) : '0.0';
             const completionRate = checkedIn > 0 ? ((completed / checkedIn) * 100).toFixed(1) : '0.0';
-            
+
             const bookingRateEl = document.getElementById('bookingConversionRate');
             const checkinRateEl = document.getElementById('checkinConversionRate');
             const completionRateEl = document.getElementById('completionConversionRate');
-            
+
             if (bookingRateEl) bookingRateEl.textContent = '開發中';
             if (checkinRateEl) checkinRateEl.textContent = checkinRate + '%';
             if (completionRateEl) completionRateEl.textContent = completionRate + '%';
@@ -6534,14 +6622,14 @@ ${landingUrl}
         function updateAnalyticsDetailedTable() {
             const partnerStats = calculateAnalyticsPartnerStats();
             const table = document.getElementById('detailedAnalyticsTable');
-            
+
             if (!table) return;
-            
+
             if (partnerStats.length === 0) {
                 table.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-stone-500">暫無數據</td></tr>';
                 return;
             }
-            
+
             table.innerHTML = partnerStats.map(partner => `
                 <tr class="border-b hover:bg-stone-50">
                     <td class="py-3 px-4 font-medium">${partner.partner_code}</td>
@@ -6559,12 +6647,12 @@ ${landingUrl}
                 </tr>
             `).join('');
         }
-        
+
         // 更新大使圖表（當下拉選單改變時）
         function updateAmbassadorChart() {
             updateAnalyticsAmbassadorChart();
         }
-        
+
         // 匯出分析報表
         function exportAnalyticsReport() {
             const partnerStats = calculateAnalyticsPartnerStats();
@@ -6579,19 +6667,19 @@ ${landingUrl}
                 '累積佣金': parseFloat(p.total_commission_earned) || 0,
                 '平均客單價': Math.round(p.avgOrderValue)
             }));
-            
+
             downloadCSV(reportData, '知音計畫分析報表.csv');
         }
-        
+
         function downloadCSV(data, filename) {
             if (data.length === 0) return;
-            
+
             const headers = Object.keys(data[0]);
             const csvContent = [
                 headers.join(','),
                 ...data.map(row => headers.map(header => row[header]).join(','))
             ].join('\n');
-            
+
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -6601,26 +6689,26 @@ ${landingUrl}
 
         // 標籤切換功能（修復版本，包含所有標籤的數據載入）
         // 將 showTab 設定為全域函數，確保 onclick 可以訪問
-        window.showTab = function(tabName) {
+        window.showTab = function (tabName) {
             // 隱藏所有標籤內容
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.add('hidden');
             });
-            
+
             // 移除所有標籤的 active 狀態
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.classList.remove('active');
             });
-            
+
             // 顯示選中的標籤內容
             const targetContent = document.getElementById(`content-${tabName}`);
             const targetButton = document.getElementById(`tab-${tabName}`);
-            
+
             if (targetContent) targetContent.classList.remove('hidden');
             if (targetButton) targetButton.classList.add('active');
-            
+
             // 根據標籤載入相應數據
-            switch(tabName) {
+            switch (tabName) {
                 case 'overview':
                     loadOverviewData();
                     break;
@@ -6638,9 +6726,9 @@ ${landingUrl}
                     break;
             }
         }
-        
+
         // 頁面載入時初始化
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('🚀 頁面載入完成，初始化應用程式');
             // 預先載入資料
             loadRealData().then(() => {
@@ -6657,4 +6745,5 @@ ${landingUrl}
     <script src="payout-functions.js?v=20240816"></script>
     <script src="commission-management.js?v=20240816"></script>
 </body>
+
 </html>

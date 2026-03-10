@@ -1749,7 +1749,6 @@
             form.submit();
             
             // 清理表單元素
-            document.body.removeChild(form);
             
             console.log('📤 表單已提交:', data);
         }
@@ -2861,7 +2860,6 @@
 
                 document.body.appendChild(form);
                 form.submit();
-                document.body.removeChild(form);
                 
                 console.log('📡 表單已提交，使用隱藏 iframe 接收回應');
                 
@@ -3403,7 +3401,6 @@
 
                 document.body.appendChild(form);
                 form.submit();
-                document.body.removeChild(form);
                 
                 console.log('📡 編輯訂房 - 表單已提交，使用隱藏 iframe 接收回應');
                 
@@ -3799,11 +3796,6 @@
                 
                 submitButton.textContent = originalText;
                 submitButton.disabled = false;
-                
-                // 清理表單
-                if (form && form.parentNode) {
-                    document.body.removeChild(form);
-                }
 
             } catch (error) {
                 console.error('登記失敗:', error);
@@ -4575,7 +4567,6 @@
                 }
                 
                 // 清理表單
-                document.body.removeChild(form);
                 
                 const newBalance = availablePoints - amount;
                 showSuccessMessage(`✅ 成功使用 $${amount.toLocaleString()} 住宿金！\n剩餘餘額：$${newBalance.toLocaleString()}`);
@@ -4851,8 +4842,6 @@
                     // 已移除：連結生成器現在使用 iframe，不需要更新下拉選單
                     // loadPartnersForLinkGen();
                 }
-                
-                document.body.removeChild(form);
                 
             } catch (error) {
                 console.error('儲存失敗:', error);
@@ -5293,11 +5282,6 @@
                     displayPartners(allData.partners);
                 }
 
-                // 清理表單
-                if (form && form.parentNode) {
-                    document.body.removeChild(form);
-                }
-
             } catch (error) {
                 console.error('轉換失敗:', error);
                 if (!batchMode) showErrorMessage('❌ 轉換失敗：' + error.message);
@@ -5574,7 +5558,6 @@
                 
                 // 等待處理完成
                 await new Promise(resolve => setTimeout(resolve, 1500));
-                document.body.removeChild(form);
 
                 // 更新前端數據
                 const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
@@ -5800,11 +5783,6 @@
                     // 重新顯示夥伴列表
                     if (typeof displayPartners === 'function') {
                         displayPartners(allData.partners);
-                    }
-                    
-                    // 清理表單
-                    if (form && form.parentNode) {
-                        document.body.removeChild(form);
                     }
                     
                 } catch (error) {

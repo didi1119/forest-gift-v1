@@ -13,11 +13,11 @@ function createPayoutDetailsModal(payout) {
             }
         });
     }
-    
+
     const modal = document.createElement('div');
     modal.id = 'payoutDetailsModal';
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    
+
     modal.innerHTML = `
         <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-6">
@@ -126,7 +126,7 @@ function createPayoutDetailsModal(payout) {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
 }
 
@@ -144,12 +144,12 @@ function getPaymentMethodText(method) {
 // 取消結算
 async function cancelPayout(payoutId) {
     console.log('嘗試取消結算 ID:', payoutId);
-    
+
     // 同時檢查 id 和 ID 欄位（Google Sheets 可能用大寫）
-    let payout = allData.payouts.find(p => 
+    let payout = allData.payouts.find(p =>
         p.id == payoutId || String(p.id) === String(payoutId)
     );
-    
+
     // 如果找不到，嘗試用索引
     if (!payout) {
         const payoutIndex = parseInt(payoutId);
@@ -157,7 +157,7 @@ async function cancelPayout(payoutId) {
             payout = allData.payouts[payoutIndex];
         }
     }
-    
+
     // 調試輸出
     if (!payout) {
         console.error('找不到 payout，所有 payouts:', allData.payouts.map(p => ({
@@ -165,51 +165,44 @@ async function cancelPayout(payoutId) {
             partner_code: p.partner_code
         })));
     }
-    
+
     if (!payout) {
         console.error('找不到結算記錄，ID:', payoutId);
         alert('找不到結算記錄。請重新載入數據後再試。');
         return;
     }
-    
+
     const confirmMessage = `確定要取消以下結算嗎？\n\n大使：${payout.partner_code}\n金額：$${(payout.amount || 0).toLocaleString()}\n類型：${payout.payout_type === 'CASH' ? '現金' : '住宿金'}\n\n取消後該筆佣金將重新計算`;
-    
+
     if (!confirm(confirmMessage)) {
         return;
     }
-    
+
     try {
-        // 改用 fetch API 避免 403 錯誤
-        const params = new URLSearchParams({
-            action: 'cancel_payout',
-            payout_id: payoutId
-        });
-        
+        // 使用 fetch + JSON 送到後端
         const response = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: params.toString()
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'cancel_payout', payout_id: payoutId })
         });
-        
+
         const result = await response.json();
         console.log('取消結算回應:', result);
-        
+
         if (!result.success) {
             throw new Error(result.error || '取消失敗');
         }
-        
+
         // 立即更新前端數據
         const payoutIndex = allData.payouts.findIndex(p => p.id == payoutId);
         if (payoutIndex !== -1) {
             // 獲取相關訂單ID
             const relatedBookingIds = allData.payouts[payoutIndex].related_booking_ids;
-            
+
             // 更新結算狀態為已取消
             allData.payouts[payoutIndex].payout_status = 'CANCELLED';
             console.log('已更新結算狀態為 CANCELLED');
-            
+
             // 更新相關訂單狀態
             if (relatedBookingIds && relatedBookingIds !== '-') {
                 const bookingIds = String(relatedBookingIds).split(',').map(id => id.trim());
@@ -222,18 +215,18 @@ async function cancelPayout(payoutId) {
                         console.log(`前端更新訂單 ${bookingId}: stay_status → PENDING`);
                     }
                 });
-                
+
                 // 如果訂單管理頁面正在顯示，立即更新
                 if (typeof displayBookings === 'function') {
                     displayBookings(allData.bookings);
                 }
             }
         }
-        
+
         showSuccessMessage('結算已取消！相關訂單狀態已重置');
         closeModal('payoutDetailsModal');
         displayPayouts(allData.payouts);
-        
+
         // 更新大使列表，因為佣金可能已連動調整
         if (typeof displayPartners === 'function') {
             displayPartners(allData.partners);
@@ -242,9 +235,9 @@ async function cancelPayout(payoutId) {
         if (typeof displayBookings === 'function') {
             displayBookings(allData.bookings);
         }
-        
+
         console.log('結算取消完成，前端數據已更新');
-        
+
     } catch (error) {
         console.error('取消結算失敗:', error);
         alert('取消結算失敗：' + error.message);
@@ -254,12 +247,12 @@ async function cancelPayout(payoutId) {
 // 修改結算
 function editPayout(payoutId) {
     console.log('嘗試編輯結算 ID:', payoutId);
-    
+
     // 同時檢查 id 和 ID 欄位（Google Sheets 可能用大寫）
-    let payout = allData.payouts.find(p => 
+    let payout = allData.payouts.find(p =>
         p.id == payoutId || String(p.id) === String(payoutId)
     );
-    
+
     // 如果找不到，嘗試用索引
     if (!payout) {
         const payoutIndex = parseInt(payoutId);
@@ -267,7 +260,7 @@ function editPayout(payoutId) {
             payout = allData.payouts[payoutIndex];
         }
     }
-    
+
     // 調試輸出
     if (!payout) {
         console.error('找不到 payout，所有 payouts:', allData.payouts.map(p => ({
@@ -275,13 +268,13 @@ function editPayout(payoutId) {
             partner_code: p.partner_code
         })));
     }
-    
+
     if (!payout) {
         console.error('找不到結算記錄，ID:', payoutId);
         alert('找不到結算記錄。請重新載入數據後再試。');
         return;
     }
-    
+
     createEditPayoutModal(payout);
 }
 
@@ -290,7 +283,7 @@ function createEditPayoutModal(payout) {
     const modal = document.createElement('div');
     modal.id = 'editPayoutModal';
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    
+
     modal.innerHTML = `
         <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
             <div class="flex justify-between items-start mb-6">
@@ -385,7 +378,7 @@ function createEditPayoutModal(payout) {
             </form>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
 }
 
@@ -402,80 +395,54 @@ async function savePayoutChanges(payoutId) {
             accommodation_voucher_code: document.getElementById('edit_accommodation_voucher_code').value.trim(),
             notes: document.getElementById('edit_payout_notes').value.trim()
         };
-        
+
         // 移除空值欄位
         Object.keys(formData).forEach(key => {
             if (formData[key] === '' && key !== 'notes') {
                 delete formData[key];
             }
         });
-        
-        // 使用表單提交方式
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = APPS_SCRIPT_URL;
-        form.target = 'hiddenFrame';
-        form.style.display = 'none';
-        
-        Object.keys(formData).forEach(key => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = formData[key];
-            form.appendChild(input);
+
+        // 使用 fetch + JSON 送到後端
+        const response = await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
         });
-        
-        // 確保隱藏iframe存在
-        let hiddenFrame = document.getElementById('hiddenFrame');
-        if (!hiddenFrame) {
-            hiddenFrame = document.createElement('iframe');
-            hiddenFrame.id = 'hiddenFrame';
-            hiddenFrame.name = 'hiddenFrame';
-            hiddenFrame.style.display = 'none';
-            document.body.appendChild(hiddenFrame);
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || '修改失敗');
         }
-        
-        document.body.appendChild(form);
-        form.submit();
-        
-        // 延時回調處理結果
+
+        // 立即更新前端數據
+        const payoutIndex = allData.payouts.findIndex(p => p.id == payoutId);
+        if (payoutIndex !== -1) {
+            allData.payouts[payoutIndex] = {
+                ...allData.payouts[payoutIndex],
+                payout_status: formData.payout_status,
+                notes: formData.notes,
+                updated_at: new Date().toISOString()
+            };
+        }
+
+        showSuccessMessage('結算記錄修改成功！');
+        closeModal('editPayoutModal');
+        closeModal('payoutDetailsModal');
+        displayPayouts(allData.payouts);
+
+        // 延遲重新載入數據
         setTimeout(() => {
-            // 立即更新前端數據
-            const payoutIndex = allData.payouts.findIndex(p => p.id == payoutId);
-            if (payoutIndex !== -1) {
-                allData.payouts[payoutIndex] = {
-                    ...allData.payouts[payoutIndex],
-                    payout_type: formData.payout_type,
-                    amount: formData.amount,
-                    payout_status: formData.payout_status,
-                    notes: formData.notes,
-                    updated_at: new Date().toISOString()
-                };
-                console.log('已更新前端結算數據');
-            }
-            
-            showSuccessMessage('結算記錄修改成功！');
-            closeModal('editPayoutModal');
-            closeModal('payoutDetailsModal');
-            displayPayouts(allData.payouts);
-            
-            // 延遲重新載入數據，避免與 iframe 衝突
-            setTimeout(() => {
-                loadRealData().then(() => {
-                    console.log('結算修改後數據重新載入完成');
-                    displayPayouts(allData.payouts);
-                    // 同時更新大使列表，因為佣金可能已連動調整
-                    if (typeof displayPartners === 'function') {
-                        displayPartners(allData.partners);
-                    }
-                }).catch(error => {
-                    console.error('重新載入數據失敗:', error);
-                });
-            }, 2000); // 延遲 2 秒再重新載入
-            
-            document.body.removeChild(form);
+            loadRealData().then(() => {
+                displayPayouts(allData.payouts);
+                if (typeof displayPartners === 'function') {
+                    displayPartners(allData.partners);
+                }
+            }).catch(error => {
+                console.error('重新載入數據失敗:', error);
+            });
         }, 1000);
-        
+
     } catch (error) {
         console.error('修改結算失敗:', error);
         alert('修改結算失敗：' + error.message);
@@ -487,7 +454,7 @@ function createPayoutReportModal() {
     const modal = document.createElement('div');
     modal.id = 'payoutReportModal';
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    
+
     // 計算報表數據
     const totalPayouts = allData.payouts.length;
     const completedPayouts = allData.payouts.filter(p => p.payout_status === 'COMPLETED').length;
@@ -496,7 +463,7 @@ function createPayoutReportModal() {
     const completedAmount = allData.payouts.filter(p => p.payout_status === 'COMPLETED')
         .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
     const pendingAmount = totalAmount - completedAmount;
-    
+
     // 按大使分組統計
     const partnerStats = {};
     allData.payouts.forEach(payout => {
@@ -512,14 +479,14 @@ function createPayoutReportModal() {
         const amount = parseFloat(payout.amount) || 0;
         partnerStats[payout.partner_code].total_amount += amount;
         partnerStats[payout.partner_code].count += 1;
-        
+
         if (payout.payout_status === 'COMPLETED') {
             partnerStats[payout.partner_code].completed_amount += amount;
         } else {
             partnerStats[payout.partner_code].pending_amount += amount;
         }
     });
-    
+
     modal.innerHTML = `
         <div class="bg-white rounded-lg p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-6">
@@ -608,7 +575,7 @@ function createPayoutReportModal() {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
 }
 
@@ -627,14 +594,14 @@ function exportPayoutReport() {
             (payout.notes || '').replace(/,/g, '；') // 替換逗號避免CSV格式問題
         ].join(','))
     ].join('\n');
-    
+
     // 下載CSV文件
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `結算報表_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-    
+
     showSuccessMessage('結算報表已匯出！');
 }
 
@@ -643,7 +610,7 @@ function formatDateDisplay(dateStr) {
     if (!dateStr) return '';
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return dateStr;
-    return date.getFullYear() + '-' + 
-           String(date.getMonth() + 1).padStart(2, '0') + '-' + 
-           String(date.getDate()).padStart(2, '0');
+    return date.getFullYear() + '-' +
+        String(date.getMonth() + 1).padStart(2, '0') + '-' +
+        String(date.getDate()).padStart(2, '0');
 }

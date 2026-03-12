@@ -4691,10 +4691,18 @@
         // 提交點數轉現金
         async function submitPointsToCash(partnerCode) {
             try {
+                const partner = allData.partners.find(p => p.partner_code === partnerCode);
+                if (!partner) {
+                    showErrorMessage('找不到夥伴資料');
+                    return;
+                }
+
                 const points = parseInt(document.getElementById('points_to_convert').value) || 0;
                 const notes = document.getElementById('conversion_notes').value.trim();
                 const exchangeRate = 0.5;
                 const cashAmount = Math.floor(points * exchangeRate);
+                const availablePoints = parseFloat(partner.available_points) || 0;
+                const pointsUsed = parseFloat(partner.points_used) || 0;
                 
                 if (points <= 0) {
                     showErrorMessage('請輸入有效的轉換點數');

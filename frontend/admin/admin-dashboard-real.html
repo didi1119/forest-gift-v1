@@ -795,20 +795,17 @@
                 const issues = [];
                 const firstBooking = bookings[0];
                 
-                // 檢查欄位映射問題
                 const actualFields = Object.keys(firstBooking);
                 const expectedFields = BOOKING_FIELDS.FIELD_ORDER;
-                
-                if (actualFields.length !== expectedFields.length) {
-                    issues.push(`欄位數量不匹配：實際 ${actualFields.length} 個，期望 ${expectedFields.length} 個`);
+
+                // Supabase / PostgREST 回傳的是物件，不保證欄位順序。
+                // 這裡只檢查真正影響功能的欄位是否存在，不再把欄位順序視為致命錯誤。
+                const missingCoreFields = BOOKING_FIELDS.REQUIRED.filter(field => !actualFields.includes(field));
+                if (!actualFields.includes('id')) {
+                    missingCoreFields.unshift('id');
                 }
-                
-                // 檢查欄位順序和名稱
-                actualFields.forEach((actualField, index) => {
-                    const expectedField = expectedFields[index];
-                    if (actualField !== expectedField) {
-                        issues.push(`欄位 ${index} 不匹配：得到 "${actualField}"，期望 "${expectedField}"`);
-                    }
+                missingCoreFields.forEach(field => {
+                    issues.push(`缺少核心欄位: "${field}"`);
                 });
                 
                 // 檢查數據類型問題
@@ -836,7 +833,10 @@
                 return {
                     hasIssues: issues.length > 0,
                     issues: issues,
-                    firstBooking: firstBooking
+                    firstBooking: firstBooking,
+                    actualFields: actualFields,
+                    expectedFields: expectedFields,
+                    missingCoreFields: missingCoreFields
                 };
             }
         };

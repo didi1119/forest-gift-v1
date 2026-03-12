@@ -57,8 +57,8 @@
                     <select id="statusFilter" class="p-2 border-2 border-stone-200 rounded-lg focus:border-green-800">
                         <option value="">全部狀態</option>
                         <option value="PENDING">待入住</option>
-                        <option value="CHECKED_IN">已入住</option>
-                        <option value="COMPLETED" selected>可確認完成</option>
+                        <option value="CHECKED_IN" selected>可確認完成</option>
+                        <option value="COMPLETED">已完成</option>
                     </select>
                 </div>
                 <div>
@@ -153,6 +153,7 @@
         const APPS_SCRIPT_URL = '/api';
         
         let allBookings = [];
+        let allPartners = [];
         let currentBookingToConfirm = null;
         
         // 佣金等級對照表
@@ -164,11 +165,80 @@
         
         const FIRST_REFERRAL_BONUS = 1500; // 首次推薦獎勵
 
+        function formatDateDisplay(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return String(dateStr).split('T')[0];
+            return date.toISOString().split('T')[0];
+        }
+
+        function buildPartnerMap(partners) {
+            const map = new Map();
+            (partners || []).forEach(partner => {
+                if (partner && partner.partner_code) {
+                    map.set(partner.partner_code, partner);
+                }
+            });
+            return map;
+        }
+
+        function normalizeBooking(rawBooking, partnerMap) {
+            const booking = rawBooking || {};
+            const partner = booking.partner_code ? partnerMap.get(booking.partner_code) : null;
+            const successfulReferrals = parseInt(partner?.successful_referrals || partner?.total_successful_referrals || 0, 10) || 0;
+
+            return {
+                ...booking,
+                id: booking.id,
+                partner_name: partner?.partner_name || booking.partner_name || null,
+                partner_level: partner?.partner_level || booking.partner_level || 'LV1_INSIDER',
+                partner_progress: parseInt(partner?.yearly_referrals || partner?.level_progress || booking.partner_progress || 0, 10) || 0,
+                partner_first_bonus: successfulReferrals > 0,
+                partner_preference: partner?.commission_preference || booking.partner_preference || 'CASH',
+                guest_name: booking.guest_name || '',
+                guest_phone: booking.guest_phone || '',
+                checkin_date: formatDateDisplay(booking.checkin_date),
+                checkout_date: formatDateDisplay(booking.checkout_date),
+                room_price: Number(booking.room_price) || 0,
+                stay_status: booking.stay_status || 'PENDING',
+                payment_status: booking.payment_status || 'PENDING',
+                commission_status: booking.commission_status || 'NOT_ELIGIBLE',
+                manually_confirmed_at: booking.manually_confirmed_at || null,
+                updated_at: booking.updated_at || null,
+            };
+        }
+
         // 載入訂房記錄
         async function loadBookings() {
             try {
-                // 目前使用模擬數據，實際使用時會從 Google Sheets 載入
-                loadMockBookings();
+                showLoadingState();
+
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({ action: 'get_dashboard_data' })
+                });
+
+                const responseText = await response.text();
+                let result;
+                try {
+                    result = responseText ? JSON.parse(responseText) : {};
+                } catch (parseError) {
+                    throw new Error('後端回應格式錯誤：' + parseError.message);
+                }
+
+                if (!response.ok || result.success === false) {
+                    throw new Error(result.error || result.message || `HTTP ${response.status}`);
+                }
+
+                allPartners = Array.isArray(result.data?.partners) ? result.data.partners : [];
+                const partnerMap = buildPartnerMap(allPartners);
+                allBookings = (Array.isArray(result.data?.bookings) ? result.data.bookings : [])
+                    .map(booking => normalizeBooking(booking, partnerMap))
+                    .sort((a, b) => new Date(b.checkin_date) - new Date(a.checkin_date));
+
                 displayBookings();
                 updateStats();
                 
@@ -178,61 +248,14 @@
             }
         }
 
-        // 載入模擬數據
-        function loadMockBookings() {
-            allBookings = [
-                {
-                    id: 1,
-                    partner_code: 'WANG001',
-                    partner_name: '王小明',
-                    partner_level: 'LV1_INSIDER',
-                    partner_progress: 0,
-                    partner_first_bonus: false,
-                    partner_preference: 'CASH',
-                    guest_name: '張三',
-                    guest_phone: '0912345678',
-                    checkin_date: '2024-02-10',
-                    checkout_date: '2024-02-12',
-                    room_price: 5000,
-                    stay_status: 'CHECKED_IN',
-                    payment_status: 'PAID',
-                    commission_status: 'NOT_ELIGIBLE',
-                    booking_source: 'REFERRAL_LINK'
-                },
-                {
-                    id: 2,
-                    partner_code: 'CHEN002',
-                    partner_name: '陳小美',
-                    partner_level: 'LV1_INSIDER',
-                    partner_progress: 1,
-                    partner_first_bonus: true,
-                    partner_preference: 'ACCOMMODATION',
-                    guest_name: '李四',
-                    guest_phone: '0987654321',
-                    checkin_date: '2024-02-15',
-                    checkout_date: '2024-02-17',
-                    room_price: 4000,
-                    stay_status: 'CHECKED_IN',
-                    payment_status: 'PAID',
-                    commission_status: 'NOT_ELIGIBLE',
-                    booking_source: 'PHONE_BOOKING'
-                },
-                {
-                    id: 3,
-                    partner_code: null,
-                    partner_name: null,
-                    partner_level: null,
-                    guest_name: '王五',
-                    guest_phone: '0900123456',
-                    checkin_date: '2024-02-20',
-                    checkout_date: '2024-02-22',
-                    room_price: 3500,
-                    stay_status: 'PENDING',
-                    payment_status: 'PAID',
-                    commission_status: 'NOT_ELIGIBLE',
-                    booking_source: 'MANUAL_ENTRY'
-                }
-            ];
+        function showLoadingState() {
+            document.getElementById('bookingsTable').innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-8 text-stone-500">
+                        載入中...
+                    </td>
+                </tr>
+            `;
         }
 
         // 顯示訂房記錄
@@ -432,23 +455,9 @@
                 // 使用表單提交方式（避免CORS問題）
                 await submitFormData(confirmData);
                 
-                // 更新本地數據
-                booking.stay_status = 'COMPLETED';
-                booking.commission_status = 'CALCULATED';
-                
-                // 更新大使進度（如果有推薦大使）
-                if (booking.partner_code) {
-                    booking.partner_progress += 1;
-                    booking.partner_first_bonus = true;
-                    
-                    // 檢查等級晉升
-                    checkLevelUpgrade(booking);
-                }
-                
                 showToast('✅ 入住確認完成，佣金已計算並記錄！');
                 closeConfirmModal();
-                displayBookings();
-                updateStats();
+                await loadBookings();
                 
             } catch (error) {
                 console.error('確認失敗:', error);
@@ -457,25 +466,6 @@
             } finally {
                 button.textContent = originalText;
                 button.disabled = false;
-            }
-        }
-
-        // 檢查等級晉升
-        function checkLevelUpgrade(booking) {
-            const currentLevel = booking.partner_level;
-            const progress = booking.partner_progress;
-            
-            let newLevel = currentLevel;
-            
-            if (currentLevel === 'LV1_INSIDER' && progress >= 4) {
-                newLevel = 'LV2_GUIDE';
-            } else if (currentLevel === 'LV2_GUIDE' && progress >= 10) {
-                newLevel = 'LV3_GUARDIAN';
-            }
-            
-            if (newLevel !== currentLevel) {
-                booking.partner_level = newLevel;
-                showToast(`🎉 ${booking.partner_name} 晉升為 ${getLevelText(newLevel)}！`, 'success');
             }
         }
 
@@ -514,9 +504,15 @@
         // 更新統計數據
         function updateStats() {
             const pendingBookings = allBookings.filter(b => b.stay_status === 'CHECKED_IN' && b.payment_status === 'PAID').length;
-            const completedToday = allBookings.filter(b => b.stay_status === 'COMPLETED').length;
+            const today = new Date().toISOString().split('T')[0];
+            const completedTodayBookings = allBookings.filter(b => {
+                if (b.stay_status !== 'COMPLETED') return false;
+                const confirmedDate = formatDateDisplay(b.manually_confirmed_at || b.updated_at);
+                return confirmedDate === today;
+            });
+            const completedToday = completedTodayBookings.length;
             const totalCommission = allBookings
-                .filter(b => b.stay_status === 'COMPLETED' && b.partner_code)
+                .filter(b => completedTodayBookings.some(todayBooking => todayBooking.id === b.id) && b.partner_code)
                 .reduce((sum, b) => sum + calculateEstimatedCommission(b).total, 0);
             const levelUps = 0; // 實際應該從系統記錄中計算
             

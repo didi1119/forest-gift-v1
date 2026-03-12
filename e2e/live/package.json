@@ -1,0 +1,22 @@
+{
+  "name": "forest-gift-live-e2e",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "admin-ui": "node scripts/e2e-admin-ui.js",
+    "partner-financial": "node scripts/e2e-partner-financial-ui.js",
+    "partner-adjustments": "node scripts/e2e-partner-adjustments-ui.js",
+    "overview-batch": "node scripts/e2e-overview-batch-ui.js",
+    "payout-management": "node scripts/e2e-payout-management-ui.js",
+    "payout-labels": "node scripts/e2e-payout-labels-ui.js",
+    "batch-partner-ops": "node scripts/e2e-batch-partner-ops-ui.js",
+    "manual-checkin": "node scripts/e2e-manual-checkin-ui.js",
+    "retroactive-commissions": "node scripts/e2e-retroactive-commissions-ui.js",
+    "level-boundaries": "node scripts/e2e-level-boundaries-ui.js",
+    "level-debt": "node scripts/e2e-level-debt-ui.js",
+    "payout-reversal": "node scripts/e2e-payout-reversal-ui.js",
+    "public-funnel": "node scripts/e2e-public-funnel-ui.js",
+    "api-edge": "node scripts/e2e-api-edge-cases.js",
+    "suite": "./run-suite.sh"
+  }
+}

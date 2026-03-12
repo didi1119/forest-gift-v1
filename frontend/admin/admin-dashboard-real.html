@@ -891,7 +891,8 @@
             lastFetchTime: null,
             isFetching: false,
             cacheTimeout: 5 * 60 * 1000, // 5 分鐘快取
-            isDataLoaded: false
+            isDataLoaded: false,
+            currentFetchPromise: null
         };
 
 
@@ -900,6 +901,9 @@
             // 檢查是否正在載入
             if (dataCache.isFetching) {
                 console.log('⏳ 數據正在載入中，避免重複請求');
+                if (dataCache.currentFetchPromise) {
+                    await dataCache.currentFetchPromise;
+                }
                 return;
             }
             
@@ -913,50 +917,51 @@
                 return;
             }
             
-            try {
-                dataCache.isFetching = true;
-                showLoadingSpinner('載入數據中...');
-                console.log('🔄 開始載入真實數據...');
-                console.log('🌐 請求 URL:', APPS_SCRIPT_URL);
-                
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'action=get_dashboard_data'
-                });
-                
-                console.log('📡 收到回應:', response.status, response.statusText);
-                console.log('📡 回應類型:', response.headers.get('content-type'));
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
-                }
-                
-                const result = await response.text();
-                console.log('📄 原始回應內容:', result);
-                
-                let data;
+            dataCache.isFetching = true;
+            dataCache.currentFetchPromise = (async () => {
                 try {
-                    data = JSON.parse(result);
-                } catch (parseError) {
-                    console.error('❌ JSON 解析失敗:', parseError);
-                    console.error('原始內容:', result);
-                    throw new Error('回應格式不正確: ' + parseError.message);
-                }
-                
-                console.log('解析後的數據:', data);
-                
-                if (data.success) {
-                    // 合併數據而不是覆蓋，確保所有陣列都存在
-                    allData = {
-                        partners: data.data.partners || [],
-                        bookings: data.data.bookings || [],
-                        payouts: data.data.payouts || [],
-                        clicks: data.data.clicks || [],
-                        accommodation_usage: data.data.accommodation_usage || []
-                    };
+                    showLoadingSpinner('載入數據中...');
+                    console.log('🔄 開始載入真實數據...');
+                    console.log('🌐 請求 URL:', APPS_SCRIPT_URL);
+                    
+                    const response = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: 'action=get_dashboard_data'
+                    });
+                    
+                    console.log('📡 收到回應:', response.status, response.statusText);
+                    console.log('📡 回應類型:', response.headers.get('content-type'));
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                    }
+                    
+                    const result = await response.text();
+                    console.log('📄 原始回應內容:', result);
+                    
+                    let data;
+                    try {
+                        data = JSON.parse(result);
+                    } catch (parseError) {
+                        console.error('❌ JSON 解析失敗:', parseError);
+                        console.error('原始內容:', result);
+                        throw new Error('回應格式不正確: ' + parseError.message);
+                    }
+                    
+                    console.log('解析後的數據:', data);
+                    
+                    if (data.success) {
+                        // 合併數據而不是覆蓋，確保所有陣列都存在
+                        allData = {
+                            partners: data.data.partners || [],
+                            bookings: (data.data.bookings || []).map(booking => BookingDataManager.normalizeBooking(booking)),
+                            payouts: data.data.payouts || [],
+                            clicks: data.data.clicks || [],
+                            accommodation_usage: data.data.accommodation_usage || []
+                        };
                     console.log('✅ 載入真實數據成功:');
                     console.log('- Partners:', allData.partners?.length || 0);
                     console.log('- Bookings:', allData.bookings?.length || 0);
@@ -1073,16 +1078,16 @@
                     }
                     
                     // 更新快取狀態
-                    dataCache.lastFetchTime = Date.now();
-                    dataCache.isDataLoaded = true;
-                } else {
-                    throw new Error(data.error || '載入數據失敗');
-                }
-                
-                hideLoadingSpinner();
-                
-            } catch (error) {
-                console.error('❌ 載入真實數據失敗:', error);
+                        dataCache.lastFetchTime = Date.now();
+                        dataCache.isDataLoaded = true;
+                    } else {
+                        throw new Error(data.error || '載入數據失敗');
+                    }
+                    
+                    hideLoadingSpinner();
+                    
+                } catch (error) {
+                    console.error('❌ 載入真實數據失敗:', error);
                 console.error('錯誤詳情:', {
                     message: error.message,
                     stack: error.stack
@@ -1106,9 +1111,13 @@
                 // 使用模擬數據作為備用方案
                 loadMockData();
                 console.log('🔄 已切換到模擬數據模式');
-            } finally {
-                dataCache.isFetching = false;
-            }
+                } finally {
+                    dataCache.isFetching = false;
+                    dataCache.currentFetchPromise = null;
+                }
+            })();
+
+            await dataCache.currentFetchPromise;
         }
 
         // 載入概覽數據

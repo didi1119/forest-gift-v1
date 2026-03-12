@@ -677,6 +677,25 @@ async function handleCancelPayout(data) {
         created_by: 'SYSTEM'
       });
     }
+  } else if (!hasRelatedBooking && payout.payout_status === 'PENDING' && payout.payout_type !== 'CASH_CONVERSION' && payout.payout_type !== 'POINTS_REFUND') {
+    const partner = await findPartnerByCode(payout.partner_code);
+    if (partner) {
+      const restoredAmount = Math.abs(parseFloat(payout.amount) || 0);
+      await updateRecord('Partners', partner.partner_code, {
+        pending_commission: (parseFloat(partner.pending_commission) || 0) + restoredAmount
+      });
+
+      await createRecord('Payouts', {
+        partner_code: payout.partner_code,
+        payout_type: 'COMMISSION_REVERSAL',
+        amount: -restoredAmount,
+        related_booking_ids: payout.related_booking_ids || '',
+        payout_method: 'OTHER',
+        payout_status: 'COMPLETED',
+        notes: `撤銷純結算 Payout #${payoutId}，恢復待支付現金 NT$ ${restoredAmount}`,
+        created_by: 'SYSTEM'
+      });
+    }
   } else if (payout.payout_type === 'CASH_CONVERSION') {
     const partner = await findPartnerByCode(payout.partner_code);
     if (partner) {

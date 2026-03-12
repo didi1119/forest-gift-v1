@@ -3302,11 +3302,8 @@
                 
                 const submitData = {
                     action: 'update_booking',
-                    // 傳遞 ID（如果有的話）和查找必要資訊
+                    // Supabase 以 booking_id 作為唯一識別，不再傳送舊 Sheets 查找欄位
                     booking_id: existingBooking.id || '',
-                    // 添加原始的姓名和電話作為查找條件（使用更新前的值）
-                    original_guest_name: existingBooking.guest_name,
-                    original_guest_phone: existingBooking.guest_phone,
                     ...updatedBooking
                 };
 
@@ -3379,7 +3376,38 @@
         // 取得等級文字（已在上方定義，此處刪除重複以避免覆蓋）
 
         function filterBookings() {
-            console.log('篩選訂單');
+            const statusFilter = document.getElementById('bookingStatusFilter')?.value || '';
+            const searchTerm = (document.getElementById('searchBooking')?.value || '').trim().toLowerCase();
+            const bookings = Array.isArray(allData.bookings) ? allData.bookings : [];
+
+            const filteredBookings = bookings.filter(booking => {
+                if (statusFilter && booking.stay_status !== statusFilter) {
+                    return false;
+                }
+
+                if (!searchTerm) {
+                    return true;
+                }
+
+                const partner = booking.partner_code
+                    ? allData.partners.find(p => p.partner_code === booking.partner_code)
+                    : null;
+
+                const searchableValues = [
+                    booking.guest_name,
+                    booking.guest_phone,
+                    booking.guest_email,
+                    booking.partner_code,
+                    partner?.partner_name,
+                    partner?.name
+                ]
+                    .filter(Boolean)
+                    .map(value => String(value).toLowerCase());
+
+                return searchableValues.some(value => value.includes(searchTerm));
+            });
+
+            displayBookings(filteredBookings);
         }
 
         // 開啟手動訂房模態框

@@ -398,6 +398,7 @@ async function handleUpdateBooking(data) {
 
     delete data.action; delete data.booking_id; delete data.id;
     delete data.created_at; delete data._internal_call; delete data.admin_secret;
+    delete data.original_guest_name; delete data.original_guest_phone;
 
     const changes = analyzeBookingChanges(oldBooking, data);
 

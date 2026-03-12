@@ -5126,14 +5126,13 @@
                 return;
             }
 
+            const partnerCodes = Array.from(selectedPartners);
             const operationLabel = getBatchOperationLabel(operation);
-            const confirmed = confirm(`確定要對 ${selectedPartners.size} 位夥伴執行「${operationLabel}」操作嗎？`);
+            const confirmed = confirm(`確定要對 ${partnerCodes.length} 位夥伴執行「${operationLabel}」操作嗎？`);
             if (!confirmed) return;
 
             try {
-                const results = [];
-                
-                for (const partnerCode of selectedPartners) {
+                for (const partnerCode of partnerCodes) {
                     switch (operation) {
                         case 'convert_all':
                             await quickConvertToCash(partnerCode, true); // true = batch mode
@@ -5148,7 +5147,7 @@
                 }
                 
                 await forceReloadCurrentData();
-                showSuccessMessage(`✅ 批量操作完成！已執行「${operationLabel}」並處理 ${selectedPartners.size} 位夥伴`);
+                showSuccessMessage(`✅ 批量操作完成！已執行「${operationLabel}」並處理 ${partnerCodes.length} 位夥伴`);
                 clearSelection();
                 
             } catch (error) {

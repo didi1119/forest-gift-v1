@@ -743,6 +743,46 @@ async function handleProcessPayout(data) {
   };
 }
 
+async function handleRevertCashToPoints(data) {
+  const partnerCode = data.partner_code;
+  if (!partnerCode) throw new Error('Partner code is required');
+
+  const partner = await findPartnerByCode(partnerCode);
+  if (!partner) throw new Error('Partner not found');
+
+  const cashAmount = parseFloat(data.amount || data.pending_commission || partner.pending_commission || 0);
+  if (cashAmount <= 0) throw new Error('No pending cash to revert');
+
+  const currentPending = parseFloat(partner.pending_commission || 0);
+  if (currentPending < cashAmount) {
+    throw new Error(`待支付現金不足。可用：${currentPending}，需要：${cashAmount}`);
+  }
+
+  const pointsAmount = Math.floor(cashAmount * 2);
+  const partnerUpdates = {
+    available_points: (parseFloat(partner.available_points) || 0) + pointsAmount,
+    pending_commission: Math.max(0, currentPending - cashAmount)
+  };
+  await updateRecord('Partners', partner.partner_code, partnerUpdates);
+
+  const payout = await createRecord('Payouts', {
+    partner_code: partnerCode,
+    payout_type: 'POINTS_ADJUSTMENT',
+    amount: pointsAmount,
+    payout_method: 'MANUAL_ADJUSTMENT',
+    payout_status: 'COMPLETED',
+    notes: data.notes || `現金轉回住宿金：NT$ ${cashAmount} → ${pointsAmount} 點`,
+    created_by: data.created_by || 'admin'
+  });
+
+  return {
+    success: true,
+    message: `Converted NT$ ${cashAmount} to ${pointsAmount} points`,
+    payout_id: payout.id,
+    data: { payout, available_points: partnerUpdates.available_points, pending_commission: partnerUpdates.pending_commission }
+  };
+}
+
 async function handleUpdatePartnerCommission(data) {
   const partnerCode = data.partner_code;
   if (!partnerCode) throw new Error('Partner code is required');
@@ -1582,6 +1622,7 @@ async function route(action, data) {
     'update_payout': handleUpdatePayout,
     'cancel_payout': handleCancelPayout,
     'process_payout': handleProcessPayout,
+    'revert_cash_to_points': handleRevertCashToPoints,
     'update_partner': handleUpdatePartner,
     'update_partner_commission': handleUpdatePartnerCommission,
     'use_accommodation_points': handleUseAccommodationPoints,

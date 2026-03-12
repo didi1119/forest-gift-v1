@@ -5342,14 +5342,10 @@
             if (!confirmed) return;
 
             try {
-                // 創建新的住宿金結算記錄
                 const submitData = {
-                    action: 'create_payout',
+                    action: 'revert_cash_to_points',
                     partner_code: partnerCode,
-                    payout_type: 'ACCOMMODATION',
-                    amount: accommodationPoints,
-                    payout_method: 'MANUAL_ADJUSTMENT',
-                    payout_status: 'COMPLETED',
+                    amount: pendingCash,
                     notes: `🔄 現金轉回住宿金：NT$ ${pendingCash} → ${accommodationPoints} 點`
                 };
 
@@ -5357,6 +5353,11 @@
                 console.log('🔄 現金轉回住宿金 - 後端已回應:', responseData);
 
                 await forceReloadCurrentData();
+                updatePartnerInMemory(partnerCode, {
+                    available_points: (parseFloat(partner.available_points) || 0) + accommodationPoints,
+                    pending_commission: 0
+                });
+                displayPartners(allData.partners);
 
                 showSuccessMessage(`✅ 轉換完成！NT$ ${pendingCash.toLocaleString()} → ${accommodationPoints.toLocaleString()} 住宿金點數`);
                 closeModal('partnerActionsModal');

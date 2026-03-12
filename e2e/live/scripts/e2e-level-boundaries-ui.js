@@ -248,8 +248,9 @@ async function showOverview(page) {
       throw new Error(`Accommodation upgrade mismatch: ${JSON.stringify({ accPartnerAfterUpgrade, accBookingAfterUpgrade })}`);
     }
 
+    await refreshDashboard(page);
     await showOverview(page);
-    const accCardAfterUpgrade = await page.locator(`[data-partner-code="${accPartnerCode}"]`).innerText();
+    const accCardAfterUpgrade = await page.locator(`.brand-card[data-partner-code="${accPartnerCode}"]`).innerText();
     log('ACC_CARD_AFTER_UPGRADE', accCardAfterUpgrade);
     expectIncludes(accCardAfterUpgrade, 'LV2 森林嚮導', 'acc upgraded card level');
     expectIncludes(accCardAfterUpgrade, '4,000', 'acc upgraded points');
@@ -264,7 +265,7 @@ async function showOverview(page) {
     expectIncludes(lastDialogMessage, accBooking1, 'acc delete confirm guest');
     await refreshDashboard(page);
     await showOverview(page);
-    const accCardAfterDelete = await page.locator(`[data-partner-code="${accPartnerCode}"]`).innerText();
+    const accCardAfterDelete = await page.locator(`.brand-card[data-partner-code="${accPartnerCode}"]`).innerText();
     log('ACC_CARD_AFTER_DELETE', accCardAfterDelete);
     expectIncludes(accCardAfterDelete, 'LV1 知音大使', 'acc downgraded card level');
     expectIncludes(accCardAfterDelete, '3,000', 'acc downgraded points');
@@ -328,8 +329,9 @@ async function showOverview(page) {
     if (cashPartnerAfterUpgrade.partner_level !== 'LV3_GUARDIAN' || Number(cashPartnerAfterUpgrade.yearly_referrals) !== 10 || Number(cashBooking1After.commission_amount) !== 600 || cashBooking1After.commission_type !== 'CASH') {
       throw new Error(`Cash upgrade mismatch: ${JSON.stringify({ cashPartnerAfterUpgrade, cashBooking1After })}`);
     }
+    await refreshDashboard(page);
     await showOverview(page);
-    const cashCardAfterUpgrade = await page.locator(`[data-partner-code="${cashPartnerCode}"]`).innerText();
+    const cashCardAfterUpgrade = await page.locator(`.brand-card[data-partner-code="${cashPartnerCode}"]`).innerText();
     log('CASH_CARD_AFTER_UPGRADE', cashCardAfterUpgrade);
     expectIncludes(cashCardAfterUpgrade, 'LV3 秘境守護者', 'cash upgraded card level');
     expectIncludes(cashCardAfterUpgrade, '6,000', 'cash upgraded pending cash');

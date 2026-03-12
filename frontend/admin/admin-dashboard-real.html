@@ -2844,6 +2844,11 @@
                 console.log('📡 確認入住 - 後端已回應:', responseData);
 
                 await loadRealData(true);
+                upsertBookingInMemory({
+                    ...updatedBooking,
+                    id: responseData.booking_id || normalizedBooking.id,
+                    stay_status: status
+                });
                 showTab('bookings');
                 filterBookings();
                 showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
@@ -3318,7 +3323,10 @@
                 const responseData = await submitToBackendViaForm(submitData);
                 console.log('📡 編輯訂房 - 後端已回應:', responseData);
 
-                await forceReloadCurrentData();
+                await loadRealData(true);
+                upsertBookingInMemory(responseData.data || { id: existingBooking.id, ...updatedBooking });
+                showTab('bookings');
+                filterBookings();
                 showSuccessMessage('✅ 訂單更新成功！');
                 closeModal('editBookingModal');
             } catch (error) {
@@ -3365,7 +3373,14 @@
                 
                 // 使用統一的後端提交函數
                 await submitToBackendViaForm(deleteData);
-                await forceReloadCurrentData();
+                await loadRealData(true);
+                upsertBookingInMemory({
+                    ...booking,
+                    stay_status: 'CANCELLED',
+                    commission_status: 'CANCELLED'
+                });
+                showTab('bookings');
+                filterBookings();
                 showSuccessMessage('✅ 訂單已成功刪除！');
                 closeModal('editBookingModal');
                 
@@ -3416,6 +3431,26 @@
             const normalizedIdentifier = String(bookingIdentifier);
             return allData.bookings.find(booking => String(booking.id) === normalizedIdentifier)
                 || allData.bookings[Number(bookingIdentifier)];
+        }
+
+        function upsertBookingInMemory(rawBooking) {
+            if (!rawBooking) return;
+
+            const normalizedBooking = BookingDataManager.normalizeBooking(rawBooking);
+            const bookingId = normalizedBooking.id;
+            const existingIndex = allData.bookings.findIndex(
+                booking => String(booking.id) === String(bookingId)
+            );
+
+            if (existingIndex >= 0) {
+                allData.bookings[existingIndex] = {
+                    ...allData.bookings[existingIndex],
+                    ...normalizedBooking
+                };
+                return;
+            }
+
+            allData.bookings.push(normalizedBooking);
         }
 
         // 開啟手動訂房模態框
@@ -3687,8 +3722,12 @@
                 // 重新載入所有數據並切換到訂單管理頁
                 try {
                     await loadRealData(true);
+                    const createdBookingId = result.booking_id || result.data?.id;
+                    if (createdBookingId && !allData.bookings.some(booking => String(booking.id) === String(createdBookingId))) {
+                        upsertBookingInMemory(result.data || { id: createdBookingId, ...bookingData });
+                    }
                     showTab('bookings');
-                    displayBookings(allData.bookings);
+                    filterBookings();
                     console.log('✅ 手動訂房登記完成，已切換到訂單管理頁');
                     showSuccessMessage('✅ 訂房記錄已成功登記！');
                 } catch (error) {

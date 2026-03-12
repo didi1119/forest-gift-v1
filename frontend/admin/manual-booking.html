@@ -148,9 +148,6 @@
         </div>
     </div>
 
-    <!-- 隱藏的 iframe 用於接收表單回應 -->
-    <iframe id="hiddenFrame" name="hiddenFrame" style="display:none;"></iframe>
-
     <script>
         // 設定值
         const APPS_SCRIPT_URL = '/api';
@@ -203,48 +200,49 @@
             submitButton.disabled = true;
 
             try {
-                // 使用表單提交方式（避免CORS問題）
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = APPS_SCRIPT_URL;
-                form.target = 'hiddenFrame';
-                form.style.display = 'none';
-
-                // 添加所有數據作為隱藏輸入
+                const body = new URLSearchParams();
                 for (const [key, value] of Object.entries(formData)) {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = value || '';
-                    form.appendChild(input);
+                    if (value === undefined || value === null) continue;
+                    body.set(key, value);
                 }
 
-                // 監聽 iframe 載入完成事件
-                const iframe = document.getElementById('hiddenFrame');
-                iframe.onload = function() {
-                    setTimeout(() => {
-                        showToast('✅ 訂房記錄已成功登記！');
-                        
-                        // 添加到最近記錄
-                        addToRecentBookings(formData);
-                        
-                        // 重置表單
-                        resetForm();
-                        
-                        submitButton.textContent = originalText;
-                        submitButton.disabled = false;
-                    }, 1000);
-                };
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body
+                });
 
-                // 提交表單
-                document.body.appendChild(form);
-                form.submit();
-                document.body.removeChild(form);
+                const responseText = await response.text();
+
+                let result;
+                try {
+                    result = responseText ? JSON.parse(responseText) : {};
+                } catch (parseError) {
+                    console.error('手動訂房 JSON 解析失敗:', parseError, responseText);
+                    throw new Error('後端回應格式錯誤，無法解析 JSON：' + parseError.message);
+                }
+
+                if (!response.ok || result.success === false) {
+                    throw new Error(result.error || result.message || `HTTP ${response.status}`);
+                }
+
+                showToast('✅ 訂房記錄已成功登記！');
+                
+                // 添加到最近記錄
+                addToRecentBookings({
+                    ...formData,
+                    booking_id: result.booking_id || ''
+                });
+                
+                // 重置表單
+                resetForm();
 
             } catch (error) {
                 console.error('登記失敗:', error);
                 alert('❌ 登記失敗：' + error.message);
-                
+            } finally {
                 submitButton.textContent = originalText;
                 submitButton.disabled = false;
             }

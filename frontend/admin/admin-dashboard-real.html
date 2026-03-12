@@ -1706,51 +1706,56 @@
             }
         }
 
-        // 統一的 iframe 表單提交函數（避免 CORS 問題）
+        // 統一的後端提交函數
         async function submitToBackendViaForm(data) {
-            // 創建隱藏的 iframe 來接收回應
-            let iframe = document.getElementById('hiddenFrame');
-            if (!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.name = 'hiddenFrame';
-                iframe.id = 'hiddenFrame';
-                iframe.style.display = 'none';
-                // 添加錯誤處理來忽略 403 錯誤
-                iframe.onerror = function() {
-                    // 忽略 iframe 載入錯誤（預期的 403 重定向）
-                    return true;
-                };
-                document.body.appendChild(iframe);
-            }
-            
-            // 設定 iframe 載入處理器來忽略錯誤
-            iframe.onload = function() {
-                // 忽略載入事件，避免觸發錯誤
-            };
-            
-            // 創建表單
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = APPS_SCRIPT_URL;
-            form.target = 'hiddenFrame';
-            form.style.display = 'none';
-            
-            // 添加數據作為表單欄位
-            Object.keys(data).forEach(key => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = data[key] || '';
-                form.appendChild(input);
+            const formData = new URLSearchParams();
+
+            Object.entries(data || {}).forEach(([key, value]) => {
+                if (value === undefined || value === null) return;
+                formData.set(key, value);
             });
-            
-            // 提交表單
-            document.body.appendChild(form);
-            form.submit();
-            
-            // 清理表單元素
-            
-            console.log('📤 表單已提交:', data);
+
+            let response;
+            let responseText = '';
+
+            try {
+                response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData
+                });
+
+                responseText = await response.text();
+            } catch (fetchError) {
+                console.error('submitToBackendViaForm fetch 失敗:', fetchError);
+                alert('❌ 後端請求失敗：' + fetchError.message);
+                throw fetchError;
+            }
+
+            let result;
+            try {
+                result = responseText ? JSON.parse(responseText) : {};
+            } catch (parseError) {
+                console.error('submitToBackendViaForm JSON 解析失敗:', parseError, responseText);
+                const syntaxError = new Error('後端回應格式錯誤，無法解析 JSON：' + parseError.message);
+                syntaxError.cause = parseError;
+                syntaxError.responseText = responseText;
+                alert('❌ ' + syntaxError.message);
+                throw syntaxError;
+            }
+
+            if (!response.ok || result.success === false) {
+                const errorMessage = result.error || result.message || `HTTP ${response.status}`;
+                const requestError = new Error(errorMessage);
+                requestError.response = result;
+                console.error('submitToBackendViaForm 回應失敗:', requestError, result);
+                throw requestError;
+            }
+
+            console.log('📤 後端提交成功:', data, result);
+            return result;
         }
 
         // 輔助函數

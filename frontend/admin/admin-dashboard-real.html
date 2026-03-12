@@ -2804,14 +2804,18 @@
 
             const partnerLevel = partner.partner_level || partner.level || 'LV1_INSIDER';
             const expectedCommission = calculateExpectedCommission(partnerLevel, booking.room_price);
+            const commissionPreference = (partner.commission_preference || 'ACCOMMODATION').toUpperCase();
+            const commissionAmount = commissionPreference === 'CASH'
+                ? expectedCommission.cash
+                : expectedCommission.accommodation;
+            const commissionLabel = commissionPreference === 'CASH' ? '現金' : '住宿金';
             
-            // 簡化流程：統一先給住宿金，後續可以自行轉換為現金
-            const confirmed = confirm(`確認 ${booking.guest_name} 完成入住？\n\n推薦大使：${booking.partner_code} (${partner.name})\n佣金：$${expectedCommission.accommodation} 住宿金\n\n（大使後續可自行決定是否轉換為現金）`);
+            const confirmed = confirm(`確認 ${booking.guest_name} 完成入住？\n\n推薦大使：${booking.partner_code} (${partner.name})\n佣金：$${commissionAmount} ${commissionLabel}`);
 
             if (confirmed) {
                 await updateBookingStatus(booking, 'COMPLETED', {
-                    commission_amount: expectedCommission.accommodation,
-                    commission_type: 'ACCOMMODATION',
+                    commission_amount: commissionAmount,
+                    commission_type: commissionPreference,
                     partner_code: booking.partner_code
                 });
             }

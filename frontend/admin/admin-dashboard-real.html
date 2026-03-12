@@ -5080,6 +5080,15 @@
             document.getElementById('batchToolbar').classList.add('hidden');
         }
 
+        function getBatchOperationLabel(operation) {
+            const labels = {
+                convert_all: '全部轉為現金',
+                payout_pending: '結算待付現金',
+                export_selected: '匯出選中資料'
+            };
+            return labels[operation] || operation || '未命名操作';
+        }
+
         // 執行批量操作
         window.executeBatchAction = async function() {
             const operation = document.getElementById('batchOperation').value;
@@ -5088,7 +5097,8 @@
                 return;
             }
 
-            const confirmed = confirm(`確定要對 ${selectedPartners.size} 位夥伴執行「${operation}」操作嗎？`);
+            const operationLabel = getBatchOperationLabel(operation);
+            const confirmed = confirm(`確定要對 ${selectedPartners.size} 位夥伴執行「${operationLabel}」操作嗎？`);
             if (!confirmed) return;
 
             try {
@@ -5109,7 +5119,7 @@
                 }
                 
                 await forceReloadCurrentData();
-                showSuccessMessage(`✅ 批量操作完成！成功處理 ${selectedPartners.size} 位夥伴`);
+                showSuccessMessage(`✅ 批量操作完成！已執行「${operationLabel}」並處理 ${selectedPartners.size} 位夥伴`);
                 clearSelection();
                 
             } catch (error) {
@@ -5147,20 +5157,23 @@
                 return;
             }
 
-            // 使用現有欄位：住宿金點數 = total_commission_earned
-            const accommodationPoints = partner.total_commission_earned || 0;
-            if (accommodationPoints <= 0) {
+            const availablePoints = Math.floor(parseFloat(partner.available_points) || 0);
+            const pointsUsed = parseFloat(partner.points_used) || 0;
+            const pendingCash = parseFloat(partner.pending_commission) || 0;
+
+            if (availablePoints <= 0) {
                 if (!batchMode) showErrorMessage('該大使目前沒有可轉換的住宿金');
                 return;
             }
 
-            const cashAmount = Math.floor(accommodationPoints * 0.5);
+            const exchangeRate = 0.5;
+            const cashAmount = Math.floor(availablePoints * exchangeRate);
             
             if (!batchMode) {
                 // 單一操作顯示確認對話框
                 const confirmed = confirm(`轉換確認 - ${partner.name || partner.partner_code}
 
-住宿金：${accommodationPoints.toLocaleString()} 點
+住宿金：${availablePoints.toLocaleString()} 點
     ↓
 現金：NT$ ${cashAmount.toLocaleString()}
 
@@ -5173,13 +5186,14 @@
 
             try {
                 const submitData = {
-                    action: 'create_payout',
+                    action: 'convert_points_to_cash',
                     partner_code: partnerCode,
-                    payout_type: 'CASH',
-                    amount: cashAmount,
-                    payout_method: 'BANK_TRANSFER',
-                    payout_status: 'PENDING',
-                    notes: `🔄 住宿金轉現金：${accommodationPoints} 點 → NT$ ${cashAmount}`
+                    points_used: availablePoints,
+                    cash_amount: cashAmount,
+                    exchange_rate: exchangeRate,
+                    notes: batchMode
+                        ? `批量轉現金：${availablePoints} 點 → NT$ ${cashAmount}`
+                        : `🔄 住宿金轉現金：${availablePoints} 點 → NT$ ${cashAmount}`
                 };
 
                 // 直接透過 Fetch 送出
@@ -5187,9 +5201,15 @@
                 console.log('🔄 一鍵轉現金 - 後端已回應:', responseData);
 
                 await forceReloadCurrentData();
+                updatePartnerInMemory(partnerCode, {
+                    available_points: Math.max(0, availablePoints - availablePoints),
+                    points_used: pointsUsed + availablePoints,
+                    pending_commission: pendingCash + cashAmount
+                });
+                displayPartners(allData.partners);
 
                 if (!batchMode) {
-                    showSuccessMessage(`✅ 轉換處理中！${accommodationPoints.toLocaleString()} 點 → NT$ ${cashAmount.toLocaleString()}`);
+                    showSuccessMessage(`✅ 轉換處理中！${availablePoints.toLocaleString()} 點 → NT$ ${cashAmount.toLocaleString()}`);
                 }
 
             } catch (error) {

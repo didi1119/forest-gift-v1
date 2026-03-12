@@ -1,5 +1,37 @@
 // 佣金管理增強功能
 
+async function parseAdminJsonResponse(response, context) {
+    const responseText = await response.text();
+    let result;
+
+    try {
+        result = responseText ? JSON.parse(responseText) : {};
+    } catch (parseError) {
+        throw new Error(`${context} 回應格式錯誤：${parseError.message}`);
+    }
+
+    if (!response.ok || result.success === false) {
+        throw new Error(result.error || result.message || `${context} 失敗 (HTTP ${response.status})`);
+    }
+
+    return result;
+}
+
+async function refreshAdminDataView() {
+    if (typeof forceReloadCurrentData === 'function') {
+        await forceReloadCurrentData();
+        return;
+    }
+
+    if (typeof loadRealData === 'function') {
+        await loadRealData(true);
+    }
+
+    if (typeof updateCurrentTabDisplay === 'function') {
+        updateCurrentTabDisplay();
+    }
+}
+
 // 快速編輯佣金
 function quickEditCommission(partnerCode) {
     const partner = allData.partners.find(p => p.partner_code === partnerCode);
@@ -162,35 +194,12 @@ async function saveCommissionChanges(partnerCode) {
             throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
         
-        const result = await response.text();
+        const result = await parseAdminJsonResponse(response, '更新佣金');
         console.log('佣金管理 - 後端回應:', result);
-        
-        // 延時處理結果
-        setTimeout(() => {
-                // 立即更新前端數據
-                const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
-                if (partnerIndex !== -1) {
-                    allData.partners[partnerIndex].total_commission_earned = formData.total_commission_earned;
-                    allData.partners[partnerIndex].pending_commission = formData.pending_commission;
-                    allData.partners[partnerIndex].updated_at = new Date().toISOString();
-                }
-                
-                showSuccessMessage('佣金資料已更新！結算記錄已創建！');
-                closeModal('quickCommissionEditModal');
-                displayPartners(allData.partners);
-                
-                // 立即重新載入所有數據，包括 payouts
-                loadRealData().then(() => {
-                    console.log('數據重新載入完成，Payouts 記錄數：', allData.payouts.length);
-                    displayPartners(allData.partners);
-                    // 如果當前在結算管理頁面，也重新顯示 payouts
-                    if (typeof displayPayouts === 'function') {
-                        displayPayouts(allData.payouts);
-                    }
-                }).catch(error => {
-                    console.error('重新載入數據失敗:', error);
-                });
-            }, 1500);
+
+        await refreshAdminDataView();
+        showSuccessMessage('佣金資料已更新！結算記錄已創建！');
+        closeModal('quickCommissionEditModal');
         
     } catch (error) {
         console.error('更新佣金失敗:', error);
@@ -374,18 +383,9 @@ async function submitMixedPayout(partnerCode) {
             await createSinglePayout(partnerCode, 'ACCOMMODATION', accommodationAmount, notes + ' (住宿金部分)');
         }
         
+        await refreshAdminDataView();
         showSuccessMessage('混合結算已創建！');
         closeModal('mixedPayoutModal');
-        
-        // 重新載入數據
-        setTimeout(() => {
-            loadRealData().then(() => {
-                displayPartners(allData.partners);
-                if (document.querySelector('.tab-button.active').textContent.includes('結算')) {
-                    displayPayouts(allData.payouts);
-                }
-            });
-        }, 1000);
         
     } catch (error) {
         console.error('創建混合結算失敗:', error);
@@ -433,7 +433,7 @@ async function createSinglePayout(partnerCode, payoutType, amount, notes) {
             throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
         
-        const result = await response.text();
+        const result = await parseAdminJsonResponse(response, '創建結算');
         console.log('創建結算 - 後端回應:', result);
         
         return result;
@@ -623,39 +623,12 @@ async function processPointsDeduction(partnerCode) {
             throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
         }
         
-        const result = await response.text();
+        const result = await parseAdminJsonResponse(response, '點數抵扣');
         console.log('點數抵扣 - 後端回應:', result);
-        
-        setTimeout(() => {
-            // 立即更新前端數據
-            const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
-            if (partnerIndex !== -1) {
-                const partner = allData.partners[partnerIndex];
-                // 正確的欄位更新：減少 available_points，增加 points_used
-                const currentPoints = partner.available_points || 0;
-                partner.available_points = Math.max(0, currentPoints - deductAmount);
-                partner.points_used = (partner.points_used || 0) + deductAmount;
-                // total_commission_earned 不變（歷史總收入不應因使用點數而減少）
-                
-                console.log(`已扣除 ${partnerCode} 的 ${deductAmount} 點數`);
-                console.log(`剩餘可用點數: ${partner.available_points}`);
-            }
-            
-            showSuccessMessage(`成功抵扣 ${deductAmount.toLocaleString()} 住宿金點數！`);
-            closeModal('accommodationPointsModal');
-            
-            // 重新顯示夥伴列表以反映更新
-            if (typeof displayPartners === 'function') {
-                displayPartners(allData.partners);
-            }
-            
-            // 背景重新載入數據確保一致性
-            setTimeout(() => {
-                loadRealData().catch(error => {
-                    console.log('背景數據重載失敗（不影響操作）:', error.message);
-                });
-            }, 2000);
-        }, 1000);
+
+        await refreshAdminDataView();
+        showSuccessMessage(`成功抵扣 ${deductAmount.toLocaleString()} 住宿金點數！`);
+        closeModal('accommodationPointsModal');
         
     } catch (error) {
         console.error('點數抵扣失敗:', error);

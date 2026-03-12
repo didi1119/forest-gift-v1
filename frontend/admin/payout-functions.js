@@ -1,5 +1,37 @@
 // 結算管理相關函數
 
+async function parsePayoutJsonResponse(response, context) {
+    const responseText = await response.text();
+    let result;
+
+    try {
+        result = responseText ? JSON.parse(responseText) : {};
+    } catch (parseError) {
+        throw new Error(`${context} 回應格式錯誤：${parseError.message}`);
+    }
+
+    if (!response.ok || result.success === false) {
+        throw new Error(result.error || result.message || `${context} 失敗 (HTTP ${response.status})`);
+    }
+
+    return result;
+}
+
+async function refreshPayoutDataView() {
+    if (typeof forceReloadCurrentData === 'function') {
+        await forceReloadCurrentData();
+        return;
+    }
+
+    if (typeof loadRealData === 'function') {
+        await loadRealData(true);
+    }
+
+    if (typeof updateCurrentTabDisplay === 'function') {
+        updateCurrentTabDisplay();
+    }
+}
+
 // 創建結算詳情模態框
 function createPayoutDetailsModal(payout) {
     // 查找相關的訂房記錄
@@ -186,57 +218,13 @@ async function cancelPayout(payoutId) {
             body: JSON.stringify({ action: 'cancel_payout', payout_id: payoutId })
         });
 
-        const result = await response.json();
+        const result = await parsePayoutJsonResponse(response, '取消結算');
         console.log('取消結算回應:', result);
-
-        if (!result.success) {
-            throw new Error(result.error || '取消失敗');
-        }
-
-        // 立即更新前端數據
-        const payoutIndex = allData.payouts.findIndex(p => p.id == payoutId);
-        if (payoutIndex !== -1) {
-            // 獲取相關訂單ID
-            const relatedBookingIds = allData.payouts[payoutIndex].related_booking_ids;
-
-            // 更新結算狀態為已取消
-            allData.payouts[payoutIndex].payout_status = 'CANCELLED';
-            console.log('已更新結算狀態為 CANCELLED');
-
-            // 更新相關訂單狀態
-            if (relatedBookingIds && relatedBookingIds !== '-') {
-                const bookingIds = String(relatedBookingIds).split(',').map(id => id.trim());
-                bookingIds.forEach(bookingId => {
-                    const booking = allData.bookings.find(b => String(b.id) === String(bookingId));
-                    if (booking) {
-                        booking.stay_status = 'PENDING';
-                        booking.commission_status = 'PENDING';
-                        booking.commission_amount = 0;
-                        console.log(`前端更新訂單 ${bookingId}: stay_status → PENDING`);
-                    }
-                });
-
-                // 如果訂單管理頁面正在顯示，立即更新
-                if (typeof displayBookings === 'function') {
-                    displayBookings(allData.bookings);
-                }
-            }
-        }
+        await refreshPayoutDataView();
 
         showSuccessMessage('結算已取消！相關訂單狀態已重置');
         closeModal('payoutDetailsModal');
-        displayPayouts(allData.payouts);
-
-        // 更新大使列表，因為佣金可能已連動調整
-        if (typeof displayPartners === 'function') {
-            displayPartners(allData.partners);
-        }
-        // 更新訂單列表
-        if (typeof displayBookings === 'function') {
-            displayBookings(allData.bookings);
-        }
-
-        console.log('結算取消完成，前端數據已更新');
+        console.log('結算取消完成，已重新載入最新數據');
 
     } catch (error) {
         console.error('取消結算失敗:', error);
@@ -409,39 +397,13 @@ async function savePayoutChanges(payoutId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
-        const result = await response.json();
+        const result = await parsePayoutJsonResponse(response, '修改結算');
 
-        if (!result.success) {
-            throw new Error(result.error || '修改失敗');
-        }
-
-        // 立即更新前端數據
-        const payoutIndex = allData.payouts.findIndex(p => p.id == payoutId);
-        if (payoutIndex !== -1) {
-            allData.payouts[payoutIndex] = {
-                ...allData.payouts[payoutIndex],
-                payout_status: formData.payout_status,
-                notes: formData.notes,
-                updated_at: new Date().toISOString()
-            };
-        }
-
+        await refreshPayoutDataView();
         showSuccessMessage('結算記錄修改成功！');
         closeModal('editPayoutModal');
         closeModal('payoutDetailsModal');
-        displayPayouts(allData.payouts);
-
-        // 延遲重新載入數據
-        setTimeout(() => {
-            loadRealData().then(() => {
-                displayPayouts(allData.payouts);
-                if (typeof displayPartners === 'function') {
-                    displayPartners(allData.partners);
-                }
-            }).catch(error => {
-                console.error('重新載入數據失敗:', error);
-            });
-        }, 1000);
+        console.log('修改結算回應:', result);
 
     } catch (error) {
         console.error('修改結算失敗:', error);

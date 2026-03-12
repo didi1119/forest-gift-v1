@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>入住完成確認系統</title>
+    <script src="admin-auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         // 抑制 Tailwind CSS 生產環境警告
@@ -146,9 +147,6 @@
             </div>
         </div>
     </div>
-
-    <!-- 隱藏的 iframe 用於接收表單回應 -->
-    <iframe id="hiddenFrame" name="hiddenFrame" style="display:none;"></iframe>
 
     <script>
         // 設定值
@@ -482,36 +480,35 @@
         }
 
         // 提交表單數據
-        function submitFormData(data) {
-            return new Promise((resolve, reject) => {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = APPS_SCRIPT_URL;
-                form.target = 'hiddenFrame';
-                form.style.display = 'none';
-
-                // 添加所有數據作為隱藏輸入
-                for (const [key, value] of Object.entries(data)) {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = value || '';
-                    form.appendChild(input);
-                }
-
-                // 監聽 iframe 載入完成事件
-                const iframe = document.getElementById('hiddenFrame');
-                iframe.onload = function() {
-                    setTimeout(() => {
-                        resolve();
-                    }, 1000);
-                };
-
-                // 提交表單
-                document.body.appendChild(form);
-                form.submit();
-                document.body.removeChild(form);
+        async function submitFormData(data) {
+            const body = new URLSearchParams();
+            Object.entries(data || {}).forEach(([key, value]) => {
+                if (value === undefined || value === null) return;
+                body.set(key, value);
             });
+
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body
+            });
+
+            const responseText = await response.text();
+
+            let result;
+            try {
+                result = responseText ? JSON.parse(responseText) : {};
+            } catch (parseError) {
+                throw new Error('後端回應格式錯誤：' + parseError.message);
+            }
+
+            if (!response.ok || result.success === false) {
+                throw new Error(result.error || result.message || `HTTP ${response.status}`);
+            }
+
+            return result;
         }
 
         // 更新統計數據

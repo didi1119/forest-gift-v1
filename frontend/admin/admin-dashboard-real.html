@@ -1896,13 +1896,16 @@
             toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
             toast.textContent = message;
             
-            // 3秒後自動消失
-            toast.style.opacity = '0';
+            // 初始顯示，稍後再淡出
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+            }, 2600);
             setTimeout(() => {
                 if (toast.parentNode) {
                     document.body.removeChild(toast);
                 }
-            }, 300);
+            }, 3000);
             
             return toast;
         }
@@ -3721,65 +3724,70 @@
             });
 
             // 設定表單提交事件
-            document.getElementById('manualBookingForm').addEventListener('submit', async function(e) {
+            document.getElementById('manualBookingForm').onsubmit = async function(e) {
                 e.preventDefault();
                 await submitManualBooking();
-            });
+            };
         }
 
         // 提交手動訂房
         async function submitManualBooking() {
-            // 收集表單資料
-            const rawFormData = {
-                partner_code: document.getElementById('modal_partner_code').value || null,
-                guest_name: document.getElementById('modal_guest_name').value.trim(),
-                guest_phone: document.getElementById('modal_guest_phone').value.trim(),
-                guest_email: document.getElementById('modal_guest_email').value.trim(),
-                bank_account_last5: document.getElementById('modal_bank_account_last5').value.trim(),
-                checkin_date: document.getElementById('modal_checkin_date').value,
-                checkout_date: document.getElementById('modal_checkout_date').value,
-                room_price: document.getElementById('modal_room_price').value,
-                stay_status: document.getElementById('modal_stay_status').value,
-                payment_status: document.getElementById('modal_payment_status').value,
-                notes: document.getElementById('modal_notes').value.trim()
-            };
-
-            console.log('📝 手動訂房 - 原始表單資料:', rawFormData);
-
-            // 使用 BookingDataManager 創建標準化 booking 數據
-            const bookingData = BookingDataManager.createNewBooking(rawFormData);
-            console.log('🔧 手動訂房 - 標準化後數據:', bookingData);
-
-            // 使用 BookingDataManager 驗證數據
-            const validation = BookingDataManager.validateBooking(bookingData);
-            if (!validation.valid) {
-                alert('資料驗證失敗：\n' + validation.errors.join('\n'));
-                return;
-            }
-
-            // 驗證推薦大使代碼（如果有選擇）
-            if (bookingData.partner_code && !allData.partners.find(p => p.partner_code === bookingData.partner_code)) {
-                alert('選擇的推薦大使代碼無效，請重新選擇！');
-                return;
-            }
-
-            // 準備提交到後端的數據（包含 action）
-            const submitData = {
-                action: 'create_booking',
-                ...bookingData
-            };
-
             const submitButton = document.querySelector('#manualBookingForm button[type="submit"]');
+            if (!submitButton) {
+                alert('❌ 找不到送出按鈕，請重新開啟手動訂房視窗後再試一次');
+                return;
+            }
+
             const originalText = submitButton.textContent;
             submitButton.textContent = '登記中...';
             submitButton.disabled = true;
 
             try {
+                // 收集表單資料
+                const rawFormData = {
+                    partner_code: document.getElementById('modal_partner_code').value || null,
+                    guest_name: document.getElementById('modal_guest_name').value.trim(),
+                    guest_phone: document.getElementById('modal_guest_phone').value.trim(),
+                    guest_email: document.getElementById('modal_guest_email').value.trim(),
+                    bank_account_last5: document.getElementById('modal_bank_account_last5').value.trim(),
+                    checkin_date: document.getElementById('modal_checkin_date').value,
+                    checkout_date: document.getElementById('modal_checkout_date').value,
+                    room_price: document.getElementById('modal_room_price').value,
+                    stay_status: document.getElementById('modal_stay_status').value,
+                    payment_status: document.getElementById('modal_payment_status').value,
+                    notes: document.getElementById('modal_notes').value.trim()
+                };
+
+                console.log('📝 手動訂房 - 原始表單資料:', rawFormData);
+
+                // 使用 BookingDataManager 創建標準化 booking 數據
+                const bookingData = BookingDataManager.createNewBooking(rawFormData);
+                console.log('🔧 手動訂房 - 標準化後數據:', bookingData);
+
+                // 使用 BookingDataManager 驗證數據
+                const validation = BookingDataManager.validateBooking(bookingData);
+                if (!validation.valid) {
+                    alert('資料驗證失敗：\n' + validation.errors.join('\n'));
+                    return;
+                }
+
+                // 驗證推薦大使代碼（如果有選擇）
+                if (bookingData.partner_code && !allData.partners.find(p => p.partner_code === bookingData.partner_code)) {
+                    alert('選擇的推薦大使代碼無效，請重新選擇！');
+                    return;
+                }
+
+                // 準備提交到後端的數據（包含 action）
+                const submitData = {
+                    action: 'create_booking',
+                    ...bookingData
+                };
+
                 console.log('📤 手動訂房 - 發送數據:', submitData);
                 
                 // 直接透過 Fetch 送出
-                await submitToBackendViaForm(submitData);
-                console.log('📡 手動訂房 - 表單已提交');
+                const result = await submitToBackendViaForm(submitData);
+                console.log('📡 手動訂房 - 後端已回應:', result);
                 
                 // 顯示成功訊息
                 showSuccessMessage('✅ 訂房記錄處理中...');
@@ -3789,7 +3797,7 @@
                 
                 // 重新載入所有數據並切換到訂單管理頁
                 try {
-                    await loadRealData();
+                    await loadRealData(true);
                     showTab('bookings');
                     displayBookings(allData.bookings);
                     console.log('✅ 手動訂房登記完成，已切換到訂單管理頁');
@@ -3798,14 +3806,10 @@
                     console.error('載入數據失敗:', error);
                     showSuccessMessage('✅ 訂房已登記，請手動重新載入頁面查看');
                 }
-                
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
-
             } catch (error) {
                 console.error('登記失敗:', error);
                 alert('❌ 登記失敗：' + error.message);
-                
+            } finally {
                 submitButton.textContent = originalText;
                 submitButton.disabled = false;
             }

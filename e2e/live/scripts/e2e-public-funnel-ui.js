@@ -268,9 +268,15 @@ async function cleanup() {
     const referralText = await page.locator('#tab-referral').innerText();
     includes(referralText, '連結點擊 2', 'partner dashboard clicks');
     includes(referralText, '轉換率 50.0%', 'partner dashboard conversion rate');
-    includes(referralText, partnerCode, 'partner dashboard referral code');
+    await page.waitForFunction(() => {
+      const referral = document.getElementById('referralLink')?.value || '';
+      const coupon = document.getElementById('couponLink')?.value || '';
+      return referral && coupon && referral !== '短連結生成中...' && coupon !== '短連結生成中...';
+    }, { timeout: 30000 });
     const referralLink = await page.locator('#referralLink').inputValue();
     const couponLink = await page.locator('#couponLink').inputValue();
+    const overviewCode = await page.locator('#overviewPartnerCode').innerText();
+    includes(overviewCode, partnerCode, 'partner dashboard referral code');
     ensure(referralLink && referralLink.length > 10, `missing referral link: ${referralLink}`);
     ensure(couponLink && couponLink.length > 10, `missing coupon link: ${couponLink}`);
     await shot(page, '11_partner_dashboard_referral');

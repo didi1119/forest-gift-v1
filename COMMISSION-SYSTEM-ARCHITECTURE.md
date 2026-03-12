@@ -221,6 +221,7 @@
    ├─ Partners.total_commission_earned -= 原佣金
    ├─ 如果是住宿金：available_points -= 原佣金
    ├─ 如果是現金：pending_commission -= 原佣金
+   ├─ 若當前可用餘額不足以完全扣回（已花掉/已結算）→ 餘額歸零，差額記為 DEBT_RECORD
    └─ 創建 COMMISSION_REVERSAL Payout 記錄（負數）
 
 5a. 如果取消導致剩餘有效訂房的佣金基礎改變（重要）
@@ -238,7 +239,7 @@
 #### 資料變更
 - **Bookings**: 更新狀態為 CANCELLED
 - **Partners**: 可能更新點數、統計、佣金
-- **Payouts**: 新增撤銷/退款記錄（不可變）
+- **Payouts**: 新增撤銷/退款/負債記錄（不可變）
 
 ### 3.6 更新訂房資料事件 (update_booking) 🔴 重點注意
 

@@ -709,11 +709,16 @@ async function handleDeleteBooking(data) {
         partnerUpdates.successful_referrals = Math.max(0, (partner.successful_referrals || 0) - 1);
         partnerUpdates.yearly_referrals = Math.max(0, (partner.yearly_referrals || 0) - 1);
         partnerUpdates.total_commission_earned = Math.max(0, (partner.total_commission_earned || 0) - commissionAmount);
+        let debtAmount = 0;
 
         if (booking.data.commission_type === 'ACCOMMODATION') {
-          partnerUpdates.available_points = Math.max(0, (partner.available_points || 0) - commissionAmount);
+          const currentAvailablePoints = parseFloat(partner.available_points || 0);
+          partnerUpdates.available_points = Math.max(0, currentAvailablePoints - commissionAmount);
+          debtAmount = Math.max(0, commissionAmount - currentAvailablePoints);
         } else if (booking.data.commission_type === 'CASH') {
-          partnerUpdates.pending_commission = Math.max(0, (partner.pending_commission || 0) - commissionAmount);
+          const currentPendingCommission = parseFloat(partner.pending_commission || 0);
+          partnerUpdates.pending_commission = Math.max(0, currentPendingCommission - commissionAmount);
+          debtAmount = Math.max(0, commissionAmount - currentPendingCommission);
         }
 
         const newLevel = checkLevelUpgrade(partnerUpdates.yearly_referrals);
@@ -729,6 +734,19 @@ async function handleDeleteBooking(data) {
           notes: `取消訂單 ${bookingId}，撤銷${booking.data.commission_type === 'ACCOMMODATION' ? '住宿金' : '現金'}佣金 NT$ ${commissionAmount}`,
           created_by: 'system'
         });
+
+        if (debtAmount > 0) {
+          await createRecord('Payouts', {
+            partner_code: partner.partner_code,
+            payout_type: 'DEBT_RECORD',
+            amount: -debtAmount,
+            related_booking_ids: String(bookingId),
+            payout_method: 'OTHER',
+            payout_status: 'PENDING',
+            notes: `取消訂單 ${bookingId} 時，可用${booking.data.commission_type === 'ACCOMMODATION' ? '住宿金' : '待支付現金'}不足，產生負債 NT$ ${debtAmount}`,
+            created_by: 'system'
+          });
+        }
       }
 
       await updateRecord('Partners', partner.partner_code, partnerUpdates);

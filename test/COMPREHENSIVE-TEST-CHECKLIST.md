@@ -783,6 +783,25 @@
 6. 驗證最終狀態一致性
 ```
 
+### 13.3 負債場景補充
+
+```
+1. 現金佣金已結算（pending_commission = 0，total_commission_paid 已累加）
+2. 取消原始已完成訂房
+3. 驗證：
+   - COMMISSION_REVERSAL 已建立
+   - pending_commission 保持 0
+   - total_commission_paid 不回寫
+   - 建立 DEBT_RECORD 記錄應收差額
+
+4. 住宿金佣金已被折抵使用
+5. 取消原始已完成訂房
+6. 驗證：
+   - available_points 保持 >= 0
+   - 若不足扣回，建立 DEBT_RECORD
+   - payout trail 可完整還原差額來源
+```
+
 ---
 
 ## 測試執行策略

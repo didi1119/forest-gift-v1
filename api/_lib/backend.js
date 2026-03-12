@@ -212,6 +212,165 @@ function calculateCommissionForLevel(level, commissionType, roomPrice, includeFi
   return commission;
 }
 
+function isTruthy(value) {
+  return value === true || String(value).toLowerCase() === 'true';
+}
+
+function getBookingTimelineValue(booking) {
+  return booking.manually_confirmed_at || booking.created_at || booking.updated_at || booking.checkin_date || booking.id || '';
+}
+
+async function getCompletedReferralBookings(partnerCode) {
+  const allBookings = await db.getAllRecords('Bookings');
+  return allBookings
+    .filter(booking =>
+      booking.partner_code === partnerCode &&
+      booking.booking_source === 'REFERRAL' &&
+      booking.stay_status === 'COMPLETED'
+    )
+    .sort((a, b) => {
+      const aTime = new Date(getBookingTimelineValue(a)).getTime();
+      const bTime = new Date(getBookingTimelineValue(b)).getTime();
+      if (!isNaN(aTime) && !isNaN(bTime) && aTime !== bTime) return aTime - bTime;
+      return Number(a.id || 0) - Number(b.id || 0);
+    });
+}
+
+async function reconcilePartnerCompletedReferralBookings(partnerCode, context = {}) {
+  const partner = await findPartnerByCode(partnerCode);
+  if (!partner) return [];
+
+  const bookings = await getCompletedReferralBookings(partnerCode);
+  if (bookings.length === 0) return [];
+
+  let successfulBefore = 0;
+  let earnedDelta = 0;
+  let pointsDelta = 0;
+  let cashDelta = 0;
+  const adjustments = [];
+
+  for (const booking of bookings) {
+    const commissionType = String(booking.commission_type || 'ACCOMMODATION').toUpperCase();
+    const expectedLevel = checkLevelUpgrade(successfulBefore);
+    const shouldHaveFirstBonus = (
+      expectedLevel === 'LV1_INSIDER' &&
+      successfulBefore === 0 &&
+      commissionType === 'ACCOMMODATION'
+    );
+    const expectedFirstBonusAmount = shouldHaveFirstBonus ? FIRST_REFERRAL_BONUS : 0;
+    const expectedCommissionAmount = calculateCommissionForLevel(
+      expectedLevel,
+      commissionType,
+      parseFloat(booking.room_price || 0),
+      shouldHaveFirstBonus
+    );
+
+    const actualCommissionAmount = parseFloat(booking.commission_amount || 0);
+    const actualFirstBonus = isTruthy(booking.is_first_referral_bonus);
+    const actualFirstBonusAmount = parseFloat(booking.first_referral_bonus_amount || 0);
+
+    const needsAdjustment = (
+      Math.abs(expectedCommissionAmount - actualCommissionAmount) > 0.01 ||
+      actualFirstBonus !== shouldHaveFirstBonus ||
+      Math.abs(expectedFirstBonusAmount - actualFirstBonusAmount) > 0.01
+    );
+
+    if (needsAdjustment) {
+      const delta = expectedCommissionAmount - actualCommissionAmount;
+      const noteReasons = [];
+
+      if (Math.abs(delta) > 0.01) {
+        noteReasons.push(`佣金 ${actualCommissionAmount} → ${expectedCommissionAmount}`);
+      }
+      if (actualFirstBonus !== shouldHaveFirstBonus || Math.abs(expectedFirstBonusAmount - actualFirstBonusAmount) > 0.01) {
+        noteReasons.push(`首次獎勵 ${actualFirstBonusAmount} → ${expectedFirstBonusAmount}`);
+      }
+
+      const bookingUpdates = {
+        commission_amount: expectedCommissionAmount,
+        is_first_referral_bonus: shouldHaveFirstBonus,
+        first_referral_bonus_amount: expectedFirstBonusAmount,
+        notes: (booking.notes || '') + `\n[重新計算於 ${new Date().toISOString()}] ${noteReasons.join('；')}（因取消訂房 #${context.cancelledBookingId || '?'}）`
+      };
+
+      if (booking.original_commission_amount === undefined || booking.original_commission_amount === null || booking.original_commission_amount === '') {
+        bookingUpdates.original_commission_amount = actualCommissionAmount;
+      }
+
+      await updateRecord('Bookings', booking.id, bookingUpdates);
+
+      if (Math.abs(delta) > 0.01) {
+        await createRecord('Payouts', {
+          partner_code: partnerCode,
+          payout_type: 'LEVEL_ADJUSTMENT',
+          amount: delta,
+          related_booking_ids: String(booking.id),
+          payout_method: 'RETROACTIVE_RECALCULATION',
+          payout_status: 'COMPLETED',
+          notes: `取消訂房 #${context.cancelledBookingId || '?'} 後重算訂房 #${booking.id}：${actualCommissionAmount} → ${expectedCommissionAmount}`,
+          created_by: context.updatedBy || 'system_adjustment'
+        });
+      }
+
+      earnedDelta += delta;
+      if (commissionType === 'ACCOMMODATION') pointsDelta += delta;
+      if (commissionType === 'CASH') cashDelta += delta;
+
+      adjustments.push({
+        booking_id: booking.id,
+        delta,
+        old_amount: actualCommissionAmount,
+        new_amount: expectedCommissionAmount,
+        old_first_bonus: actualFirstBonusAmount,
+        new_first_bonus: expectedFirstBonusAmount
+      });
+    }
+
+    successfulBefore += 1;
+  }
+
+  if (Math.abs(earnedDelta) > 0.01 || Math.abs(pointsDelta) > 0.01 || Math.abs(cashDelta) > 0.01) {
+    const currentAvailablePoints = parseFloat(partner.available_points || 0);
+    const currentPendingCommission = parseFloat(partner.pending_commission || 0);
+    const currentTotalEarned = parseFloat(partner.total_commission_earned || 0);
+    const nextAvailablePoints = currentAvailablePoints + pointsDelta;
+    const nextPendingCommission = currentPendingCommission + cashDelta;
+    const partnerUpdates = {
+      total_commission_earned: Math.max(0, currentTotalEarned + earnedDelta),
+      available_points: Math.max(0, nextAvailablePoints),
+      pending_commission: Math.max(0, nextPendingCommission)
+    };
+
+    await updateRecord('Partners', partnerCode, partnerUpdates);
+
+    if (nextAvailablePoints < 0) {
+      await createRecord('Payouts', {
+        partner_code: partnerCode,
+        payout_type: 'DEBT_RECORD',
+        amount: nextAvailablePoints,
+        payout_method: 'RETROACTIVE_RECALCULATION',
+        payout_status: 'PENDING',
+        notes: `取消訂房 #${context.cancelledBookingId || '?'} 後重算造成住宿金負債 ${Math.abs(nextAvailablePoints)}`,
+        created_by: context.updatedBy || 'system_adjustment'
+      });
+    }
+
+    if (nextPendingCommission < 0) {
+      await createRecord('Payouts', {
+        partner_code: partnerCode,
+        payout_type: 'DEBT_RECORD',
+        amount: nextPendingCommission,
+        payout_method: 'RETROACTIVE_RECALCULATION',
+        payout_status: 'PENDING',
+        notes: `取消訂房 #${context.cancelledBookingId || '?'} 後重算造成現金負債 ${Math.abs(nextPendingCommission)}`,
+        created_by: context.updatedBy || 'system_adjustment'
+      });
+    }
+  }
+
+  return adjustments;
+}
+
 // ========================================
 // 業務邏輯處理函數
 // ========================================
@@ -583,6 +742,19 @@ async function handleDeleteBooking(data) {
   };
 
   const cancelled = await updateRecord('Bookings', bookingId, cancelData);
+
+  if (
+    booking.data.booking_source === 'REFERRAL' &&
+    booking.data.partner_code &&
+    booking.data.stay_status === 'COMPLETED' &&
+    parseFloat(booking.data.commission_amount || 0) > 0
+  ) {
+    await reconcilePartnerCompletedReferralBookings(booking.data.partner_code, {
+      cancelledBookingId: bookingId,
+      updatedBy: data.cancelled_by || data.updated_by || 'system'
+    });
+  }
+
   return { success: true, message: 'Booking cancelled successfully', data: cancelled };
 }
 

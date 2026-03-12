@@ -223,6 +223,14 @@
    ├─ 如果是現金：pending_commission -= 原佣金
    └─ 創建 COMMISSION_REVERSAL Payout 記錄（負數）
 
+5a. 如果取消導致剩餘有效訂房的佣金基礎改變（重要）
+   ├─ 重新檢查該大使所有仍為 COMPLETED 的 REFERRAL 訂房
+   ├─ 若因降級而影響後續訂房佣金 → 必須回溯重算
+   ├─ 若被取消的是首次推薦訂房 → 首次推薦獎勵必須轉移到新的第一筆有效完成訂房
+   ├─ 更新受影響 Bookings 的 commission_amount / 首次獎勵欄位
+   ├─ 同步調整 Partners.available_points / pending_commission / total_commission_earned
+   └─ 創建 LEVEL_ADJUSTMENT / DEBT_RECORD 等審計 Payout 記錄
+
 6. 更新訂房狀態
    └─ stay_status = CANCELLED
 ```

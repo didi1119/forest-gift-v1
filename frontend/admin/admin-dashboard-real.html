@@ -1422,7 +1422,7 @@
                 const statusText = getStatusText(booking.stay_status);
                 const partner = booking.partner_code ? allData.partners.find(p => p.partner_code === booking.partner_code) : null;
                 const partnerLevel = partner ? (partner.partner_level || partner.level || 'LV1_INSIDER') : null;
-                const expectedCommission = partner ? calculateExpectedCommission(partnerLevel, booking.room_price) : null;
+                const expectedCommission = partner ? calculateExpectedCommission(partnerLevel, booking.room_price, partner) : null;
                 const isCheckoutPassed = booking.checkout_date && new Date(booking.checkout_date) < new Date();
                 const canConfirmStay = ['PENDING', 'CHECKED_IN'].includes(booking.stay_status) && isCheckoutPassed;
                 
@@ -2326,7 +2326,7 @@
                                                 const statusClass = getStatusClass(booking.stay_status);
                                                 const statusText = getStatusText(booking.stay_status);
                                                 const partnerLevel = partner.partner_level || partner.level || 'LV1_INSIDER';
-                                                const expectedCommission = calculateExpectedCommission(partnerLevel, booking.room_price);
+                                                const expectedCommission = calculateExpectedCommission(partnerLevel, booking.room_price, partner);
                                                 const bookingIndex = allData.bookings.findIndex(b => b === booking);
                                                 return `
                                                     <tr class="border-b hover:bg-gray-50">
@@ -2773,14 +2773,28 @@
         }
 
         // 計算預期佣金
-        function calculateExpectedCommission(level, roomPrice) {
+        function calculateExpectedCommission(level, roomPrice, partner = null) {
             const commissionRates = {
                 'LV1_INSIDER': { accommodation: 1000, cash: 500 },
                 'LV2_GUIDE': { accommodation: 1200, cash: 600 },
                 'LV3_GUARDIAN': { accommodation: 1500, cash: 750 }
             };
-            
-            return commissionRates[level] || { accommodation: 0, cash: 0 };
+
+            const baseRates = commissionRates[level] || { accommodation: 0, cash: 0 };
+            const successfulReferrals = partner
+                ? parseInt(partner.successful_referrals || partner.total_successful_referrals || 0, 10) || 0
+                : null;
+            const hasFirstReferralBonus = (
+                partner &&
+                level === 'LV1_INSIDER' &&
+                successfulReferrals === 0
+            );
+
+            return {
+                accommodation: baseRates.accommodation + (hasFirstReferralBonus ? FIRST_REFERRAL_BONUS : 0),
+                cash: baseRates.cash,
+                hasFirstReferralBonus
+            };
         }
 
         // 確認入住完成
@@ -2803,7 +2817,7 @@
             }
 
             const partnerLevel = partner.partner_level || partner.level || 'LV1_INSIDER';
-            const expectedCommission = calculateExpectedCommission(partnerLevel, booking.room_price);
+            const expectedCommission = calculateExpectedCommission(partnerLevel, booking.room_price, partner);
             const commissionPreference = (partner.commission_preference || 'ACCOMMODATION').toUpperCase();
             const commissionAmount = commissionPreference === 'CASH'
                 ? expectedCommission.cash
@@ -2906,7 +2920,7 @@
 
             const partner = booking.partner_code ? allData.partners.find(p => p.partner_code === booking.partner_code) : null;
             const partnerLevel = partner ? (partner.partner_level || partner.level || 'LV1_INSIDER') : null;
-            const expectedCommission = partner ? calculateExpectedCommission(partnerLevel, booking.room_price) : null;
+            const expectedCommission = partner ? calculateExpectedCommission(partnerLevel, booking.room_price, partner) : null;
 
             const modal = document.createElement('div');
             modal.id = 'bookingDetailsModal';
@@ -3202,7 +3216,7 @@
             if (!partner) return '<p class="text-gray-500">無推薦大使</p>';
             
             const partnerLevel = partner.partner_level || partner.level || 'LV1_INSIDER';
-            const expectedCommission = calculateExpectedCommission(partnerLevel, 0);
+            const expectedCommission = calculateExpectedCommission(partnerLevel, 0, partner);
             return `
                 <div>
                     <p class="font-medium text-green-700">${partner.name || '未設定姓名'}</p>
@@ -3220,7 +3234,7 @@
             const partner = allData.partners.find(p => p.partner_code === booking.partner_code);
             if (!partner) return '<p class="text-sm text-gray-500">大使不存在</p>';
             
-            const expectedCommission = calculateExpectedCommission(partner.partner_level || partner.level, booking.room_price || 0);
+            const expectedCommission = calculateExpectedCommission(partner.partner_level || partner.level, booking.room_price || 0, partner);
             return `
                 <div class="text-sm">
                     <p class="font-medium text-blue-700">預計佣金</p>
@@ -3263,7 +3277,7 @@
             }
             
             const partnerLevel = partner.partner_level || partner.level || 'LV1_INSIDER';
-            const expectedCommission = calculateExpectedCommission(partnerLevel, roomPrice);
+            const expectedCommission = calculateExpectedCommission(partnerLevel, roomPrice, partner);
             previewDiv.innerHTML = `
                 <div class="text-sm">
                     <p class="font-medium text-blue-700">預計佣金</p>

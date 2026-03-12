@@ -43,6 +43,7 @@ function getPayoutTypeLabel(type) {
         'CASH_CONVERSION': '點數轉現金',
         'PAYMENT_COMPLETED': '支付完成',
         'COMMISSION_REVERSAL': '佣金撤銷',
+        'LEVEL_ADJUSTMENT': '等級調整',
         'POINTS_ADJUSTMENT': '點數調整',
         'POINTS_REFUND': '點數退還'
     };

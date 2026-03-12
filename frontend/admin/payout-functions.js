@@ -32,6 +32,23 @@ async function refreshPayoutDataView() {
     }
 }
 
+function getPayoutTypeLabel(type) {
+    if (typeof getPayoutTypeText === 'function') {
+        return getPayoutTypeText(type);
+    }
+
+    const labels = {
+        'ACCOMMODATION': '住宿金佣金',
+        'CASH': '現金佣金',
+        'CASH_CONVERSION': '點數轉現金',
+        'PAYMENT_COMPLETED': '支付完成',
+        'COMMISSION_REVERSAL': '佣金撤銷',
+        'POINTS_ADJUSTMENT': '點數調整',
+        'POINTS_REFUND': '點數退還'
+    };
+    return labels[type] || type || '其他';
+}
+
 // 創建結算詳情模態框
 function createPayoutDetailsModal(payout) {
     // 查找相關的訂房記錄
@@ -75,7 +92,7 @@ function createPayoutDetailsModal(payout) {
                     </div>
                     <div>
                         <span class="text-gray-600">結算類型：</span>
-                        <span class="font-medium">${payout.payout_type === 'CASH' ? '現金' : '住宿金'}</span>
+                        <span class="font-medium">${getPayoutTypeLabel(payout.payout_type)}</span>
                     </div>
                     <div>
                         <span class="text-gray-600">結算金額：</span>
@@ -204,7 +221,7 @@ async function cancelPayout(payoutId) {
         return;
     }
 
-    const confirmMessage = `確定要取消以下結算嗎？\n\n大使：${payout.partner_code}\n金額：$${(payout.amount || 0).toLocaleString()}\n類型：${payout.payout_type === 'CASH' ? '現金' : '住宿金'}\n\n取消後該筆佣金將重新計算`;
+    const confirmMessage = `確定要取消以下結算嗎？\n\n大使：${payout.partner_code}\n金額：$${(payout.amount || 0).toLocaleString()}\n類型：${getPayoutTypeLabel(payout.payout_type)}\n\n取消後該筆佣金將重新計算`;
 
     if (!confirm(confirmMessage)) {
         return;
@@ -310,7 +327,7 @@ function createEditPayoutModal(payout) {
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-500 mb-1">結算類型（不可改）</label>
-                        <input type="text" value="${payout.payout_type === 'CASH' ? '現金' : '住宿金'}" 
+                        <input type="text" value="${getPayoutTypeLabel(payout.payout_type)}" 
                             class="w-full p-2 border rounded-md bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled>
                     </div>
                     <div>
@@ -549,7 +566,7 @@ function exportPayoutReport() {
         headers.join(','),
         ...allData.payouts.map(payout => [
             payout.partner_code,
-            payout.payout_type === 'CASH' ? '現金' : '住宿金',
+            getPayoutTypeLabel(payout.payout_type),
             payout.amount || 0,
             payout.payout_status === 'COMPLETED' ? '已付款' : '待付款',
             formatDateDisplay(payout.created_at) || '',

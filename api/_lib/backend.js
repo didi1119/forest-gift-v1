@@ -590,7 +590,11 @@ async function handleUpdatePayout(data) {
   const payoutId = data.payout_id || data.id;
   if (!payoutId) throw new Error('Payout ID is required');
 
-  delete data.action; delete data.payout_id; delete data.id; delete data.created_at;
+  delete data.action;
+  delete data.payout_id;
+  delete data.id;
+  delete data.created_at;
+  delete data.admin_secret;
   const updated = await updateRecord('Payouts', payoutId, data);
   return { success: true, message: 'Payout updated successfully', data: updated };
 }

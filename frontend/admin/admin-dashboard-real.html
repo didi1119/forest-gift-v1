@@ -5213,12 +5213,9 @@
                 console.log('🎯 創建結算記錄:', { partnerCode, pendingAmount });
                 
                 const submitData = {
-                    action: 'create_payout',
+                    action: 'process_payout',
                     partner_code: partnerCode,
-                    payout_type: 'CASH',
                     amount: pendingAmount,
-                    payout_method: 'BANK_TRANSFER',
-                    payout_status: 'COMPLETED',
                     notes: `💳 現金結算 - ${new Date().toLocaleString()}`
                 };
 

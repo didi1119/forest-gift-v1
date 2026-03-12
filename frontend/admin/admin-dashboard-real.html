@@ -3453,6 +3453,18 @@
             allData.bookings.push(normalizedBooking);
         }
 
+        function updatePartnerInMemory(partnerCode, updates) {
+            if (!partnerCode || !updates) return;
+
+            const partnerIndex = allData.partners.findIndex(partner => partner.partner_code === partnerCode);
+            if (partnerIndex === -1) return;
+
+            allData.partners[partnerIndex] = {
+                ...allData.partners[partnerIndex],
+                ...updates
+            };
+        }
+
         // 開啟手動訂房模態框
         window.openManualBookingModal = function() {
             createManualBookingModal();
@@ -4445,8 +4457,13 @@
                 const responseData = await submitToBackendViaForm(submitData);
                 console.log('📤 住宿金折抵 - 後端已回應:', responseData);
 
-                await forceReloadCurrentData();
                 const newBalance = availablePoints - amount;
+                await forceReloadCurrentData();
+                updatePartnerInMemory(partnerCode, {
+                    available_points: newBalance,
+                    points_used: (parseFloat(partner.points_used) || 0) + amount
+                });
+                updateCurrentTabDisplay();
                 showSuccessMessage(`✅ 成功使用 $${amount.toLocaleString()} 住宿金！\n剩餘餘額：$${newBalance.toLocaleString()}`);
                 closeModal('usePointsModal');
                 
@@ -4707,6 +4724,12 @@
                 showSuccessMessage('✅ 資料已儲存到 資料庫！');
                 closeModal('pointsToCashModal');
                 await forceReloadCurrentData();
+                updatePartnerInMemory(partnerCode, {
+                    available_points: availablePoints - points,
+                    points_used: pointsUsed + points,
+                    pending_commission: (parseFloat(partner.pending_commission) || 0) + cashAmount
+                });
+                updateCurrentTabDisplay();
                 
             } catch (error) {
                 console.error('儲存失敗:', error);
@@ -5197,6 +5220,11 @@
                 console.log('💳 結算處理 - 後端已回應:', responseData);
 
                 await forceReloadCurrentData();
+                updatePartnerInMemory(partnerCode, {
+                    pending_commission: Math.max(0, pendingAmount - pendingAmount),
+                    total_commission_paid: (parseFloat(partner.total_commission_paid) || 0) + pendingAmount
+                });
+                updateCurrentTabDisplay();
 
                 if (!batchMode) {
                     showSuccessMessage(`✅ 結算完成！已轉帳 NT$ ${pendingAmount.toLocaleString()}`);

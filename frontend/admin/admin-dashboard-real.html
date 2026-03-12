@@ -1410,7 +1410,7 @@
                 const partnerLevel = partner ? (partner.partner_level || partner.level || 'LV1_INSIDER') : null;
                 const expectedCommission = partner ? calculateExpectedCommission(partnerLevel, booking.room_price) : null;
                 const isCheckoutPassed = booking.checkout_date && new Date(booking.checkout_date) < new Date();
-                const canConfirmStay = booking.stay_status !== 'COMPLETED' && isCheckoutPassed;
+                const canConfirmStay = ['PENDING', 'CHECKED_IN'].includes(booking.stay_status) && isCheckoutPassed;
                 
                 // 檢查是否為自用訂單
                 const isSelfUse = booking.booking_source === 'SELF_USE';

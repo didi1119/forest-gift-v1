@@ -370,7 +370,11 @@
             const rates = COMMISSION_RATES[level];
             
             let baseCommission = rates[preference.toLowerCase()] || rates.cash;
-            let firstBonus = !booking.partner_first_bonus ? FIRST_REFERRAL_BONUS : 0;
+            let firstBonus = (
+                level === 'LV1_INSIDER' &&
+                preference === 'ACCOMMODATION' &&
+                !booking.partner_first_bonus
+            ) ? FIRST_REFERRAL_BONUS : 0;
             let total = baseCommission + firstBonus;
             
             let breakdown = `基本: $${baseCommission}`;

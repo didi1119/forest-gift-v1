@@ -10,6 +10,7 @@
     <title>知音大使管理後台 - 真實數據版</title>
     <script src="admin-auth.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <script>
         // 抑制 Tailwind CSS 生產環境警告
         if (typeof tailwind !== 'undefined') {
@@ -557,13 +558,19 @@
                         <p class="text-sm text-stone-500 mt-1">直接查看和編輯系統資料</p>
                     </div>
                     <a href="https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit"
+                       id="database-tab-link"
                        target="_blank"
                        class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 text-sm">
                         在新分頁開啟
                     </a>
                 </div>
-                <div class="bg-stone-50 rounded-xl overflow-hidden" style="height: calc(100vh - 300px);">
-                    <iframe src="https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit?rm=minimal"
+                <div id="supabase-placeholder" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-8 text-center text-emerald-900">
+                    <h3 class="text-xl font-serif font-semibold mb-3">目前資料來源為 Supabase</h3>
+                    <p class="text-sm mb-4">正式環境不再嵌入 Google Sheets。請使用上方按鈕前往 Supabase Dashboard 檢視資料。</p>
+                    <p class="text-xs text-emerald-700">這個區塊保留為導引，避免背景載入舊版 Google Sheets iframe 產生授權錯誤。</p>
+                </div>
+                <div id="database-tab-iframe" class="bg-stone-50 rounded-xl overflow-hidden hidden" style="height: calc(100vh - 300px);">
+                    <iframe data-src="https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit?rm=minimal"
                             style="width: 100%; height: 100%; border: none;"
                             title="資料庫 資料庫">
                     </iframe>
@@ -845,6 +852,11 @@
         async function checkAppsScriptConnection() {
             try {
                 console.log('🔍 檢查 Apps Script 連線...');
+                if (APPS_SCRIPT_URL === '/api') {
+                    console.log('✅ 同網域 API 模式，略過舊版 Apps Script test 檢查');
+                    return true;
+                }
+
                 const testUrl = `${APPS_SCRIPT_URL}?action=test`;
                 
                 // 嘗試使用 fetch
@@ -969,6 +981,10 @@
                         } else {
                             if (iframeContainer) iframeContainer.classList.remove('hidden');
                             if (supabasePlaceholder) supabasePlaceholder.classList.add('hidden');
+                            const sheetFrame = iframeContainer ? iframeContainer.querySelector('iframe[data-src]') : null;
+                            if (sheetFrame && !sheetFrame.getAttribute('src')) {
+                                sheetFrame.setAttribute('src', sheetFrame.dataset.src);
+                            }
                             if (databaseLink) {
                                 databaseLink.href = 'https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit';
                                 databaseLink.textContent = '在 資料庫 開啟';
@@ -6001,6 +6017,14 @@
                 case 'analytics':
                     loadAnalyticsData();
                     break;
+                case 'database': {
+                    const iframeContainer = document.getElementById('database-tab-iframe');
+                    const sheetFrame = iframeContainer ? iframeContainer.querySelector('iframe[data-src]') : null;
+                    if (iframeContainer && !iframeContainer.classList.contains('hidden') && sheetFrame && !sheetFrame.getAttribute('src')) {
+                        sheetFrame.setAttribute('src', sheetFrame.dataset.src);
+                    }
+                    break;
+                }
             }
         }
         

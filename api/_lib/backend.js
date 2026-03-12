@@ -791,45 +791,94 @@ async function handleUpdatePartnerCommission(data) {
   if (!partner) throw new Error('Partner not found');
 
   const updates = {};
-  let adjustmentAmount = 0;
-  let adjustmentType = 'MANUAL_ADJUSTMENT';
+  const auditEntries = [];
+  const adjustmentReason = data.adjustment_reason || '';
+
+  function createAdjustmentNote(label, oldValue, newValue, extraDetail = '') {
+    const parts = [`手動調整${label}: ${oldValue} -> ${newValue}`];
+    if (extraDetail) parts.push(extraDetail);
+    if (adjustmentReason) parts.push(`原因: ${adjustmentReason}`);
+    return parts.join(' | ');
+  }
 
   if (data.total_commission_earned !== undefined) {
     const newValue = parseFloat(data.total_commission_earned);
-    const diff = newValue - (partner.total_commission_earned || 0);
-    if (diff !== 0) { adjustmentAmount = diff; updates.total_commission_earned = newValue; }
+    const oldValue = parseFloat(partner.total_commission_earned) || 0;
+    const diff = newValue - oldValue;
+    if (diff !== 0) {
+      updates.total_commission_earned = newValue;
+      auditEntries.push({
+        payout_type: 'MANUAL_ADJUSTMENT',
+        amount: diff,
+        notes: createAdjustmentNote('累積佣金', oldValue, newValue)
+      });
+    }
   }
   if (data.pending_commission !== undefined) {
     const newValue = Math.max(0, parseFloat(data.pending_commission));
-    const diff = newValue - (partner.pending_commission || 0);
-    if (diff !== 0) { adjustmentAmount = diff; adjustmentType = 'CASH_ADJUSTMENT'; updates.pending_commission = newValue; }
+    const oldValue = parseFloat(partner.pending_commission) || 0;
+    const diff = newValue - oldValue;
+    if (diff !== 0) {
+      updates.pending_commission = newValue;
+      auditEntries.push({
+        payout_type: 'CASH_ADJUSTMENT',
+        amount: diff,
+        notes: createAdjustmentNote('待支付現金', oldValue, newValue)
+      });
+    }
   }
   if (data.available_points !== undefined) {
     const newValue = Math.max(0, parseFloat(data.available_points));
-    const diff = newValue - (partner.available_points || 0);
-    if (diff !== 0) { adjustmentAmount = diff; adjustmentType = 'POINTS_ADJUSTMENT'; updates.available_points = newValue; }
+    const oldValue = parseFloat(partner.available_points) || 0;
+    const diff = newValue - oldValue;
+    if (diff !== 0) {
+      updates.available_points = newValue;
+      const oldPointsUsed = parseFloat(partner.points_used) || 0;
+      const newPointsUsed = data.points_used !== undefined ? (parseFloat(data.points_used) || 0) : oldPointsUsed;
+      const extraDetail = oldPointsUsed !== newPointsUsed
+        ? `已使用點數: ${oldPointsUsed} -> ${newPointsUsed}`
+        : '';
+      auditEntries.push({
+        payout_type: 'POINTS_ADJUSTMENT',
+        amount: diff,
+        notes: createAdjustmentNote('可用點數', oldValue, newValue, extraDetail)
+      });
+    }
   }
-  if (data.points_used !== undefined) updates.points_used = parseFloat(data.points_used);
+  if (data.points_used !== undefined) {
+    const newValue = parseFloat(data.points_used);
+    const oldValue = parseFloat(partner.points_used) || 0;
+    if (newValue !== oldValue) {
+      updates.points_used = newValue;
+      if (data.available_points === undefined || (parseFloat(data.available_points) || 0) === (parseFloat(partner.available_points) || 0)) {
+        auditEntries.push({
+          payout_type: 'MANUAL_ADJUSTMENT',
+          amount: 0,
+          notes: createAdjustmentNote('已使用點數', oldValue, newValue)
+        });
+      }
+    }
+  }
   if (data.successful_referrals !== undefined) updates.successful_referrals = parseInt(data.successful_referrals);
   if (data.yearly_referrals !== undefined) updates.yearly_referrals = parseInt(data.yearly_referrals);
 
   const updated = await updateRecord('Partners', partnerCode, updates);
 
-  if ((data.adjustment_reason || adjustmentAmount !== 0) && adjustmentAmount !== undefined) {
+  for (const entry of auditEntries) {
     await createRecord('Payouts', {
       partner_code: partnerCode,
-      payout_type: adjustmentType,
-      amount: adjustmentAmount,
+      payout_type: entry.payout_type,
+      amount: entry.amount,
       payout_method: 'MANUAL_ADJUSTMENT',
       payout_status: 'COMPLETED',
-      notes: data.adjustment_reason || `手動調整 ${adjustmentAmount > 0 ? '增加' : '減少'} NT$ ${Math.abs(adjustmentAmount)}`,
+      notes: entry.notes,
       created_by: data.created_by || 'admin'
     });
   }
 
   return {
     success: true, message: 'Partner commission updated successfully', data: updated,
-    adjustment: adjustmentAmount !== 0 ? { type: adjustmentType, amount: adjustmentAmount } : null
+    adjustments: auditEntries
   };
 }
 

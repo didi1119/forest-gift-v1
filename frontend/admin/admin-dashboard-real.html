@@ -1403,6 +1403,7 @@
             }
 
             table.innerHTML = normalizedBookings.map((booking, index) => {
+                const bookingIdentifier = booking.id || index;
                 const statusClass = getStatusClass(booking.stay_status);
                 const statusText = getStatusText(booking.stay_status);
                 const partner = booking.partner_code ? allData.partners.find(p => p.partner_code === booking.partner_code) : null;
@@ -1506,16 +1507,16 @@
                         <td class="py-4 px-4 text-center">
                             <div class="flex flex-col space-y-1">
                                 ${canConfirmStay ? `
-                                    <button onclick="confirmStayCompletion(${index})" 
+                                    <button onclick="confirmStayCompletion('${bookingIdentifier}')" 
                                         class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700">
                                         ✅ 確認入住
                                     </button>
                                 ` : ''}
-                                <button onclick="editBooking(${index})" 
+                                <button onclick="editBooking('${bookingIdentifier}')" 
                                     class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">
                                     ✏️ 編輯訂單
                                 </button>
-                                <button onclick="viewBookingDetails(${index})" 
+                                <button onclick="viewBookingDetails('${bookingIdentifier}')" 
                                     class="text-blue-600 hover:underline text-xs">
                                     詳情
                                 </button>
@@ -2769,14 +2770,14 @@
         }
 
         // 確認入住完成
-        window.confirmStayCompletion = async function(bookingIndex) {
-            const booking = allData.bookings[bookingIndex];
+        window.confirmStayCompletion = async function(bookingIdentifier) {
+            const booking = getBookingByIdentifier(bookingIdentifier);
             if (!booking) {
                 alert('找不到訂房記錄');
                 return;
             }
             
-            console.log('🔍 開始確認入住流程，訂房索引:', bookingIndex);
+            console.log('🔍 開始確認入住流程，訂房識別:', bookingIdentifier);
             console.log('訂房資料:', booking);
 
             const partner = booking.partner_code ? allData.partners.find(p => p.partner_code === booking.partner_code) : null;
@@ -2842,7 +2843,9 @@
                 const responseData = await submitToBackendViaForm(submitData);
                 console.log('📡 確認入住 - 後端已回應:', responseData);
 
-                await forceReloadCurrentData();
+                await loadRealData(true);
+                showTab('bookings');
+                filterBookings();
                 showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
             } catch (error) {
                 console.error('❌ 更新訂房狀態失敗:', error);
@@ -2871,8 +2874,8 @@
         }
 
         // 查看訂房詳情
-        function viewBookingDetails(bookingIndex) {
-            const booking = allData.bookings[bookingIndex];
+        function viewBookingDetails(bookingIdentifier) {
+            const booking = getBookingByIdentifier(bookingIdentifier);
             if (!booking) {
                 alert('找不到訂房記錄');
                 return;
@@ -2888,7 +2891,7 @@
             modal.innerHTML = `
                 <div class="bg-white p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold">訂房詳情 #${bookingIndex + 1}</h3>
+                        <h3 class="text-xl font-bold">訂房詳情 #${booking.id || bookingIdentifier}</h3>
                         <button onclick="closeModal('bookingDetailsModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -2991,19 +2994,19 @@
         }
 
         // 編輯訂單
-        window.editBooking = function(bookingIndex) {
-            const booking = allData.bookings[bookingIndex];
+        window.editBooking = function(bookingIdentifier) {
+            const booking = getBookingByIdentifier(bookingIdentifier);
             if (!booking) {
                 alert('找不到訂房記錄');
                 return;
             }
 
-            const modal = createBookingEditModal(booking, bookingIndex);
+            const modal = createBookingEditModal(booking, bookingIdentifier);
             document.body.appendChild(modal);
         }
 
         // 創建訂單編輯模態框
-        function createBookingEditModal(booking, bookingIndex) {
+        function createBookingEditModal(booking, bookingIdentifier) {
             // 格式化日期為 HTML date input 需要的格式
             const formatDateForInput = (dateStr) => {
                 if (!dateStr) return '';
@@ -3027,7 +3030,7 @@
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-6">
-                        <h3 class="text-2xl font-bold">編輯訂單 #${booking.id || (bookingIndex + 1)}</h3>
+                        <h3 class="text-2xl font-bold">編輯訂單 #${booking.id || bookingIdentifier}</h3>
                         <button onclick="closeModal('editBookingModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -3146,7 +3149,7 @@
                                 class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
                                 取消
                             </button>
-                            <button type="button" onclick="deleteBooking(${bookingIndex})" 
+                            <button type="button" onclick="deleteBooking('${booking.id || bookingIdentifier}')" 
                                 class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
                                 刪除訂單
                             </button>
@@ -3163,9 +3166,8 @@
             const form = modal.querySelector('#editBookingForm');
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
-                // 使用 booking.id 或 bookingIndex 作為標識符
-                const bookingIdentifier = booking.id || bookingIndex;
-                saveBookingChanges(bookingIdentifier);
+                const currentBookingIdentifier = booking.id || bookingIdentifier;
+                saveBookingChanges(currentBookingIdentifier);
             });
 
             return modal;
@@ -3326,8 +3328,8 @@
         }
 
         // 刪除訂單
-        window.deleteBooking = async function(bookingIndex) {
-            const booking = allData.bookings[bookingIndex];
+        window.deleteBooking = async function(bookingIdentifier) {
+            const booking = getBookingByIdentifier(bookingIdentifier);
             if (!booking) {
                 alert('找不到訂房記錄');
                 return;
@@ -3408,6 +3410,12 @@
             });
 
             displayBookings(filteredBookings);
+        }
+
+        function getBookingByIdentifier(bookingIdentifier) {
+            const normalizedIdentifier = String(bookingIdentifier);
+            return allData.bookings.find(booking => String(booking.id) === normalizedIdentifier)
+                || allData.bookings[Number(bookingIdentifier)];
         }
 
         // 開啟手動訂房模態框

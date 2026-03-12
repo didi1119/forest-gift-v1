@@ -5294,7 +5294,7 @@
                     available_points: availablePoints,
                     points_used: pointsUsed,
                     pending_commission: pendingCash,
-                    adjustment_notes: notes // 傳遞調整備註
+                    adjustment_reason: notes
                 };
 
                 console.log('🚀 準備更新夥伴佣金（使用正確欄位）:', updateData);
@@ -5305,6 +5305,12 @@
                 console.log('✅ 佣金調整請求已發送');
 
                 await forceReloadCurrentData();
+                updatePartnerInMemory(partnerCode, {
+                    available_points: availablePoints,
+                    points_used: pointsUsed,
+                    pending_commission: pendingCash
+                });
+                displayPartners(allData.partners);
 
                 showSuccessMessage('✅ 佣金資訊已更新，調整記錄已保存');
                 closeModal('partnerModal');

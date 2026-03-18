@@ -2743,19 +2743,22 @@
 
             return {
                 links: [
-                    { label: '大使登入頁', description: '讓對方登入查詢佣金、點數與推薦紀錄', url: loginUrl },
-                    { label: shareLabel, description: '分享給朋友使用的主工具包頁面', url: toolkitHomeUrl },
-                    ...(couponUrl ? [{ label: '專屬優惠券連結', description: '專屬 LINE 優惠券或導流連結', url: couponUrl }] : [])
+                    { label: '大使登入頁', description: '查看推薦紀錄、點數與佣金時，從這裡登入', url: loginUrl },
+                    { label: shareLabel, description: '對外分享時最常用的入口，已整理好你的專屬內容', url: toolkitHomeUrl },
+                    ...(couponUrl ? [{ label: '專屬優惠券連結', description: '可直接分享給對品牌感興趣的朋友使用', url: couponUrl }] : [])
                 ],
                 message: [
-                    `${recipientName}，歡迎加入靜謐森林知音大使計畫。`,
+                    `${recipientName}，歡迎加入靜謐森林的知音大使計畫。很開心接下來能和你一起，把森林裡的安靜與美好分享給更多人。`,
                     '',
-                    '以下是你之後會用到的完整連結與文件：',
+                    '先把之後合作時最常用到的入口整理給你，你可以直接從這裡開始：',
                     `1. 大使登入頁：${loginUrl}`,
                     `2. ${shareLabel}：${toolkitHomeUrl}`,
                     couponUrl ? `3. 你的專屬優惠券連結：${couponUrl}` : null,
                     '',
-                    '之後如果你要查看佣金紀錄，請從登入頁登入；如果要分享給朋友，直接使用你的分享工具包或優惠券連結即可。'
+                    '使用方式也幫你整理好了：',
+                    '查看推薦紀錄、點數與佣金時，請從大使登入頁登入。',
+                    '分享給朋友時，直接使用你的分享工具包；若有指定優惠活動，也可以搭配專屬優惠券連結。',
+                    '之後如果你想調整介紹方式、素材方向或合作安排，也都可以隨時跟我們說。'
                 ].filter(Boolean).join('\n')
             };
         }

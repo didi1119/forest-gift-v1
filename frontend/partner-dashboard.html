@@ -133,14 +133,50 @@
             border-radius: 0.75rem;
             padding: 1rem;
         }
-        /* LV3 special card */
-        .lv3-card {
-            background: var(--forest-dark);
-            color: #fff;
+        .level-guide-card {
+            background: rgba(255,255,255,0.5);
+            border: 1px solid var(--forest-faint);
             border-radius: 0.75rem;
             padding: 1rem 1.25rem;
+            transition: all 0.25s ease;
         }
-        .lv3-card h3 { color: var(--gold); }
+        .level-guide-card.active {
+            background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.68));
+            border-color: rgba(45, 74, 62, 0.26);
+            box-shadow: 0 14px 36px rgba(26, 47, 35, 0.08);
+            transform: translateY(-2px);
+        }
+        .level-guide-card.level-guide-card-lv3.active {
+            background: var(--forest-dark);
+            border-color: rgba(197, 160, 101, 0.55);
+            box-shadow: 0 16px 42px rgba(26, 47, 35, 0.18);
+        }
+        .level-title { color: var(--forest-dark); }
+        .level-copy { color: var(--forest-light); }
+        .level-guide-card .reward-strong { color: var(--forest-dark); }
+        .level-guide-card.level-guide-card-lv3.active .level-title,
+        .level-guide-card.level-guide-card-lv3.active .reward-strong {
+            color: var(--gold);
+        }
+        .level-guide-card.level-guide-card-lv3.active .level-copy {
+            color: rgba(255,255,255,0.78);
+        }
+        .current-level-flag {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.2rem 0.55rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: white;
+            background: var(--forest-medium);
+        }
+        .level-guide-card.level-guide-card-lv3.active .current-level-flag {
+            background: var(--gold);
+            color: var(--forest-dark);
+        }
 
         /* ====== Bottom Navigation ====== */
         .compact-header {
@@ -467,29 +503,35 @@
                     <h2 class="text-sm font-medium mb-5 font-serif" style="color: var(--forest-dark);">等級制度與專屬禮遇</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                         <!-- LV1 -->
-                        <div class="py-4 px-4 rounded-xl" style="background: rgba(255,255,255,0.5); border: 1px solid var(--forest-faint);">
-                            <div class="flex justify-center gap-1.5 mb-3">
-                                <span class="level-dot level-dot-active"></span>
-                                <span class="level-dot level-dot-inactive"></span>
-                                <span class="level-dot level-dot-inactive"></span>
+                        <div id="lv1GuideCard" data-level-card="LV1_INSIDER" class="level-guide-card level-guide-card-lv1">
+                            <div class="flex justify-between items-center mb-3">
+                                <div class="flex gap-1.5">
+                                    <span class="level-dot level-dot-active"></span>
+                                    <span class="level-dot level-dot-inactive"></span>
+                                    <span class="level-dot level-dot-inactive"></span>
+                                </div>
+                                <span class="current-level-flag hidden">目前等級</span>
                             </div>
-                            <h3 class="text-sm font-medium text-center mb-3" style="color: var(--forest-dark);">LV1 知音大使</h3>
-                            <div class="text-xs space-y-1.5" style="color: var(--forest-light);">
-                                <p>每筆 <strong style="color: var(--forest-dark);">$1,000</strong> 住宿金 / <strong style="color: var(--forest-dark);">$500</strong> 現金</p>
+                            <h3 class="text-sm font-medium text-center mb-3 level-title">LV1 知音大使</h3>
+                            <div class="text-xs space-y-1.5 level-copy">
+                                <p>每筆 <strong class="reward-strong">$1,000</strong> 住宿金 / <strong class="reward-strong">$500</strong> 現金</p>
                                 <p>0 - 3 筆成功推薦</p>
                                 <p class="font-medium" style="color: var(--gold);">首次推薦 +$1,500 住宿金</p>
                             </div>
                         </div>
                         <!-- LV2 -->
-                        <div class="py-4 px-4 rounded-xl" style="background: rgba(255,255,255,0.5); border: 1px solid var(--forest-faint);">
-                            <div class="flex justify-center gap-1.5 mb-3">
-                                <span class="level-dot level-dot-active"></span>
-                                <span class="level-dot level-dot-active"></span>
-                                <span class="level-dot level-dot-inactive"></span>
+                        <div id="lv2GuideCard" data-level-card="LV2_GUIDE" class="level-guide-card level-guide-card-lv2">
+                            <div class="flex justify-between items-center mb-3">
+                                <div class="flex gap-1.5">
+                                    <span class="level-dot level-dot-active"></span>
+                                    <span class="level-dot level-dot-active"></span>
+                                    <span class="level-dot level-dot-inactive"></span>
+                                </div>
+                                <span class="current-level-flag hidden">目前等級</span>
                             </div>
-                            <h3 class="text-sm font-medium text-center mb-3" style="color: var(--forest-dark);">LV2 森林嚮導</h3>
-                            <div class="text-xs space-y-1.5" style="color: var(--forest-light);">
-                                <p>每筆 <strong style="color: var(--forest-dark);">$1,200</strong> 住宿金 / <strong style="color: var(--forest-dark);">$600</strong> 現金</p>
+                            <h3 class="text-sm font-medium text-center mb-3 level-title">LV2 森林嚮導</h3>
+                            <div class="text-xs space-y-1.5 level-copy">
+                                <p>每筆 <strong class="reward-strong">$1,200</strong> 住宿金 / <strong class="reward-strong">$600</strong> 現金</p>
                                 <p>年度 4 - 9 筆成功推薦</p>
                                 <p class="font-medium" style="color: var(--gold);">晉升賀禮：靜謐森林特色紀念品</p>
                                 <p>「森友故事」專欄主角機會</p>
@@ -497,15 +539,18 @@
                             </div>
                         </div>
                         <!-- LV3 -->
-                        <div class="lv3-card">
-                            <div class="flex justify-center gap-1.5 mb-3">
-                                <span class="level-dot" style="background: var(--gold);"></span>
-                                <span class="level-dot" style="background: var(--gold);"></span>
-                                <span class="level-dot" style="background: var(--gold);"></span>
+                        <div id="lv3GuideCard" data-level-card="LV3_GUARDIAN" class="level-guide-card level-guide-card-lv3">
+                            <div class="flex justify-between items-center mb-3">
+                                <div class="flex gap-1.5">
+                                    <span class="level-dot" style="background: var(--gold);"></span>
+                                    <span class="level-dot" style="background: var(--gold);"></span>
+                                    <span class="level-dot" style="background: var(--gold);"></span>
+                                </div>
+                                <span class="current-level-flag hidden">目前等級</span>
                             </div>
-                            <h3 class="text-sm font-medium text-center mb-3">LV3 秘境守護者</h3>
-                            <div class="text-xs space-y-1.5" style="color: rgba(255,255,255,0.75);">
-                                <p>每筆 <strong style="color: var(--gold);">$1,500</strong> 住宿金 / <strong style="color: var(--gold);">$750</strong> 現金</p>
+                            <h3 class="text-sm font-medium text-center mb-3 level-title">LV3 秘境守護者</h3>
+                            <div class="text-xs space-y-1.5 level-copy">
+                                <p>每筆 <strong class="reward-strong">$1,500</strong> 住宿金 / <strong class="reward-strong">$750</strong> 現金</p>
                                 <p>年度 10+ 筆成功推薦</p>
                                 <p class="font-medium" style="color: var(--gold);">晉升賀禮：「守護者之息」客製香水</p>
                                 <p style="color: var(--gold-light);">年度免費住一晚（平日）</p>
@@ -676,6 +721,8 @@
             } else {
                 levelEl.className = 'badge badge-level';
             }
+
+            updateLevelGuide(level);
         }
 
         function displayAllData() {
@@ -963,6 +1010,19 @@
         // ========================================
         function getLevelText(level) {
             return { 'LV1_INSIDER': 'LV1 知音大使', 'LV2_GUIDE': 'LV2 森林嚮導', 'LV3_GUARDIAN': 'LV3 秘境守護者' }[level] || level;
+        }
+
+        function updateLevelGuide(level) {
+            const normalizedLevel = ['LV1_INSIDER', 'LV2_GUIDE', 'LV3_GUARDIAN'].includes(level) ? level : 'LV1_INSIDER';
+
+            document.querySelectorAll('[data-level-card]').forEach(card => {
+                const isCurrent = card.dataset.levelCard === normalizedLevel;
+                card.classList.toggle('active', isCurrent);
+                const flag = card.querySelector('.current-level-flag');
+                if (flag) {
+                    flag.classList.toggle('hidden', !isCurrent);
+                }
+            });
         }
 
         function statusClass(s) {

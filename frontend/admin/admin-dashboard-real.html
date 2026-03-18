@@ -108,17 +108,158 @@
             border: 1px solid #e7dfd3;
             border-radius: 1.25rem;
         }
+        .onboarding-hero {
+            background:
+                radial-gradient(circle at top right, rgba(92, 138, 104, 0.18), transparent 28%),
+                linear-gradient(135deg, #f7f2e9 0%, #ffffff 55%, #f6faf5 100%);
+            border: 1px solid #e7dfd3;
+            border-radius: 2rem;
+            overflow: hidden;
+            position: relative;
+        }
+        .onboarding-section-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            background: #f2ece3;
+            color: #776a5a;
+            font-size: 0.75rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .onboarding-stat {
+            border: 1px solid #ebe2d5;
+            border-radius: 1.25rem;
+            background: rgba(255,255,255,0.82);
+            padding: 1rem 1.1rem;
+            backdrop-filter: blur(8px);
+        }
+        .onboarding-shell {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
+            gap: 1.5rem;
+            align-items: start;
+        }
+        .onboarding-sidebar {
+            position: sticky;
+            top: 1.5rem;
+        }
+        .onboarding-panel {
+            background: #fff;
+            border: 1px solid #eae3d8;
+            border-radius: 1.5rem;
+            box-shadow: 0 12px 34px rgba(60, 45, 24, 0.05);
+        }
+        .onboarding-panel-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
         .onboarding-chip {
             border: 1px solid #d9d0c3;
             border-radius: 9999px;
             padding: 0.45rem 0.9rem;
             font-size: 0.875rem;
             transition: all 0.2s ease;
+            background: #fff;
         }
         .onboarding-chip.active {
             background-color: #2E4B36;
             color: #fff;
             border-color: #2E4B36;
+        }
+        .onboarding-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            padding: 0.85rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .onboarding-action.primary {
+            background: #2E4B36;
+            color: #fff;
+        }
+        .onboarding-action.primary:hover {
+            background: #243c2b;
+        }
+        .onboarding-action.secondary {
+            background: #fff;
+            color: #5c544b;
+            border: 1px solid #ddd3c6;
+        }
+        .onboarding-action.secondary:hover {
+            background: #faf7f2;
+            border-color: #c7b9a4;
+        }
+        .onboarding-mini-card {
+            border: 1px solid #eee5da;
+            border-radius: 1.2rem;
+            background: #fcfaf7;
+            padding: 1rem;
+        }
+        .onboarding-empty {
+            border: 1px dashed #cfbfab;
+            border-radius: 1.25rem;
+            background: linear-gradient(180deg, #fffdfa 0%, #faf7f1 100%);
+            padding: 1.25rem;
+        }
+        .onboarding-focus-card {
+            border: 1px solid #e8dfd2;
+            border-radius: 1.4rem;
+            padding: 1.1rem;
+            background: linear-gradient(180deg, #ffffff 0%, #fbf8f3 100%);
+        }
+        .onboarding-progress {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+        .onboarding-progress-step {
+            border-radius: 1rem;
+            border: 1px solid #eadfce;
+            background: #fcf9f5;
+            padding: 0.8rem 0.9rem;
+        }
+        .onboarding-progress-step strong {
+            display: block;
+            color: #2E4B36;
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.3rem;
+        }
+        .application-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.65rem;
+        }
+        .application-meta div {
+            border-radius: 0.9rem;
+            background: #f9f5ef;
+            padding: 0.7rem 0.8rem;
+        }
+        .onboarding-textarea {
+            margin-top: 1rem;
+            width: 100%;
+            border: 1px solid #e7ddd0;
+            border-radius: 1.2rem;
+            background: #fbf8f4;
+            color: #4f463f;
+            font-size: 0.9rem;
+            line-height: 1.65;
+            padding: 1rem;
+        }
+        .onboarding-link-grid {
+            display: grid;
+            gap: 0.75rem;
         }
         .application-card-active {
             border-color: #2E4B36;
@@ -137,6 +278,23 @@
         .packet-link:hover {
             border-color: #c7b9a4;
             background: #fff;
+        }
+        @media (max-width: 1279px) {
+            .onboarding-shell {
+                grid-template-columns: 1fr;
+            }
+            .onboarding-sidebar {
+                position: static;
+            }
+        }
+        @media (max-width: 767px) {
+            .onboarding-progress,
+            .application-meta {
+                grid-template-columns: 1fr;
+            }
+            .onboarding-panel-header {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -237,75 +395,71 @@
         <!-- 大使 onboarding 標籤內容 -->
         <div id="content-onboarding" class="tab-content">
             <div class="space-y-8">
-                <div class="brand-card p-8">
-                    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+                <div class="onboarding-hero p-8 lg:p-10">
+                    <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_minmax(22rem,0.8fr)] gap-8 items-start">
                         <div>
-                            <p class="text-sm tracking-[0.3em] text-stone-400 uppercase mb-3">Partner Workflow</p>
-                            <h2 class="font-serif text-3xl font-semibold brand-accent">大使 onboarding 工作台</h2>
-                            <p class="text-stone-600 mt-3 max-w-3xl">
-                                把「申請審核 → 建立專屬連結 → 交付完整資源包」收斂成一條工作流，避免來回切頁與漏步驟。
+                            <span class="onboarding-section-tag mb-4">Partner Workflow</span>
+                            <h2 class="font-serif text-3xl lg:text-4xl font-semibold brand-accent leading-tight">大使 onboarding 工作台</h2>
+                            <p class="text-stone-600 mt-4 max-w-3xl text-base lg:text-lg leading-8">
+                                把「邀請加入、審核申請、建立專屬連結、交付完整資源包」收斂成單一路徑。你只需要判斷對方現在在哪個階段，下一步就在眼前。
                             </p>
+                            <div class="flex flex-wrap gap-3 mt-6">
+                                <button onclick="refreshOnboardingWorkspace()" class="onboarding-action primary">重新整理工作台</button>
+                                <button onclick="openStandaloneLinkGenerator()" class="onboarding-action secondary">直接手動建檔</button>
+                                <button onclick="copyOnboardingInviteMessage()" class="onboarding-action secondary">複製邀請文案</button>
+                                <a href="application-review-dashboard.html" target="_blank" class="onboarding-action secondary">開啟獨立審核頁</a>
+                            </div>
                         </div>
-                        <div class="flex flex-wrap gap-3">
-                            <button onclick="refreshOnboardingWorkspace()" class="bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800">
-                                🔄 重新整理工作台
-                            </button>
-                            <a href="application-review-dashboard.html" target="_blank" class="bg-white text-stone-700 px-4 py-2 rounded-lg border border-stone-300 hover:bg-stone-50">
-                                ↗ 獨立審核頁
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-                        <div class="workflow-step p-5">
-                            <div class="text-xs tracking-[0.24em] text-stone-400 uppercase mb-3">Step 1</div>
-                            <h3 class="font-serif text-xl text-stone-800 mb-2">審核申請</h3>
-                            <p class="text-sm text-stone-600">先看申請內容與留言，快速核准或拒絕，避免申請積壓。</p>
-                        </div>
-                        <div class="workflow-step p-5">
-                            <div class="text-xs tracking-[0.24em] text-stone-400 uppercase mb-3">Step 2</div>
-                            <h3 class="font-serif text-xl text-stone-800 mb-2">準備專屬連結</h3>
-                            <p class="text-sm text-stone-600">核准後直接帶著預填資料進連結生成器，完成夥伴建檔與短網址產出。</p>
-                        </div>
-                        <div class="workflow-step p-5">
-                            <div class="text-xs tracking-[0.24em] text-stone-400 uppercase mb-3">Step 3</div>
-                            <h3 class="font-serif text-xl text-stone-800 mb-2">交付資源包</h3>
-                            <p class="text-sm text-stone-600">整理大使登入頁、贈禮工具包、規則頁與專屬連結，一次交付完整文件。</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 gap-4">
+                            <div class="onboarding-stat">
+                                <div class="text-xs tracking-[0.14em] uppercase text-stone-400 mb-2">Step 1</div>
+                                <div class="font-serif text-xl text-stone-800 mb-2">邀請或收件</div>
+                                <p class="text-sm text-stone-600 leading-6">先發邀請頁給對方，或直接從待審核佇列接手。</p>
+                            </div>
+                            <div class="onboarding-stat">
+                                <div class="text-xs tracking-[0.14em] uppercase text-stone-400 mb-2">Step 2</div>
+                                <div class="font-serif text-xl text-stone-800 mb-2">建立專屬連結</div>
+                                <p class="text-sm text-stone-600 leading-6">核准後帶著預填資料進連結生成器，完成建檔與短網址。</p>
+                            </div>
+                            <div class="onboarding-stat">
+                                <div class="text-xs tracking-[0.14em] uppercase text-stone-400 mb-2">Step 3</div>
+                                <div class="font-serif text-xl text-stone-800 mb-2">完整交付</div>
+                                <p class="text-sm text-stone-600 leading-6">最後一次交付登入頁、工具包、規則頁與專屬連結。</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 xl:grid-cols-5 gap-8">
-                    <div class="xl:col-span-3 space-y-6">
-                        <div class="brand-card p-8">
-                            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                <div class="onboarding-shell">
+                    <div class="space-y-6">
+                        <div class="onboarding-panel p-8">
+                            <div class="onboarding-panel-header">
                                 <div>
+                                    <span class="onboarding-section-tag mb-3">Queue</span>
                                     <h3 class="font-serif text-2xl font-semibold brand-accent">申請佇列</h3>
-                                    <p class="text-sm text-stone-500 mt-1">優先處理待審核申請，核准後直接送進下一步。</p>
+                                    <p class="text-sm text-stone-500 mt-2">優先處理待審核申請，核准後直接送進下一步。</p>
                                 </div>
                                 <div class="grid grid-cols-3 gap-3 text-center min-w-[18rem]">
-                                    <div class="bg-amber-50 rounded-2xl p-3">
+                                    <div class="onboarding-stat !p-3">
                                         <div class="text-xs text-amber-700">待審核</div>
                                         <div id="onboardingPendingCount" class="text-2xl font-bold text-amber-700">0</div>
                                     </div>
-                                    <div class="bg-emerald-50 rounded-2xl p-3">
+                                    <div class="onboarding-stat !p-3">
                                         <div class="text-xs text-emerald-700">已核准</div>
                                         <div id="onboardingApprovedCount" class="text-2xl font-bold text-emerald-700">0</div>
                                     </div>
-                                    <div class="bg-stone-100 rounded-2xl p-3">
+                                    <div class="onboarding-stat !p-3">
                                         <div class="text-xs text-stone-600">總申請</div>
                                         <div id="onboardingTotalCount" class="text-2xl font-bold text-stone-700">0</div>
                                     </div>
                                 </div>
                             </div>
-
                             <div class="flex flex-wrap gap-3 mb-6">
                                 <button type="button" class="onboarding-chip active" data-onboarding-filter="PENDING" onclick="setOnboardingFilter('PENDING')">待審核</button>
                                 <button type="button" class="onboarding-chip" data-onboarding-filter="APPROVED" onclick="setOnboardingFilter('APPROVED')">已核准</button>
                                 <button type="button" class="onboarding-chip" data-onboarding-filter="REJECTED" onclick="setOnboardingFilter('REJECTED')">已拒絕</button>
                                 <button type="button" class="onboarding-chip" data-onboarding-filter="ALL" onclick="setOnboardingFilter('ALL')">全部</button>
                             </div>
-
                             <div id="onboardingApplications" class="space-y-4">
                                 <div class="text-center py-10 text-stone-500">
                                     <div class="loading-spinner mx-auto"></div>
@@ -313,58 +467,51 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="onboarding-panel p-8">
+                            <div class="onboarding-panel-header">
+                                <div>
+                                    <span class="onboarding-section-tag mb-3">Invite Kit</span>
+                                    <h3 class="font-serif text-2xl font-semibold brand-accent">邀請快捷台</h3>
+                                    <p class="text-sm text-stone-500 mt-2">用於邀請還沒申請的人，快速發送邀請頁、申請表和說明文案。</p>
+                                </div>
+                                <button onclick="copyOnboardingInviteMessage()" class="onboarding-action secondary">複製邀請文案</button>
+                            </div>
+                            <div id="onboardingInvitePanel" class="onboarding-link-grid">
+                                <div class="onboarding-empty text-sm text-stone-500">這裡會整理邀請頁、申請表與手動建檔捷徑。</div>
+                            </div>
+                            <textarea id="onboardingInviteMessage" class="onboarding-textarea h-48" readonly>這裡會產生可直接傳給潛在大使的邀請訊息。</textarea>
+                        </div>
                     </div>
 
-                    <div class="xl:col-span-2 space-y-6">
-                        <div class="brand-card p-8">
-                            <div class="flex items-center justify-between mb-4">
+                    <div class="onboarding-sidebar space-y-6">
+                        <div class="onboarding-panel p-8">
+                            <div class="onboarding-panel-header">
                                 <div>
+                                    <span class="onboarding-section-tag mb-3">Workspace</span>
                                     <h3 class="font-serif text-2xl font-semibold brand-accent">當前工作區</h3>
-                                    <p class="text-sm text-stone-500 mt-1">選一位申請者後，從這裡一路處理到交付完成；若對方還沒申請，也能直接手動建檔。</p>
+                                    <p class="text-sm text-stone-500 mt-2">選一位申請者後，從這裡一路處理到交付完成；若對方還沒申請，也能直接手動建檔。</p>
                                 </div>
                                 <button onclick="clearOnboardingSelection()" class="text-sm text-stone-500 hover:text-stone-700">清除選取</button>
                             </div>
                             <div id="onboardingWorkspace" class="space-y-4">
-                                <div class="rounded-2xl border border-dashed border-stone-300 p-6 text-sm text-stone-500">
-                                    先從左側選擇一位申請者，這裡會顯示審核、連結生成與交付步驟。
-                                </div>
+                                <div class="onboarding-empty text-sm text-stone-500">先從左側選擇一位申請者，這裡會顯示審核、連結生成與交付步驟。</div>
                             </div>
                         </div>
 
-                        <div class="brand-card p-8">
-                            <div class="flex items-center justify-between mb-4">
+                        <div class="onboarding-panel p-8">
+                            <div class="onboarding-panel-header">
                                 <div>
-                                    <h3 class="font-serif text-2xl font-semibold brand-accent">邀請快捷台</h3>
-                                    <p class="text-sm text-stone-500 mt-1">用於邀請還沒申請的人，快速發送邀請頁、申請表和說明文案。</p>
-                                </div>
-                                <button onclick="copyOnboardingInviteMessage()" class="bg-stone-900 text-white px-3 py-2 rounded-lg text-sm hover:bg-stone-800">
-                                    📋 複製邀請文案
-                                </button>
-                            </div>
-                            <div id="onboardingInvitePanel" class="space-y-3">
-                                <div class="rounded-2xl border border-dashed border-stone-300 p-6 text-sm text-stone-500">
-                                    這裡會整理邀請頁、申請表與手動建檔捷徑。
-                                </div>
-                            </div>
-                            <textarea id="onboardingInviteMessage" class="mt-4 w-full h-48 p-4 border border-stone-200 rounded-2xl bg-stone-50 text-sm text-stone-700" readonly>這裡會產生可直接傳給潛在大使的邀請訊息。</textarea>
-                        </div>
-
-                        <div class="brand-card p-8">
-                            <div class="flex items-center justify-between mb-4">
-                                <div>
+                                    <span class="onboarding-section-tag mb-3">Delivery Kit</span>
                                     <h3 class="font-serif text-2xl font-semibold brand-accent">交付資源包</h3>
-                                    <p class="text-sm text-stone-500 mt-1">完成建檔後，把這些頁面與連結一次交給大使。</p>
+                                    <p class="text-sm text-stone-500 mt-2">完成建檔後，把這些頁面與連結一次交給大使。</p>
                                 </div>
-                                <button onclick="copyOnboardingPacketMessage()" class="bg-stone-900 text-white px-3 py-2 rounded-lg text-sm hover:bg-stone-800">
-                                    📋 複製交付訊息
-                                </button>
+                                <button onclick="copyOnboardingPacketMessage()" class="onboarding-action secondary">複製交付訊息</button>
                             </div>
-                            <div id="onboardingPacketPanel" class="space-y-3">
-                                <div class="rounded-2xl border border-dashed border-stone-300 p-6 text-sm text-stone-500">
-                                    完成夥伴建檔後，這裡會自動整理好登入頁、工具包、規則頁與專屬連結。
-                                </div>
+                            <div id="onboardingPacketPanel" class="onboarding-link-grid">
+                                <div class="onboarding-empty text-sm text-stone-500">完成夥伴建檔後，這裡會自動整理好登入頁、工具包、規則頁與專屬連結。</div>
                             </div>
-                            <textarea id="onboardingPacketMessage" class="mt-4 w-full h-56 p-4 border border-stone-200 rounded-2xl bg-stone-50 text-sm text-stone-700" readonly>完成夥伴建檔後，這裡會產生可直接傳給大使的完整訊息。</textarea>
+                            <textarea id="onboardingPacketMessage" class="onboarding-textarea h-56" readonly>完成夥伴建檔後，這裡會產生可直接傳給大使的完整訊息。</textarea>
                         </div>
                     </div>
                 </div>
@@ -2238,8 +2385,9 @@
 
             if (onboardingState.applications.length === 0) {
                 container.innerHTML = `
-                    <div class="rounded-2xl border border-dashed border-stone-300 p-8 text-center text-stone-500">
-                        目前沒有符合此篩選條件的申請資料。
+                    <div class="onboarding-empty text-center text-stone-500">
+                        <div class="font-serif text-xl text-stone-700 mb-2">目前沒有符合此篩選條件的申請</div>
+                        <p class="text-sm">你可以切換篩選條件，或直接從右側走手動建檔路徑。</p>
                     </div>
                 `;
                 return;
@@ -2249,36 +2397,50 @@
                 const isActive = String(application.id) === String(onboardingState.selectedApplicationId);
                 const draft = getOnboardingDraft(application);
                 const partnerReady = Boolean(application.partner_code_assigned);
+                const hasMessage = Boolean(application.message);
                 return `
-                    <div class="brand-card p-5 border ${isActive ? 'application-card-active' : ''}">
+                    <div class="onboarding-focus-card ${isActive ? 'application-card-active' : ''}">
                         <div class="flex flex-col gap-4">
                             <div class="flex items-start justify-between gap-4">
                                 <div>
                                     <div class="flex items-center gap-2 flex-wrap">
-                                        <h4 class="font-semibold text-lg text-stone-800">${escapeHtml(application.name || '未提供姓名')}</h4>
+                                        <h4 class="font-serif text-xl text-stone-800">${escapeHtml(application.name || '未提供姓名')}</h4>
                                         <span class="px-2 py-1 rounded-full text-xs ${getApplicationStatusClass(application.application_status)}">${getApplicationStatusText(application.application_status)}</span>
+                                        ${isActive ? '<span class="px-2 py-1 rounded-full text-xs bg-stone-900 text-white">目前處理中</span>' : ''}
                                     </div>
                                     <p class="text-sm text-stone-500 mt-1">${escapeHtml(application.email || '未提供 Email')}</p>
                                     <p class="text-xs text-stone-400 mt-2">申請時間：${application.created_at ? new Date(application.created_at).toLocaleString('zh-TW') : '-'}</p>
                                 </div>
-                                <button onclick="selectOnboardingApplication(${application.id})" class="px-3 py-2 rounded-lg border border-stone-300 text-sm hover:bg-stone-50">
-                                    ${isActive ? '目前處理中' : '選取處理'}
+                                <button onclick="selectOnboardingApplication(${application.id})" class="onboarding-action ${isActive ? 'primary' : 'secondary'}">
+                                    ${isActive ? '已選取' : '選取處理'}
                                 </button>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-stone-600">
-                                <div>電話：${escapeHtml(application.phone || '未提供')}</div>
-                                <div>LINE：${escapeHtml(application.line_name || '未提供')}</div>
-                                <div>建議代碼：<span class="font-mono">${escapeHtml(draft.partnerCode)}</span></div>
-                                <div>${partnerReady ? `已建立夥伴：<span class="font-mono">${escapeHtml(application.partner_code_assigned)}</span>` : '尚未建立夥伴檔案'}</div>
+                            <div class="application-meta text-sm text-stone-600">
+                                <div>
+                                    <div class="text-xs text-stone-400 mb-1">電話</div>
+                                    <div>${escapeHtml(application.phone || '未提供')}</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-stone-400 mb-1">LINE</div>
+                                    <div>${escapeHtml(application.line_name || '未提供')}</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-stone-400 mb-1">建議代碼</div>
+                                    <div class="font-mono">${escapeHtml(draft.partnerCode)}</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-stone-400 mb-1">建檔狀態</div>
+                                    <div>${partnerReady ? `已建立 <span class="font-mono">${escapeHtml(application.partner_code_assigned)}</span>` : '尚未建立夥伴檔案'}</div>
+                                </div>
                             </div>
-                            ${application.message ? `<div class="bg-stone-50 rounded-xl p-3 text-sm text-stone-600">${escapeHtml(application.message)}</div>` : ''}
+                            ${hasMessage ? `<div class="onboarding-mini-card text-sm text-stone-600"><div class="text-xs uppercase tracking-[0.12em] text-stone-400 mb-2">申請留言</div>${escapeHtml(application.message)}</div>` : ''}
                             <div class="flex flex-wrap gap-2">
                                 ${application.application_status === 'PENDING' ? `
-                                    <button onclick="reviewOnboardingApplication(${application.id}, 'APPROVED')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700">✅ 核准</button>
-                                    <button onclick="reviewOnboardingApplication(${application.id}, 'REJECTED')" class="bg-rose-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-rose-700">✕ 拒絕</button>
+                                    <button onclick="reviewOnboardingApplication(${application.id}, 'APPROVED')" class="onboarding-action primary">核准</button>
+                                    <button onclick="reviewOnboardingApplication(${application.id}, 'REJECTED')" class="onboarding-action secondary">拒絕</button>
                                 ` : ''}
                                 ${application.application_status === 'APPROVED' ? `
-                                    <button onclick="selectOnboardingApplication(${application.id}); openLinkGeneratorForSelectedApplication();" class="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-black">🔗 進入連結生成器</button>
+                                    <button onclick="selectOnboardingApplication(${application.id}); openLinkGeneratorForSelectedApplication();" class="onboarding-action primary">進入連結生成器</button>
                                 ` : ''}
                             </div>
                         </div>
@@ -2327,21 +2489,17 @@
             const application = getSelectedOnboardingApplication();
             if (!application) {
                 container.innerHTML = `
-                    <div class="rounded-2xl border border-dashed border-stone-300 p-6">
+                    <div class="onboarding-empty">
                         <div class="text-sm text-stone-500 mb-4">
-                            先從左側選擇一位申請者，這裡會顯示審核、連結生成與交付步驟。
+                            先從左側選擇一位申請者，這裡會顯示審核、連結生成與交付步驟。若對方不想填申請表，你也可以直接手動建立大使資料。
                         </div>
                         <div class="workflow-step p-5">
                             <div class="text-xs tracking-[0.18em] uppercase text-stone-400 mb-2">Manual Path</div>
                             <h4 class="font-serif text-xl text-stone-800 mb-3">對方還沒申請，也可以直接建檔</h4>
                             <p class="text-sm text-stone-600 mb-4">如果你已經私下確認合作，直接打開連結生成器填資料，不必先走申請流程。</p>
                             <div class="flex flex-wrap gap-2">
-                                <button onclick="openStandaloneLinkGenerator()" class="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-black">
-                                    🔗 直接開啟連結生成器
-                                </button>
-                                <button onclick="copyOnboardingInviteMessage()" class="bg-white border border-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm hover:bg-stone-50">
-                                    📋 複製邀請申請文案
-                                </button>
+                                <button onclick="openStandaloneLinkGenerator()" class="onboarding-action primary">直接開啟連結生成器</button>
+                                <button onclick="copyOnboardingInviteMessage()" class="onboarding-action secondary">複製邀請申請文案</button>
                             </div>
                         </div>
                     </div>
@@ -2353,14 +2511,32 @@
             const hasPartner = Boolean(getSelectedOnboardingPartner(application));
 
             container.innerHTML = `
-                <div class="rounded-2xl bg-stone-50 p-5">
-                    <div class="flex items-center justify-between gap-3">
+                <div class="onboarding-focus-card">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
                         <div>
                             <p class="text-xs tracking-[0.2em] uppercase text-stone-400 mb-2">Selected Application</p>
                             <h4 class="font-serif text-2xl text-stone-800">${escapeHtml(application.name || '未提供姓名')}</h4>
                             <p class="text-sm text-stone-500 mt-1">${escapeHtml(application.email || '未提供 Email')} ・ ${escapeHtml(application.phone || '未提供電話')}</p>
                         </div>
-                        <span class="px-3 py-1 rounded-full text-xs ${getApplicationStatusClass(application.application_status)}">${getApplicationStatusText(application.application_status)}</span>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 rounded-full text-xs ${getApplicationStatusClass(application.application_status)}">${getApplicationStatusText(application.application_status)}</span>
+                            ${hasPartner ? '<span class="px-3 py-1 rounded-full text-xs bg-emerald-100 text-emerald-800">已建檔</span>' : '<span class="px-3 py-1 rounded-full text-xs bg-stone-100 text-stone-700">待建檔</span>'}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="onboarding-progress">
+                    <div class="onboarding-progress-step">
+                        <strong>1. 審核</strong>
+                        <span class="text-sm text-stone-600">${application.application_status === 'PENDING' ? '等待你確認申請是否通過。' : '此申請已完成審核。'}</span>
+                    </div>
+                    <div class="onboarding-progress-step">
+                        <strong>2. 連結</strong>
+                        <span class="text-sm text-stone-600">${hasPartner ? '夥伴資料已建立，可補調整連結。' : '下一步是完成專屬代碼與短網址。'}</span>
+                    </div>
+                    <div class="onboarding-progress-step">
+                        <strong>3. 交付</strong>
+                        <span class="text-sm text-stone-600">${hasPartner ? '可以直接複製完整交付訊息。' : '建檔後這裡會自動整理交付資源包。'}</span>
                     </div>
                 </div>
 
@@ -2372,15 +2548,15 @@
                         </div>
                         ${application.application_status === 'PENDING' ? `
                             <div class="flex gap-2">
-                                <button onclick="reviewOnboardingApplication(${application.id}, 'APPROVED')" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-emerald-700">核准</button>
-                                <button onclick="reviewOnboardingApplication(${application.id}, 'REJECTED')" class="bg-rose-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-rose-700">拒絕</button>
+                                <button onclick="reviewOnboardingApplication(${application.id}, 'APPROVED')" class="onboarding-action primary">核准</button>
+                                <button onclick="reviewOnboardingApplication(${application.id}, 'REJECTED')" class="onboarding-action secondary">拒絕</button>
                             </div>
                         ` : `<div class="text-sm text-stone-500">審核已完成</div>`}
                     </div>
-                    <div class="text-sm text-stone-600 space-y-2">
-                        <div>來源：${escapeHtml(application.referral_source || '未填寫')}</div>
-                        <div>社群：${escapeHtml(application.social_profile || '未填寫')}</div>
-                        <div>備註：${escapeHtml(application.review_notes || '尚無審核備註')}</div>
+                    <div class="application-meta text-sm text-stone-600">
+                        <div><div class="text-xs text-stone-400 mb-1">來源</div><div>${escapeHtml(application.referral_source || '未填寫')}</div></div>
+                        <div><div class="text-xs text-stone-400 mb-1">社群</div><div>${escapeHtml(application.social_profile || '未填寫')}</div></div>
+                        <div style="grid-column: 1 / -1;"><div class="text-xs text-stone-400 mb-1">審核備註</div><div>${escapeHtml(application.review_notes || '尚無審核備註')}</div></div>
                     </div>
                 </div>
 
@@ -2397,15 +2573,9 @@
                             <input id="workflowCouponUrl" type="url" value="${escapeHtml(draft.couponUrl)}" oninput="syncOnboardingDraftField('couponUrl', this.value.trim())" class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-200" placeholder="https://lin.ee/...">
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button onclick="openLinkGeneratorForSelectedApplication()" class="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-black">
-                                🔗 帶著預填資料進連結生成器
-                            </button>
-                            <button onclick="openStandaloneLinkGenerator()" class="bg-white border border-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm hover:bg-stone-50">
-                                ➕ 手動新建另一位大使
-                            </button>
-                            <button onclick="quickPromoteSelectedApplication()" class="bg-white border border-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm hover:bg-stone-50">
-                                ⚡ 直接建立基本大使
-                            </button>
+                            <button onclick="openLinkGeneratorForSelectedApplication()" class="onboarding-action primary">帶著預填資料進連結生成器</button>
+                            <button onclick="quickPromoteSelectedApplication()" class="onboarding-action secondary">直接建立基本大使</button>
+                            <button onclick="openStandaloneLinkGenerator()" class="onboarding-action secondary">手動新建另一位大使</button>
                         </div>
                         <p class="text-xs text-stone-500">
                             ${hasPartner ? '這位申請者已建立大使檔案，可直接往下複製交付資源包。' : '建議先進連結生成器完成短網址與資料儲存，再交付給大使。'}
@@ -2416,7 +2586,7 @@
                 <div class="workflow-step p-5">
                     <div class="text-xs tracking-[0.18em] uppercase text-stone-400 mb-2">Application Context</div>
                     <h4 class="font-serif text-xl text-stone-800 mb-3">申請內容摘要</h4>
-                    <div class="text-sm text-stone-600 whitespace-pre-line">${escapeHtml(buildApplicationSummary(application) || '目前沒有可帶入的申請摘要。')}</div>
+                    <div class="onboarding-mini-card text-sm text-stone-600 whitespace-pre-line">${escapeHtml(buildApplicationSummary(application) || '目前沒有可帶入的申請摘要。')}</div>
                 </div>
             `;
         }

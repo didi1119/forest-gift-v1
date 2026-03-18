@@ -2300,7 +2300,12 @@
             return [
                 application.referral_source ? `申請來源：${application.referral_source}` : null,
                 application.social_profile ? `社群連結：${application.social_profile}` : null,
-                application.message ? `申請留言：${application.message}` : null
+                application.message ? `申請留言：${application.message}` : null,
+                application.bank_name || application.bank_code || application.bank_branch
+                    ? `銀行資訊：${[application.bank_name, application.bank_code, application.bank_branch].filter(Boolean).join(' / ')}`
+                    : null,
+                application.bank_account_name ? `戶名：${application.bank_account_name}` : null,
+                application.bank_account_number ? `帳號：${application.bank_account_number}` : null
             ].filter(Boolean).join('\n');
         }
 
@@ -2755,6 +2760,11 @@
                 partner_phone: application.phone || '',
                 partner_code: draft.partnerCode || '',
                 coupon_url: draft.couponUrl || '',
+                bank_name: application.bank_name || '',
+                bank_code: application.bank_code || '',
+                bank_branch: application.bank_branch || '',
+                bank_account_name: application.bank_account_name || '',
+                bank_account_number: application.bank_account_number || '',
                 referral_source: application.referral_source || '',
                 social_profile: application.social_profile || '',
                 application_message: application.message || '',

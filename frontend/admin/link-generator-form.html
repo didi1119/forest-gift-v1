@@ -340,7 +340,12 @@
             return [
                 params.get('referral_source') ? `申請來源：${params.get('referral_source')}` : null,
                 params.get('social_profile') ? `社群連結：${params.get('social_profile')}` : null,
-                params.get('application_message') ? `申請留言：${params.get('application_message')}` : null
+                params.get('application_message') ? `申請留言：${params.get('application_message')}` : null,
+                params.get('bank_name') || params.get('bank_code') || params.get('bank_branch')
+                    ? `銀行資訊：${[params.get('bank_name'), params.get('bank_code'), params.get('bank_branch')].filter(Boolean).join(' / ')}`
+                    : null,
+                params.get('bank_account_name') ? `戶名：${params.get('bank_account_name')}` : null,
+                params.get('bank_account_number') ? `帳號：${params.get('bank_account_number')}` : null
             ].filter(Boolean).join('\n');
         }
 
@@ -351,7 +356,12 @@
                 ['partner_email', 'partnerEmail'],
                 ['partner_phone', 'partnerPhone'],
                 ['partner_code', 'partnerCode'],
-                ['coupon_url', 'couponUrl']
+                ['coupon_url', 'couponUrl'],
+                ['bank_name', 'bankName'],
+                ['bank_code', 'bankCode'],
+                ['bank_branch', 'bankBranch'],
+                ['bank_account_name', 'bankAccountName'],
+                ['bank_account_number', 'bankAccountNumber']
             ];
 
             prefillMap.forEach(([paramName, fieldId]) => {

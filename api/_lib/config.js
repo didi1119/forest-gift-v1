@@ -71,6 +71,7 @@ const DataModels = {
     tableName: 'Applications',
     fields: ['id', 'name', 'email', 'line_name', 'phone', 'message',
       'referral_source', 'social_profile',
+      'bank_name', 'bank_code', 'bank_branch', 'bank_account_name', 'bank_account_number',
       'application_status', 'review_notes', 'reviewed_by', 'reviewed_at',
       'partner_code_assigned', 'partner_link_sent', 'created_at', 'updated_at']
   }

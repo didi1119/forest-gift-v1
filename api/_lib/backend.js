@@ -2123,6 +2123,11 @@ async function handleSubmitApplication(data) {
   const message = String(data.message || '').trim().slice(0, 500);
   const referralSource = String(data.referral_source || '').trim().slice(0, 100);
   const socialProfile = String(data.social_profile || '').trim().slice(0, 200);
+  const bankName = String(data.bank_name || '').trim().slice(0, 50);
+  const bankCode = String(data.bank_code || '').trim().slice(0, 10);
+  const bankBranch = String(data.bank_branch || '').trim().slice(0, 50);
+  const bankAccountName = String(data.bank_account_name || '').trim().slice(0, 50);
+  const bankAccountNumber = String(data.bank_account_number || '').trim().slice(0, 30);
 
   // Email 格式驗證
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -2151,6 +2156,11 @@ async function handleSubmitApplication(data) {
     message,
     referral_source: referralSource,
     social_profile: socialProfile,
+    bank_name: bankName,
+    bank_code: bankCode,
+    bank_branch: bankBranch,
+    bank_account_name: bankAccountName,
+    bank_account_number: bankAccountNumber,
     application_status: 'PENDING',
     review_notes: '',
     reviewed_by: '',
@@ -2257,8 +2267,11 @@ async function handlePromoteToPartner(data) {
     short_coupon_link: '',
     available_points: 0,
     points_used: 0,
-    bank_account: '',
-    bank_code: '',
+    bank_account: record.data.bank_account_number || '',
+    bank_code: record.data.bank_code || '',
+    bank_name: record.data.bank_name || '',
+    bank_branch: record.data.bank_branch || '',
+    bank_account_name: record.data.bank_account_name || '',
     yearly_referrals: 0,
     base_level_for_year: 'LV1_INSIDER',
     yearly_referrals_year: getBusinessYear(),

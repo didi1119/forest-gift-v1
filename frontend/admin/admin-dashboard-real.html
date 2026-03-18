@@ -320,7 +320,7 @@
                             <div class="flex items-center justify-between mb-4">
                                 <div>
                                     <h3 class="font-serif text-2xl font-semibold brand-accent">當前工作區</h3>
-                                    <p class="text-sm text-stone-500 mt-1">選一位申請者後，從這裡一路處理到交付完成。</p>
+                                    <p class="text-sm text-stone-500 mt-1">選一位申請者後，從這裡一路處理到交付完成；若對方還沒申請，也能直接手動建檔。</p>
                                 </div>
                                 <button onclick="clearOnboardingSelection()" class="text-sm text-stone-500 hover:text-stone-700">清除選取</button>
                             </div>
@@ -329,6 +329,24 @@
                                     先從左側選擇一位申請者，這裡會顯示審核、連結生成與交付步驟。
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="brand-card p-8">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="font-serif text-2xl font-semibold brand-accent">邀請快捷台</h3>
+                                    <p class="text-sm text-stone-500 mt-1">用於邀請還沒申請的人，快速發送邀請頁、申請表和說明文案。</p>
+                                </div>
+                                <button onclick="copyOnboardingInviteMessage()" class="bg-stone-900 text-white px-3 py-2 rounded-lg text-sm hover:bg-stone-800">
+                                    📋 複製邀請文案
+                                </button>
+                            </div>
+                            <div id="onboardingInvitePanel" class="space-y-3">
+                                <div class="rounded-2xl border border-dashed border-stone-300 p-6 text-sm text-stone-500">
+                                    這裡會整理邀請頁、申請表與手動建檔捷徑。
+                                </div>
+                            </div>
+                            <textarea id="onboardingInviteMessage" class="mt-4 w-full h-48 p-4 border border-stone-200 rounded-2xl bg-stone-50 text-sm text-stone-700" readonly>這裡會產生可直接傳給潛在大使的邀請訊息。</textarea>
                         </div>
 
                         <div class="brand-card p-8">
@@ -1867,6 +1885,7 @@
                 case 'onboarding':
                     renderOnboardingApplications();
                     renderOnboardingWorkspace();
+                    renderOnboardingInvitePanel();
                     renderOnboardingPacketPanel();
                     break;
                 case 'overview':
@@ -2128,6 +2147,16 @@
             return new URL(relativePath, window.location.href).toString();
         }
 
+        function buildApplicationSummary(application) {
+            if (!application) return '';
+
+            return [
+                application.referral_source ? `申請來源：${application.referral_source}` : null,
+                application.social_profile ? `社群連結：${application.social_profile}` : null,
+                application.message ? `申請留言：${application.message}` : null
+            ].filter(Boolean).join('\n');
+        }
+
         function getSelectedOnboardingPartner(application = getSelectedOnboardingApplication()) {
             if (!application || !Array.isArray(allData.partners)) return null;
 
@@ -2298,8 +2327,23 @@
             const application = getSelectedOnboardingApplication();
             if (!application) {
                 container.innerHTML = `
-                    <div class="rounded-2xl border border-dashed border-stone-300 p-6 text-sm text-stone-500">
-                        先從左側選擇一位申請者，這裡會顯示審核、連結生成與交付步驟。
+                    <div class="rounded-2xl border border-dashed border-stone-300 p-6">
+                        <div class="text-sm text-stone-500 mb-4">
+                            先從左側選擇一位申請者，這裡會顯示審核、連結生成與交付步驟。
+                        </div>
+                        <div class="workflow-step p-5">
+                            <div class="text-xs tracking-[0.18em] uppercase text-stone-400 mb-2">Manual Path</div>
+                            <h4 class="font-serif text-xl text-stone-800 mb-3">對方還沒申請，也可以直接建檔</h4>
+                            <p class="text-sm text-stone-600 mb-4">如果你已經私下確認合作，直接打開連結生成器填資料，不必先走申請流程。</p>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="openStandaloneLinkGenerator()" class="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-black">
+                                    🔗 直接開啟連結生成器
+                                </button>
+                                <button onclick="copyOnboardingInviteMessage()" class="bg-white border border-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm hover:bg-stone-50">
+                                    📋 複製邀請申請文案
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 `;
                 return;
@@ -2356,6 +2400,9 @@
                             <button onclick="openLinkGeneratorForSelectedApplication()" class="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-black">
                                 🔗 帶著預填資料進連結生成器
                             </button>
+                            <button onclick="openStandaloneLinkGenerator()" class="bg-white border border-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm hover:bg-stone-50">
+                                ➕ 手動新建另一位大使
+                            </button>
                             <button onclick="quickPromoteSelectedApplication()" class="bg-white border border-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm hover:bg-stone-50">
                                 ⚡ 直接建立基本大使
                             </button>
@@ -2365,7 +2412,58 @@
                         </p>
                     </div>
                 </div>
+
+                <div class="workflow-step p-5">
+                    <div class="text-xs tracking-[0.18em] uppercase text-stone-400 mb-2">Application Context</div>
+                    <h4 class="font-serif text-xl text-stone-800 mb-3">申請內容摘要</h4>
+                    <div class="text-sm text-stone-600 whitespace-pre-line">${escapeHtml(buildApplicationSummary(application) || '目前沒有可帶入的申請摘要。')}</div>
+                </div>
             `;
+        }
+
+        function buildOnboardingInviteKit() {
+            const invitationUrl = getAbsoluteFrontendUrl('../invitation.html');
+            const signupUrl = getAbsoluteFrontendUrl('../invitation.html#signup');
+            const levelsUrl = getAbsoluteFrontendUrl('../invitation.html#journey');
+            const manualLinkgenUrl = getAbsoluteFrontendUrl('link-generator-form.html');
+
+            return {
+                links: [
+                    { label: '合作邀請頁', description: '先讓對方理解整體合作概念與品牌調性', url: invitationUrl },
+                    { label: '直接申請表單', description: '直接跳到申請區塊，方便對方立即填寫', url: signupUrl },
+                    { label: '等級與回饋說明', description: '讓對方先看升級、保級與合作回饋', url: levelsUrl },
+                    { label: '手動建檔入口', description: '若對方不想填申請表，你可直接手動建立大使資料', url: manualLinkgenUrl }
+                ],
+                message: [
+                    '想正式邀請你加入靜謐森林的知音大使計畫。',
+                    '',
+                    '你可以先看這份完整邀請頁，裡面有合作方式、回饋規則和申請表：',
+                    `1. 合作邀請頁：${invitationUrl}`,
+                    `2. 直接申請表單：${signupUrl}`,
+                    `3. 等級與回饋說明：${levelsUrl}`,
+                    '',
+                    '如果你願意加入，直接填申請表就可以；若你想先聊聊也可以直接回我。'
+                ].join('\n')
+            };
+        }
+
+        function renderOnboardingInvitePanel() {
+            const panel = document.getElementById('onboardingInvitePanel');
+            const textarea = document.getElementById('onboardingInviteMessage');
+            if (!panel || !textarea) return;
+
+            const inviteKit = buildOnboardingInviteKit();
+            panel.innerHTML = inviteKit.links.map(link => `
+                <div class="packet-link">
+                    <div class="min-w-0">
+                        <div class="font-medium text-stone-800">${escapeHtml(link.label)}</div>
+                        <div class="text-xs text-stone-500 mt-1">${escapeHtml(link.description)}</div>
+                        <div class="text-xs text-stone-400 mt-2 break-all">${escapeHtml(link.url)}</div>
+                    </div>
+                    <a href="${link.url}" target="_blank" class="text-sm text-emerald-700 hover:underline whitespace-nowrap">開啟</a>
+                </div>
+            `).join('');
+            textarea.value = inviteKit.message;
         }
 
         function buildOnboardingPacket(application, partner) {
@@ -2445,6 +2543,18 @@
             textarea.value = packet.message;
         }
 
+        function copyOnboardingInviteMessage() {
+            const textarea = document.getElementById('onboardingInviteMessage');
+            if (!textarea || !textarea.value) {
+                showErrorMessage('目前沒有可複製的邀請訊息');
+                return;
+            }
+
+            textarea.select();
+            document.execCommand('copy');
+            showSuccessMessage('✅ 已複製邀請文案');
+        }
+
         function copyOnboardingPacketMessage() {
             const textarea = document.getElementById('onboardingPacketMessage');
             if (!textarea || !textarea.value) {
@@ -2455,6 +2565,14 @@
             textarea.select();
             document.execCommand('copy');
             showSuccessMessage('✅ 已複製交付訊息');
+        }
+
+        function openStandaloneLinkGenerator() {
+            const iframe = document.getElementById('linkgenIframe');
+            if (iframe) {
+                iframe.src = 'link-generator-form.html?source=manual';
+            }
+            showTab('linkgen');
         }
 
         function openLinkGeneratorForSelectedApplication() {
@@ -2473,6 +2591,9 @@
                 partner_phone: application.phone || '',
                 partner_code: draft.partnerCode || '',
                 coupon_url: draft.couponUrl || '',
+                referral_source: application.referral_source || '',
+                social_profile: application.social_profile || '',
+                application_message: application.message || '',
                 source: 'onboarding'
             });
 
@@ -2513,6 +2634,7 @@
         async function refreshOnboardingWorkspace(forceRefresh = true) {
             await loadRealData(forceRefresh);
             await loadOnboardingApplications();
+            renderOnboardingInvitePanel();
         }
 
         function showLoadingSpinner(message) {

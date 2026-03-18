@@ -96,6 +96,7 @@
         <div id="prefillNotice" class="hidden mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-900">
             <div class="font-medium mb-1">已從 onboarding 流程帶入申請資料</div>
             <div id="prefillNoticeText" class="text-emerald-800">你可以直接確認資料、生成連結並儲存。</div>
+            <div id="prefillApplicationSummary" class="hidden mt-3 whitespace-pre-line rounded-xl bg-white/70 px-4 py-3 text-xs text-emerald-900"></div>
         </div>
 
         <!-- Main Form -->
@@ -335,6 +336,14 @@
 
         let generatedData = null;
 
+        function buildApplicationSummaryFromQuery(params = new URLSearchParams(window.location.search)) {
+            return [
+                params.get('referral_source') ? `申請來源：${params.get('referral_source')}` : null,
+                params.get('social_profile') ? `社群連結：${params.get('social_profile')}` : null,
+                params.get('application_message') ? `申請留言：${params.get('application_message')}` : null
+            ].filter(Boolean).join('\n');
+        }
+
         function applyPrefillFromQuery() {
             const params = new URLSearchParams(window.location.search);
             const prefillMap = [
@@ -354,6 +363,7 @@
 
             const notice = document.getElementById('prefillNotice');
             const noticeText = document.getElementById('prefillNoticeText');
+            const summaryBox = document.getElementById('prefillApplicationSummary');
             const applicationId = params.get('application_id');
             const source = params.get('source');
             if ((applicationId || source === 'onboarding') && notice && noticeText) {
@@ -361,6 +371,17 @@
                 noticeText.textContent = applicationId
                     ? `申請 #${applicationId} 的姓名、聯絡方式與建議代碼已預先帶入。`
                     : '你可以直接確認資料、生成連結並儲存。';
+
+                const summaryText = buildApplicationSummaryFromQuery(params);
+                if (summaryBox) {
+                    if (summaryText) {
+                        summaryBox.classList.remove('hidden');
+                        summaryBox.textContent = summaryText;
+                    } else {
+                        summaryBox.classList.add('hidden');
+                        summaryBox.textContent = '';
+                    }
+                }
             }
         }
 
@@ -552,6 +573,7 @@ ${shortCouponUrl}
                 // Save generated data
                 generatedData = {
                     application_id: new URLSearchParams(window.location.search).get('application_id') || '',
+                    notes: buildApplicationSummaryFromQuery(),
                     partner_code: partnerCode,
                     partner_name: partnerName,
                     contact_email: partnerEmail,
@@ -677,7 +699,8 @@ ${shortCouponUrl}
                     bank_name: generatedData.bank_name || '',
                     bank_code: generatedData.bank_code || '',
                     bank_branch: generatedData.bank_branch || '',
-                    bank_account_name: generatedData.bank_account_name || ''
+                    bank_account_name: generatedData.bank_account_name || '',
+                    notes: generatedData.notes || ''
                 };
 
                 // Use fetch with JSON (form submit won't work with Vercel JSON body parser)

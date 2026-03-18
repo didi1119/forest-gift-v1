@@ -4,9 +4,9 @@ const path = require('path');
 const { URL } = require('url');
 
 process.env.DATA_BACKEND = process.env.DATA_BACKEND || 'supabase';
-const root = '/private/tmp/forest-gift-fix-clean';
+const root = path.resolve(__dirname, '../../..');
 const port = Number(process.env.PORT || 4174);
-const { route, handleRedirect } = require('/private/tmp/forest-gift-fix-clean/api/_lib/backend.js');
+const { route, handleRedirect } = require(path.join(root, 'api/_lib/backend.js'));
 
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',

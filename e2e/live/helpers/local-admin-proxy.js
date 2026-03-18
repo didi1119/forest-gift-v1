@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
 
-const root = '/private/tmp/forest-gift-fix-clean';
+const root = path.resolve(__dirname, '../../..');
 const remoteOrigin = 'https://forest-ambassador.vercel.app';
 const port = Number(process.env.PORT || 4173);
 

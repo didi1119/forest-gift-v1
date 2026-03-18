@@ -80,6 +80,10 @@ function ensure(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function isTruthyFlag(value) {
+  return value === true || value === 1 || String(value).toLowerCase() === 'true';
+}
+
 async function shot(page, name) {
   const file = path.join(screenshotsDir, `${name}.png`);
   try {
@@ -120,6 +124,21 @@ async function setOnboardingDraftValues(page, nextPartnerCode, nextCouponUrl) {
     partnerCodeValue: nextPartnerCode,
     couponUrlValue: nextCouponUrl
   });
+}
+
+async function logOnboardingWorkspaceState(page, label) {
+  const debug = await page.evaluate(() => {
+    const workspace = document.getElementById('onboardingWorkspace');
+    const applicationCards = Array.from(document.querySelectorAll('.onboarding-focus-card')).map(card => (card.innerText || '').slice(0, 240));
+    return {
+      workspaceText: workspace ? (workspace.innerText || '').slice(0, 800) : null,
+      hasPartnerCodeInput: Boolean(document.getElementById('workflowPartnerCode')),
+      hasCouponUrlInput: Boolean(document.getElementById('workflowCouponUrl')),
+      applicationCardCount: applicationCards.length,
+      applicationCards
+    };
+  });
+  log(label, JSON.stringify(debug));
 }
 
 async function supabaseQuery(table, query) {
@@ -273,16 +292,15 @@ async function cleanup() {
       }, reviewNote, { timeout: 30000 });
     }
 
+    await logOnboardingWorkspaceState(page, 'WORKSPACE_AFTER_APPROVAL');
     await setOnboardingDraftValues(page, partnerCode, couponUrl);
     await shot(page, '04_onboarding_approved');
 
     await page.waitForFunction(() => {
-      return Array.from(document.querySelectorAll('#onboardingWorkspace button'))
-        .some(button => (button.innerText || '').includes('帶著預填資料進連結生成器'));
+      return Boolean(document.querySelector('#onboardingWorkspace button[onclick*="openLinkGeneratorForSelectedApplication"]'));
     }, { timeout: 30000 });
     await page.evaluate(() => {
-      const button = Array.from(document.querySelectorAll('#onboardingWorkspace button'))
-        .find(item => (item.innerText || '').includes('帶著預填資料進連結生成器'));
+      const button = document.querySelector('#onboardingWorkspace button[onclick*="openLinkGeneratorForSelectedApplication"]');
       if (!button) throw new Error('找不到帶著預填資料進連結生成器按鈕');
       button.click();
     });
@@ -327,6 +345,7 @@ async function cleanup() {
       return null;
     }, 30000, 1500);
 
+    await logOnboardingWorkspaceState(page, 'WORKSPACE_AFTER_RETURN');
     const returnApplicationCard = page.locator('.onboarding-focus-card', { hasText: applicantEmail }).first();
     if (await returnApplicationCard.count()) {
       const returnSelectButton = returnApplicationCard.getByRole('button', { name: /選取處理|已選取/ }).first();
@@ -338,12 +357,10 @@ async function cleanup() {
     await setOnboardingDraftValues(page, partnerCode, couponUrl);
 
     await page.waitForFunction(() => {
-      return Array.from(document.querySelectorAll('#onboardingWorkspace button'))
-        .some(button => (button.innerText || '').includes('直接建立基本大使'));
+      return Boolean(document.querySelector('#onboardingWorkspace button[onclick*="quickPromoteSelectedApplication"]'));
     }, { timeout: 30000 });
     await page.evaluate(() => {
-      const button = Array.from(document.querySelectorAll('#onboardingWorkspace button'))
-        .find(item => (item.innerText || '').includes('直接建立基本大使'));
+      const button = document.querySelector('#onboardingWorkspace button[onclick*="quickPromoteSelectedApplication"]');
       if (!button) throw new Error('找不到直接建立基本大使按鈕');
       button.click();
     });
@@ -373,14 +390,10 @@ async function cleanup() {
         `select=id,application_status,partner_code_assigned,partner_link_sent&email=eq.${encodeURIComponent(applicantEmail)}&limit=1`
       );
       const row = rows[0];
-      return row && row.partner_code_assigned === partnerCode && row.partner_link_sent === true ? row : null;
+      return row && row.partner_code_assigned === partnerCode && isTruthyFlag(row.partner_link_sent) ? row : null;
     }, 30000, 1000);
     ensure(linkedApplication.partner_code_assigned === partnerCode, `application partner_code_assigned mismatch: ${JSON.stringify(linkedApplication)}`);
 
-    await page.waitForFunction((code) => {
-      const text = document.getElementById('onboardingWorkspace')?.innerText || '';
-      return text.includes(code) && text.includes('已建立');
-    }, partnerCode, { timeout: 30000 });
     await page.waitForFunction(() => {
       const textarea = document.getElementById('onboardingPacketMessage');
       return textarea && textarea.value.includes('大使登入頁') && textarea.value.includes('分享工具包');

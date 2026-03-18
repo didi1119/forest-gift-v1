@@ -1215,6 +1215,7 @@
             filter: 'PENDING',
             selectedApplicationId: null,
             manualPartnerCode: null,
+            focusedApplication: null,
             draftByApplicationId: {}
         };
         
@@ -2288,7 +2289,15 @@
         }
 
         function getSelectedOnboardingApplication() {
-            return onboardingState.applications.find(app => String(app.id) === String(onboardingState.selectedApplicationId)) || null;
+            const selected = onboardingState.applications.find(app => String(app.id) === String(onboardingState.selectedApplicationId));
+            if (selected) return selected;
+
+            if (onboardingState.focusedApplication &&
+                String(onboardingState.focusedApplication.id) === String(onboardingState.selectedApplicationId)) {
+                return onboardingState.focusedApplication;
+            }
+
+            return null;
         }
 
         function getAbsoluteFrontendUrl(relativePath) {
@@ -2338,6 +2347,7 @@
         function selectOnboardingApplication(applicationId) {
             onboardingState.selectedApplicationId = applicationId;
             onboardingState.manualPartnerCode = null;
+            onboardingState.focusedApplication = onboardingState.applications.find(app => String(app.id) === String(applicationId)) || null;
             renderOnboardingApplications();
             renderOnboardingWorkspace();
             renderOnboardingPacketPanel();
@@ -2346,6 +2356,7 @@
         function clearOnboardingSelection() {
             onboardingState.selectedApplicationId = null;
             onboardingState.manualPartnerCode = null;
+            onboardingState.focusedApplication = null;
             renderOnboardingApplications();
             renderOnboardingWorkspace();
             renderOnboardingPacketPanel();
@@ -2358,16 +2369,30 @@
                     status_filter: onboardingState.filter
                 });
 
-                onboardingState.applications = result.data || [];
+                let nextApplications = result.data || [];
                 onboardingState.counts = result.counts || { pending: 0, approved: 0, rejected: 0 };
                 onboardingState.totalCount = result.total_count || 0;
 
+                const focusedMatchesFilter = onboardingState.focusedApplication &&
+                    (onboardingState.filter === 'ALL' || onboardingState.focusedApplication.application_status === onboardingState.filter);
+
+                if (focusedMatchesFilter && onboardingState.selectedApplicationId &&
+                    !nextApplications.some(app => String(app.id) === String(onboardingState.selectedApplicationId))) {
+                    nextApplications = [onboardingState.focusedApplication, ...nextApplications];
+                }
+
+                onboardingState.applications = nextApplications;
+
                 if (!onboardingState.selectedApplicationId && !onboardingState.manualPartnerCode && onboardingState.applications.length > 0) {
                     onboardingState.selectedApplicationId = onboardingState.applications[0].id;
+                    onboardingState.focusedApplication = onboardingState.applications[0];
                 } else if (onboardingState.selectedApplicationId) {
                     const stillExists = onboardingState.applications.some(app => String(app.id) === String(onboardingState.selectedApplicationId));
                     if (!stillExists) {
                         onboardingState.selectedApplicationId = onboardingState.manualPartnerCode ? null : (onboardingState.applications[0]?.id || null);
+                        onboardingState.focusedApplication = onboardingState.manualPartnerCode ? null : (onboardingState.applications[0] || null);
+                    } else {
+                        onboardingState.focusedApplication = onboardingState.applications.find(app => String(app.id) === String(onboardingState.selectedApplicationId)) || null;
                     }
                 }
 
@@ -2479,8 +2504,25 @@
                     review_notes: reviewNotes || '',
                     reviewed_by: 'admin'
                 });
+                const updatedApplication = {
+                    ...application,
+                    application_status: status,
+                    review_notes: reviewNotes || '',
+                    reviewed_by: 'admin',
+                    reviewed_at: new Date().toISOString()
+                };
                 showSuccessMessage(`✅ 申請已${status === 'APPROVED' ? '核准' : '拒絕'}`);
+                onboardingState.filter = status;
+                updateOnboardingFilterButtons();
                 onboardingState.selectedApplicationId = applicationId;
+                onboardingState.focusedApplication = updatedApplication;
+                onboardingState.applications = [
+                    updatedApplication,
+                    ...onboardingState.applications.filter(app => String(app.id) !== String(applicationId) && app.application_status === status)
+                ];
+                renderOnboardingApplications();
+                renderOnboardingWorkspace();
+                renderOnboardingPacketPanel();
                 await loadOnboardingApplications();
             } catch (error) {
                 showErrorMessage('❌ 審核失敗：' + error.message);

@@ -932,44 +932,44 @@
                         html += `
                             <div class="editorial-grid mb-16 pb-16 last:mb-0 last:pb-0 group animation-fade-in-up">
                                 <!-- Centered Header -->
-                                <div class="text-center mb-12">
-                                    <span class="inline-block px-3 py-1 mb-4 text-[0.6rem] font-bold tracking-[0.3em] uppercase text-[#C5A065] border border-[#C5A065]/30 rounded-full">Message from the Forest</span>
-                                    <h5 class="font-editorial text-5xl text-[#1A2F23] mb-4">${card.name}</h5>
-                                    <p class="font-serif text-lg italic text-[#4A675A] opacity-80">${card.keyword}</p>
+                                <div class="text-center mb-10 sm:mb-12">
+                                    <span class="inline-block px-3 py-1 mb-4 text-[0.55rem] sm:text-[0.6rem] font-bold tracking-[0.2em] sm:tracking-[0.3em] uppercase text-[#C5A065] border border-[#C5A065]/30 rounded-full">Message from the Forest</span>
+                                    <h5 class="font-editorial text-4xl sm:text-5xl text-[#1A2F23] mb-3">${card.name}</h5>
+                                    <p class="font-serif text-base sm:text-lg italic text-[#4A675A] opacity-80">${card.keyword}</p>
                                 </div>
 
                                 <!-- The Whisper (Voice) - Centered & Poetic -->
-                                <div class="max-w-2xl mx-auto mb-16 text-center relative">
-                                    <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-6xl text-[#C5A065]/10 font-serif">"</span>
-                                    <p class="font-serif text-2xl leading-relaxed text-[#1A2F23]/80 italic">
+                                <div class="max-w-2xl mx-auto mb-12 sm:mb-16 text-center relative">
+                                    <span class="absolute -top-5 left-1/2 -translate-x-1/2 text-5xl sm:text-6xl text-[#C5A065]/10 font-serif">"</span>
+                                    <p class="font-serif text-xl sm:text-2xl leading-relaxed text-[#1A2F23]/80 italic">
                                         ${card.whisper}
                                     </p>
                                 </div>
 
                                 <!-- The Reflection (Grid: Light & Shadow) -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto mb-16">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 max-w-4xl mx-auto mb-12 sm:mb-16">
                                     <!-- Mirror (Light) -->
                                     <div class="relative pl-8 border-l border-[#C5A065]/30">
                                         <span class="absolute -left-3 top-0 w-6 h-6 bg-[#F5F2EB] flex items-center justify-center rounded-full border border-[#C5A065] text-[#C5A065] text-xs">☀</span>
                                         <h6 class="font-bold text-[#1A2F23] mb-3 tracking-widest text-xs uppercase">鏡像 (Insight)</h6>
-                                        <p class="font-serif text-lg leading-relaxed text-[#1A2F23]/80">${card.mirror}</p>
+                                        <p class="font-serif text-base sm:text-lg leading-relaxed text-[#1A2F23]/80">${card.mirror}</p>
                                     </div>
-                                    
+
                                     <!-- Shadow (Dark) -->
                                     <div class="relative pl-8 border-l border-[#8B4513]/20">
                                         <span class="absolute -left-3 top-0 w-6 h-6 bg-[#F5F2EB] flex items-center justify-center rounded-full border border-[#8B4513]/40 text-[#8B4513] text-xs">☾</span>
                                         <h6 class="font-bold text-[#8B4513]/80 mb-3 tracking-widest text-xs uppercase">陰影 (Shadow)</h6>
-                                        <p class="font-serif text-lg leading-relaxed text-[#5D4037]/80">${card.shadow}</p>
+                                        <p class="font-serif text-base sm:text-lg leading-relaxed text-[#5D4037]/80">${card.shadow}</p>
                                     </div>
                                 </div>
 
                                 <!-- The Path (Action) - Full Width Footer -->
-                                <div class="max-w-3xl mx-auto bg-[#1A2F23]/5 p-8 rounded-sm text-center">
+                                <div class="max-w-3xl mx-auto bg-[#1A2F23]/5 p-6 sm:p-8 rounded-lg text-center">
                                     <h6 class="font-bold text-[#4A675A] mb-4 tracking-widest text-xs uppercase">指引路徑 (The Path)</h6>
-                                    <p class="font-serif text-lg leading-loose text-[#1A2F23]">${card.path}</p>
-                                    
+                                    <p class="font-serif text-base sm:text-lg leading-loose text-[#1A2F23]">${card.path}</p>
+
                                     <!-- Random Ending Phrase Add-on -->
-                                    <div class="mt-8 pt-6 border-t border-[#1A2F23]/10">
+                                    <div class="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-[#1A2F23]/10">
                                         <p class="font-serif text-sm leading-relaxed text-[#1A2F23]/70 italic">
                                             ${Math.random() > 0.5 ? '「如果這份指引觸動了你，或許代表你的心正渴望一場真正的休息。」' : '「願這份指引，陪你度過下一個需要勇氣的時刻。」'}
                                         </p>

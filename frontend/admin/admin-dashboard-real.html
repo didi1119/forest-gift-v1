@@ -2695,29 +2695,25 @@
             const toolkitUrl = partner?.short_landing_link || partner?.landing_link || '';
             const couponUrl = partner?.short_coupon_link || partner?.coupon_link || partner?.coupon_url || draft.couponUrl || '';
             const loginUrl = getAbsoluteFrontendUrl('../partner-login.html');
-            const dashboardUrl = getAbsoluteFrontendUrl('../partner-dashboard.html');
             const toolkitHomeUrl = toolkitUrl || getAbsoluteFrontendUrl('../index.html');
-            const adminResourcesUrl = getAbsoluteFrontendUrl('resources.html');
             const recipientName = application?.name || partner?.partner_name || partner?.name || '你好';
+            const shareLabel = toolkitUrl ? '你的專屬分享工具包' : '知音大使贈禮工具包';
 
             return {
                 links: [
                     { label: '大使登入頁', description: '讓對方登入查詢佣金、點數與推薦紀錄', url: loginUrl },
-                    { label: '知音大使贈禮工具包', description: '對外分享的主工具包頁面', url: toolkitHomeUrl },
-                    { label: '大使儀表板介紹頁', description: '內部操作頁面，方便你教對方認識登入後會看到什麼', url: dashboardUrl },
-                    { label: '專屬優惠券連結', description: '專屬 LINE 優惠券或導流連結', url: couponUrl },
-                    { label: '管理員資源中心', description: '若你內部還要回查其他頁面，可從這裡進', url: adminResourcesUrl }
+                    { label: shareLabel, description: '分享給朋友使用的主工具包頁面', url: toolkitHomeUrl },
+                    ...(couponUrl ? [{ label: '專屬優惠券連結', description: '專屬 LINE 優惠券或導流連結', url: couponUrl }] : [])
                 ],
                 message: [
                     `${recipientName}，歡迎加入靜謐森林知音大使計畫。`,
                     '',
                     '以下是你之後會用到的完整連結與文件：',
                     `1. 大使登入頁：${loginUrl}`,
-                    `2. 知音大使贈禮工具包：${toolkitHomeUrl}`,
-                    toolkitUrl ? `3. 你的專屬分享主連結：${toolkitUrl}` : null,
-                    couponUrl ? `4. 你的專屬優惠券連結：${couponUrl}` : null,
+                    `2. ${shareLabel}：${toolkitHomeUrl}`,
+                    couponUrl ? `3. 你的專屬優惠券連結：${couponUrl}` : null,
                     '',
-                    '之後如果你要登入查看紀錄，或直接分享你的工具包，都可以從上面這些連結進去。'
+                    '之後如果你要查看佣金紀錄，請從登入頁登入；如果要分享給朋友，直接使用你的分享工具包或優惠券連結即可。'
                 ].filter(Boolean).join('\n')
             };
         }

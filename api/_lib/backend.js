@@ -7,12 +7,15 @@
 const db = require('./data-adapter');
 const {
   SHEETS_ID, GITHUB_PAGES_URL, DEFAULT_LINE_COUPON_URL,
-  COMMISSION_RATES, FIRST_REFERRAL_BONUS, LEVEL_REQUIREMENTS, DataModels
+  COMMISSION_RATES, FIRST_REFERRAL_BONUS, LEVEL_REQUIREMENTS,
+  LEVEL_RETENTION_REQUIREMENTS, DataModels
 } = require('./config');
 
 // 調用深度追蹤
 let CALL_DEPTH = 0;
 const MAX_CALL_DEPTH = 5;
+const BUSINESS_TIMEZONE = 'Asia/Taipei';
+const LEVEL_SEQUENCE = ['LV1_INSIDER', 'LV2_GUIDE', 'LV3_GUARDIAN'];
 
 // ========================================
 // 通用數據訪問函數（adapter 薄包裝）
@@ -38,26 +41,371 @@ async function createRecord(sheetName, data) {
 // 輔助函數
 // ========================================
 
-async function findPartnerByCode(partnerCode) {
-  const results = await findRecordsByField('Partners', 'partner_code', partnerCode);
-  if (results.length > 0) {
-    const partner = results[0].data;
-    partner.partner_name = partner.partner_name || partner.name;
-    partner.partner_level = partner.partner_level || partner.level;
-    partner.contact_phone = partner.contact_phone || partner.phone;
-    partner.contact_email = partner.contact_email || partner.email;
-    partner.successful_referrals = partner.successful_referrals || partner.total_successful_referrals || 0;
-    partner.available_points = partner.available_points !== undefined ? partner.available_points : 0;
-    partner.points_used = partner.points_used !== undefined ? partner.points_used : 0;
-    return partner;
-  }
-  return null;
+function toInt(value, fallback = 0) {
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-async function findPartnerByCodeCaseInsensitive(code) {
-  let partner = await findPartnerByCode(code);
-  if (!partner) partner = await findPartnerByCode(code.toLowerCase());
-  if (!partner) partner = await findPartnerByCode(code.toUpperCase());
+function toNumber(value, fallback = 0) {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeLevel(level) {
+  return LEVEL_SEQUENCE.includes(level) ? level : 'LV1_INSIDER';
+}
+
+function getLevelRank(level) {
+  return LEVEL_SEQUENCE.indexOf(normalizeLevel(level));
+}
+
+function maxLevel(levelA, levelB) {
+  return getLevelRank(levelA) >= getLevelRank(levelB) ? normalizeLevel(levelA) : normalizeLevel(levelB);
+}
+
+function getBusinessDateParts(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BUSINESS_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+
+  const lookup = {};
+  for (const part of parts) {
+    if (part.type !== 'literal') lookup[part.type] = part.value;
+  }
+
+  if (!lookup.year || !lookup.month || !lookup.day) return null;
+  return { year: toInt(lookup.year), month: lookup.month, day: lookup.day };
+}
+
+function getBusinessYear(value = new Date()) {
+  const parts = getBusinessDateParts(value);
+  return parts ? parts.year : new Date().getUTCFullYear();
+}
+
+function getStartOfYearDate(year) {
+  return `${year}-01-01`;
+}
+
+function getEndOfYearDate(year) {
+  return `${year}-12-31`;
+}
+
+function getValueAsDateString(value) {
+  if (!value) return '';
+  const raw = String(value);
+  const directMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (directMatch) return `${directMatch[1]}-${directMatch[2]}-${directMatch[3]}`;
+
+  const parts = getBusinessDateParts(value);
+  if (!parts) return '';
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function getBookingLevelDateValue(booking) {
+  return booking.checkout_date ||
+    booking.checkin_date ||
+    booking.manually_confirmed_at ||
+    booking.updated_at ||
+    booking.created_at ||
+    '';
+}
+
+function getBookingLevelYear(booking) {
+  const dateValue = getBookingLevelDateValue(booking);
+  const directMatch = String(dateValue).match(/^(\d{4})-/);
+  if (directMatch) return toInt(directMatch[1]);
+  return getBusinessYear(dateValue || new Date());
+}
+
+function getBookingSortKey(booking) {
+  return `${getValueAsDateString(getBookingLevelDateValue(booking))}:${booking.id || booking.ID || ''}`;
+}
+
+function isCompletedReferralBooking(booking) {
+  return Boolean(
+    booking &&
+    booking.partner_code &&
+    booking.booking_source !== 'SELF_USE' &&
+    booking.stay_status === 'COMPLETED'
+  );
+}
+
+function normalizePartnerRecord(rawPartner) {
+  const partner = { ...rawPartner };
+  partner.partner_name = partner.partner_name || partner.name || '';
+  partner.name = partner.name || partner.partner_name || '';
+  partner.partner_level = normalizeLevel(partner.partner_level || partner.level);
+  partner.level = normalizeLevel(partner.level || partner.partner_level);
+  partner.base_level_for_year = normalizeLevel(partner.base_level_for_year || partner.partner_level || partner.level);
+  partner.contact_phone = partner.contact_phone || partner.phone || '';
+  partner.contact_email = partner.contact_email || partner.email || '';
+  partner.successful_referrals = toInt(
+    partner.successful_referrals !== undefined ? partner.successful_referrals : partner.total_successful_referrals,
+    0
+  );
+  partner.total_successful_referrals = toInt(
+    partner.total_successful_referrals !== undefined ? partner.total_successful_referrals : partner.successful_referrals,
+    0
+  );
+  partner.yearly_referrals = toInt(
+    partner.yearly_referrals !== undefined ? partner.yearly_referrals : partner.level_progress,
+    0
+  );
+  partner.level_progress = toInt(
+    partner.level_progress !== undefined ? partner.level_progress : partner.yearly_referrals,
+    0
+  );
+  partner.yearly_referrals_year = toInt(partner.yearly_referrals_year, 0);
+  partner.last_level_review_year = toInt(partner.last_level_review_year, 0);
+  partner.total_referrals = toInt(partner.total_referrals, 0);
+  partner.available_points = toNumber(partner.available_points, 0);
+  partner.points_used = toNumber(partner.points_used, 0);
+  partner.pending_commission = toNumber(partner.pending_commission, 0);
+  partner.total_commission_earned = toNumber(partner.total_commission_earned, 0);
+  partner.total_commission_paid = toNumber(partner.total_commission_paid, 0);
+  partner.level_achieved_at = partner.level_achieved_at || '';
+  partner.level_valid_until = partner.level_valid_until || '';
+  return partner;
+}
+
+function buildPartnerLevelUpdates(snapshot) {
+  return {
+    partner_level: snapshot.partner_level,
+    level: snapshot.partner_level,
+    base_level_for_year: snapshot.base_level_for_year,
+    yearly_referrals: snapshot.yearly_referrals,
+    yearly_referrals_year: snapshot.yearly_referrals_year,
+    level_progress: snapshot.yearly_referrals,
+    successful_referrals: snapshot.successful_referrals,
+    total_successful_referrals: snapshot.successful_referrals,
+    level_achieved_at: snapshot.level_achieved_at,
+    level_valid_until: snapshot.level_valid_until,
+    last_level_review_year: snapshot.last_level_review_year
+  };
+}
+
+function partnerLevelUpdatesChanged(partner, updates) {
+  return (
+    normalizeLevel(partner.partner_level) !== normalizeLevel(updates.partner_level) ||
+    normalizeLevel(partner.level) !== normalizeLevel(updates.level) ||
+    normalizeLevel(partner.base_level_for_year) !== normalizeLevel(updates.base_level_for_year) ||
+    toInt(partner.yearly_referrals) !== toInt(updates.yearly_referrals) ||
+    toInt(partner.yearly_referrals_year) !== toInt(updates.yearly_referrals_year) ||
+    toInt(partner.level_progress) !== toInt(updates.level_progress) ||
+    toInt(partner.successful_referrals) !== toInt(updates.successful_referrals) ||
+    toInt(partner.total_successful_referrals) !== toInt(updates.total_successful_referrals) ||
+    String(partner.level_achieved_at || '') !== String(updates.level_achieved_at || '') ||
+    String(partner.level_valid_until || '') !== String(updates.level_valid_until || '') ||
+    toInt(partner.last_level_review_year) !== toInt(updates.last_level_review_year)
+  );
+}
+
+function reviewLevelForNextYear(levelAtEndOfYear, yearlyReferrals) {
+  const currentLevel = normalizeLevel(levelAtEndOfYear);
+  const count = toInt(yearlyReferrals, 0);
+
+  if (count >= LEVEL_REQUIREMENTS.LV3_GUARDIAN) return 'LV3_GUARDIAN';
+  if (currentLevel === 'LV3_GUARDIAN') {
+    if (count >= LEVEL_RETENTION_REQUIREMENTS.LV3_GUARDIAN) return 'LV3_GUARDIAN';
+    return 'LV2_GUIDE';
+  }
+  if (count >= LEVEL_REQUIREMENTS.LV2_GUIDE) return 'LV2_GUIDE';
+  if (currentLevel === 'LV2_GUIDE') {
+    if (count >= LEVEL_RETENTION_REQUIREMENTS.LV2_GUIDE) return 'LV2_GUIDE';
+    return 'LV1_INSIDER';
+  }
+  return 'LV1_INSIDER';
+}
+
+function getThresholdAchievementDate(bookings, level) {
+  const threshold = LEVEL_REQUIREMENTS[level];
+  if (!threshold) return '';
+
+  const sorted = [...bookings].sort((a, b) => getBookingSortKey(a).localeCompare(getBookingSortKey(b)));
+  if (sorted.length < threshold) return '';
+
+  return getValueAsDateString(getBookingLevelDateValue(sorted[threshold - 1])) || '';
+}
+
+function groupPartnerCompletedBookings(partnerCode, allBookings, options = {}) {
+  const excludeIds = new Set((options.excludeBookingIds || []).map(id => String(id)));
+  const normalizedPartnerCode = String(partnerCode || '');
+  const bookings = [];
+
+  for (const booking of allBookings || []) {
+    if (!isCompletedReferralBooking(booking)) continue;
+    if (String(booking.partner_code || '') !== normalizedPartnerCode) continue;
+    if (excludeIds.has(String(booking.id || booking.ID || ''))) continue;
+    bookings.push(booking);
+  }
+
+  for (const extraBooking of options.extraCompletedBookings || []) {
+    if (!isCompletedReferralBooking(extraBooking)) continue;
+    if (String(extraBooking.partner_code || '') !== normalizedPartnerCode) continue;
+    bookings.push(extraBooking);
+  }
+
+  const bookingsByYear = new Map();
+  for (const booking of bookings) {
+    const year = getBookingLevelYear(booking);
+    const list = bookingsByYear.get(year) || [];
+    list.push(booking);
+    bookingsByYear.set(year, list);
+  }
+
+  for (const list of bookingsByYear.values()) {
+    list.sort((a, b) => getBookingSortKey(a).localeCompare(getBookingSortKey(b)));
+  }
+
+  return { bookings, bookingsByYear };
+}
+
+function buildLegacyLevelSnapshot(partner, bookingsByYear, referenceDate) {
+  const currentYear = getBusinessYear(referenceDate);
+  const existingLevel = normalizeLevel(partner.partner_level || partner.level);
+  const currentYearBookings = bookingsByYear.get(currentYear) || [];
+  const upgradeLevel = checkLevelUpgrade(currentYearBookings.length);
+  const effectiveLevel = maxLevel(existingLevel, upgradeLevel);
+  const upgradedThisYear = getLevelRank(upgradeLevel) > getLevelRank(existingLevel);
+
+  return {
+    partner_level: effectiveLevel,
+    base_level_for_year: existingLevel,
+    yearly_referrals: currentYearBookings.length,
+    yearly_referrals_year: currentYear,
+    successful_referrals: Array.from(bookingsByYear.values()).reduce((sum, list) => sum + list.length, 0),
+    level_achieved_at: upgradedThisYear
+      ? (getThresholdAchievementDate(currentYearBookings, effectiveLevel) || getStartOfYearDate(currentYear))
+      : getStartOfYearDate(currentYear),
+    level_valid_until: upgradedThisYear ? getEndOfYearDate(currentYear + 1) : getEndOfYearDate(currentYear),
+    last_level_review_year: currentYear - 1
+  };
+}
+
+function simulatePartnerLevelSnapshot(partner, bookingsByYear, referenceDate = new Date()) {
+  const currentYear = getBusinessYear(referenceDate);
+  const totalSuccessful = Array.from(bookingsByYear.values()).reduce((sum, list) => sum + list.length, 0);
+  const hasCycleMetadata = (
+    toInt(partner.yearly_referrals_year, 0) > 0 ||
+    Boolean(partner.level_valid_until) ||
+    toInt(partner.last_level_review_year, 0) > 0
+  );
+
+  if (!hasCycleMetadata) {
+    return buildLegacyLevelSnapshot(partner, bookingsByYear, referenceDate);
+  }
+
+  let trackedYear = Math.min(Math.max(toInt(partner.yearly_referrals_year, currentYear), 1), currentYear);
+  let baseLevelForYear = normalizeLevel(partner.base_level_for_year || partner.partner_level || partner.level);
+  let effectiveLevel = normalizeLevel(partner.partner_level || partner.level);
+  let lastLevelReviewYear = partner.last_level_review_year ? toInt(partner.last_level_review_year, trackedYear - 1) : trackedYear - 1;
+
+  const trackedYearBookings = bookingsByYear.get(trackedYear) || [];
+  const trackedUpgradeLevel = checkLevelUpgrade(trackedYearBookings.length);
+  const trackedEffectiveLevel = maxLevel(baseLevelForYear, trackedUpgradeLevel);
+  effectiveLevel = trackedEffectiveLevel;
+
+  let levelAchievedAt = getLevelRank(trackedUpgradeLevel) > getLevelRank(baseLevelForYear)
+    ? (getThresholdAchievementDate(trackedYearBookings, trackedEffectiveLevel) || getStartOfYearDate(trackedYear))
+    : getStartOfYearDate(trackedYear);
+  let levelValidUntil = getLevelRank(trackedUpgradeLevel) > getLevelRank(baseLevelForYear)
+    ? getEndOfYearDate(trackedYear + 1)
+    : getEndOfYearDate(trackedYear);
+
+  for (let year = trackedYear + 1; year <= currentYear; year++) {
+    const previousYear = year - 1;
+    const previousYearCount = (bookingsByYear.get(previousYear) || []).length;
+    baseLevelForYear = reviewLevelForNextYear(effectiveLevel, previousYearCount);
+
+    const currentYearBookings = bookingsByYear.get(year) || [];
+    const upgradeLevel = checkLevelUpgrade(currentYearBookings.length);
+    effectiveLevel = maxLevel(baseLevelForYear, upgradeLevel);
+    lastLevelReviewYear = previousYear;
+
+    if (getLevelRank(upgradeLevel) > getLevelRank(baseLevelForYear)) {
+      levelAchievedAt = getThresholdAchievementDate(currentYearBookings, effectiveLevel) || getStartOfYearDate(year);
+      levelValidUntil = getEndOfYearDate(year + 1);
+    } else {
+      levelAchievedAt = getStartOfYearDate(year);
+      levelValidUntil = getEndOfYearDate(year);
+    }
+
+    trackedYear = year;
+  }
+
+  return {
+    partner_level: effectiveLevel,
+    base_level_for_year: baseLevelForYear,
+    yearly_referrals: (bookingsByYear.get(currentYear) || []).length,
+    yearly_referrals_year: currentYear,
+    successful_referrals: totalSuccessful,
+    level_achieved_at: levelAchievedAt,
+    level_valid_until: levelValidUntil,
+    last_level_review_year: lastLevelReviewYear
+  };
+}
+
+async function buildPartnerLevelSnapshot(partner, options = {}) {
+  const allBookings = options.bookings || await db.getAllRecords('Bookings');
+  const { bookingsByYear } = groupPartnerCompletedBookings(partner.partner_code, allBookings, options);
+  return simulatePartnerLevelSnapshot(partner, bookingsByYear, options.referenceDate);
+}
+
+async function syncPartnerLevelState(partner, options = {}) {
+  const normalizedPartner = normalizePartnerRecord(partner);
+  const snapshot = await buildPartnerLevelSnapshot(normalizedPartner, options);
+  const updates = buildPartnerLevelUpdates(snapshot);
+  const merged = normalizePartnerRecord({ ...normalizedPartner, ...updates });
+
+  if (!options.skipPersist && partnerLevelUpdatesChanged(normalizedPartner, updates)) {
+    await updateRecord('Partners', normalizedPartner.partner_code, updates);
+  }
+
+  return merged;
+}
+
+async function syncPartnerCollectionLevelState(partners, bookings, referenceDate = new Date()) {
+  const syncedPartners = [];
+
+  for (const rawPartner of partners || []) {
+    const partner = normalizePartnerRecord(rawPartner);
+    const snapshot = await buildPartnerLevelSnapshot(partner, { bookings, referenceDate });
+    const updates = buildPartnerLevelUpdates(snapshot);
+    const merged = normalizePartnerRecord({ ...partner, ...updates });
+
+    if (partnerLevelUpdatesChanged(partner, updates)) {
+      await updateRecord('Partners', partner.partner_code, updates);
+    }
+
+    syncedPartners.push(merged);
+  }
+
+  return syncedPartners;
+}
+
+function parseRelatedBookingIds(value) {
+  return String(value || '')
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+async function findPartnerByCode(partnerCode, options = {}) {
+  const results = await findRecordsByField('Partners', 'partner_code', partnerCode);
+  if (results.length === 0) return null;
+  return syncPartnerLevelState(results[0].data, options);
+}
+
+async function findPartnerByCodeCaseInsensitive(code, options = {}) {
+  let partner = await findPartnerByCode(code, options);
+  if (!partner) partner = await findPartnerByCode(code.toLowerCase(), options);
+  if (!partner) partner = await findPartnerByCode(code.toUpperCase(), options);
   return partner;
 }
 
@@ -91,10 +439,8 @@ async function updatePartnerReferralStats(partnerCode, increment) {
   });
 }
 
-async function updatePartnerAfterCheckin(partner, commissionAmount, commissionType) {
+async function updatePartnerAfterCheckin(partner, booking, commissionAmount, commissionType) {
   const updates = {
-    successful_referrals: (partner.successful_referrals || 0) + 1,
-    yearly_referrals: (partner.yearly_referrals || 0) + 1,
     total_commission_earned: (partner.total_commission_earned || 0) + commissionAmount
   };
 
@@ -104,10 +450,17 @@ async function updatePartnerAfterCheckin(partner, commissionAmount, commissionTy
     updates.pending_commission = (partner.pending_commission || 0) + commissionAmount;
   }
 
-  const newLevel = checkLevelUpgrade(updates.yearly_referrals);
-  if (newLevel !== partner.partner_level) {
-    updates.partner_level = newLevel;
-    console.log(`Partner ${partner.partner_code} upgraded to ${newLevel}`);
+  const snapshot = await buildPartnerLevelSnapshot(partner, {
+    extraCompletedBookings: [{
+      ...booking,
+      stay_status: 'COMPLETED',
+      manually_confirmed_at: booking.manually_confirmed_at || new Date().toISOString()
+    }]
+  });
+  Object.assign(updates, buildPartnerLevelUpdates(snapshot));
+
+  if (snapshot.partner_level !== partner.partner_level) {
+    console.log(`Partner ${partner.partner_code} level changed to ${snapshot.partner_level}`);
   }
 
   await updateRecord('Partners', partner.partner_code, updates);
@@ -236,6 +589,45 @@ async function getCompletedReferralBookings(partnerCode) {
     });
 }
 
+function buildCompletedBookingLevelTimeline(bookings, startingLevel = 'LV1_INSIDER') {
+  const timeline = [];
+  let activeYear = null;
+  let baseLevelForYear = normalizeLevel(startingLevel);
+  let effectiveLevel = normalizeLevel(startingLevel);
+  let yearlyCount = 0;
+  let totalSuccessfulBefore = 0;
+
+  for (const booking of bookings) {
+    const bookingYear = getBookingLevelYear(booking);
+
+    if (activeYear === null) {
+      activeYear = bookingYear;
+      baseLevelForYear = normalizeLevel(startingLevel);
+      effectiveLevel = normalizeLevel(startingLevel);
+      yearlyCount = 0;
+    }
+
+    while (activeYear < bookingYear) {
+      baseLevelForYear = reviewLevelForNextYear(effectiveLevel, yearlyCount);
+      effectiveLevel = baseLevelForYear;
+      yearlyCount = 0;
+      activeYear += 1;
+    }
+
+    timeline.push({
+      booking,
+      levelBeforeBooking: effectiveLevel,
+      successfulBefore: totalSuccessfulBefore
+    });
+
+    yearlyCount += 1;
+    totalSuccessfulBefore += 1;
+    effectiveLevel = maxLevel(baseLevelForYear, checkLevelUpgrade(yearlyCount));
+  }
+
+  return timeline;
+}
+
 async function reconcilePartnerCompletedReferralBookings(partnerCode, context = {}) {
   const partner = await findPartnerByCode(partnerCode);
   if (!partner) return [];
@@ -243,23 +635,23 @@ async function reconcilePartnerCompletedReferralBookings(partnerCode, context = 
   const bookings = await getCompletedReferralBookings(partnerCode);
   if (bookings.length === 0) return [];
 
-  let successfulBefore = 0;
   let earnedDelta = 0;
   let pointsDelta = 0;
   let cashDelta = 0;
   const adjustments = [];
+  const timeline = buildCompletedBookingLevelTimeline(bookings);
 
-  for (const booking of bookings) {
+  for (const entry of timeline) {
+    const { booking, levelBeforeBooking, successfulBefore } = entry;
     const commissionType = String(booking.commission_type || 'ACCOMMODATION').toUpperCase();
-    const expectedLevel = checkLevelUpgrade(successfulBefore);
     const shouldHaveFirstBonus = (
-      expectedLevel === 'LV1_INSIDER' &&
+      levelBeforeBooking === 'LV1_INSIDER' &&
       successfulBefore === 0 &&
       commissionType === 'ACCOMMODATION'
     );
     const expectedFirstBonusAmount = shouldHaveFirstBonus ? FIRST_REFERRAL_BONUS : 0;
     const expectedCommissionAmount = calculateCommissionForLevel(
-      expectedLevel,
+      levelBeforeBooking,
       commissionType,
       parseFloat(booking.room_price || 0),
       shouldHaveFirstBonus
@@ -325,8 +717,6 @@ async function reconcilePartnerCompletedReferralBookings(partnerCode, context = 
         new_first_bonus: expectedFirstBonusAmount
       });
     }
-
-    successfulBefore += 1;
   }
 
   if (Math.abs(earnedDelta) > 0.01 || Math.abs(pointsDelta) > 0.01 || Math.abs(cashDelta) > 0.01) {
@@ -440,7 +830,7 @@ async function handleConfirmCheckinCompletion(data) {
       commissionType = commission.type;
       isFirstBonus = commission.isFirstBonus;
       firstBonusAmount = commission.firstBonusAmount;
-      await updatePartnerAfterCheckin(partner, commissionAmount, commissionType);
+      await updatePartnerAfterCheckin(partner, booking, commissionAmount, commissionType);
       await createPayoutRecord(partner.partner_code, commissionAmount, booking.id, commissionType);
     }
   }
@@ -536,6 +926,10 @@ async function handleGetAllData() {
     }
   }
 
+  if (data.partners && data.bookings) {
+    data.partners = await syncPartnerCollectionLevelState(data.partners, data.bookings);
+  }
+
   const backend = process.env.DATA_BACKEND || 'sheets';
   return { success: true, backend, data };
 }
@@ -590,11 +984,13 @@ async function handlePartnerChange(oldBooking, newData) {
     const oldPartner = await findPartnerByCode(oldPartnerCode);
     if (oldPartner) {
       const commissionAmount = parseFloat(oldBooking.commission_amount);
+      const levelSnapshot = await buildPartnerLevelSnapshot(oldPartner, {
+        excludeBookingIds: [oldBooking.id]
+      });
       const oldPartnerUpdates = {
-        successful_referrals: Math.max(0, (oldPartner.successful_referrals || 0) - 1),
-        yearly_referrals: Math.max(0, (oldPartner.yearly_referrals || 0) - 1),
         total_commission_earned: Math.max(0, (oldPartner.total_commission_earned || 0) - commissionAmount)
       };
+      Object.assign(oldPartnerUpdates, buildPartnerLevelUpdates(levelSnapshot));
 
       if (oldBooking.commission_type === 'ACCOMMODATION') {
         oldPartnerUpdates.available_points = Math.max(0, (oldPartner.available_points || 0) - commissionAmount);
@@ -620,7 +1016,10 @@ async function handlePartnerChange(oldBooking, newData) {
     const newPartner = await findPartnerByCode(newPartnerCode);
     if (newPartner) {
       const commission = calculateCommission(newPartner);
-      await updatePartnerAfterCheckin(newPartner, commission.amount, commission.type);
+      await updatePartnerAfterCheckin(newPartner, {
+        ...oldBooking,
+        partner_code: newPartnerCode
+      }, commission.amount, commission.type);
       await createPayoutRecord(newPartnerCode, commission.amount, oldBooking.id, commission.type);
       newData.commission_amount = commission.amount;
       newData.commission_type = commission.type;
@@ -700,14 +1099,16 @@ async function handleDeleteBooking(data) {
   } else if (booking.data.booking_source === 'REFERRAL' && booking.data.partner_code) {
     const partner = await findPartnerByCode(booking.data.partner_code);
     if (partner) {
+      const levelSnapshot = await buildPartnerLevelSnapshot(partner, {
+        excludeBookingIds: [bookingId]
+      });
       const partnerUpdates = {
         total_referrals: Math.max(0, (partner.total_referrals || 0) - 1)
       };
+      Object.assign(partnerUpdates, buildPartnerLevelUpdates(levelSnapshot));
 
       if (booking.data.stay_status === 'COMPLETED' && booking.data.commission_amount > 0) {
         const commissionAmount = parseFloat(booking.data.commission_amount);
-        partnerUpdates.successful_referrals = Math.max(0, (partner.successful_referrals || 0) - 1);
-        partnerUpdates.yearly_referrals = Math.max(0, (partner.yearly_referrals || 0) - 1);
         partnerUpdates.total_commission_earned = Math.max(0, (partner.total_commission_earned || 0) - commissionAmount);
         let debtAmount = 0;
 
@@ -720,9 +1121,6 @@ async function handleDeleteBooking(data) {
           partnerUpdates.pending_commission = Math.max(0, currentPendingCommission - commissionAmount);
           debtAmount = Math.max(0, commissionAmount - currentPendingCommission);
         }
-
-        const newLevel = checkLevelUpgrade(partnerUpdates.yearly_referrals);
-        if (newLevel !== partner.partner_level) partnerUpdates.partner_level = newLevel;
 
         await createRecord('Payouts', {
           partner_code: partner.partner_code,
@@ -810,21 +1208,16 @@ async function handleCancelPayout(data) {
     const partner = await findPartnerByCode(payout.partner_code);
     if (partner) {
       const commissionToDeduct = Math.abs(parseFloat(payout.amount) || 0);
-      const currentSuccessful = parseInt(partner.successful_referrals || 0);
-      const currentYearly = parseInt(partner.yearly_referrals || 0);
       const currentAvailablePoints = parseFloat(partner.available_points || 0);
       const currentPendingCommission = parseFloat(partner.pending_commission || 0);
-
-      const tempSuccessful = Math.max(0, currentSuccessful - 1);
-      const tempYearly = Math.max(0, currentYearly - 1);
-      const tempLevel = checkLevelUpgrade(tempYearly);
+      const levelSnapshot = await buildPartnerLevelSnapshot(partner, {
+        excludeBookingIds: parseRelatedBookingIds(payout.related_booking_ids)
+      });
 
       const partnerUpdates = {
-        successful_referrals: tempSuccessful,
-        yearly_referrals: tempYearly,
-        partner_level: tempLevel,
         total_commission_earned: Math.max(0, (partner.total_commission_earned || 0) - commissionToDeduct)
       };
+      Object.assign(partnerUpdates, buildPartnerLevelUpdates(levelSnapshot));
 
       if (payout.payout_type === 'CASH') {
         partnerUpdates.pending_commission = Math.max(0, currentPendingCommission - commissionToDeduct);
@@ -1106,15 +1499,27 @@ async function handleUpdatePartner(data) {
 
   const oldLevel = partner.partner_level;
   const oldPreference = partner.commission_preference;
+  const currentYear = getBusinessYear();
 
   if (data.partner_level && data.partner_level !== oldLevel) {
+    const normalizedLevel = normalizeLevel(data.partner_level);
+    data.partner_level = normalizedLevel;
+    data.level = normalizedLevel;
+    data.base_level_for_year = data.base_level_for_year || normalizedLevel;
+    data.yearly_referrals_year = data.yearly_referrals_year || currentYear;
+    data.level_achieved_at = data.level_achieved_at || getValueAsDateString(new Date()) || getStartOfYearDate(currentYear);
+    data.level_valid_until = data.level_valid_until || getEndOfYearDate(currentYear);
+    data.last_level_review_year = data.last_level_review_year !== undefined
+      ? toInt(data.last_level_review_year, currentYear - 1)
+      : currentYear - 1;
+
     await createRecord('Payouts', {
       partner_code: partnerCode,
       payout_type: 'LEVEL_ADJUSTMENT',
       amount: 0,
       payout_method: 'OTHER',
       payout_status: 'COMPLETED',
-      notes: `等級調整：${oldLevel} → ${data.partner_level}`,
+      notes: `等級調整：${oldLevel} → ${normalizedLevel}`,
       created_by: data.updated_by || 'admin'
     });
   }
@@ -1225,6 +1630,11 @@ async function handleCreatePartner(data) {
     total_successful_referrals: parseInt(data.successful_referrals) || parseInt(data.total_successful_referrals) || 0,
     yearly_referrals: parseInt(data.yearly_referrals) || 0,
     level_progress: parseInt(data.level_progress) || 0,
+    base_level_for_year: data.base_level_for_year || data.partner_level || data.level || 'LV1_INSIDER',
+    yearly_referrals_year: parseInt(data.yearly_referrals_year) || getBusinessYear(),
+    level_achieved_at: data.level_achieved_at || getStartOfYearDate(getBusinessYear()),
+    level_valid_until: data.level_valid_until || getEndOfYearDate(getBusinessYear()),
+    last_level_review_year: parseInt(data.last_level_review_year) || (getBusinessYear() - 1),
     total_commission_earned: parseFloat(data.total_commission_earned) || 0,
     total_commission_paid: parseFloat(data.total_commission_paid) || 0,
     available_points: data.available_points !== undefined ? parseFloat(data.available_points) : 0,
@@ -1837,6 +2247,11 @@ async function handlePromoteToPartner(data) {
     bank_account: '',
     bank_code: '',
     yearly_referrals: 0,
+    base_level_for_year: 'LV1_INSIDER',
+    yearly_referrals_year: getBusinessYear(),
+    level_achieved_at: getStartOfYearDate(getBusinessYear()),
+    level_valid_until: getEndOfYearDate(getBusinessYear()),
+    last_level_review_year: getBusinessYear() - 1,
     notes: `從申請 #${appId} 轉入`,
     is_active: true,
     contact_phone: record.data.phone || '',
@@ -1912,4 +2327,19 @@ async function route(action, data) {
   return await handler(data);
 }
 
-module.exports = { route, handleRedirect };
+module.exports = {
+  route,
+  handleRedirect,
+  __test__: {
+    normalizeLevel,
+    maxLevel,
+    checkLevelUpgrade,
+    reviewLevelForNextYear,
+    getBusinessYear,
+    getBookingLevelYear,
+    groupPartnerCompletedBookings,
+    buildLegacyLevelSnapshot,
+    simulatePartnerLevelSnapshot,
+    buildCompletedBookingLevelTimeline
+  }
+};

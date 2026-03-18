@@ -1194,6 +1194,7 @@
          * 統一的佣金資料計算函數
          */
         function calculatePartnerFinancials(partner) {
+            const currentLevel = partner.partner_level || partner.level || 'LV1_INSIDER';
             const financials = {
                 // 住宿金相關
                 availablePoints: parseFloat(partner.available_points) || 0,
@@ -1211,7 +1212,12 @@
                 yearlyReferrals: partner.yearly_referrals || partner.level_progress || 0,
                 
                 // 等級資訊
-                level: partner.partner_level || partner.level || 'LV1_INSIDER',
+                level: currentLevel,
+                baseLevelForYear: partner.base_level_for_year || currentLevel,
+                levelValidUntil: partner.level_valid_until || '',
+                levelAchievedAt: partner.level_achieved_at || '',
+                lastLevelReviewYear: parseInt(partner.last_level_review_year, 10) || 0,
+                yearlyReferralsYear: parseInt(partner.yearly_referrals_year, 10) || 0,
                 name: partner.partner_name || partner.name || '未設定姓名',
                 code: partner.partner_code
             };
@@ -1256,6 +1262,10 @@
                                 </div>
                                 <div class="mt-1">
                                     <span class="px-3 py-1 rounded-full text-xs font-medium ${levelClass}">${levelText}</span>
+                                </div>
+                                <div class="mt-2 space-y-1 text-xs text-stone-500">
+                                    <div>年初基準：${getLevelText(f.baseLevelForYear)}</div>
+                                    <div>資格有效至：${formatDate(f.levelValidUntil)}</div>
                                 </div>
                             </div>
                         </div>
@@ -1841,6 +1851,16 @@
             return requirements[level] || 4;
         }
 
+        function getPartnerLevelSummary(partner) {
+            return {
+                currentLevel: partner.partner_level || partner.level || 'LV1_INSIDER',
+                baseLevelForYear: partner.base_level_for_year || partner.partner_level || partner.level || 'LV1_INSIDER',
+                validUntil: formatDate(partner.level_valid_until),
+                achievedAt: formatDate(partner.level_achieved_at),
+                lastReviewYear: parseInt(partner.last_level_review_year, 10) || 0
+            };
+        }
+
         function getPartnerClicks(partnerCode) {
             if (!allData.clicks || !Array.isArray(allData.clicks)) {
                 return 0;
@@ -1955,15 +1975,22 @@
         }
 
         window.exportPartnersData = function() {
-            const data = allData.partners.map(p => ({
-                '夥伴代碼': p.partner_code,
-                '姓名': p.name,
-                '等級': getLevelText(p.partner_level || p.level),
-                '本年進度': p.yearly_referrals || p.level_progress || 0,
-                '累積推薦': p.successful_referrals || p.total_successful_referrals || 0,
-                '可用點數': parseFloat(p.available_points) || 0,
-                '待支付現金': p.pending_cash || p.pending_commission || 0
-            }));
+            const data = allData.partners.map(p => {
+                const levelSummary = getPartnerLevelSummary(p);
+                return {
+                    '夥伴代碼': p.partner_code,
+                    '姓名': p.name,
+                    '等級': getLevelText(levelSummary.currentLevel),
+                    '年初基準等級': getLevelText(levelSummary.baseLevelForYear),
+                    '資格有效至': levelSummary.validUntil,
+                    '升級生效日': levelSummary.achievedAt,
+                    '上次年審年度': levelSummary.lastReviewYear || '-',
+                    '本年進度': p.yearly_referrals || p.level_progress || 0,
+                    '累積推薦': p.successful_referrals || p.total_successful_referrals || 0,
+                    '可用點數': parseFloat(p.available_points) || 0,
+                    '待支付現金': p.pending_cash || p.pending_commission || 0
+                };
+            });
             
             downloadCSV(data, '夥伴數據.csv');
         }
@@ -2153,6 +2180,7 @@
             
             const bookings = allData.bookings.filter(b => b.partner_code === partner.partner_code);
             const totalRevenue = bookings.reduce((sum, b) => sum + (b.room_price || 0), 0);
+            const levelSummary = getPartnerLevelSummary(partner);
             
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -2185,11 +2213,27 @@
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">等級</p>
-                                <p class="font-semibold">${getLevelText(partner.partner_level || partner.level)}</p>
+                                <p class="font-semibold">${getLevelText(levelSummary.currentLevel)}</p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">本年進度</p>
-                                <p class="font-semibold">${partner.yearly_referrals || partner.level_progress || 0} / ${getNextLevelRequirement(partner.partner_level || partner.level)}</p>
+                                <p class="font-semibold">${partner.yearly_referrals || partner.level_progress || 0} / ${getNextLevelRequirement(levelSummary.currentLevel)}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">年初基準等級</p>
+                                <p class="font-semibold">${getLevelText(levelSummary.baseLevelForYear)}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">資格有效至</p>
+                                <p class="font-semibold">${levelSummary.validUntil}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">升級生效日</p>
+                                <p class="font-semibold">${levelSummary.achievedAt}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">上次年審年度</p>
+                                <p class="font-semibold">${levelSummary.lastReviewYear || '-'}</p>
                             </div>
                         </div>
                         

@@ -31,7 +31,9 @@ const TABLES = [
       'coupon_code', 'coupon_url', 'landing_link', 'coupon_link',
       'short_landing_link', 'short_coupon_link', 'created_at', 'updated_at',
       'available_points', 'points_used', 'bank_account', 'bank_code',
-      'yearly_referrals', 'notes', 'is_active', 'contact_phone', 'contact_email']
+      'yearly_referrals', 'notes', 'is_active', 'contact_phone', 'contact_email',
+      'base_level_for_year', 'yearly_referrals_year', 'level_achieved_at',
+      'level_valid_until', 'last_level_review_year']
   },
   {
     sheet: 'Bookings',

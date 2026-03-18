@@ -45,9 +45,20 @@ CREATE TABLE IF NOT EXISTS partners (
   total_clicks INTEGER DEFAULT 0,
   last_click_date TEXT DEFAULT '',
   total_commission NUMERIC DEFAULT 0,
+  base_level_for_year TEXT DEFAULT 'LV1_INSIDER',
+  yearly_referrals_year INTEGER DEFAULT 0,
+  level_achieved_at TEXT DEFAULT '',
+  level_valid_until TEXT DEFAULT '',
+  last_level_review_year INTEGER DEFAULT 0,
   created_at TEXT DEFAULT '',
   updated_at TEXT DEFAULT ''
 );
+
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS base_level_for_year TEXT DEFAULT 'LV1_INSIDER';
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS yearly_referrals_year INTEGER DEFAULT 0;
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS level_achieved_at TEXT DEFAULT '';
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS level_valid_until TEXT DEFAULT '';
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS last_level_review_year INTEGER DEFAULT 0;
 
 CREATE INDEX IF NOT EXISTS idx_partners_partner_code ON partners(partner_code);
 CREATE INDEX IF NOT EXISTS idx_partners_email ON partners(email);

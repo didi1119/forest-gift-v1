@@ -61,7 +61,8 @@ function convertTypes(record, tableName) {
   ];
   const intFields = [
     'level_progress', 'total_successful_referrals', 'total_referrals',
-    'successful_referrals', 'yearly_referrals', 'total_clicks'
+    'successful_referrals', 'yearly_referrals', 'total_clicks',
+    'yearly_referrals_year', 'last_level_review_year'
   ];
   const boolFields = ['is_active'];
 

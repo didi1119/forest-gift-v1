@@ -1609,6 +1609,7 @@ async function handleCreatePayout(data) {
 }
 
 async function handleCreatePartner(data) {
+  const applicationId = data.application_id;
   const partnerData = {
     partner_code: data.partner_code,
     name: data.partner_name || data.name || '',
@@ -1662,6 +1663,18 @@ async function handleCreatePartner(data) {
   if (existing) throw new Error('Partner code already exists');
 
   const partner = await createRecord('Partners', partnerData);
+
+  if (applicationId) {
+    await ensureApplicationsSheet();
+    const applicationRecord = await findRecordById(APPLICATION_SHEET, applicationId);
+    if (applicationRecord) {
+      await updateRecord(APPLICATION_SHEET, applicationId, {
+        partner_code_assigned: partner.partner_code,
+        partner_link_sent: true
+      });
+    }
+  }
+
   return { success: true, message: 'Partner created successfully', partner_code: partner.partner_code, data: partner };
 }
 

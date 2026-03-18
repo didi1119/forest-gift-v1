@@ -103,6 +103,41 @@
                 border-bottom: none;
             }
         }
+        .workflow-step {
+            background: linear-gradient(180deg, #ffffff 0%, #f6f3ee 100%);
+            border: 1px solid #e7dfd3;
+            border-radius: 1.25rem;
+        }
+        .onboarding-chip {
+            border: 1px solid #d9d0c3;
+            border-radius: 9999px;
+            padding: 0.45rem 0.9rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+        .onboarding-chip.active {
+            background-color: #2E4B36;
+            color: #fff;
+            border-color: #2E4B36;
+        }
+        .application-card-active {
+            border-color: #2E4B36;
+            box-shadow: 0 12px 30px rgba(46, 75, 54, 0.12);
+        }
+        .packet-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.9rem 1rem;
+            border: 1px solid #ebe4da;
+            border-radius: 1rem;
+            background: #fcfaf7;
+        }
+        .packet-link:hover {
+            border-color: #c7b9a4;
+            background: #fff;
+        }
     </style>
 </head>
 <body class="antialiased min-h-screen py-12">
@@ -176,7 +211,10 @@
 
         <!-- 導航標籤 -->
         <div class="flex space-x-6 mb-8">
-            <button onclick="showTab('overview')" id="tab-overview" class="tab-button active">
+            <button onclick="showTab('onboarding')" id="tab-onboarding" class="tab-button active">
+                大使 onboarding
+            </button>
+            <button onclick="showTab('overview')" id="tab-overview" class="tab-button">
                 概覽儀表
             </button>
             <button onclick="showTab('bookings')" id="tab-bookings" class="tab-button">
@@ -196,8 +234,127 @@
             </button>
         </div>
 
+        <!-- 大使 onboarding 標籤內容 -->
+        <div id="content-onboarding" class="tab-content">
+            <div class="space-y-8">
+                <div class="brand-card p-8">
+                    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+                        <div>
+                            <p class="text-sm tracking-[0.3em] text-stone-400 uppercase mb-3">Partner Workflow</p>
+                            <h2 class="font-serif text-3xl font-semibold brand-accent">大使 onboarding 工作台</h2>
+                            <p class="text-stone-600 mt-3 max-w-3xl">
+                                把「申請審核 → 建立專屬連結 → 交付完整資源包」收斂成一條工作流，避免來回切頁與漏步驟。
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="refreshOnboardingWorkspace()" class="bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800">
+                                🔄 重新整理工作台
+                            </button>
+                            <a href="application-review-dashboard.html" target="_blank" class="bg-white text-stone-700 px-4 py-2 rounded-lg border border-stone-300 hover:bg-stone-50">
+                                ↗ 獨立審核頁
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                        <div class="workflow-step p-5">
+                            <div class="text-xs tracking-[0.24em] text-stone-400 uppercase mb-3">Step 1</div>
+                            <h3 class="font-serif text-xl text-stone-800 mb-2">審核申請</h3>
+                            <p class="text-sm text-stone-600">先看申請內容與留言，快速核准或拒絕，避免申請積壓。</p>
+                        </div>
+                        <div class="workflow-step p-5">
+                            <div class="text-xs tracking-[0.24em] text-stone-400 uppercase mb-3">Step 2</div>
+                            <h3 class="font-serif text-xl text-stone-800 mb-2">準備專屬連結</h3>
+                            <p class="text-sm text-stone-600">核准後直接帶著預填資料進連結生成器，完成夥伴建檔與短網址產出。</p>
+                        </div>
+                        <div class="workflow-step p-5">
+                            <div class="text-xs tracking-[0.24em] text-stone-400 uppercase mb-3">Step 3</div>
+                            <h3 class="font-serif text-xl text-stone-800 mb-2">交付資源包</h3>
+                            <p class="text-sm text-stone-600">整理大使登入頁、贈禮工具包、規則頁與專屬連結，一次交付完整文件。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-5 gap-8">
+                    <div class="xl:col-span-3 space-y-6">
+                        <div class="brand-card p-8">
+                            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                                <div>
+                                    <h3 class="font-serif text-2xl font-semibold brand-accent">申請佇列</h3>
+                                    <p class="text-sm text-stone-500 mt-1">優先處理待審核申請，核准後直接送進下一步。</p>
+                                </div>
+                                <div class="grid grid-cols-3 gap-3 text-center min-w-[18rem]">
+                                    <div class="bg-amber-50 rounded-2xl p-3">
+                                        <div class="text-xs text-amber-700">待審核</div>
+                                        <div id="onboardingPendingCount" class="text-2xl font-bold text-amber-700">0</div>
+                                    </div>
+                                    <div class="bg-emerald-50 rounded-2xl p-3">
+                                        <div class="text-xs text-emerald-700">已核准</div>
+                                        <div id="onboardingApprovedCount" class="text-2xl font-bold text-emerald-700">0</div>
+                                    </div>
+                                    <div class="bg-stone-100 rounded-2xl p-3">
+                                        <div class="text-xs text-stone-600">總申請</div>
+                                        <div id="onboardingTotalCount" class="text-2xl font-bold text-stone-700">0</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-3 mb-6">
+                                <button type="button" class="onboarding-chip active" data-onboarding-filter="PENDING" onclick="setOnboardingFilter('PENDING')">待審核</button>
+                                <button type="button" class="onboarding-chip" data-onboarding-filter="APPROVED" onclick="setOnboardingFilter('APPROVED')">已核准</button>
+                                <button type="button" class="onboarding-chip" data-onboarding-filter="REJECTED" onclick="setOnboardingFilter('REJECTED')">已拒絕</button>
+                                <button type="button" class="onboarding-chip" data-onboarding-filter="ALL" onclick="setOnboardingFilter('ALL')">全部</button>
+                            </div>
+
+                            <div id="onboardingApplications" class="space-y-4">
+                                <div class="text-center py-10 text-stone-500">
+                                    <div class="loading-spinner mx-auto"></div>
+                                    <p class="mt-4">載入申請佇列中...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="xl:col-span-2 space-y-6">
+                        <div class="brand-card p-8">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="font-serif text-2xl font-semibold brand-accent">當前工作區</h3>
+                                    <p class="text-sm text-stone-500 mt-1">選一位申請者後，從這裡一路處理到交付完成。</p>
+                                </div>
+                                <button onclick="clearOnboardingSelection()" class="text-sm text-stone-500 hover:text-stone-700">清除選取</button>
+                            </div>
+                            <div id="onboardingWorkspace" class="space-y-4">
+                                <div class="rounded-2xl border border-dashed border-stone-300 p-6 text-sm text-stone-500">
+                                    先從左側選擇一位申請者，這裡會顯示審核、連結生成與交付步驟。
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="brand-card p-8">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="font-serif text-2xl font-semibold brand-accent">交付資源包</h3>
+                                    <p class="text-sm text-stone-500 mt-1">完成建檔後，把這些頁面與連結一次交給大使。</p>
+                                </div>
+                                <button onclick="copyOnboardingPacketMessage()" class="bg-stone-900 text-white px-3 py-2 rounded-lg text-sm hover:bg-stone-800">
+                                    📋 複製交付訊息
+                                </button>
+                            </div>
+                            <div id="onboardingPacketPanel" class="space-y-3">
+                                <div class="rounded-2xl border border-dashed border-stone-300 p-6 text-sm text-stone-500">
+                                    完成夥伴建檔後，這裡會自動整理好登入頁、工具包、規則頁與專屬連結。
+                                </div>
+                            </div>
+                            <textarea id="onboardingPacketMessage" class="mt-4 w-full h-56 p-4 border border-stone-200 rounded-2xl bg-stone-50 text-sm text-stone-700" readonly>完成夥伴建檔後，這裡會產生可直接傳給大使的完整訊息。</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 概覽儀表標籤內容 -->
-        <div id="content-overview" class="tab-content">
+        <div id="content-overview" class="tab-content hidden">
             <!-- 聯盟夥伴列表 -->
             <div class="brand-card p-8">
                 <div class="flex justify-between items-center mb-6">
@@ -543,7 +700,7 @@
 
         <!-- 連結生成器標籤內容 -->
         <div id="content-linkgen" class="tab-content hidden">
-            <iframe src="link-generator-form.html"
+            <iframe id="linkgenIframe" src="link-generator-form.html"
                     style="width: 100%; height: calc(100vh - 200px); border: none; border-radius: 1.5rem; background: white;"
                     title="連結生成器">
             </iframe>
@@ -884,6 +1041,15 @@
             bookings: [],
             payouts: [],
             clicks: []
+        };
+
+        let onboardingState = {
+            applications: [],
+            counts: { pending: 0, approved: 0, rejected: 0 },
+            totalCount: 0,
+            filter: 'PENDING',
+            selectedApplicationId: null,
+            draftByApplicationId: {}
         };
         
         // 資料快取控制
@@ -1698,6 +1864,11 @@
             console.log(`🔄 更新 ${tabName} 顯示`);
             
             switch(tabName) {
+                case 'onboarding':
+                    renderOnboardingApplications();
+                    renderOnboardingWorkspace();
+                    renderOnboardingPacketPanel();
+                    break;
                 case 'overview':
                     updateStats();
                     displayRecentActivity();
@@ -1895,6 +2066,453 @@
             } catch (e) {
                 return dateStr;
             }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text == null ? '' : String(text);
+            return div.innerHTML;
+        }
+
+        function isTruthyValue(value) {
+            if (value === true) return true;
+            if (typeof value === 'number') return value !== 0;
+            if (typeof value === 'string') {
+                return ['true', '1', 'yes', 'y'].includes(value.trim().toLowerCase());
+            }
+            return Boolean(value);
+        }
+
+        function getApplicationStatusText(status) {
+            return {
+                PENDING: '待審核',
+                APPROVED: '已核准',
+                REJECTED: '已拒絕'
+            }[status] || status || '未知';
+        }
+
+        function getApplicationStatusClass(status) {
+            return {
+                PENDING: 'bg-amber-100 text-amber-800',
+                APPROVED: 'bg-emerald-100 text-emerald-800',
+                REJECTED: 'bg-rose-100 text-rose-800'
+            }[status] || 'bg-stone-100 text-stone-700';
+        }
+
+        function generateSuggestedPartnerCode(application) {
+            const explicitCode = application?.partner_code_assigned;
+            if (explicitCode) return explicitCode;
+
+            const numericId = String(application?.id || Date.now()).replace(/\D/g, '').slice(-4).padStart(4, '0');
+            return `FOREST${numericId}`;
+        }
+
+        function getOnboardingDraft(application) {
+            if (!application) return { partnerCode: '', couponUrl: '' };
+
+            if (!onboardingState.draftByApplicationId[application.id]) {
+                onboardingState.draftByApplicationId[application.id] = {
+                    partnerCode: application.partner_code_assigned || generateSuggestedPartnerCode(application),
+                    couponUrl: application.coupon_url || ''
+                };
+            }
+
+            return onboardingState.draftByApplicationId[application.id];
+        }
+
+        function getSelectedOnboardingApplication() {
+            return onboardingState.applications.find(app => String(app.id) === String(onboardingState.selectedApplicationId)) || null;
+        }
+
+        function getAbsoluteFrontendUrl(relativePath) {
+            return new URL(relativePath, window.location.href).toString();
+        }
+
+        function getSelectedOnboardingPartner(application = getSelectedOnboardingApplication()) {
+            if (!application || !Array.isArray(allData.partners)) return null;
+
+            const draft = getOnboardingDraft(application);
+            const assignedCode = application.partner_code_assigned || draft.partnerCode;
+            return allData.partners.find(partner => partner.partner_code === assignedCode) || null;
+        }
+
+        function updateOnboardingFilterButtons() {
+            document.querySelectorAll('[data-onboarding-filter]').forEach(button => {
+                button.classList.toggle('active', button.dataset.onboardingFilter === onboardingState.filter);
+            });
+        }
+
+        function setOnboardingFilter(filter) {
+            onboardingState.filter = filter;
+            updateOnboardingFilterButtons();
+            loadOnboardingApplications();
+        }
+
+        function selectOnboardingApplication(applicationId) {
+            onboardingState.selectedApplicationId = applicationId;
+            renderOnboardingApplications();
+            renderOnboardingWorkspace();
+            renderOnboardingPacketPanel();
+        }
+
+        function clearOnboardingSelection() {
+            onboardingState.selectedApplicationId = null;
+            renderOnboardingApplications();
+            renderOnboardingWorkspace();
+            renderOnboardingPacketPanel();
+        }
+
+        async function loadOnboardingApplications() {
+            try {
+                const result = await submitToBackendViaForm({
+                    action: 'get_applications',
+                    status_filter: onboardingState.filter
+                });
+
+                onboardingState.applications = result.data || [];
+                onboardingState.counts = result.counts || { pending: 0, approved: 0, rejected: 0 };
+                onboardingState.totalCount = result.total_count || 0;
+
+                if (!onboardingState.selectedApplicationId && onboardingState.applications.length > 0) {
+                    onboardingState.selectedApplicationId = onboardingState.applications[0].id;
+                } else if (onboardingState.selectedApplicationId) {
+                    const stillExists = onboardingState.applications.some(app => String(app.id) === String(onboardingState.selectedApplicationId));
+                    if (!stillExists) {
+                        onboardingState.selectedApplicationId = onboardingState.applications[0]?.id || null;
+                    }
+                }
+
+                renderOnboardingApplications();
+                renderOnboardingWorkspace();
+                renderOnboardingPacketPanel();
+            } catch (error) {
+                console.error('載入 onboarding 申請失敗:', error);
+                const container = document.getElementById('onboardingApplications');
+                if (container) {
+                    container.innerHTML = `<div class="rounded-2xl bg-rose-50 border border-rose-200 p-4 text-sm text-rose-700">載入申請資料失敗：${escapeHtml(error.message)}</div>`;
+                }
+            }
+        }
+
+        function renderOnboardingApplications() {
+            const pendingEl = document.getElementById('onboardingPendingCount');
+            const approvedEl = document.getElementById('onboardingApprovedCount');
+            const totalEl = document.getElementById('onboardingTotalCount');
+            const container = document.getElementById('onboardingApplications');
+            if (!container) return;
+
+            updateOnboardingFilterButtons();
+
+            if (pendingEl) pendingEl.textContent = onboardingState.counts.pending || 0;
+            if (approvedEl) approvedEl.textContent = onboardingState.counts.approved || 0;
+            if (totalEl) totalEl.textContent = onboardingState.totalCount || 0;
+
+            if (onboardingState.applications.length === 0) {
+                container.innerHTML = `
+                    <div class="rounded-2xl border border-dashed border-stone-300 p-8 text-center text-stone-500">
+                        目前沒有符合此篩選條件的申請資料。
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = onboardingState.applications.map(application => {
+                const isActive = String(application.id) === String(onboardingState.selectedApplicationId);
+                const draft = getOnboardingDraft(application);
+                const partnerReady = Boolean(application.partner_code_assigned);
+                return `
+                    <div class="brand-card p-5 border ${isActive ? 'application-card-active' : ''}">
+                        <div class="flex flex-col gap-4">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h4 class="font-semibold text-lg text-stone-800">${escapeHtml(application.name || '未提供姓名')}</h4>
+                                        <span class="px-2 py-1 rounded-full text-xs ${getApplicationStatusClass(application.application_status)}">${getApplicationStatusText(application.application_status)}</span>
+                                    </div>
+                                    <p class="text-sm text-stone-500 mt-1">${escapeHtml(application.email || '未提供 Email')}</p>
+                                    <p class="text-xs text-stone-400 mt-2">申請時間：${application.created_at ? new Date(application.created_at).toLocaleString('zh-TW') : '-'}</p>
+                                </div>
+                                <button onclick="selectOnboardingApplication(${application.id})" class="px-3 py-2 rounded-lg border border-stone-300 text-sm hover:bg-stone-50">
+                                    ${isActive ? '目前處理中' : '選取處理'}
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-stone-600">
+                                <div>電話：${escapeHtml(application.phone || '未提供')}</div>
+                                <div>LINE：${escapeHtml(application.line_name || '未提供')}</div>
+                                <div>建議代碼：<span class="font-mono">${escapeHtml(draft.partnerCode)}</span></div>
+                                <div>${partnerReady ? `已建立夥伴：<span class="font-mono">${escapeHtml(application.partner_code_assigned)}</span>` : '尚未建立夥伴檔案'}</div>
+                            </div>
+                            ${application.message ? `<div class="bg-stone-50 rounded-xl p-3 text-sm text-stone-600">${escapeHtml(application.message)}</div>` : ''}
+                            <div class="flex flex-wrap gap-2">
+                                ${application.application_status === 'PENDING' ? `
+                                    <button onclick="reviewOnboardingApplication(${application.id}, 'APPROVED')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700">✅ 核准</button>
+                                    <button onclick="reviewOnboardingApplication(${application.id}, 'REJECTED')" class="bg-rose-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-rose-700">✕ 拒絕</button>
+                                ` : ''}
+                                ${application.application_status === 'APPROVED' ? `
+                                    <button onclick="selectOnboardingApplication(${application.id}); openLinkGeneratorForSelectedApplication();" class="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-black">🔗 進入連結生成器</button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function reviewOnboardingApplication(applicationId, status) {
+            const application = onboardingState.applications.find(app => String(app.id) === String(applicationId));
+            if (!application) return;
+
+            const reviewNotes = window.prompt(
+                status === 'APPROVED' ? '核准備註（可留空）' : '拒絕原因（可留空）',
+                application.review_notes || ''
+            );
+
+            try {
+                await submitToBackendViaForm({
+                    action: 'review_application',
+                    application_id: applicationId,
+                    status,
+                    review_notes: reviewNotes || '',
+                    reviewed_by: 'admin'
+                });
+                showSuccessMessage(`✅ 申請已${status === 'APPROVED' ? '核准' : '拒絕'}`);
+                onboardingState.selectedApplicationId = applicationId;
+                await loadOnboardingApplications();
+            } catch (error) {
+                showErrorMessage('❌ 審核失敗：' + error.message);
+            }
+        }
+
+        function syncOnboardingDraftField(field, value) {
+            const application = getSelectedOnboardingApplication();
+            if (!application) return;
+            const draft = getOnboardingDraft(application);
+            draft[field] = value;
+            renderOnboardingPacketPanel();
+        }
+
+        function renderOnboardingWorkspace() {
+            const container = document.getElementById('onboardingWorkspace');
+            if (!container) return;
+
+            const application = getSelectedOnboardingApplication();
+            if (!application) {
+                container.innerHTML = `
+                    <div class="rounded-2xl border border-dashed border-stone-300 p-6 text-sm text-stone-500">
+                        先從左側選擇一位申請者，這裡會顯示審核、連結生成與交付步驟。
+                    </div>
+                `;
+                return;
+            }
+
+            const draft = getOnboardingDraft(application);
+            const hasPartner = Boolean(getSelectedOnboardingPartner(application));
+
+            container.innerHTML = `
+                <div class="rounded-2xl bg-stone-50 p-5">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-xs tracking-[0.2em] uppercase text-stone-400 mb-2">Selected Application</p>
+                            <h4 class="font-serif text-2xl text-stone-800">${escapeHtml(application.name || '未提供姓名')}</h4>
+                            <p class="text-sm text-stone-500 mt-1">${escapeHtml(application.email || '未提供 Email')} ・ ${escapeHtml(application.phone || '未提供電話')}</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs ${getApplicationStatusClass(application.application_status)}">${getApplicationStatusText(application.application_status)}</span>
+                    </div>
+                </div>
+
+                <div class="workflow-step p-5">
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <div>
+                            <div class="text-xs tracking-[0.18em] uppercase text-stone-400">Step 1</div>
+                            <h4 class="font-serif text-xl text-stone-800">審核申請</h4>
+                        </div>
+                        ${application.application_status === 'PENDING' ? `
+                            <div class="flex gap-2">
+                                <button onclick="reviewOnboardingApplication(${application.id}, 'APPROVED')" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-emerald-700">核准</button>
+                                <button onclick="reviewOnboardingApplication(${application.id}, 'REJECTED')" class="bg-rose-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-rose-700">拒絕</button>
+                            </div>
+                        ` : `<div class="text-sm text-stone-500">審核已完成</div>`}
+                    </div>
+                    <div class="text-sm text-stone-600 space-y-2">
+                        <div>來源：${escapeHtml(application.referral_source || '未填寫')}</div>
+                        <div>社群：${escapeHtml(application.social_profile || '未填寫')}</div>
+                        <div>備註：${escapeHtml(application.review_notes || '尚無審核備註')}</div>
+                    </div>
+                </div>
+
+                <div class="workflow-step p-5">
+                    <div class="text-xs tracking-[0.18em] uppercase text-stone-400 mb-2">Step 2</div>
+                    <h4 class="font-serif text-xl text-stone-800 mb-4">準備專屬連結</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-stone-600 mb-2">大使代碼</label>
+                            <input id="workflowPartnerCode" type="text" value="${escapeHtml(draft.partnerCode)}" oninput="syncOnboardingDraftField('partnerCode', this.value.trim())" class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-stone-600 mb-2">優惠券連結</label>
+                            <input id="workflowCouponUrl" type="url" value="${escapeHtml(draft.couponUrl)}" oninput="syncOnboardingDraftField('couponUrl', this.value.trim())" class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-200" placeholder="https://lin.ee/...">
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="openLinkGeneratorForSelectedApplication()" class="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-black">
+                                🔗 帶著預填資料進連結生成器
+                            </button>
+                            <button onclick="quickPromoteSelectedApplication()" class="bg-white border border-stone-300 text-stone-700 px-4 py-2 rounded-lg text-sm hover:bg-stone-50">
+                                ⚡ 直接建立基本大使
+                            </button>
+                        </div>
+                        <p class="text-xs text-stone-500">
+                            ${hasPartner ? '這位申請者已建立大使檔案，可直接往下複製交付資源包。' : '建議先進連結生成器完成短網址與資料儲存，再交付給大使。'}
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildOnboardingPacket(application, partner) {
+            const draft = getOnboardingDraft(application);
+            const toolkitUrl = partner?.short_landing_link || partner?.landing_link || '';
+            const couponUrl = partner?.short_coupon_link || partner?.coupon_link || partner?.coupon_url || draft.couponUrl || '';
+            const invitationUrl = getAbsoluteFrontendUrl('../invitation.html');
+            const loginUrl = getAbsoluteFrontendUrl('../partner-login.html');
+            const dashboardUrl = getAbsoluteFrontendUrl('../partner-dashboard.html');
+            const toolkitHomeUrl = toolkitUrl || getAbsoluteFrontendUrl('../index.html');
+            const adminResourcesUrl = getAbsoluteFrontendUrl('resources.html');
+
+            return {
+                links: [
+                    { label: '大使登入頁', description: '讓對方登入查詢佣金、點數與推薦紀錄', url: loginUrl },
+                    { label: '知音大使贈禮工具包', description: '對外分享的主工具包頁面', url: toolkitHomeUrl },
+                    { label: '合作規則／邀請頁', description: '隨時回查合作條款與等級規則', url: invitationUrl },
+                    { label: '大使儀表板介紹頁', description: '內部操作頁面，方便你教對方認識登入後會看到什麼', url: dashboardUrl },
+                    { label: '專屬優惠券連結', description: '專屬 LINE 優惠券或導流連結', url: couponUrl },
+                    { label: '管理員資源中心', description: '若你內部還要回查其他頁面，可從這裡進', url: adminResourcesUrl }
+                ],
+                message: [
+                    `${application.name || '你好'}，歡迎加入靜謐森林知音大使計畫。`,
+                    '',
+                    '以下是你之後會用到的完整連結與文件：',
+                    `1. 大使登入頁：${loginUrl}`,
+                    `2. 知音大使贈禮工具包：${toolkitHomeUrl}`,
+                    `3. 合作規則／邀請頁：${invitationUrl}`,
+                    toolkitUrl ? `4. 你的專屬分享主連結：${toolkitUrl}` : null,
+                    couponUrl ? `5. 你的專屬優惠券連結：${couponUrl}` : null,
+                    '',
+                    '之後如果你要回查規則、登入查看紀錄，或直接分享你的工具包，都可以從上面這些連結進去。'
+                ].filter(Boolean).join('\n')
+            };
+        }
+
+        function renderOnboardingPacketPanel() {
+            const panel = document.getElementById('onboardingPacketPanel');
+            const textarea = document.getElementById('onboardingPacketMessage');
+            if (!panel || !textarea) return;
+
+            const application = getSelectedOnboardingApplication();
+            if (!application) {
+                panel.innerHTML = `<div class="rounded-2xl border border-dashed border-stone-300 p-6 text-sm text-stone-500">選取申請者後，這裡會整理交付資源包。</div>`;
+                textarea.value = '完成夥伴建檔後，這裡會產生可直接傳給大使的完整訊息。';
+                return;
+            }
+
+            const partner = getSelectedOnboardingPartner(application);
+            if (!partner) {
+                const invitationUrl = getAbsoluteFrontendUrl('../invitation.html');
+                const loginUrl = getAbsoluteFrontendUrl('../partner-login.html');
+                const toolkitUrl = getAbsoluteFrontendUrl('../index.html');
+                panel.innerHTML = `
+                    <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
+                        這位申請者尚未完成夥伴建檔。先進入連結生成器儲存資料，交付資源包才會自動帶入專屬連結。
+                    </div>
+                    <div class="packet-link"><div><div class="font-medium text-stone-800">合作規則／邀請頁</div><div class="text-xs text-stone-500">先給對方回查制度與合作說明</div></div><a href="${invitationUrl}" target="_blank" class="text-sm text-emerald-700 hover:underline">開啟</a></div>
+                    <div class="packet-link"><div><div class="font-medium text-stone-800">大使登入頁</div><div class="text-xs text-stone-500">完成建檔後會用這裡登入</div></div><a href="${loginUrl}" target="_blank" class="text-sm text-emerald-700 hover:underline">開啟</a></div>
+                    <div class="packet-link"><div><div class="font-medium text-stone-800">知音大使贈禮工具包</div><div class="text-xs text-stone-500">完成建檔後會切成專屬分享連結</div></div><a href="${toolkitUrl}" target="_blank" class="text-sm text-emerald-700 hover:underline">開啟</a></div>
+                `;
+                textarea.value = '這位申請者尚未完成夥伴建檔。先進入連結生成器儲存資料，交付資源包才會自動帶入專屬連結。';
+                return;
+            }
+
+            const packet = buildOnboardingPacket(application, partner);
+            panel.innerHTML = packet.links.map(link => `
+                <div class="packet-link">
+                    <div class="min-w-0">
+                        <div class="font-medium text-stone-800">${escapeHtml(link.label)}</div>
+                        <div class="text-xs text-stone-500 mt-1">${escapeHtml(link.description)}</div>
+                        <div class="text-xs text-stone-400 mt-2 break-all">${escapeHtml(link.url || '尚未設定')}</div>
+                    </div>
+                    ${link.url ? `<a href="${link.url}" target="_blank" class="text-sm text-emerald-700 hover:underline whitespace-nowrap">開啟</a>` : '<span class="text-xs text-stone-400 whitespace-nowrap">待完成</span>'}
+                </div>
+            `).join('');
+            textarea.value = packet.message;
+        }
+
+        function copyOnboardingPacketMessage() {
+            const textarea = document.getElementById('onboardingPacketMessage');
+            if (!textarea || !textarea.value) {
+                showErrorMessage('目前沒有可複製的交付訊息');
+                return;
+            }
+
+            textarea.select();
+            document.execCommand('copy');
+            showSuccessMessage('✅ 已複製交付訊息');
+        }
+
+        function openLinkGeneratorForSelectedApplication() {
+            const application = getSelectedOnboardingApplication();
+            if (!application) {
+                showErrorMessage('請先選擇申請者');
+                return;
+            }
+
+            const draft = getOnboardingDraft(application);
+            const iframe = document.getElementById('linkgenIframe');
+            const params = new URLSearchParams({
+                application_id: application.id,
+                partner_name: application.name || '',
+                partner_email: application.email || '',
+                partner_phone: application.phone || '',
+                partner_code: draft.partnerCode || '',
+                coupon_url: draft.couponUrl || '',
+                source: 'onboarding'
+            });
+
+            if (iframe) {
+                iframe.src = `link-generator-form.html?${params.toString()}`;
+            }
+
+            showTab('linkgen');
+        }
+
+        async function quickPromoteSelectedApplication() {
+            const application = getSelectedOnboardingApplication();
+            if (!application) {
+                showErrorMessage('請先選擇申請者');
+                return;
+            }
+
+            const draft = getOnboardingDraft(application);
+            if (!draft.partnerCode) {
+                showErrorMessage('請先填寫大使代碼');
+                return;
+            }
+
+            try {
+                await submitToBackendViaForm({
+                    action: 'promote_to_partner',
+                    application_id: application.id,
+                    partner_code: draft.partnerCode,
+                    coupon_url: draft.couponUrl || ''
+                });
+                showSuccessMessage('✅ 已建立基本大使資料');
+                await refreshOnboardingWorkspace();
+            } catch (error) {
+                showErrorMessage('❌ 建立大使失敗：' + error.message);
+            }
+        }
+
+        async function refreshOnboardingWorkspace(forceRefresh = true) {
+            await loadRealData(forceRefresh);
+            await loadOnboardingApplications();
         }
 
         function showLoadingSpinner(message) {
@@ -6094,6 +6712,9 @@
             
             // 根據標籤載入相應數據
             switch(tabName) {
+                case 'onboarding':
+                    refreshOnboardingWorkspace(false);
+                    break;
                 case 'overview':
                     loadOverviewData();
                     break;
@@ -6123,13 +6744,26 @@
             console.log('🚀 頁面載入完成，初始化應用程式');
             // 預先載入資料
             loadRealData().then(() => {
-                // 顯示預設的概覽標籤
-                showTab('overview');
+                // 顯示預設的 onboarding 標籤
+                showTab('onboarding');
             }).catch(error => {
                 console.error('初始載入失敗:', error);
-                // 即使失敗也顯示概覽標籤
-                showTab('overview');
+                // 即使失敗也顯示 onboarding 標籤
+                showTab('onboarding');
             });
+        });
+
+        window.addEventListener('message', async function(event) {
+            const message = event.data;
+            if (!message || typeof message !== 'object') return;
+
+            if (message.type === 'partner-saved') {
+                if (message.applicationId) {
+                    onboardingState.selectedApplicationId = message.applicationId;
+                }
+                await refreshOnboardingWorkspace();
+                showTab('onboarding');
+            }
         });
     </script>
     <!-- 外部 JavaScript 文件，添加版本號防止快取 -->

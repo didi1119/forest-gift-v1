@@ -321,13 +321,13 @@
 
                     <div class="relative z-10 flex flex-col sm:flex-row">
                         <!-- Left: Text Column -->
-                        <div class="flex-1 p-8 sm:p-10 sm:pr-0 flex flex-col justify-center">
+                        <div class="flex-1 p-8 sm:p-10 sm:pr-0 flex flex-col justify-center text-center sm:text-left items-center sm:items-start">
                             <span
                                 class="text-[0.6rem] font-bold tracking-[0.35em] text-[#C5A065] uppercase block mb-5">Gift
                                 One</span>
 
-                            <!-- Compass mark -->
-                            <div class="mb-5 w-10 h-10 relative flex items-center justify-center">
+                            <!-- Compass mark (desktop only) -->
+                            <div class="mb-5 w-10 h-10 relative hidden sm:flex items-center justify-center">
                                 <div
                                     class="absolute w-px h-full bg-gradient-to-b from-transparent via-[#C5A065]/60 to-transparent">
                                 </div>
@@ -336,6 +336,8 @@
                                 </div>
                                 <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/70"></div>
                             </div>
+                            <!-- Mobile: gold line divider -->
+                            <div class="sm:hidden w-8 h-px bg-gradient-to-r from-transparent via-[#C5A065] to-transparent mb-5"></div>
 
                             <h3 class="text-2xl sm:text-3xl font-serif font-bold text-[#1A2F23] mb-3 leading-tight">森林手記
                             </h3>
@@ -345,11 +347,11 @@
                             <p class="text-stone-600 text-sm font-light leading-relaxed mb-7">
                                 給自己七天，每天五分鐘。<br><br>
                                 不需要寫得好，只需要寫得真。<br>
-                                森林會在你的字裡行間，陪你找到答案。
+                                森林會在你的字裡行間，<br class="sm:hidden">陪你找到答案。
                             </p>
 
                             <a href="inner_map.html"
-                                class="btn-mystic self-start inline-flex items-center gap-3 group/btn px-6 py-2.5"
+                                class="btn-mystic inline-flex items-center gap-3 group/btn px-6 py-2.5"
                                 onclick="trackEvent('inner_map_click', { page: 'index_ab' })">
                                 <span class="text-xs tracking-[0.2em] uppercase">開始書寫</span>
                                 <span

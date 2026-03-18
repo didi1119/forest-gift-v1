@@ -2739,6 +2739,8 @@
             const loginUrl = getAbsoluteFrontendUrl('../partner-login.html');
             const toolkitHomeUrl = toolkitUrl || getAbsoluteFrontendUrl('../index.html');
             const recipientName = application?.name || partner?.partner_name || partner?.name || '你好';
+            const partnerCode = partner?.partner_code || application?.partner_code_assigned || draft.partnerCode || '';
+            const phoneHint = application?.phone || partner?.contact_phone || partner?.phone || '';
             const shareLabel = toolkitUrl ? '你的專屬分享工具包' : '知音大使贈禮工具包';
 
             return {
@@ -2749,6 +2751,10 @@
                 ],
                 message: [
                     `${recipientName}，歡迎加入靜謐森林的知音大使計畫。很開心接下來能和你一起，把森林裡的安靜與美好分享給更多人。`,
+                    '',
+                    '先補給你登入資訊：',
+                    partnerCode ? `你的大使代碼：${partnerCode}` : null,
+                    phoneHint ? `登入時請搭配你留存手機的後 4 碼（${String(phoneHint).slice(-4)}）` : '登入時請搭配你留存手機的後 4 碼',
                     '',
                     '先把之後合作時最常用到的入口整理給你，你可以直接從這裡開始：',
                     `1. 大使登入頁：${loginUrl}`,

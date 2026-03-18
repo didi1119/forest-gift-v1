@@ -203,10 +203,10 @@
             left: 0;
             right: 0;
             z-index: 40;
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(26, 47, 35, 0.95);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid rgba(232, 236, 233, 0.6);
+            border-top: 1px solid rgba(197, 160, 101, 0.15);
             padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         .nav-tab {
@@ -218,8 +218,7 @@
             padding: 8px 0 6px;
             flex: 1;
             font-size: 0.625rem;
-            color: var(--forest-light);
-            opacity: 0.55;
+            color: rgba(245, 242, 235, 0.4);
             transition: all 0.2s ease;
             position: relative;
             cursor: pointer;
@@ -228,7 +227,6 @@
         }
         .nav-tab.active {
             color: var(--gold);
-            opacity: 1;
         }
         .nav-tab.active::before {
             content: "";
@@ -251,10 +249,11 @@
     <div class="toast-wrap" id="toastContainer"></div>
 
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 flex items-center justify-center z-50" style="background: rgba(245, 242, 235, 0.9);">
+    <div id="loadingOverlay" class="fixed inset-0 flex items-center justify-center z-50" style="background: var(--forest-dark);">
         <div class="text-center">
-            <div class="w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-4" style="border-color: var(--forest-faint); border-top-color: var(--forest-medium);"></div>
-            <p class="text-sm font-light" style="color: var(--forest-light);">載入數據中...</p>
+            <p class="text-xs font-bold tracking-[0.35em] uppercase mb-6" style="color: var(--gold);">靜謐森林</p>
+            <div class="w-8 h-8 border-2 rounded-full animate-spin mx-auto mb-4" style="border-color: rgba(197,160,101,0.2); border-top-color: var(--gold);"></div>
+            <p class="text-sm font-light" style="color: rgba(245,242,235,0.6);">載入數據中...</p>
         </div>
     </div>
 
@@ -262,15 +261,15 @@
     <header class="compact-header">
         <div class="max-w-5xl mx-auto px-4 py-3">
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: var(--forest-medium);">
-                    <span class="text-white text-xs font-semibold" id="userInitial">K</span>
+                <div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 border" style="background: var(--forest-dark); border-color: rgba(197,160,101,0.3);">
+                    <span class="font-serif text-xs font-semibold" style="color: var(--gold);" id="userInitial">K</span>
                 </div>
                 <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <h1 class="text-sm font-medium truncate" id="partnerName">知音大使</h1>
+                        <h1 class="text-sm font-medium truncate font-serif" id="partnerName">知音大使</h1>
                         <span class="badge badge-level" id="partnerLevel">--</span>
                     </div>
-                    <p class="text-[0.65rem] mt-0.5" style="color: var(--forest-light);">代碼 <span class="font-mono" id="partnerCode">-</span></p>
+                    <p class="text-[0.65rem] mt-0.5" style="color: var(--forest-light);">代碼 <span class="font-mono" style="color: var(--gold); opacity: 0.8;" id="partnerCode">-</span></p>
                 </div>
             </div>
         </div>
@@ -563,16 +562,16 @@
 
                 <!-- Reload + Logout -->
                 <div class="glass-card p-5 md:p-6 mb-4">
-                    <button onclick="refreshData()" class="w-full py-3 text-sm font-medium border rounded-lg transition-colors mb-3" style="color: var(--forest-medium); border-color: var(--forest-faint);">
+                    <button onclick="refreshData()" class="w-full py-3 text-sm font-medium rounded-lg transition-all mb-3" style="background: var(--forest-dark); color: var(--gold); border: 1px solid rgba(197,160,101,0.3);">
                         重新載入數據
                     </button>
-                    <button onclick="logout()" class="w-full py-3 text-sm font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint); opacity: 0.7;">
+                    <button onclick="logout()" class="w-full py-3 text-sm font-medium border rounded-lg transition-colors" style="color: var(--forest-light); border-color: var(--forest-faint); opacity: 0.6;">
                         登出
                     </button>
                 </div>
 
                 <!-- Version -->
-                <p class="text-center text-[0.65rem] py-4" style="color: var(--forest-light); opacity: 0.5;">知音大使 v2.0</p>
+                <p class="text-center text-[0.65rem] py-4" style="color: var(--forest-light); opacity: 0.4;">知音大使 v2.1</p>
             </div>
 
         </div>

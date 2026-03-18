@@ -117,6 +117,81 @@
             border-color: rgba(197, 160, 101, 0.6);
             box-shadow: 0 0 20px rgba(197, 160, 101, 0.15);
         }
+
+        /* === Day Card UI Enhancements === */
+
+        /* Day number watermark */
+        .day-number-badge {
+            position: absolute;
+            top: -0.75rem;
+            right: 0;
+            font-size: 7rem;
+            font-family: 'Noto Serif TC', serif;
+            color: var(--forest-dark);
+            opacity: 0.03;
+            line-height: 1;
+            pointer-events: none;
+            user-select: none;
+            z-index: 0;
+        }
+        .brand-card { position: relative; overflow: hidden; }
+        .brand-card > *:not(.day-number-badge) { position: relative; z-index: 1; }
+
+        /* Nav completion dots */
+        .nav-link { position: relative; }
+        .completion-dot {
+            display: block;
+            margin: -6px auto 0;
+            width: 5px; height: 5px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid transparent;
+            transition: all 0.4s ease;
+        }
+        .completion-dot.filled {
+            background: var(--gold);
+            border-color: var(--gold);
+            box-shadow: 0 0 6px rgba(197, 160, 101, 0.35);
+        }
+
+        /* Better textarea styling */
+        textarea[data-day] {
+            font-family: 'Noto Serif TC', serif;
+            font-size: 0.95rem;
+            line-height: 1.85;
+            min-height: 10rem;
+            resize: vertical;
+        }
+        textarea[data-day]:focus {
+            background: white;
+        }
+
+        /* Day card subtle left accent */
+        .journey-day .brand-card {
+            border-left: 3px solid transparent;
+            transition: border-color 0.4s ease;
+        }
+        .journey-day.has-content .brand-card {
+            border-left-color: var(--gold);
+        }
+
+        /* === Mobile Optimizations === */
+        @media (max-width: 639px) {
+            /* Day card titles: prevent ugly wrapping */
+            .journey-day h2 { font-size: 1.25rem !important; line-height: 1.5 !important; }
+            .journey-day h3 { font-size: 0.85rem !important; }
+            /* Card padding tighter */
+            .journey-day .brand-card { padding: 1.25rem !important; }
+            /* Prose body text */
+            .journey-day .prose { font-size: 0.875rem !important; }
+            .journey-day .prose p, .journey-day .prose li { font-size: 0.875rem !important; }
+            /* Ritual box padding */
+            .journey-day .brand-secondary-bg { padding: 1rem !important; }
+            /* Day number watermark smaller */
+            .day-number-badge { font-size: 4.5rem !important; top: -0.25rem !important; }
+            /* Sections gap */
+            main.mobile-gap { gap: 3rem !important; }
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -142,31 +217,23 @@
     <!-- Sticky Navigation -->
     <nav id="journey-nav" class="sticky top-0 z-50 backdrop-blur-lg border-b" style="background: rgba(245,242,235,0.85); border-color: rgba(26,47,35,0.08);">
         <div class="max-w-4xl mx-auto px-6">
-            <div class="flex justify-center sm:justify-between items-center h-16">
+            <div class="flex justify-center sm:justify-between items-center h-11 sm:h-16">
                 <div class="hidden sm:block font-serif font-semibold text-lg" style="color: var(--forest-dark);">森林手記</div>
-                <div class="flex space-x-4 sm:space-x-6 text-sm sm:text-base font-medium" style="color: var(--forest-light)">
-                    <a href="#day-1" class="nav-link py-5">第一日</a>
-                    <a href="#day-2" class="nav-link py-5">第二日</a>
-                    <a href="#day-3" class="nav-link py-5">第三日</a>
-                    <a href="#day-4" class="nav-link py-5">第四日</a>
-                    <a href="#day-5" class="nav-link py-5">第五日</a>
-                    <a href="#day-6" class="nav-link py-5">第六日</a>
-                    <a href="#day-7" class="nav-link py-5">第七日</a>
+                <div class="flex space-x-3 sm:space-x-6 text-[0.7rem] sm:text-base font-medium" style="color: var(--forest-light)">
+                    <a href="#day-1" class="nav-link py-3 sm:py-5 whitespace-nowrap">第一日</a>
+                    <a href="#day-2" class="nav-link py-3 sm:py-5 whitespace-nowrap">第二日</a>
+                    <a href="#day-3" class="nav-link py-3 sm:py-5 whitespace-nowrap">第三日</a>
+                    <a href="#day-4" class="nav-link py-3 sm:py-5 whitespace-nowrap">第四日</a>
+                    <a href="#day-5" class="nav-link py-3 sm:py-5 whitespace-nowrap">第五日</a>
+                    <a href="#day-6" class="nav-link py-3 sm:py-5 whitespace-nowrap">第六日</a>
+                    <a href="#day-7" class="nav-link py-3 sm:py-5 whitespace-nowrap">第七日</a>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Auto-save Notice -->
-    <section class="max-w-4xl mx-auto px-6 pt-12">
-        <div class="rounded-xl p-5 text-center border-l-4" style="background: rgba(197,160,101,0.06); border-left-color: var(--gold);">
-            <h3 class="font-serif font-semibold text-sm mb-1" style="color: var(--gold);">自動保存</h3>
-            <p class="text-xs max-w-xl mx-auto" style="color: var(--forest-light);">您的紀錄會自動保存在裝置上，重新開啟時自動還原。</p>
-        </div>
-    </section>
-
     <!-- Main Content -->
-    <main class="max-w-4xl mx-auto px-6 py-16 sm:py-24 space-y-20 sm:space-y-24">
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-24 space-y-12 sm:space-y-24">
         
         <!-- Day 1 -->
         <section id="day-1" class="journey-day">
@@ -244,16 +311,17 @@
         <section id="day-7" class="journey-day"><div class="brand-card p-8 sm:p-12 content-fade-in"><h2 class="font-serif text-3xl font-semibold brand-accent mb-2">第七日：整合與前行</h2><h3 class="text-xl text-[#4A675A] mb-8">主題：地圖的祝福</h3><div class="prose prose-lg max-w-none text-[#4A675A] leading-relaxed space-y-6"><p>經過了六天的探索，你的內心地圖上，已經留下了新的足跡。今天，我們不做新的練習，而是進行一次整合與祝福。</p><div class="brand-secondary-bg p-6 rounded-2xl"><h4 class="font-serif font-semibold text-lg text-[#1A2F23] mb-4">【今日儀式】</h4><div class="space-y-4"><p class="ritual-item">請你重新閱讀過去六天，你在「地圖上的印記」中所寫下的文字。</p><p class="ritual-item">閱讀完畢後，請閉上眼睛，感受這趟旅程為你帶來的微妙變化。</p><p class="ritual-item">最後，請為自己，<strong>寫下一句祝福的話</strong>。這句話，將是你帶著上路的、來自你自己內心最深處的期許。</p></div></div><div><h4 class="font-serif font-semibold text-lg text-[#1A2F23] mb-3">【地圖上的印記】</h4><p class="mb-4">請將這句祝福的話，寫在你的手帳扉頁、或是一張便條紙上，並在此記錄下來。</p><textarea data-day="7" class="w-full h-40 p-4 border border-[#1A2F23]/15 rounded-xl transition duration-300 bg-[#F5F2EB]/50" placeholder="在此寫下您的祝福..."></textarea></div></div></div></section>
 
         <!-- Conclusion -->
-        <section class="text-center pt-16 content-fade-in">
-             <h2 class="font-serif text-4xl font-bold brand-accent mb-8">終章：森林從不終結</h2>
-             <div class="prose prose-lg max-w-2xl mx-auto text-[#4A675A] leading-relaxed">
-                <p>
-                    這七天的旅程，即將告一段落。但你的內心地圖，卻正要真正開始變得精彩。「靜謐森林」無法給你一片新的森林，因為那片最繁盛、最真實的森林，早已存在於你的內心。我們能給予的，只是一份微小而珍貴的禮物：一張地圖的草稿、一些工具、以及一份同行的祝福。
-                </p>
-                <p class="font-serif text-xl text-[#4A675A] mt-8">
-                    森林從不終結，只是歸藏。而我們，將永遠在這裡，等待你的每一次甦醒。
-                </p>
-            </div>
+        <section class="text-center pt-16 pb-4 content-fade-in">
+            <div class="gold-line mb-10"></div>
+            <p class="text-[0.6rem] font-bold tracking-[0.35em] text-[#C5A065] uppercase mb-6">Afterword</p>
+            <h2 class="font-serif text-2xl sm:text-3xl text-[#1A2F23] mb-8 leading-relaxed">七日已過，地圖仍在延伸。</h2>
+            <p class="text-sm text-[#4A675A] max-w-sm mx-auto leading-loose mb-10">
+                這份手記沒有終點。<br>
+                每一次重讀你寫下的字，<br>
+                都是一次與自己的重逢。
+            </p>
+            <div class="gold-line mb-10"></div>
+            <a href="index.html" class="brand-button text-xs tracking-[0.15em]">返回森林</a>
         </section>
     </main>
 
@@ -375,6 +443,47 @@
 
             // 頁面載入時還原已保存的內容
             loadSavedEntries();
+
+            // === UI Enhancements ===
+
+            // Add day number watermark to each card
+            document.querySelectorAll('.journey-day').forEach((section, index) => {
+                const card = section.querySelector('.brand-card');
+                if (card) {
+                    const badge = document.createElement('div');
+                    badge.className = 'day-number-badge';
+                    badge.textContent = String(index + 1).padStart(2, '0');
+                    card.insertBefore(badge, card.firstChild);
+                }
+            });
+
+            // Add completion dots to nav links
+            navLinks.forEach((link, index) => {
+                const dot = document.createElement('span');
+                dot.className = 'completion-dot';
+                dot.dataset.dot = index + 1;
+                link.appendChild(dot);
+            });
+
+            // Update completion state (dots + card left border)
+            function updateCompletionState() {
+                for (let i = 1; i <= 7; i++) {
+                    const saved = localStorage.getItem(`innermap_day_${i}`);
+                    const hasMeaningfulContent = saved && saved.trim().length > 10;
+                    // Nav dot
+                    const dot = document.querySelector(`.completion-dot[data-dot="${i}"]`);
+                    if (dot) dot.classList.toggle('filled', hasMeaningfulContent);
+                    // Card left border
+                    const section = document.getElementById(`day-${i}`);
+                    if (section) section.classList.toggle('has-content', hasMeaningfulContent);
+                }
+            }
+            updateCompletionState();
+
+            // Update completion state on every input
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', updateCompletionState);
+            });
 
 
 

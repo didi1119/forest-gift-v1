@@ -96,6 +96,44 @@ function getEndOfYearDate(year) {
   return `${year}-12-31`;
 }
 
+async function createShortUrl(originalUrl) {
+  if (!originalUrl) return '';
+
+  try {
+    const response = await fetch('https://api.reurl.cc/shorten', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'reurl-api-key': '4070ff49d794e43515523b663c974755ecd7b335959e04df8a38b58d65165567c4f5d6'
+      },
+      body: JSON.stringify({ url: originalUrl })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.res === 'success' && data.short_url) {
+        return data.short_url;
+      }
+    }
+  } catch (error) {
+    console.warn('createShortUrl reurl.cc failed:', error.message || error);
+  }
+
+  try {
+    const response = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(originalUrl)}`);
+    if (response.ok) {
+      const shortUrl = (await response.text()).trim();
+      if (shortUrl.startsWith('https://is.gd/')) {
+        return shortUrl;
+      }
+    }
+  } catch (error) {
+    console.warn('createShortUrl is.gd failed:', error.message || error);
+  }
+
+  return originalUrl;
+}
+
 function getValueAsDateString(value) {
   if (!value) return '';
   const raw = String(value);
@@ -2246,6 +2284,11 @@ async function handlePromoteToPartner(data) {
   const baseUrl = GITHUB_PAGES_URL.replace('/frontend/index.html', '');
   const landingLink = `${baseUrl}/api?dest=landing&pid=${partnerCode}`;
   const couponLink = `${baseUrl}/api?dest=coupon&pid=${partnerCode}`;
+  const couponUrl = data.coupon_url || DEFAULT_LINE_COUPON_URL;
+  const [shortLandingLink, shortCouponLink] = await Promise.all([
+    createShortUrl(landingLink),
+    createShortUrl(couponLink)
+  ]);
 
   const partnerData = {
     partner_code: partnerCode,
@@ -2260,11 +2303,12 @@ async function handlePromoteToPartner(data) {
     total_commission_paid: 0,
     pending_commission: 0,
     coupon_code: '',
-    coupon_url: data.coupon_url || DEFAULT_LINE_COUPON_URL,
+    line_coupon_url: couponUrl,
+    coupon_url: couponUrl,
     landing_link: landingLink,
     coupon_link: couponLink,
-    short_landing_link: '',
-    short_coupon_link: '',
+    short_landing_link: shortLandingLink,
+    short_coupon_link: shortCouponLink,
     available_points: 0,
     points_used: 0,
     bank_account: record.data.bank_account_number || '',
@@ -2296,7 +2340,9 @@ async function handlePromoteToPartner(data) {
     message: '已成功轉為正式大使',
     partner_code: partnerCode,
     landing_link: landingLink,
-    coupon_link: couponLink
+    coupon_link: couponLink,
+    short_landing_link: shortLandingLink,
+    short_coupon_link: shortCouponLink
   };
 }
 

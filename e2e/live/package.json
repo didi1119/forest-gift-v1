@@ -16,6 +16,7 @@
     "level-debt": "node scripts/e2e-level-debt-ui.js",
     "payout-reversal": "node scripts/e2e-payout-reversal-ui.js",
     "public-funnel": "node scripts/e2e-public-funnel-ui.js",
+    "application-onboarding": "node scripts/e2e-application-onboarding-ui.js",
     "api-edge": "node scripts/e2e-api-edge-cases.js",
     "suite": "./run-suite.sh"
   }

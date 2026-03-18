@@ -17,6 +17,7 @@ SCRIPTS="
  scripts/e2e-level-debt-ui.js
  scripts/e2e-payout-reversal-ui.js
  scripts/e2e-public-funnel-ui.js
+ scripts/e2e-application-onboarding-ui.js
  scripts/e2e-api-edge-cases.js
 "
 

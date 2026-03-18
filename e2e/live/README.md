@@ -112,6 +112,12 @@ export API_BASE=http://127.0.0.1:4173/api
   - 夥伴登入
   - partner dashboard 各分頁
   - click tracking
+- `e2e-application-onboarding-ui.js`
+  - 公開申請頁含銀行資訊
+  - admin onboarding 工作台審核
+  - 帶預填資料進連結生成器
+  - 直接建立基本大使
+  - 驗證短網址與交付資源包
 - `e2e-api-edge-cases.js`
   - `cancel_accommodation_usage`
   - `partial_refund`

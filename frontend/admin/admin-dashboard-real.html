@@ -1214,6 +1214,7 @@
             totalCount: 0,
             filter: 'PENDING',
             selectedApplicationId: null,
+            manualPartnerCode: null,
             draftByApplicationId: {}
         };
         
@@ -2317,6 +2318,11 @@
             return allData.partners.find(partner => partner.partner_code === assignedCode) || null;
         }
 
+        function getManualOnboardingPartner() {
+            if (!onboardingState.manualPartnerCode || !Array.isArray(allData.partners)) return null;
+            return allData.partners.find(partner => partner.partner_code === onboardingState.manualPartnerCode) || null;
+        }
+
         function updateOnboardingFilterButtons() {
             document.querySelectorAll('[data-onboarding-filter]').forEach(button => {
                 button.classList.toggle('active', button.dataset.onboardingFilter === onboardingState.filter);
@@ -2331,6 +2337,7 @@
 
         function selectOnboardingApplication(applicationId) {
             onboardingState.selectedApplicationId = applicationId;
+            onboardingState.manualPartnerCode = null;
             renderOnboardingApplications();
             renderOnboardingWorkspace();
             renderOnboardingPacketPanel();
@@ -2338,6 +2345,7 @@
 
         function clearOnboardingSelection() {
             onboardingState.selectedApplicationId = null;
+            onboardingState.manualPartnerCode = null;
             renderOnboardingApplications();
             renderOnboardingWorkspace();
             renderOnboardingPacketPanel();
@@ -2354,12 +2362,12 @@
                 onboardingState.counts = result.counts || { pending: 0, approved: 0, rejected: 0 };
                 onboardingState.totalCount = result.total_count || 0;
 
-                if (!onboardingState.selectedApplicationId && onboardingState.applications.length > 0) {
+                if (!onboardingState.selectedApplicationId && !onboardingState.manualPartnerCode && onboardingState.applications.length > 0) {
                     onboardingState.selectedApplicationId = onboardingState.applications[0].id;
                 } else if (onboardingState.selectedApplicationId) {
                     const stillExists = onboardingState.applications.some(app => String(app.id) === String(onboardingState.selectedApplicationId));
                     if (!stillExists) {
-                        onboardingState.selectedApplicationId = onboardingState.applications[0]?.id || null;
+                        onboardingState.selectedApplicationId = onboardingState.manualPartnerCode ? null : (onboardingState.applications[0]?.id || null);
                     }
                 }
 
@@ -2492,7 +2500,54 @@
             if (!container) return;
 
             const application = getSelectedOnboardingApplication();
+            const manualPartner = getManualOnboardingPartner();
             if (!application) {
+                if (manualPartner) {
+                    container.innerHTML = `
+                        <div class="onboarding-focus-card">
+                            <div class="flex items-center justify-between gap-3 flex-wrap">
+                                <div>
+                                    <p class="text-xs tracking-[0.2em] uppercase text-stone-400 mb-2">Manual Creation</p>
+                                    <h4 class="font-serif text-2xl text-stone-800">${escapeHtml(manualPartner.partner_name || manualPartner.name || manualPartner.partner_code || '未命名大使')}</h4>
+                                    <p class="text-sm text-stone-500 mt-1">代碼：<span class="font-mono">${escapeHtml(manualPartner.partner_code || '-')}</span></p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs bg-emerald-100 text-emerald-800">已手動建檔</span>
+                            </div>
+                        </div>
+
+                        <div class="onboarding-progress">
+                            <div class="onboarding-progress-step">
+                                <strong>1. 建檔</strong>
+                                <span class="text-sm text-stone-600">已完成手動建立大使資料。</span>
+                            </div>
+                            <div class="onboarding-progress-step">
+                                <strong>2. 檢查</strong>
+                                <span class="text-sm text-stone-600">可回到連結生成器補調整連結或銀行資訊。</span>
+                            </div>
+                            <div class="onboarding-progress-step">
+                                <strong>3. 交付</strong>
+                                <span class="text-sm text-stone-600">右側已整理可直接傳給大使的完整資源包。</span>
+                            </div>
+                        </div>
+
+                        <div class="workflow-step p-5">
+                            <div class="text-xs tracking-[0.18em] uppercase text-stone-400 mb-2">Manual Path</div>
+                            <h4 class="font-serif text-xl text-stone-800 mb-4">你剛剛手動建立的對象</h4>
+                            <div class="application-meta text-sm text-stone-600">
+                                <div><div class="text-xs text-stone-400 mb-1">姓名</div><div>${escapeHtml(manualPartner.partner_name || manualPartner.name || '未提供')}</div></div>
+                                <div><div class="text-xs text-stone-400 mb-1">Email</div><div>${escapeHtml(manualPartner.contact_email || manualPartner.email || '未提供')}</div></div>
+                                <div><div class="text-xs text-stone-400 mb-1">電話</div><div>${escapeHtml(manualPartner.contact_phone || manualPartner.phone || '未提供')}</div></div>
+                                <div><div class="text-xs text-stone-400 mb-1">大使代碼</div><div class="font-mono">${escapeHtml(manualPartner.partner_code || '-')}</div></div>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-4">
+                                <button onclick="openStandaloneLinkGenerator()" class="onboarding-action primary">再開一次連結生成器</button>
+                                <button onclick="copyOnboardingPacketMessage()" class="onboarding-action secondary">複製交付訊息</button>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
                 container.innerHTML = `
                     <div class="onboarding-empty">
                         <div class="text-sm text-stone-500 mb-4">
@@ -2636,7 +2691,7 @@
         }
 
         function buildOnboardingPacket(application, partner) {
-            const draft = getOnboardingDraft(application);
+            const draft = application ? getOnboardingDraft(application) : { couponUrl: '' };
             const toolkitUrl = partner?.short_landing_link || partner?.landing_link || '';
             const couponUrl = partner?.short_coupon_link || partner?.coupon_link || partner?.coupon_url || draft.couponUrl || '';
             const invitationUrl = getAbsoluteFrontendUrl('../invitation.html');
@@ -2644,6 +2699,7 @@
             const dashboardUrl = getAbsoluteFrontendUrl('../partner-dashboard.html');
             const toolkitHomeUrl = toolkitUrl || getAbsoluteFrontendUrl('../index.html');
             const adminResourcesUrl = getAbsoluteFrontendUrl('resources.html');
+            const recipientName = application?.name || partner?.partner_name || partner?.name || '你好';
 
             return {
                 links: [
@@ -2655,7 +2711,7 @@
                     { label: '管理員資源中心', description: '若你內部還要回查其他頁面，可從這裡進', url: adminResourcesUrl }
                 ],
                 message: [
-                    `${application.name || '你好'}，歡迎加入靜謐森林知音大使計畫。`,
+                    `${recipientName}，歡迎加入靜謐森林知音大使計畫。`,
                     '',
                     '以下是你之後會用到的完整連結與文件：',
                     `1. 大使登入頁：${loginUrl}`,
@@ -2675,7 +2731,24 @@
             if (!panel || !textarea) return;
 
             const application = getSelectedOnboardingApplication();
+            const manualPartner = getManualOnboardingPartner();
             if (!application) {
+                if (manualPartner) {
+                    const packet = buildOnboardingPacket(null, manualPartner);
+                    panel.innerHTML = packet.links.map(link => `
+                        <div class="packet-link">
+                            <div class="min-w-0">
+                                <div class="font-medium text-stone-800">${escapeHtml(link.label)}</div>
+                                <div class="text-xs text-stone-500 mt-1">${escapeHtml(link.description)}</div>
+                                <div class="text-xs text-stone-400 mt-2 break-all">${escapeHtml(link.url || '尚未設定')}</div>
+                            </div>
+                            ${link.url ? `<a href="${link.url}" target="_blank" class="text-sm text-emerald-700 hover:underline whitespace-nowrap">開啟</a>` : '<span class="text-xs text-stone-400 whitespace-nowrap">待完成</span>'}
+                        </div>
+                    `).join('');
+                    textarea.value = packet.message;
+                    return;
+                }
+
                 panel.innerHTML = `<div class="rounded-2xl border border-dashed border-stone-300 p-6 text-sm text-stone-500">選取申請者後，這裡會整理交付資源包。</div>`;
                 textarea.value = '完成夥伴建檔後，這裡會產生可直接傳給大使的完整訊息。';
                 return;
@@ -2737,6 +2810,7 @@
         }
 
         function openStandaloneLinkGenerator() {
+            onboardingState.manualPartnerCode = null;
             const iframe = document.getElementById('linkgenIframe');
             if (iframe) {
                 iframe.src = 'link-generator-form.html?source=manual';
@@ -7056,6 +7130,10 @@
             if (message.type === 'partner-saved') {
                 if (message.applicationId) {
                     onboardingState.selectedApplicationId = message.applicationId;
+                    onboardingState.manualPartnerCode = null;
+                } else if (message.partnerCode) {
+                    onboardingState.selectedApplicationId = null;
+                    onboardingState.manualPartnerCode = message.partnerCode;
                 }
                 await refreshOnboardingWorkspace();
                 showTab('onboarding');

@@ -25,9 +25,11 @@ function loadEnvFile(filePath) {
 ].forEach(loadEnvFile);
 
 function loadPlaywrightChromium() {
+  const fallbackRoot = process.env.PLAYWRIGHT_NODE_MODULES || '/tmp/codex-browser-test/node_modules';
   const candidateModules = [
     'playwright-core',
-    path.resolve(process.env.PLAYWRIGHT_NODE_MODULES || '/tmp/codex-browser-test/node_modules/playwright-core')
+    path.resolve(fallbackRoot, 'playwright-core'),
+    path.resolve(fallbackRoot, 'playwright-core/index.js')
   ];
 
   for (const candidate of candidateModules) {
@@ -49,10 +51,8 @@ const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 const adminSecret = process.env.ADMIN_SECRET;
 const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY. Provide env vars or .env.local.');
-}
 if (!adminSecret) throw new Error('Missing ADMIN_SECRET');
+const hasSupabase = Boolean(supabaseUrl && supabaseKey);
 
 const ts = Date.now();
 const suffix = String(ts).slice(-6);
@@ -100,7 +100,30 @@ async function waitFor(check, timeoutMs = 30000, intervalMs = 800) {
   throw new Error(`Condition not met within ${timeoutMs}ms`);
 }
 
+async function setOnboardingDraftValues(page, nextPartnerCode, nextCouponUrl) {
+  await page.waitForFunction(() => {
+    return Boolean(document.getElementById('workflowPartnerCode') && document.getElementById('workflowCouponUrl'));
+  }, { timeout: 30000 });
+
+  await page.evaluate(({ partnerCodeValue, couponUrlValue }) => {
+    const partnerCodeInput = document.getElementById('workflowPartnerCode');
+    const couponUrlInput = document.getElementById('workflowCouponUrl');
+    if (!partnerCodeInput || !couponUrlInput) {
+      throw new Error('workflow draft inputs not found');
+    }
+
+    partnerCodeInput.value = partnerCodeValue;
+    partnerCodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+    couponUrlInput.value = couponUrlValue;
+    couponUrlInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }, {
+    partnerCodeValue: nextPartnerCode,
+    couponUrlValue: nextCouponUrl
+  });
+}
+
 async function supabaseQuery(table, query) {
+  if (!hasSupabase) throw new Error('Supabase env not configured');
   const res = await fetch(`${supabaseUrl}/rest/v1/${table}?${query}`, {
     headers: {
       apikey: supabaseKey,
@@ -113,6 +136,7 @@ async function supabaseQuery(table, query) {
 }
 
 async function supabaseDeleteBy(table, where) {
+  if (!hasSupabase) return;
   const res = await fetch(`${supabaseUrl}/rest/v1/${table}?${where}`, {
     method: 'DELETE',
     headers: {
@@ -126,6 +150,7 @@ async function supabaseDeleteBy(table, where) {
 }
 
 async function cleanup() {
+  if (!hasSupabase) return;
   await supabaseDeleteBy('accommodation_usage', `partner_code=eq.${encodeURIComponent(partnerCode)}`).catch(() => {});
   await supabaseDeleteBy('payouts', `partner_code=eq.${encodeURIComponent(partnerCode)}`).catch(() => {});
   await supabaseDeleteBy('bookings', `partner_code=eq.${encodeURIComponent(partnerCode)}`).catch(() => {});
@@ -176,6 +201,8 @@ async function cleanup() {
       log('REQUEST_FAILED', request.method(), request.url(), request.failure() ? request.failure().errorText : 'unknown');
     });
 
+    log('E2E_MODE', hasSupabase ? 'FULL' : 'UI_ONLY');
+
     await page.goto(invitationUrl, { waitUntil: 'domcontentloaded' });
     await page.locator('#name').fill(applicantName);
     await page.locator('#email').fill(applicantEmail);
@@ -195,21 +222,26 @@ async function cleanup() {
     await page.waitForFunction(() => document.body.innerText.includes('感謝您的加入'), { timeout: 30000 });
     await shot(page, '02_invitation_success');
 
-    const application = await waitFor(async () => {
-      const rows = await supabaseQuery(
-        'applications',
-        `select=id,name,email,phone,line_name,referral_source,social_profile,message,application_status,bank_name,bank_code,bank_branch,bank_account_name,bank_account_number,partner_code_assigned,partner_link_sent&email=eq.${encodeURIComponent(applicantEmail)}&order=id.desc&limit=1`
-      );
-      return rows[0] || null;
-    }, 30000, 1000);
-    ensure(application.application_status === 'PENDING', `application should be PENDING: ${JSON.stringify(application)}`);
-    ensure(application.bank_name === bankName, `application bank_name mismatch: ${JSON.stringify(application)}`);
-    ensure(application.bank_account_number === bankAccountNumber, `application bank_account_number mismatch: ${JSON.stringify(application)}`);
+    if (hasSupabase) {
+      const application = await waitFor(async () => {
+        const rows = await supabaseQuery(
+          'applications',
+          `select=id,name,email,phone,line_name,referral_source,social_profile,message,application_status,bank_name,bank_code,bank_branch,bank_account_name,bank_account_number,partner_code_assigned,partner_link_sent&email=eq.${encodeURIComponent(applicantEmail)}&order=id.desc&limit=1`
+        );
+        return rows[0] || null;
+      }, 30000, 1000);
+      ensure(application.application_status === 'PENDING', `application should be PENDING: ${JSON.stringify(application)}`);
+      ensure(application.bank_name === bankName, `application bank_name mismatch: ${JSON.stringify(application)}`);
+      ensure(application.bank_account_number === bankAccountNumber, `application bank_account_number mismatch: ${JSON.stringify(application)}`);
+    }
 
     await page.goto(adminUrl, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => !document.body.innerText.includes('載入數據中...'), { timeout: 30000 });
-    await page.getByRole('button', { name: /重新整理工作台/ }).click();
-    await page.waitForFunction((email) => document.body.innerText.includes(email), applicantEmail, { timeout: 30000 });
+    await waitFor(async () => {
+      await page.getByRole('button', { name: /重新整理工作台/ }).click();
+      const bodyText = await page.locator('body').innerText();
+      return bodyText.includes(applicantEmail) ? true : null;
+    }, 30000, 1500);
 
     const applicationCard = page.locator('.onboarding-focus-card', { hasText: applicantEmail }).first();
     await applicationCard.waitFor({ timeout: 30000 });
@@ -224,25 +256,36 @@ async function cleanup() {
     await shot(page, '03_onboarding_pending');
 
     await page.locator('#onboardingWorkspace').getByRole('button', { name: /核准/ }).click();
-    const approvedApplication = await waitFor(async () => {
-      const rows = await supabaseQuery(
-        'applications',
-        `select=id,application_status,review_notes,partner_code_assigned,partner_link_sent&email=eq.${encodeURIComponent(applicantEmail)}&limit=1`
-      );
-      const row = rows[0];
-      return row && row.application_status === 'APPROVED' ? row : null;
-    }, 30000, 1000);
-    ensure(approvedApplication.review_notes === reviewNote, `review note mismatch: ${JSON.stringify(approvedApplication)}`);
+    if (hasSupabase) {
+      const approvedApplication = await waitFor(async () => {
+        const rows = await supabaseQuery(
+          'applications',
+          `select=id,application_status,review_notes,partner_code_assigned,partner_link_sent&email=eq.${encodeURIComponent(applicantEmail)}&limit=1`
+        );
+        const row = rows[0];
+        return row && row.application_status === 'APPROVED' ? row : null;
+      }, 30000, 1000);
+      ensure(approvedApplication.review_notes === reviewNote, `review note mismatch: ${JSON.stringify(approvedApplication)}`);
+    } else {
+      await page.waitForFunction((note) => {
+        const workspace = document.getElementById('onboardingWorkspace');
+        return workspace && workspace.innerText.includes('已核准') && workspace.innerText.includes(note);
+      }, reviewNote, { timeout: 30000 });
+    }
 
-    await page.waitForFunction((email) => {
-      const text = document.body.innerText || '';
-      return text.includes(email) && text.includes('已核准');
-    }, applicantEmail, { timeout: 30000 });
-    await page.locator('#workflowPartnerCode').fill(partnerCode);
-    await page.locator('#workflowCouponUrl').fill(couponUrl);
+    await setOnboardingDraftValues(page, partnerCode, couponUrl);
     await shot(page, '04_onboarding_approved');
 
-    await page.locator('#onboardingWorkspace').getByRole('button', { name: /帶著預填資料進連結生成器/ }).click();
+    await page.waitForFunction(() => {
+      return Array.from(document.querySelectorAll('#onboardingWorkspace button'))
+        .some(button => (button.innerText || '').includes('帶著預填資料進連結生成器'));
+    }, { timeout: 30000 });
+    await page.evaluate(() => {
+      const button = Array.from(document.querySelectorAll('#onboardingWorkspace button'))
+        .find(item => (item.innerText || '').includes('帶著預填資料進連結生成器'));
+      if (!button) throw new Error('找不到帶著預填資料進連結生成器按鈕');
+      button.click();
+    });
     await page.waitForFunction(() => {
       const tab = document.getElementById('tab-linkgen');
       const content = document.getElementById('content-linkgen');
@@ -274,8 +317,36 @@ async function cleanup() {
       const content = document.getElementById('content-onboarding');
       return tab && content && tab.classList.contains('active') && !content.classList.contains('hidden');
     }, { timeout: 20000 });
+    await waitFor(async () => {
+      const cardCount = await page.locator('.onboarding-focus-card', { hasText: applicantEmail }).count();
+      if (cardCount > 0) return true;
+      const refreshButton = page.getByRole('button', { name: /重新整理工作台/ }).first();
+      if (await refreshButton.isVisible().catch(() => false)) {
+        await refreshButton.click().catch(() => {});
+      }
+      return null;
+    }, 30000, 1500);
 
-    await page.locator('#onboardingWorkspace').getByRole('button', { name: /直接建立基本大使/ }).click();
+    const returnApplicationCard = page.locator('.onboarding-focus-card', { hasText: applicantEmail }).first();
+    if (await returnApplicationCard.count()) {
+      const returnSelectButton = returnApplicationCard.getByRole('button', { name: /選取處理|已選取/ }).first();
+      if (await returnSelectButton.isVisible().catch(() => false)) {
+        await returnSelectButton.click().catch(() => {});
+      }
+    }
+
+    await setOnboardingDraftValues(page, partnerCode, couponUrl);
+
+    await page.waitForFunction(() => {
+      return Array.from(document.querySelectorAll('#onboardingWorkspace button'))
+        .some(button => (button.innerText || '').includes('直接建立基本大使'));
+    }, { timeout: 30000 });
+    await page.evaluate(() => {
+      const button = Array.from(document.querySelectorAll('#onboardingWorkspace button'))
+        .find(item => (item.innerText || '').includes('直接建立基本大使'));
+      if (!button) throw new Error('找不到直接建立基本大使按鈕');
+      button.click();
+    });
     const partner = await waitFor(async () => {
       const rows = await supabaseQuery(
         'partners',

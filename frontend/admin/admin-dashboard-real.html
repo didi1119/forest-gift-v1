@@ -2694,7 +2694,6 @@
             const draft = application ? getOnboardingDraft(application) : { couponUrl: '' };
             const toolkitUrl = partner?.short_landing_link || partner?.landing_link || '';
             const couponUrl = partner?.short_coupon_link || partner?.coupon_link || partner?.coupon_url || draft.couponUrl || '';
-            const invitationUrl = getAbsoluteFrontendUrl('../invitation.html');
             const loginUrl = getAbsoluteFrontendUrl('../partner-login.html');
             const dashboardUrl = getAbsoluteFrontendUrl('../partner-dashboard.html');
             const toolkitHomeUrl = toolkitUrl || getAbsoluteFrontendUrl('../index.html');
@@ -2705,7 +2704,6 @@
                 links: [
                     { label: '大使登入頁', description: '讓對方登入查詢佣金、點數與推薦紀錄', url: loginUrl },
                     { label: '知音大使贈禮工具包', description: '對外分享的主工具包頁面', url: toolkitHomeUrl },
-                    { label: '合作規則／邀請頁', description: '隨時回查合作條款與等級規則', url: invitationUrl },
                     { label: '大使儀表板介紹頁', description: '內部操作頁面，方便你教對方認識登入後會看到什麼', url: dashboardUrl },
                     { label: '專屬優惠券連結', description: '專屬 LINE 優惠券或導流連結', url: couponUrl },
                     { label: '管理員資源中心', description: '若你內部還要回查其他頁面，可從這裡進', url: adminResourcesUrl }
@@ -2716,11 +2714,10 @@
                     '以下是你之後會用到的完整連結與文件：',
                     `1. 大使登入頁：${loginUrl}`,
                     `2. 知音大使贈禮工具包：${toolkitHomeUrl}`,
-                    `3. 合作規則／邀請頁：${invitationUrl}`,
-                    toolkitUrl ? `4. 你的專屬分享主連結：${toolkitUrl}` : null,
-                    couponUrl ? `5. 你的專屬優惠券連結：${couponUrl}` : null,
+                    toolkitUrl ? `3. 你的專屬分享主連結：${toolkitUrl}` : null,
+                    couponUrl ? `4. 你的專屬優惠券連結：${couponUrl}` : null,
                     '',
-                    '之後如果你要回查規則、登入查看紀錄，或直接分享你的工具包，都可以從上面這些連結進去。'
+                    '之後如果你要登入查看紀錄，或直接分享你的工具包，都可以從上面這些連結進去。'
                 ].filter(Boolean).join('\n')
             };
         }
@@ -2756,14 +2753,12 @@
 
             const partner = getSelectedOnboardingPartner(application);
             if (!partner) {
-                const invitationUrl = getAbsoluteFrontendUrl('../invitation.html');
                 const loginUrl = getAbsoluteFrontendUrl('../partner-login.html');
                 const toolkitUrl = getAbsoluteFrontendUrl('../index.html');
                 panel.innerHTML = `
                     <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
                         這位申請者尚未完成夥伴建檔。先進入連結生成器儲存資料，交付資源包才會自動帶入專屬連結。
                     </div>
-                    <div class="packet-link"><div><div class="font-medium text-stone-800">合作規則／邀請頁</div><div class="text-xs text-stone-500">先給對方回查制度與合作說明</div></div><a href="${invitationUrl}" target="_blank" class="text-sm text-emerald-700 hover:underline">開啟</a></div>
                     <div class="packet-link"><div><div class="font-medium text-stone-800">大使登入頁</div><div class="text-xs text-stone-500">完成建檔後會用這裡登入</div></div><a href="${loginUrl}" target="_blank" class="text-sm text-emerald-700 hover:underline">開啟</a></div>
                     <div class="packet-link"><div><div class="font-medium text-stone-800">知音大使贈禮工具包</div><div class="text-xs text-stone-500">完成建檔後會切成專屬分享連結</div></div><a href="${toolkitUrl}" target="_blank" class="text-sm text-emerald-700 hover:underline">開啟</a></div>
                 `;

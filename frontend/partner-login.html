@@ -18,55 +18,48 @@
         }
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background: var(--paper);
             color: var(--forest-dark);
-            position: relative;
-        }
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-            pointer-events: none;
-            z-index: 50;
-            opacity: 0.4;
         }
         h1, h2, h3, .font-serif {
             font-family: 'Noto Serif TC', serif;
         }
         .glass-card {
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
+            background: rgba(245, 242, 235, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
             border-radius: 1.25rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.03);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.06);
         }
         .input-field {
             transition: all 0.2s ease;
-            border: 1px solid var(--forest-faint);
-            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(26,47,35,0.15);
+            background: rgba(255,255,255,0.8);
         }
         .input-field:focus {
-            border-color: var(--forest-medium);
-            box-shadow: 0 0 0 3px rgba(45, 74, 62, 0.08);
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(197, 160, 101, 0.12);
+            background: #fff;
         }
-        .btn-primary {
+        .btn-login {
+            background: var(--forest-dark);
+            color: var(--gold);
+            border: 1px solid rgba(197,160,101,0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-login:hover {
             background: var(--forest-medium);
-            transition: all 0.2s ease;
+            border-color: rgba(197,160,101,0.6);
+            box-shadow: 0 0 24px rgba(197,160,101,0.15);
         }
-        .btn-primary:hover {
-            background: var(--forest-light);
-            box-shadow: 0 4px 16px rgba(45, 74, 62, 0.2);
+        .btn-login:disabled {
+            opacity: 0.6;
         }
-        .btn-gold {
-            background: var(--gold);
-            color: #fff;
-            transition: all 0.2s ease;
-        }
-        .btn-gold:hover {
-            background: var(--gold-light);
-            box-shadow: 0 4px 16px rgba(197, 160, 101, 0.25);
+        .gold-line {
+            width: 2rem;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 0 auto;
         }
         .msg-error {
             animation: fadeShake 0.4s ease;
@@ -78,107 +71,123 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center py-12 px-4">
-    <div class="max-w-md w-full">
-        <!-- Logo & Title -->
-        <div class="text-center mb-8">
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-5" style="background: var(--forest-medium);">
-                <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                </svg>
-            </div>
-            <h1 class="font-serif text-2xl font-semibold mb-1.5" style="color: var(--forest-dark);">知音大使</h1>
-            <p class="text-sm font-light" style="color: var(--forest-light);">登入查看您的推薦成果</p>
+<body class="min-h-screen relative overflow-hidden">
+
+    <!-- Full-screen forest background -->
+    <div class="fixed inset-0 z-0">
+        <div class="absolute inset-0 bg-cover bg-center"
+            style="background-image: url('images/hero-cabin.jpg'); background-position: center 55%;">
         </div>
+        <div class="absolute inset-0 bg-[#1A2F23]/70"></div>
+    </div>
 
-        <!-- Login Card -->
-        <div class="glass-card p-8">
-            <form class="space-y-5" onsubmit="handleLogin(event)">
-                <div>
-                    <label for="partnerCode" class="block text-sm font-medium mb-1.5" style="color: var(--forest-light);">
-                        大使代碼
-                    </label>
-                    <input
-                        type="text"
-                        id="partnerCode"
-                        name="partnerCode"
-                        placeholder="請輸入您的大使代碼"
-                        class="input-field w-full px-4 py-3 rounded-lg text-sm focus:outline-none"
-                        required
-                    >
-                </div>
+    <!-- Noise texture overlay -->
+    <div class="fixed inset-0 z-[1] pointer-events-none opacity-30"
+        style="background-image: url(&quot;data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E&quot;);">
+    </div>
 
-                <div>
-                    <label for="phone" class="block text-sm font-medium mb-1.5" style="color: var(--forest-light);">
-                        手機號碼後 4 碼
-                    </label>
-                    <input
-                        type="text"
-                        id="phone"
-                        name="phone"
-                        placeholder="請輸入手機後4碼"
-                        maxlength="4"
-                        pattern="[0-9]{4}"
-                        class="input-field w-full px-4 py-3 rounded-lg text-sm focus:outline-none"
-                        required
-                    >
-                    <p class="text-xs mt-1.5" style="color: var(--forest-light); opacity: 0.7;">使用註冊時提供的手機號碼後4碼</p>
-                </div>
+    <!-- Content -->
+    <div class="relative z-10 min-h-screen flex items-center justify-center py-12 px-4">
+        <div class="max-w-sm w-full">
 
-                <!-- Error / Success Message -->
-                <div id="errorMessage" class="hidden msg-error px-4 py-3 rounded-lg text-sm"></div>
+            <!-- Brand header -->
+            <div class="text-center mb-8">
+                <p class="text-xs font-bold tracking-[0.35em] text-[#C5A065] uppercase mb-4">靜謐森林</p>
+                <h1 class="font-serif text-3xl font-semibold text-[#F5F2EB] mb-2"
+                    style="text-shadow: 0 2px 16px rgba(0,0,0,0.3);">知音大使</h1>
+                <div class="gold-line my-4"></div>
+                <p class="text-sm font-light text-[#F5F2EB]/70">登入查看您的推薦成果</p>
+            </div>
 
-                <!-- Login Button -->
-                <button
-                    type="submit"
-                    id="loginButton"
-                    class="w-full btn-primary text-white py-3 px-6 rounded-lg text-sm font-medium"
-                >
-                    <span id="loginText">登入</span>
-                    <span id="loginSpinner" class="hidden">
-                        <svg class="animate-spin h-4 w-4 text-white inline mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        驗證中...
-                    </span>
-                </button>
-            </form>
-
-            <!-- Footer -->
-            <div class="mt-8 pt-6" style="border-top: 1px solid var(--forest-faint);">
-                <div class="text-center space-y-3">
-                    <p class="text-xs" style="color: var(--forest-light);">
-                        首次登入？請透過官方 LINE@ 申請成為知音大使
-                    </p>
-                    <div class="flex justify-center gap-6 text-xs pt-1" style="color: var(--forest-light); opacity: 0.7;">
-                        <a href="index.html" class="hover:opacity-100 transition-opacity">回到首頁</a>
-                        <a href="https://line.me/R/ti/p/@478hisen" target="_blank" class="hover:opacity-100 transition-opacity">官方 LINE@</a>
+            <!-- Login Card -->
+            <div class="glass-card p-8">
+                <form class="space-y-5" onsubmit="handleLogin(event)">
+                    <div>
+                        <label for="partnerCode" class="block text-sm font-medium mb-1.5" style="color: var(--forest-light);">
+                            大使代碼
+                        </label>
+                        <input
+                            type="text"
+                            id="partnerCode"
+                            name="partnerCode"
+                            placeholder="請輸入您的大使代碼"
+                            class="input-field w-full px-4 py-3 rounded-lg text-sm focus:outline-none"
+                            required
+                        >
                     </div>
+
+                    <div>
+                        <label for="phone" class="block text-sm font-medium mb-1.5" style="color: var(--forest-light);">
+                            手機號碼後 4 碼
+                        </label>
+                        <input
+                            type="text"
+                            id="phone"
+                            name="phone"
+                            placeholder="請輸入手機後4碼"
+                            maxlength="4"
+                            pattern="[0-9]{4}"
+                            class="input-field w-full px-4 py-3 rounded-lg text-sm focus:outline-none"
+                            required
+                        >
+                        <p class="text-xs mt-1.5" style="color: var(--forest-light); opacity: 0.6;">使用註冊時提供的手機號碼後4碼</p>
+                    </div>
+
+                    <!-- Error / Success Message -->
+                    <div id="errorMessage" class="hidden msg-error px-4 py-3 rounded-lg text-sm"></div>
+
+                    <!-- Login Button -->
+                    <button
+                        type="submit"
+                        id="loginButton"
+                        class="w-full btn-login py-3.5 px-6 rounded-lg text-sm font-semibold tracking-wide"
+                    >
+                        <span id="loginText">登入</span>
+                        <span id="loginSpinner" class="hidden">
+                            <svg class="animate-spin h-4 w-4 inline mr-2" style="color: var(--gold);" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            驗證中...
+                        </span>
+                    </button>
+                </form>
+
+                <!-- Divider -->
+                <div class="mt-8 pt-6" style="border-top: 1px solid rgba(26,47,35,0.1);">
+                    <p class="text-xs text-center" style="color: var(--forest-light); opacity: 0.7;">
+                        首次登入？請透過
+                        <a href="https://line.me/R/ti/p/@478hisen" target="_blank"
+                            class="font-medium underline hover:opacity-100 transition" style="color: var(--gold);">官方 LINE@</a>
+                        申請成為知音大使
+                    </p>
                 </div>
             </div>
-        </div>
 
-        <!-- Feature List -->
-        <div class="glass-card mt-4 p-6">
-            <h3 class="text-sm font-medium mb-4 text-center" style="color: var(--forest-light);">登入後您可以查看</h3>
-            <div class="grid grid-cols-2 gap-3 text-xs" style="color: var(--forest-light);">
-                <div class="flex items-center gap-2.5">
-                    <span class="w-1.5 h-1.5 rounded-full" style="background: var(--forest-medium);"></span>
+            <!-- Feature hints -->
+            <div class="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 px-2">
+                <div class="flex items-center gap-2.5 text-xs text-[#F5F2EB]/50">
+                    <span class="w-1 h-1 rounded-full bg-[#C5A065]/60 flex-shrink-0"></span>
                     推薦成果統計
                 </div>
-                <div class="flex items-center gap-2.5">
-                    <span class="w-1.5 h-1.5 rounded-full" style="background: var(--forest-medium);"></span>
+                <div class="flex items-center gap-2.5 text-xs text-[#F5F2EB]/50">
+                    <span class="w-1 h-1 rounded-full bg-[#C5A065]/60 flex-shrink-0"></span>
                     佣金收益記錄
                 </div>
-                <div class="flex items-center gap-2.5">
-                    <span class="w-1.5 h-1.5 rounded-full" style="background: var(--forest-medium);"></span>
+                <div class="flex items-center gap-2.5 text-xs text-[#F5F2EB]/50">
+                    <span class="w-1 h-1 rounded-full bg-[#C5A065]/60 flex-shrink-0"></span>
                     等級進度追蹤
                 </div>
-                <div class="flex items-center gap-2.5">
-                    <span class="w-1.5 h-1.5 rounded-full" style="background: var(--forest-medium);"></span>
+                <div class="flex items-center gap-2.5 text-xs text-[#F5F2EB]/50">
+                    <span class="w-1 h-1 rounded-full bg-[#C5A065]/60 flex-shrink-0"></span>
                     專屬推薦連結
                 </div>
+            </div>
+
+            <!-- Footer links -->
+            <div class="mt-8 flex justify-center gap-6 text-xs text-[#F5F2EB]/40">
+                <a href="index.html" class="hover:text-[#C5A065] transition">回到首頁</a>
+                <a href="invitation.html" class="hover:text-[#C5A065] transition">加入知音計畫</a>
             </div>
         </div>
     </div>

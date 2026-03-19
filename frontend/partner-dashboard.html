@@ -296,13 +296,22 @@
                     <div class="glass-card p-4 md:p-5 stat-card">
                         <p class="text-xs mb-1.5" style="color: var(--forest-light);">可用住宿金</p>
                         <p class="text-2xl md:text-3xl font-semibold tabular-nums" style="color: var(--forest-medium);" id="availablePoints">-</p>
-                        <a href="https://line.me/R/ti/p/@478hisen" target="_blank"
-                           class="inline-block mt-2 px-3 py-1.5 text-[0.65rem] font-medium text-white rounded-lg transition-all"
-                           style="background: var(--gold);"
-                           onmouseover="this.style.background='var(--gold-light)'"
-                           onmouseout="this.style.background='var(--gold)'">
-                            使用住宿金 →
-                        </a>
+                        <div class="flex gap-2 mt-2">
+                            <a href="https://line.me/R/ti/p/@478hisen" target="_blank"
+                               class="inline-block px-3 py-1.5 text-[0.65rem] font-medium text-white rounded-lg transition-all"
+                               style="background: var(--forest-medium);"
+                               onmouseover="this.style.background='var(--forest-dark)'"
+                               onmouseout="this.style.background='var(--forest-medium)'">
+                                訂房折抵
+                            </a>
+                            <button onclick="openConvertModal()"
+                               class="inline-block px-3 py-1.5 text-[0.65rem] font-medium rounded-lg transition-all border"
+                               style="color: var(--gold); border-color: var(--gold);"
+                               onmouseover="this.style.background='rgba(197,160,101,0.1)'"
+                               onmouseout="this.style.background='transparent'">
+                                轉現金
+                            </button>
+                        </div>
                     </div>
                     <div class="glass-card p-4 md:p-5 stat-card">
                         <p class="text-xs mb-1.5" style="color: var(--forest-light);">待結算現金</p>
@@ -321,6 +330,24 @@
                         <div class="progress-track mt-2.5">
                             <div class="progress-fill" id="levelProgressBar" style="width: 0%"></div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Pending Conversion Card -->
+                <div id="pendingConversionCard" class="hidden glass-card p-4 md:p-5 mb-5" style="border-left: 3px solid var(--gold);">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-sm font-medium" style="color: var(--forest-dark);">💰 轉現金申請處理中</p>
+                            <p class="text-xs mt-1" style="color: var(--forest-light);" id="pendingConversionDetail">-</p>
+                            <p class="text-xs mt-0.5" style="color: var(--forest-light);" id="pendingConversionStatus">-</p>
+                        </div>
+                        <button id="cancelConversionBtn" onclick="cancelPendingConversion()"
+                            class="hidden px-3 py-1.5 text-[0.65rem] font-medium rounded-lg transition-all border"
+                            style="color: #b91c1c; border-color: #fca5a5;"
+                            onmouseover="this.style.background='#fef2f2'"
+                            onmouseout="this.style.background='transparent'">
+                            取消申請
+                        </button>
                     </div>
                 </div>
 
@@ -560,6 +587,72 @@
                     </div>
                 </div>
 
+                <!-- Bank Account Settings -->
+                <div class="glass-card p-5 md:p-6 mb-4">
+                    <h2 class="text-sm font-medium mb-4 font-serif" style="color: var(--forest-dark);">🏦 匯款帳戶設定</h2>
+                    <p class="text-[0.65rem] mb-4" style="color: var(--forest-light);">首次申請轉現金前須完成設定 ・ 每月限修改 1 次</p>
+
+                    <!-- Display mode -->
+                    <div id="bankInfoDisplay" class="hidden">
+                        <div class="space-y-2 text-xs" style="color: var(--forest-dark);">
+                            <div class="flex justify-between py-2 border-b" style="border-color: var(--forest-faint);">
+                                <span style="color: var(--forest-light);">銀行</span>
+                                <span id="displayBankName">-</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b" style="border-color: var(--forest-faint);">
+                                <span style="color: var(--forest-light);">分行</span>
+                                <span id="displayBankBranch">-</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b" style="border-color: var(--forest-faint);">
+                                <span style="color: var(--forest-light);">代碼</span>
+                                <span id="displayBankCode">-</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b" style="border-color: var(--forest-faint);">
+                                <span style="color: var(--forest-light);">戶名</span>
+                                <span id="displayAccountName">-</span>
+                            </div>
+                            <div class="flex justify-between py-2">
+                                <span style="color: var(--forest-light);">帳號</span>
+                                <span id="displayAccountNumber">-</span>
+                            </div>
+                        </div>
+                        <button onclick="toggleBankEdit(true)" class="w-full mt-4 py-2.5 text-xs font-medium border rounded-lg transition-colors"
+                            style="color: var(--forest-light); border-color: var(--forest-faint);">
+                            修改帳戶資訊
+                        </button>
+                    </div>
+
+                    <!-- Edit mode -->
+                    <div id="bankInfoEdit">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-[0.65rem] mb-1" style="color: var(--forest-light);">銀行名稱</label>
+                                <input id="inputBankName" type="text" placeholder="例：中國信託商業銀行" class="w-full px-3 py-2 text-xs rounded-lg border" style="border-color: var(--forest-faint); background: rgba(255,255,255,0.5);">
+                            </div>
+                            <div>
+                                <label class="block text-[0.65rem] mb-1" style="color: var(--forest-light);">分行名稱</label>
+                                <input id="inputBankBranch" type="text" placeholder="例：松山分行" class="w-full px-3 py-2 text-xs rounded-lg border" style="border-color: var(--forest-faint); background: rgba(255,255,255,0.5);">
+                            </div>
+                            <div>
+                                <label class="block text-[0.65rem] mb-1" style="color: var(--forest-light);">銀行代碼（3碼）</label>
+                                <input id="inputBankCode" type="text" placeholder="例：822" maxlength="3" class="w-full px-3 py-2 text-xs rounded-lg border" style="border-color: var(--forest-faint); background: rgba(255,255,255,0.5);">
+                            </div>
+                            <div>
+                                <label class="block text-[0.65rem] mb-1" style="color: var(--forest-light);">戶名</label>
+                                <input id="inputAccountName" type="text" placeholder="帳戶持有人姓名" class="w-full px-3 py-2 text-xs rounded-lg border" style="border-color: var(--forest-faint); background: rgba(255,255,255,0.5);">
+                            </div>
+                            <div>
+                                <label class="block text-[0.65rem] mb-1" style="color: var(--forest-light);">帳號</label>
+                                <input id="inputAccountNumber" type="text" placeholder="銀行帳號" class="w-full px-3 py-2 text-xs rounded-lg border" style="border-color: var(--forest-faint); background: rgba(255,255,255,0.5);">
+                            </div>
+                        </div>
+                        <button onclick="saveBankInfo()" class="w-full mt-4 py-2.5 text-xs font-medium rounded-lg transition-all"
+                            style="background: var(--forest-dark); color: var(--gold); border: 1px solid rgba(197,160,101,0.3);">
+                            儲存帳戶資訊
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Reload + Logout -->
                 <div class="glass-card p-5 md:p-6 mb-4">
                     <button onclick="refreshData()" class="w-full py-3 text-sm font-medium rounded-lg transition-all mb-3" style="background: var(--forest-dark); color: var(--gold); border: 1px solid rgba(197,160,101,0.3);">
@@ -606,6 +699,69 @@
             </button>
         </div>
     </nav>
+
+    <!-- Convert Points to Cash Modal -->
+    <div id="convertModal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-black/40" onclick="closeConvertModal()"></div>
+        <div class="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-2xl p-6 md:p-8 md:max-w-lg md:mx-auto md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:rounded-2xl" style="background: var(--paper);">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-sm font-serif font-medium" style="color: var(--forest-dark);">住宿金轉現金</h3>
+                <button onclick="closeConvertModal()" class="text-lg" style="color: var(--forest-light);">&times;</button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex justify-between text-xs" style="color: var(--forest-light);">
+                    <span>可轉換點數</span>
+                    <span id="modalAvailablePoints" class="font-medium" style="color: var(--forest-dark);">-</span>
+                </div>
+                <div class="flex justify-between text-xs" style="color: var(--forest-light);">
+                    <span>換算比例</span>
+                    <span>2:1（1,000 點 = NT$500）</span>
+                </div>
+
+                <div class="border-t" style="border-color: var(--forest-faint);"></div>
+
+                <div>
+                    <label class="block text-xs mb-1.5" style="color: var(--forest-light);">轉換點數</label>
+                    <input id="convertAmountInput" type="number" min="1000" step="100" placeholder="最低 1,000 點"
+                        class="w-full px-4 py-3 text-sm rounded-lg border" style="border-color: var(--forest-faint); background: rgba(255,255,255,0.5);"
+                        oninput="updateConvertPreview()">
+                </div>
+
+                <div class="text-center py-2">
+                    <span class="text-xs" style="color: var(--forest-light);">↓</span>
+                </div>
+
+                <div class="p-4 rounded-lg text-center" style="background: rgba(197,160,101,0.08); border: 1px solid rgba(197,160,101,0.2);">
+                    <p class="text-xs" style="color: var(--gold);">可得現金</p>
+                    <p class="text-2xl font-semibold mt-1" style="color: var(--forest-dark);">NT$ <span id="convertCashPreview">0</span></p>
+                </div>
+
+                <div class="p-3 rounded-lg text-[0.65rem] leading-relaxed" style="background: rgba(45,74,62,0.05); color: var(--forest-light);">
+                    <p>⚠ 用住宿金直接訂房可享<strong>全額價值</strong>，轉現金僅有 50%</p>
+                    <p class="mt-1">轉換後不可逆，請確認金額無誤</p>
+                </div>
+
+                <div id="convertBankInfo" class="p-3 rounded-lg text-xs" style="background: rgba(255,255,255,0.5); border: 1px solid var(--forest-faint);">
+                    <span style="color: var(--forest-light);">匯入帳戶：</span>
+                    <span id="convertBankDisplay" style="color: var(--forest-dark);">尚未設定</span>
+                </div>
+
+                <div class="text-[0.6rem] space-y-0.5" style="color: var(--forest-light); opacity: 0.7;">
+                    <p>※ 每月限申請 1 次 ・ 提交後 3 日內可取消</p>
+                    <p>※ 每月 5 日前申請，當月 11-15 日撥款</p>
+                </div>
+
+                <div id="convertError" class="hidden text-xs text-center p-2 rounded-lg" style="background: #fef2f2; color: #b91c1c;"></div>
+
+                <button id="confirmConvertBtn" onclick="confirmConvert()"
+                    class="w-full py-3 text-sm font-medium rounded-lg transition-all"
+                    style="background: var(--forest-dark); color: var(--gold); border: 1px solid rgba(197,160,101,0.3);">
+                    確認轉換
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const APPS_SCRIPT_URL = '/api';
@@ -732,6 +888,8 @@
             generateReferralLink();
             displayCouponCode();
             displayNextLevelPreview();
+            displayPendingConversion();
+            displayBankInfo();
         }
 
         function displayCouponCode() {
@@ -1162,6 +1320,263 @@
                 t.classList.remove('show');
                 setTimeout(() => t.remove(), 350);
             }, 2500);
+        }
+
+        // ========================================
+        // 住宿金轉現金
+        // ========================================
+        function openConvertModal() {
+            const points = parseFloat(partnerData?.available_points) || 0;
+            if (points < 1000) {
+                showToast('住宿金不足 1,000 點，無法轉換', 'error');
+                return;
+            }
+            // Check if already has pending conversion this month
+            const hasPending = checkPendingConversion();
+            if (hasPending) {
+                showToast('本月已有轉現金申請，每月限 1 次', 'error');
+                return;
+            }
+            // Check bank info
+            const bankDisplay = getBankDisplayText();
+            document.getElementById('convertBankDisplay').textContent = bankDisplay;
+            document.getElementById('modalAvailablePoints').textContent = points.toLocaleString() + ' 點';
+            document.getElementById('convertAmountInput').value = '';
+            document.getElementById('convertAmountInput').max = points;
+            document.getElementById('convertCashPreview').textContent = '0';
+            document.getElementById('convertError').classList.add('hidden');
+            document.getElementById('convertModal').classList.remove('hidden');
+        }
+
+        function closeConvertModal() {
+            document.getElementById('convertModal').classList.add('hidden');
+        }
+
+        function updateConvertPreview() {
+            const input = document.getElementById('convertAmountInput');
+            const amount = parseInt(input.value) || 0;
+            const cash = Math.floor(amount * 0.5);
+            document.getElementById('convertCashPreview').textContent = cash.toLocaleString();
+        }
+
+        async function confirmConvert() {
+            const amount = parseInt(document.getElementById('convertAmountInput').value) || 0;
+            const points = parseFloat(partnerData?.available_points) || 0;
+            const errorEl = document.getElementById('convertError');
+
+            // Validation
+            if (amount < 1000) {
+                errorEl.textContent = '最低轉換 1,000 點';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (amount > points) {
+                errorEl.textContent = '超過可用點數';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (!partnerData.bank_account_number) {
+                errorEl.textContent = '請先至「我的」頁面設定匯款帳戶';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            // Second confirmation
+            const cash = Math.floor(amount * 0.5);
+            if (!confirm(`確認將 ${amount.toLocaleString()} 點轉換為 NT$${cash.toLocaleString()}？\n\n此操作不可逆。\n提交後 3 日內可取消。`)) return;
+
+            const btn = document.getElementById('confirmConvertBtn');
+            btn.disabled = true;
+            btn.textContent = '處理中...';
+            errorEl.classList.add('hidden');
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'convert_points_to_cash',
+                        partner_code: partnerData.partner_code,
+                        points_used: amount,
+                        notes: `大使自助轉換 ${amount} 點 → NT$${cash}`
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    closeConvertModal();
+                    showToast(`成功！${amount.toLocaleString()} 點已轉為 NT$${cash.toLocaleString()}`, 'success');
+                    await refreshData();
+                } else {
+                    errorEl.textContent = result.message || '轉換失敗，請稍後重試';
+                    errorEl.classList.remove('hidden');
+                }
+            } catch (e) {
+                errorEl.textContent = '網路錯誤，請稍後重試';
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '確認轉換';
+            }
+        }
+
+        // ========================================
+        // 待處理轉換申請
+        // ========================================
+        function checkPendingConversion() {
+            if (!allPayouts) return false;
+            const now = new Date();
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            return allPayouts.some(p =>
+                p.payout_type === 'CASH_CONVERSION' &&
+                p.payout_status !== 'CANCELLED' &&
+                new Date(p.created_at) >= monthStart
+            );
+        }
+
+        function displayPendingConversion() {
+            const card = document.getElementById('pendingConversionCard');
+            if (!allPayouts) { card.classList.add('hidden'); return; }
+
+            const pending = allPayouts.find(p =>
+                p.payout_type === 'CASH_CONVERSION' &&
+                (p.payout_status === 'PENDING' || p.payout_status === 'PROCESSING')
+            );
+
+            if (!pending) { card.classList.add('hidden'); return; }
+
+            const createdDate = new Date(pending.created_at);
+            const cooldownEnd = new Date(createdDate.getTime() + 3 * 24 * 60 * 60 * 1000);
+            const now = new Date();
+            const inCooldown = now < cooldownEnd;
+            const pointsConverted = Math.abs(parseFloat(pending.amount) || 0) * 2; // reverse 2:1
+            const cashAmount = Math.abs(parseFloat(pending.amount) || 0);
+
+            document.getElementById('pendingConversionDetail').textContent =
+                `轉換：${pointsConverted.toLocaleString()} 點 → NT$${cashAmount.toLocaleString()}`;
+            document.getElementById('pendingConversionStatus').textContent = inCooldown
+                ? `申請時間：${createdDate.toLocaleDateString('zh-TW')}（冷靜期至 ${cooldownEnd.toLocaleDateString('zh-TW')}）`
+                : `等待撥款（每月 11-15 日）`;
+
+            const cancelBtn = document.getElementById('cancelConversionBtn');
+            cancelBtn.classList.toggle('hidden', !inCooldown);
+            cancelBtn.dataset.payoutId = pending.id;
+
+            card.classList.remove('hidden');
+        }
+
+        async function cancelPendingConversion() {
+            const payoutId = document.getElementById('cancelConversionBtn').dataset.payoutId;
+            if (!confirm('確定要取消此轉現金申請？點數將退回。')) return;
+
+            showLoading();
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'cancel_payout',
+                        payout_id: payoutId,
+                        reason: '大使於冷靜期內取消',
+                        cancelled_by: partnerData.partner_code
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast('已取消，點數已退回', 'success');
+                    await refreshData();
+                } else {
+                    showToast(result.message || '取消失敗', 'error');
+                }
+            } catch (e) {
+                showToast('網路錯誤，請稍後重試', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ========================================
+        // 銀行帳戶管理
+        // ========================================
+        function getBankDisplayText() {
+            if (!partnerData?.bank_account_number) return '尚未設定';
+            const num = partnerData.bank_account_number;
+            const masked = '****' + num.slice(-4);
+            return `${partnerData.bank_name || ''} ${masked}`;
+        }
+
+        function displayBankInfo() {
+            const hasBank = !!partnerData?.bank_account_number;
+            document.getElementById('bankInfoDisplay').classList.toggle('hidden', !hasBank);
+            document.getElementById('bankInfoEdit').classList.toggle('hidden', hasBank);
+
+            if (hasBank) {
+                const num = partnerData.bank_account_number;
+                document.getElementById('displayBankName').textContent = partnerData.bank_name || '-';
+                document.getElementById('displayBankBranch').textContent = partnerData.bank_branch || '-';
+                document.getElementById('displayBankCode').textContent = partnerData.bank_code || '-';
+                document.getElementById('displayAccountName').textContent = partnerData.bank_account_name || '-';
+                document.getElementById('displayAccountNumber').textContent = '****' + num.slice(-4);
+            }
+        }
+
+        function toggleBankEdit(show) {
+            if (show && partnerData) {
+                document.getElementById('inputBankName').value = partnerData.bank_name || '';
+                document.getElementById('inputBankBranch').value = partnerData.bank_branch || '';
+                document.getElementById('inputBankCode').value = partnerData.bank_code || '';
+                document.getElementById('inputAccountName').value = partnerData.bank_account_name || '';
+                document.getElementById('inputAccountNumber').value = partnerData.bank_account_number || '';
+            }
+            document.getElementById('bankInfoDisplay').classList.toggle('hidden', show);
+            document.getElementById('bankInfoEdit').classList.toggle('hidden', !show);
+        }
+
+        async function saveBankInfo() {
+            const bankName = document.getElementById('inputBankName').value.trim();
+            const bankBranch = document.getElementById('inputBankBranch').value.trim();
+            const bankCode = document.getElementById('inputBankCode').value.trim();
+            const accountName = document.getElementById('inputAccountName').value.trim();
+            const accountNumber = document.getElementById('inputAccountNumber').value.trim();
+
+            // Validation
+            if (!bankName) { showToast('請輸入銀行名稱', 'error'); return; }
+            if (!/^\d{3}$/.test(bankCode)) { showToast('銀行代碼須為 3 碼數字', 'error'); return; }
+            if (!accountName) { showToast('請輸入戶名', 'error'); return; }
+            if (accountNumber.length < 10) { showToast('帳號至少 10 碼', 'error'); return; }
+
+            showLoading();
+            try {
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        action: 'update_partner',
+                        partner_code: partnerData.partner_code,
+                        bank_name: bankName,
+                        bank_branch: bankBranch,
+                        bank_code: bankCode,
+                        bank_account_name: accountName,
+                        bank_account_number: accountNumber
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    // Update local data
+                    partnerData.bank_name = bankName;
+                    partnerData.bank_branch = bankBranch;
+                    partnerData.bank_code = bankCode;
+                    partnerData.bank_account_name = accountName;
+                    partnerData.bank_account_number = accountNumber;
+                    displayBankInfo();
+                    showToast('帳戶資訊已儲存', 'success');
+                } else {
+                    showToast(result.message || '儲存失敗', 'error');
+                }
+            } catch (e) {
+                showToast('網路錯誤，請稍後重試', 'error');
+            } finally {
+                hideLoading();
+            }
         }
     </script>
 </body>

@@ -2758,6 +2758,7 @@
             const toolkitHomeUrl = toolkitUrl || getAbsoluteFrontendUrl('../index.html');
             const recipientName = application?.name || partner?.partner_name || partner?.name || '你好';
             const loginEmail = application?.email || partner?.contact_email || partner?.email || '';
+            const partnerCode = partner?.partner_code || application?.partner_code_assigned || draft.partnerCode || '';
             const phoneHint = application?.phone || partner?.contact_phone || partner?.phone || '';
             const shareLabel = toolkitUrl ? '你的專屬分享工具包' : '知音大使贈禮工具包';
 
@@ -2771,9 +2772,11 @@
                     `${recipientName}，歡迎加入靜謐森林的知音大使計畫。很開心接下來能和你一起，把森林裡的安靜與美好分享給更多人。`,
                     '',
                     '先補給你登入資訊：',
-                    loginEmail ? `登入帳號：${loginEmail}` : '登入帳號：你建立資料時提供的 Email',
+                    loginEmail ? `登入 Email：${loginEmail}` : '登入 Email：你建立資料時提供的 Email',
+                    partnerCode ? `你的大使代碼：${partnerCode}` : null,
                     phoneHint ? `登入驗證：請搭配你留存手機的後 4 碼（${String(phoneHint).slice(-4)}）` : '登入驗證：請搭配你留存手機的後 4 碼',
-                    '若忘記大使代碼也沒關係，先用 Email 登入，登入後就可以在儀表板看到你的代碼。',
+                    '登入時可使用 Email 或大使代碼擇一輸入。',
+                    '大使代碼屬於你的私人識別資訊，請不要對外公開；若忘記也沒關係，先用 Email 登入即可。',
                     '',
                     '先把之後合作時最常用到的入口整理給你，你可以直接從這裡開始：',
                     `1. 大使登入頁：${loginUrl}`,

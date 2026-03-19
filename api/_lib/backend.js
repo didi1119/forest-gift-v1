@@ -1904,6 +1904,7 @@ async function handleUpdatePartner(data) {
   if (!partner) throw new Error('Partner not found');
 
   delete data.action; delete data.partner_code; delete data.created_at;
+  delete data.admin_secret; delete data._internal_call;
 
   const oldLevel = partner.partner_level;
   const oldPreference = partner.commission_preference;

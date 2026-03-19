@@ -259,22 +259,42 @@
         <header class="text-center mb-16 sm:mb-24 section-fade-in relative text-[#F5F2EB]">
             <h1
                 class="text-3xl sm:text-6xl font-bold tracking-tight mb-6 sm:mb-8 font-serif leading-tight drop-shadow-lg">
-                來自森林的邀請：<br>找回平靜的 5 分鐘練習
+                來自森林小屋的邀請
             </h1>
 
             <div class="w-12 h-[1px] bg-[#F5F2EB]/50 mx-auto mb-8"></div>
 
             <h2
-                class="text-sm sm:text-lg font-serif font-medium mb-8 sm:mb-12 tracking-[0.08em] sm:tracking-[0.2em] max-w-2xl mx-auto leading-relaxed"
+                class="text-sm sm:text-lg font-serif font-medium mb-6 sm:mb-8 tracking-[0.08em] sm:tracking-[0.2em] max-w-2xl mx-auto leading-relaxed"
                 style="text-shadow: 0 1px 10px rgba(26,47,35,0.9), 0 0 30px rgba(26,47,35,0.6);">
-                給自己五分鐘，跟著森林呼吸。<br class="sm:hidden">完成後，有份驚喜等著您。
+                在群山與星空之間，有一張為你留的床。
             </h2>
+
+            <!-- Hero CTA -->
+            <button onclick="goToLineCoupon()"
+                class="inline-flex items-center gap-3 px-7 py-3 sm:px-9 sm:py-4 rounded-full font-serif text-sm sm:text-base tracking-[0.15em] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(197,160,101,0.25)]"
+                style="background: rgba(197,160,101,0.15); border: 1px solid rgba(197,160,101,0.5); color: #F5F2EB; backdrop-filter: blur(4px);">
+                走進真實的森林
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
 
             <!-- 推薦來源（僅後台追蹤用，前台不顯示） -->
             <div id="referral-note" class="hidden"><span id="referrer-name"></span></div>
         </header>
 
         <main class="space-y-10 sm:space-y-24">
+
+            <!-- 過渡引言：為禮物定位（與 Hero 拉開呼吸空間） -->
+            <div class="text-center section-fade-in pt-4 sm:pt-8">
+                <div class="flex items-center justify-center gap-4 mb-5">
+                    <div class="w-8 h-px bg-[#C5A065]/40"></div>
+                    <span class="text-[0.6rem] tracking-[0.4em] text-[#C5A065] uppercase font-serif">Before You Arrive</span>
+                    <div class="w-8 h-px bg-[#C5A065]/40"></div>
+                </div>
+                <p class="font-serif text-[#1A2F23]/50 text-sm leading-relaxed max-w-sm mx-auto">
+                    出發之前，先收下幾份來自森林的禮物。
+                </p>
+            </div>
 
             <!-- Gift 1: Music -->
             <section id="gift-music" class="section-fade-in hidden">
@@ -449,6 +469,16 @@
                 </div>
             </section>
 
+            <!-- 情境 CTA：Gift 01 後 -->
+            <div class="text-center section-fade-in">
+                <p class="font-serif text-[#1A2F23]/50 text-sm mb-4 tracking-wide">寫完了嗎？如果你已經準備好⋯⋯</p>
+                <button onclick="goToLineCoupon()"
+                    class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-serif tracking-[0.1em] transition-all duration-400 hover:-translate-y-0.5 text-[#4A675A] border border-[#4A675A]/30 hover:bg-[#4A675A]/5">
+                    去森林住一晚
+                    <span class="text-sm">→</span>
+                </button>
+            </div>
+
             <!-- Gift 2 (in this version): Oracle Cards -->
             <section id="gift-oracle" class="section-fade-in py-6 sm:py-20">
                 <div class="max-w-6xl mx-auto relative px-4">
@@ -459,7 +489,7 @@
 
                     <div class="text-center mb-10 sm:mb-16 relative z-10">
                         <span
-                            class="text-[0.6rem] font-bold tracking-[0.4em] text-[#C5A065] uppercase block mb-4">指引</span>
+                            class="text-[0.6rem] font-bold tracking-[0.4em] text-[#C5A065] uppercase block mb-4">Gift Two</span>
                         <h3 class="text-2xl sm:text-4xl font-serif text-[#1A2F23] mb-4 sm:mb-6 tracking-wide">森林的指引</h3>
                         <p class="text-stone-500 font-serif italic text-base sm:text-lg opacity-80 mb-6 sm:mb-8">
                             一場與潛意識的靜謐對話
@@ -547,68 +577,46 @@
             </section>
 
             <!-- Call to Action -->
-            <section id="line-cta" class="section-fade-in pb-12 sm:pb-20 px-4 mt-8 sm:mt-12">
-                <div class="max-w-4xl mx-auto relative group">
-                    <!-- The Golden Ticket Container (Refined) -->
-                    <div
-                        class="relative bg-[#1A2F23] rounded-2xl p-8 sm:p-12 overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-700">
-                        <!-- Background Decor (Realistic Indoor Bed Scene) -->
-                        <div class="absolute inset-0 bg-cover bg-center z-0 opacity-40 transition-opacity duration-700"
-                            style="background-image: url('images/cta-forest-room.png');">
-                        </div>
-                        <div
-                            class="absolute inset-0 bg-gradient-to-t from-[#1A2F23]/95 via-[#1A2F23]/70 to-[#1A2F23]/50 z-0">
-                        </div>
+            <section id="line-cta" class="section-fade-in pb-12 sm:pb-20 mt-8 sm:mt-12">
+                <div class="max-w-3xl mx-auto">
 
+                    <div class="flex items-center justify-center gap-4 mb-10">
+                        <div class="w-12 h-px bg-[#C5A065]/30"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/40"></div>
+                        <div class="w-12 h-px bg-[#C5A065]/30"></div>
+                    </div>
 
-                        <!-- Ticket Content -->
-                        <div class="relative z-10 text-center">
-                            <div class="mb-10">
-                                <span
-                                    class="inline-block py-2 px-6 border border-[#C5A065]/40 rounded-full text-[#C5A065] text-[0.6rem] sm:text-[0.65rem] tracking-[0.2em] sm:tracking-[0.4em] uppercase font-serif bg-[#1A2F23]/80 shadow-[inset_0_0_20px_rgba(197,160,101,0.05)]">The
-                                    Final Invitation</span>
-                            </div>
+                    <!-- Cabin photo with soft fade edges -->
+                    <div class="relative mx-auto mb-10 max-w-2xl overflow-hidden rounded-2xl" style="mask-image: radial-gradient(ellipse 90% 85% at center, black 50%, transparent 100%); -webkit-mask-image: radial-gradient(ellipse 90% 85% at center, black 50%, transparent 100%);">
+                        <img src="images/cabin-interior.png" alt="靜謐森林小屋內部"
+                            class="w-full h-80 sm:h-[28rem] object-cover"
+                            style="object-position: center 65%;">
+                    </div>
 
-                            <h3
-                                class="text-2xl sm:text-4xl font-serif text-[#F5F2EB] mb-6 leading-tight tracking-wide drop-shadow-md">
-                                準備好出發去森林<br class="sm:hidden">
-                                <span class="italic text-[#C5A065] relative inline-block mt-2 sm:mt-0">
-                                    住一晚了嗎？
-                                    <svg class="absolute -bottom-2 left-0 w-full h-2 text-[#C5A065]/40"
-                                        viewBox="0 0 100 10" preserveAspectRatio="none">
-                                        <path d="M0 5 Q 50 10 100 5" stroke="currentColor" stroke-width="2"
-                                            fill="none" />
-                                    </svg>
-                                </span>
-                            </h3>
+                    <div class="text-center">
+                        <p class="font-serif text-[#1A2F23]/50 text-sm tracking-wide mb-5">
+                            森林已給出指引，下一步由你決定。
+                        </p>
 
-                            <p
-                                class="text-[#F5F2EB]/90 mb-12 max-w-xl mx-auto leading-loose font-serif text-base sm:text-lg tracking-wide drop-shadow-sm">
-                                從線上平靜，到真實的森林棲息。<br>
-                                靜謐森林小屋已為你準備好<br class="sm:hidden">床墊與星空。
-                            </p>
+                        <h3 class="text-2xl sm:text-3xl font-serif text-[#1A2F23] mb-4 leading-relaxed tracking-wide">
+                            準備好了嗎？
+                        </h3>
 
-                            <button id="line-coupon-btn"
-                                class="btn-mystic inline-flex items-center justify-center gap-4 sm:gap-6 px-8 py-4 sm:px-12 sm:py-5 shadow-2xl hover:shadow-[0_20px_40px_rgba(197,160,101,0.15)] hover:-translate-y-1 transition-all duration-500 rounded-full relative overflow-hidden group/cta"
-                                onclick="goToLineCoupon()"
-                                style="background: linear-gradient(135deg, #1A2F23 0%, #0F1D15 100%); border: 1px solid rgba(197,160,101,0.3);">
-                                <!-- Foil shine effect -->
-                                <div
-                                    class="absolute inset-0 -translate-x-full group-hover/cta:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-[rgba(197,160,101,0.1)] to-transparent skew-x-12">
-                                </div>
-                                <span
-                                    class="tracking-[0.3em] font-serif text-[#DFC698] text-xs sm:text-sm uppercase group-hover/cta:text-[#F5F2EB] transition-colors duration-300">領取專屬住宿驚喜</span>
-                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-[#C5A065] group-hover/cta:translate-x-1 transition-transform duration-300"
-                                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                                </svg>
-                            </button>
+                        <p class="text-[#1A2F23]/60 font-serif text-sm sm:text-base leading-relaxed mb-10 max-w-md mx-auto">
+                            從螢幕前的寧靜，到真實的森林棲息。<br>
+                            有一張床、一片星空，正在等你。
+                        </p>
 
-                            <p class="mt-8 text-[0.6rem] uppercase tracking-[0.3em] text-[#F5F2EB]/30 font-serif">Let
-                                the forest heal you</p>
-                        </div>
+                        <button id="line-coupon-btn"
+                            onclick="goToLineCoupon()"
+                            class="inline-flex items-center gap-3 px-8 py-3.5 sm:px-10 sm:py-4 rounded-full font-serif text-sm sm:text-base tracking-[0.15em] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(26,47,35,0.15)] bg-[#1A2F23] text-[#F5F2EB]">
+                            走進真實的森林
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </button>
+
+                        <p class="mt-6 text-[0.6rem] uppercase tracking-[0.3em] text-[#1A2F23]/20 font-serif">
+                            Let the forest heal you
+                        </p>
                     </div>
                 </div>
             </section>

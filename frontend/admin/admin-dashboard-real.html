@@ -2276,11 +2276,12 @@
         }
 
         function getOnboardingDraft(application) {
-            if (!application) return { partnerCode: '', couponUrl: '' };
+            if (!application) return { partnerCode: '', couponCode: '', couponUrl: '' };
 
             if (!onboardingState.draftByApplicationId[application.id]) {
                 onboardingState.draftByApplicationId[application.id] = {
                     partnerCode: application.partner_code_assigned || generateSuggestedPartnerCode(application),
+                    couponCode: application.coupon_code || '',
                     couponUrl: application.coupon_url || ''
                 };
             }
@@ -2669,6 +2670,12 @@
                         <div>
                             <label class="block text-sm text-stone-600 mb-2">大使代碼</label>
                             <input id="workflowPartnerCode" type="text" value="${escapeHtml(draft.partnerCode)}" oninput="syncOnboardingDraftField('partnerCode', this.value.trim())" class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                            <p class="text-xs text-stone-500 mt-2">此代碼屬於內部登入與追蹤識別，請不要對外公開。</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-stone-600 mb-2">優惠券代碼</label>
+                            <input id="workflowCouponCode" type="text" value="${escapeHtml(draft.couponCode)}" oninput="syncOnboardingDraftField('couponCode', this.value.trim())" class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-200" placeholder="例如：FORESTGIFT23">
+                            <p class="text-xs text-stone-500 mt-2">此代碼會對外公開，請與大使代碼分開。</p>
                         </div>
                         <div>
                             <label class="block text-sm text-stone-600 mb-2">優惠券連結</label>
@@ -2733,13 +2740,13 @@
         }
 
         function buildOnboardingPacket(application, partner) {
-            const draft = application ? getOnboardingDraft(application) : { couponUrl: '' };
+            const draft = application ? getOnboardingDraft(application) : { couponUrl: '', couponCode: '' };
             const toolkitUrl = partner?.short_landing_link || partner?.landing_link || '';
             const couponUrl = partner?.short_coupon_link || partner?.coupon_link || partner?.coupon_url || draft.couponUrl || '';
             const loginUrl = getAbsoluteFrontendUrl('../partner-login.html');
             const toolkitHomeUrl = toolkitUrl || getAbsoluteFrontendUrl('../index.html');
             const recipientName = application?.name || partner?.partner_name || partner?.name || '你好';
-            const partnerCode = partner?.partner_code || application?.partner_code_assigned || draft.partnerCode || '';
+            const loginEmail = application?.email || partner?.contact_email || partner?.email || '';
             const phoneHint = application?.phone || partner?.contact_phone || partner?.phone || '';
             const shareLabel = toolkitUrl ? '你的專屬分享工具包' : '知音大使贈禮工具包';
 
@@ -2753,8 +2760,9 @@
                     `${recipientName}，歡迎加入靜謐森林的知音大使計畫。很開心接下來能和你一起，把森林裡的安靜與美好分享給更多人。`,
                     '',
                     '先補給你登入資訊：',
-                    partnerCode ? `你的大使代碼：${partnerCode}` : null,
-                    phoneHint ? `登入時請搭配你留存手機的後 4 碼（${String(phoneHint).slice(-4)}）` : '登入時請搭配你留存手機的後 4 碼',
+                    loginEmail ? `登入帳號：${loginEmail}` : '登入帳號：你建立資料時提供的 Email',
+                    phoneHint ? `登入驗證：請搭配你留存手機的後 4 碼（${String(phoneHint).slice(-4)}）` : '登入驗證：請搭配你留存手機的後 4 碼',
+                    '若忘記大使代碼也沒關係，先用 Email 登入，登入後就可以在儀表板看到你的代碼。',
                     '',
                     '先把之後合作時最常用到的入口整理給你，你可以直接從這裡開始：',
                     `1. 大使登入頁：${loginUrl}`,
@@ -2875,6 +2883,7 @@
                 partner_email: application.email || '',
                 partner_phone: application.phone || '',
                 partner_code: draft.partnerCode || '',
+                coupon_code: draft.couponCode || '',
                 coupon_url: draft.couponUrl || '',
                 bank_name: application.bank_name || '',
                 bank_code: application.bank_code || '',
@@ -2906,12 +2915,21 @@
                 showErrorMessage('請先填寫大使代碼');
                 return;
             }
+            if (!draft.couponCode) {
+                showErrorMessage('請先填寫優惠券代碼');
+                return;
+            }
+            if (draft.couponCode.toLowerCase() === draft.partnerCode.toLowerCase()) {
+                showErrorMessage('優惠券代碼不可與大使代碼相同');
+                return;
+            }
 
             try {
                 await submitToBackendViaForm({
                     action: 'promote_to_partner',
                     application_id: application.id,
                     partner_code: draft.partnerCode,
+                    coupon_code: draft.couponCode,
                     coupon_url: draft.couponUrl || ''
                 });
                 showSuccessMessage('✅ 已建立基本大使資料');

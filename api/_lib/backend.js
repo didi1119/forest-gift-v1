@@ -447,6 +447,50 @@ async function findPartnerByCodeCaseInsensitive(code, options = {}) {
   return partner;
 }
 
+async function findPartnersByEmailCaseInsensitive(email, options = {}) {
+  const targetEmail = String(email || '').trim().toLowerCase();
+  if (!targetEmail) return [];
+
+  const partners = await db.getAllRecords('Partners');
+  const matches = [];
+
+  for (const partner of partners) {
+    const emails = [partner.contact_email, partner.email]
+      .map(value => String(value || '').trim().toLowerCase())
+      .filter(Boolean);
+
+    if (emails.includes(targetEmail)) {
+      matches.push(await syncPartnerLevelState(partner, options));
+    }
+  }
+
+  return matches;
+}
+
+async function findPartnersByLoginIdentifier(loginIdentifier, options = {}) {
+  const normalized = String(loginIdentifier || '').trim();
+  if (!normalized) return [];
+
+  const candidates = [];
+  const seen = new Set();
+
+  const codeMatch = await findPartnerByCodeCaseInsensitive(normalized, options);
+  if (codeMatch && !seen.has(codeMatch.partner_code)) {
+    candidates.push(codeMatch);
+    seen.add(codeMatch.partner_code);
+  }
+
+  const emailMatches = await findPartnersByEmailCaseInsensitive(normalized, options);
+  for (const partner of emailMatches) {
+    if (!seen.has(partner.partner_code)) {
+      candidates.push(partner);
+      seen.add(partner.partner_code);
+    }
+  }
+
+  return candidates;
+}
+
 async function findRecordsByGuestInfo(guestName, guestPhone, checkinDate) {
   const allRecords = await db.getAllRecords('Bookings');
   const results = [];
@@ -1696,6 +1740,10 @@ async function handleCreatePartner(data) {
   if (!partnerData.partner_code) throw new Error('Partner code is required');
   if (!partnerData.partner_name) throw new Error('Partner name is required');
   if (!partnerData.contact_phone) throw new Error('Contact phone is required');
+  if (!partnerData.coupon_code) throw new Error('Coupon code is required');
+  if (String(partnerData.coupon_code).trim().toLowerCase() === String(partnerData.partner_code).trim().toLowerCase()) {
+    throw new Error('優惠券代碼不可與大使代碼相同');
+  }
 
   const existing = await findPartnerByCode(partnerData.partner_code);
   if (existing) throw new Error('Partner code already exists');
@@ -1995,20 +2043,21 @@ async function handleBatchCancel(data) {
 // ========================================
 
 async function handleVerifyPartnerLogin(data) {
-  const partnerCodeInput = (data.partner_code || '').trim();
+  const loginIdentifier = (data.login_identifier || data.partner_code || '').trim();
   const phoneLast4 = (data.phone_last4 || '').trim();
 
-  if (!partnerCodeInput || !phoneLast4) return { success: false, error: '請提供大使代碼和手機末4碼' };
+  if (!loginIdentifier || !phoneLast4) return { success: false, error: '請提供 Email 或大使代碼，以及手機末4碼' };
   if (!/^\d{4}$/.test(phoneLast4)) return { success: false, error: '手機末4碼必須是4位數字' };
 
-  const partner = await findPartnerByCodeCaseInsensitive(partnerCodeInput);
-  if (!partner) return { success: false, error: '大使代碼或手機號碼不正確' };
+  const candidates = await findPartnersByLoginIdentifier(loginIdentifier);
+  if (candidates.length === 0) return { success: false, error: '登入資訊不正確' };
 
-  const contactPhone = String(partner.contact_phone || partner.phone || '');
-  if (!contactPhone || contactPhone.length < 4) return { success: false, error: '此帳號尚未設定手機號碼' };
+  const partner = candidates.find(candidate => {
+    const contactPhone = String(candidate.contact_phone || candidate.phone || '');
+    return contactPhone.length >= 4 && contactPhone.slice(-4) === phoneLast4;
+  });
 
-  const actualLast4 = contactPhone.slice(-4);
-  if (actualLast4 !== phoneLast4) return { success: false, error: '大使代碼或手機號碼不正確' };
+  if (!partner) return { success: false, error: '登入資訊不正確' };
 
   // 計算點擊數
   let totalClicks = 0;
@@ -2149,8 +2198,8 @@ async function ensureApplicationsSheet() {
 async function handleSubmitApplication(data) {
   await ensureApplicationsSheet();
 
-  if (!data.name || !data.email) {
-    throw new Error('姓名與 Email 為必填欄位');
+  if (!data.name || !data.email || !data.phone) {
+    throw new Error('姓名、Email 與聯絡電話為必填欄位');
   }
 
   // 字串清理 & 截斷
@@ -2171,6 +2220,10 @@ async function handleSubmitApplication(data) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     throw new Error('Email 格式不正確');
+  }
+
+  if (!phone) {
+    throw new Error('聯絡電話為必填欄位');
   }
 
   // 推薦來源必填
@@ -2263,12 +2316,17 @@ async function handlePromoteToPartner(data) {
 
   const appId = data.application_id;
   const partnerCode = data.partner_code;
+  const couponCode = String(data.coupon_code || '').trim();
 
   if (!appId) throw new Error('application_id 為必填');
   if (!partnerCode) throw new Error('partner_code 為必填');
+  if (!couponCode) throw new Error('coupon_code 為必填');
 
   if (!/^[A-Za-z0-9]{3,20}$/.test(partnerCode)) {
     throw new Error('大使代碼只能包含英文字母與數字，3-20 字元');
+  }
+  if (couponCode.toLowerCase() === partnerCode.toLowerCase()) {
+    throw new Error('優惠券代碼不可與大使代碼相同');
   }
 
   const record = await findRecordById(APPLICATION_SHEET, appId);
@@ -2280,6 +2338,7 @@ async function handlePromoteToPartner(data) {
 
   const existing = await findPartnerByCode(partnerCode);
   if (existing) throw new Error('大使代碼已被使用: ' + partnerCode);
+  if (!record.data.phone) throw new Error('申請資料缺少聯絡電話，請先補齊再建立大使');
 
   const baseUrl = GITHUB_PAGES_URL.replace('/frontend/index.html', '');
   const landingLink = `${baseUrl}/api?dest=landing&pid=${partnerCode}`;
@@ -2302,7 +2361,7 @@ async function handlePromoteToPartner(data) {
     total_commission_earned: 0,
     total_commission_paid: 0,
     pending_commission: 0,
-    coupon_code: '',
+    coupon_code: couponCode,
     line_coupon_url: couponUrl,
     coupon_url: couponUrl,
     landing_link: landingLink,

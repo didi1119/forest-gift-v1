@@ -104,16 +104,17 @@
                 <form class="space-y-5" onsubmit="handleLogin(event)">
                     <div>
                         <label for="partnerCode" class="block text-sm font-medium mb-1.5" style="color: var(--forest-light);">
-                            大使代碼
+                            Email 或大使代碼
                         </label>
                         <input
                             type="text"
                             id="partnerCode"
                             name="partnerCode"
-                            placeholder="請輸入您的大使代碼"
+                            placeholder="優先輸入申請時使用的 Email"
                             class="input-field w-full px-4 py-3 rounded-lg text-sm focus:outline-none"
                             required
                         >
+                        <p class="text-xs mt-1.5" style="color: var(--forest-light); opacity: 0.6;">若忘記大使代碼，可直接使用申請時的 Email 登入</p>
                     </div>
 
                     <div>
@@ -156,10 +157,10 @@
                 <!-- Divider -->
                 <div class="mt-8 pt-6" style="border-top: 1px solid rgba(26,47,35,0.1);">
                     <p class="text-xs text-center" style="color: var(--forest-light); opacity: 0.7;">
-                        首次登入？請透過
+                        忘記大使代碼或需要協助？
                         <a href="https://line.me/R/ti/p/@478hisen" target="_blank"
                             class="font-medium underline hover:opacity-100 transition" style="color: var(--gold);">官方 LINE@</a>
-                        申請成為知音大使
+                        聯繫我們
                     </p>
                 </div>
             </div>
@@ -198,10 +199,10 @@
         async function handleLogin(event) {
             event.preventDefault();
 
-            const partnerCode = document.getElementById('partnerCode').value.trim();
+            const loginIdentifier = document.getElementById('partnerCode').value.trim();
             const phone = document.getElementById('phone').value.trim();
 
-            if (!partnerCode || !phone) {
+            if (!loginIdentifier || !phone) {
                 showError('請填寫所有必填欄位');
                 return;
             }
@@ -220,7 +221,7 @@
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams({
                         action: 'verify_partner_login',
-                        partner_code: partnerCode,
+                        login_identifier: loginIdentifier,
                         phone_last4: phone
                     })
                 });
@@ -228,13 +229,13 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    sessionStorage.setItem('partnerCode', partnerCode);
+                    sessionStorage.setItem('partnerCode', result.partner.partner_code);
                     sessionStorage.setItem('partnerData', JSON.stringify(result.partner));
                     sessionStorage.setItem('loginTime', Date.now().toString());
                     showSuccess('登入成功，正在載入...');
                     setTimeout(() => { window.location.href = 'partner-dashboard.html'; }, 1200);
                 } else {
-                    showError(result.error || '大使代碼或手機號碼不正確');
+                    showError(result.error || '登入資訊不正確');
                 }
             } catch (error) {
                 console.error('登入錯誤:', error);

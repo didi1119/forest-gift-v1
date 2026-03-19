@@ -197,12 +197,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            優惠券代碼
+                            優惠券代碼 <span class="text-red-500">*</span>
                         </label>
                         <input type="text" id="couponCode"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 focus:outline-none"
-                            placeholder="會自動與夥伴代碼同步" readonly>
-                        <p class="text-xs text-amber-700 mt-2">會自動跟夥伴代碼一致，不需要另外填寫。</p>
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            placeholder="例如：FORESTGIFT23">
+                        <p class="text-xs text-amber-700 mt-2">對外公開使用的優惠代碼，請與大使代碼分開設定。</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -337,13 +337,6 @@
 
         let generatedData = null;
 
-        function syncCouponCodeFromPartnerCode() {
-            const partnerCodeField = document.getElementById('partnerCode');
-            const couponCodeField = document.getElementById('couponCode');
-            if (!partnerCodeField || !couponCodeField) return;
-            couponCodeField.value = partnerCodeField.value.trim();
-        }
-
         function buildApplicationSummaryFromQuery(params = new URLSearchParams(window.location.search)) {
             return [
                 params.get('referral_source') ? `申請來源：${params.get('referral_source')}` : null,
@@ -364,6 +357,7 @@
                 ['partner_email', 'partnerEmail'],
                 ['partner_phone', 'partnerPhone'],
                 ['partner_code', 'partnerCode'],
+                ['coupon_code', 'couponCode'],
                 ['coupon_url', 'couponUrl'],
                 ['bank_name', 'bankName'],
                 ['bank_code', 'bankCode'],
@@ -378,8 +372,6 @@
                 const field = document.getElementById(fieldId);
                 if (field) field.value = value;
             });
-
-            syncCouponCodeFromPartnerCode();
 
             const notice = document.getElementById('prefillNotice');
             const noticeText = document.getElementById('prefillNoticeText');
@@ -410,14 +402,8 @@
             const modeToggle = document.getElementById('directLinkMode');
             const directInfo = document.getElementById('directModeInfo');
             const trackingInfo = document.getElementById('trackingModeInfo');
-            const partnerCodeField = document.getElementById('partnerCode');
 
             applyPrefillFromQuery();
-            syncCouponCodeFromPartnerCode();
-
-            if (partnerCodeField) {
-                partnerCodeField.addEventListener('input', syncCouponCodeFromPartnerCode);
-            }
 
             // Toggle info display based on mode
             modeToggle.addEventListener('change', function () {
@@ -515,6 +501,16 @@
 
             if (!couponUrl) {
                 alert('請提供專屬優惠券連結！\n\n請到 LINE 官方帳號後台建立專屬優惠券，然後將連結貼上。');
+                return;
+            }
+
+            if (!couponCode) {
+                alert('請填寫優惠券代碼');
+                return;
+            }
+
+            if (couponCode.toLowerCase() === partnerCode.toLowerCase()) {
+                alert('優惠券代碼不可與大使代碼相同，請分開設定。');
                 return;
             }
 
@@ -676,6 +672,21 @@ ${shortCouponUrl}
         async function saveToSheets() {
             if (!generatedData) {
                 alert('請先生成連結');
+                return;
+            }
+
+            if (!generatedData.contact_phone) {
+                alert('請先填寫聯絡電話');
+                return;
+            }
+
+            if (!generatedData.coupon_code) {
+                alert('請先填寫優惠券代碼');
+                return;
+            }
+
+            if (generatedData.coupon_code.toLowerCase() === generatedData.partner_code.toLowerCase()) {
+                alert('優惠券代碼不可與大使代碼相同，請先調整後再儲存。');
                 return;
             }
 

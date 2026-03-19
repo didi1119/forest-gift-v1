@@ -63,6 +63,7 @@ const applicantLine = `line_${suffix}`;
 const applicantMessage = `ONBOARDING_MESSAGE_${suffix}`;
 const reviewNote = `ONBOARDING_APPROVED_${suffix}`;
 const partnerCode = `ob${suffix}`;
+const couponCode = `gift${suffix}`;
 const couponUrl = `https://example.com/coupon/onboarding-${suffix}`;
 const bankName = '台灣銀行';
 const bankCode = '004';
@@ -104,24 +105,28 @@ async function waitFor(check, timeoutMs = 30000, intervalMs = 800) {
   throw new Error(`Condition not met within ${timeoutMs}ms`);
 }
 
-async function setOnboardingDraftValues(page, nextPartnerCode, nextCouponUrl) {
+async function setOnboardingDraftValues(page, nextPartnerCode, nextCouponCode, nextCouponUrl) {
   await page.waitForFunction(() => {
-    return Boolean(document.getElementById('workflowPartnerCode') && document.getElementById('workflowCouponUrl'));
+    return Boolean(document.getElementById('workflowPartnerCode') && document.getElementById('workflowCouponCode') && document.getElementById('workflowCouponUrl'));
   }, { timeout: 30000 });
 
-  await page.evaluate(({ partnerCodeValue, couponUrlValue }) => {
+  await page.evaluate(({ partnerCodeValue, couponCodeValue, couponUrlValue }) => {
     const partnerCodeInput = document.getElementById('workflowPartnerCode');
+    const couponCodeInput = document.getElementById('workflowCouponCode');
     const couponUrlInput = document.getElementById('workflowCouponUrl');
-    if (!partnerCodeInput || !couponUrlInput) {
+    if (!partnerCodeInput || !couponCodeInput || !couponUrlInput) {
       throw new Error('workflow draft inputs not found');
     }
 
     partnerCodeInput.value = partnerCodeValue;
     partnerCodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+    couponCodeInput.value = couponCodeValue;
+    couponCodeInput.dispatchEvent(new Event('input', { bubbles: true }));
     couponUrlInput.value = couponUrlValue;
     couponUrlInput.dispatchEvent(new Event('input', { bubbles: true }));
   }, {
     partnerCodeValue: nextPartnerCode,
+    couponCodeValue: nextCouponCode,
     couponUrlValue: nextCouponUrl
   });
 }
@@ -133,6 +138,7 @@ async function logOnboardingWorkspaceState(page, label) {
     return {
       workspaceText: workspace ? (workspace.innerText || '').slice(0, 800) : null,
       hasPartnerCodeInput: Boolean(document.getElementById('workflowPartnerCode')),
+      hasCouponCodeInput: Boolean(document.getElementById('workflowCouponCode')),
       hasCouponUrlInput: Boolean(document.getElementById('workflowCouponUrl')),
       applicationCardCount: applicationCards.length,
       applicationCards
@@ -293,7 +299,7 @@ async function cleanup() {
     }
 
     await logOnboardingWorkspaceState(page, 'WORKSPACE_AFTER_APPROVAL');
-    await setOnboardingDraftValues(page, partnerCode, couponUrl);
+    await setOnboardingDraftValues(page, partnerCode, couponCode, couponUrl);
     await shot(page, '04_onboarding_approved');
 
     await page.waitForFunction(() => {
@@ -316,8 +322,9 @@ async function cleanup() {
     ensure(await frame.locator('#partnerEmail').inputValue() === applicantEmail, 'link generator partner email prefill mismatch');
     ensure(await frame.locator('#partnerPhone').inputValue() === applicantPhone, 'link generator partner phone prefill mismatch');
     ensure(await frame.locator('#partnerCode').inputValue() === partnerCode, 'link generator partner code prefill mismatch');
+    ensure(await frame.locator('#couponCode').inputValue() === couponCode, 'link generator coupon code prefill mismatch');
     ensure(await frame.locator('#couponUrl').inputValue() === couponUrl, 'link generator coupon url prefill mismatch');
-    ensure(await frame.locator('#couponCode').inputValue() === partnerCode, 'coupon code should sync with partner code');
+    ensure((await frame.locator('#couponCode').inputValue()) !== partnerCode, 'coupon code should stay separate from partner code');
     ensure(await frame.locator('#bankName').inputValue() === bankName, 'link generator bank name prefill mismatch');
     ensure(await frame.locator('#bankCode').inputValue() === bankCode, 'link generator bank code prefill mismatch');
     ensure(await frame.locator('#bankBranch').inputValue() === bankBranch, 'link generator bank branch prefill mismatch');
@@ -354,7 +361,7 @@ async function cleanup() {
       }
     }
 
-    await setOnboardingDraftValues(page, partnerCode, couponUrl);
+    await setOnboardingDraftValues(page, partnerCode, couponCode, couponUrl);
 
     await page.waitForFunction(() => {
       return Boolean(document.querySelector('#onboardingWorkspace button[onclick*="quickPromoteSelectedApplication"]'));
@@ -367,7 +374,7 @@ async function cleanup() {
     const partner = await waitFor(async () => {
       const rows = await supabaseQuery(
         'partners',
-        `select=partner_code,name,partner_name,contact_email,contact_phone,line_coupon_url,coupon_url,landing_link,coupon_link,short_landing_link,short_coupon_link,bank_name,bank_code,bank_branch,bank_account_name,bank_account,commission_preference&partner_code=eq.${encodeURIComponent(partnerCode)}&limit=1`
+        `select=partner_code,name,partner_name,contact_email,contact_phone,coupon_code,line_coupon_url,coupon_url,landing_link,coupon_link,short_landing_link,short_coupon_link,bank_name,bank_code,bank_branch,bank_account_name,bank_account,commission_preference&partner_code=eq.${encodeURIComponent(partnerCode)}&limit=1`
       );
       return rows[0] || null;
     }, 45000, 1000);
@@ -380,6 +387,7 @@ async function cleanup() {
     ensure(partner.bank_branch === bankBranch, `partner bank_branch mismatch: ${JSON.stringify(partner)}`);
     ensure(partner.bank_account_name === bankAccountName, `partner bank account name mismatch: ${JSON.stringify(partner)}`);
     ensure(partner.bank_account === bankAccountNumber, `partner bank account mismatch: ${JSON.stringify(partner)}`);
+    ensure(partner.coupon_code === couponCode, `partner coupon_code mismatch: ${JSON.stringify(partner)}`);
     ensure((partner.line_coupon_url || partner.coupon_url) === couponUrl, `partner coupon target mismatch: ${JSON.stringify(partner)}`);
     ensure(Boolean(partner.short_landing_link), `short_landing_link should be populated: ${JSON.stringify(partner)}`);
     ensure(Boolean(partner.short_coupon_link), `short_coupon_link should be populated: ${JSON.stringify(partner)}`);
@@ -404,7 +412,20 @@ async function cleanup() {
     const deliveryCouponUrl = partner.short_coupon_link || partner.coupon_link;
     ensure(packetMessage.includes(deliveryLandingUrl), `packet should contain landing/toolkit link: ${packetMessage}`);
     ensure(packetMessage.includes(deliveryCouponUrl), `packet should contain coupon link: ${packetMessage}`);
+    ensure(packetMessage.includes(applicantEmail), `packet should mention email login: ${packetMessage}`);
     await shot(page, '06_onboarding_delivery_packet');
+
+    await page.goto(`${siteOrigin}/frontend/partner-login.html`, { waitUntil: 'domcontentloaded' });
+    await page.locator('#partnerCode').fill(applicantEmail);
+    await page.locator('#phone').fill(applicantPhone.slice(-4));
+    await shot(page, '07_partner_login_email_ready');
+    await page.locator('form button[type=submit]').click();
+    await page.waitForURL(/partner-dashboard\.html/, { timeout: 30000 });
+    await page.waitForFunction((code) => {
+      const label = document.getElementById('partnerCode');
+      return label && label.textContent.includes(code);
+    }, partnerCode, { timeout: 30000 });
+    await shot(page, '08_partner_dashboard_email_login');
 
     log('SHORT_LINKS', JSON.stringify({
       landing_link: partner.landing_link,

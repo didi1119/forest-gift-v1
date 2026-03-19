@@ -286,8 +286,8 @@
                         <input type="text" id="line-name" name="line-name" class="w-full px-4 py-2.5 border border-[#1A2F23]/20 rounded-lg focus:ring-[#1A2F23] focus:border-[#1A2F23] transition bg-[#F5F2EB]/50">
                     </div>
                     <div>
-                        <label for="phone" class="block text-sm font-medium text-[#1A2F23] mb-2">聯絡電話</label>
-                        <input type="tel" id="phone" name="phone" class="w-full px-4 py-2.5 border border-[#1A2F23]/20 rounded-lg focus:ring-[#1A2F23] focus:border-[#1A2F23] transition bg-[#F5F2EB]/50">
+                        <label for="phone" class="block text-sm font-medium text-[#1A2F23] mb-2">聯絡電話*</label>
+                        <input type="tel" id="phone" name="phone" required class="w-full px-4 py-2.5 border border-[#1A2F23]/20 rounded-lg focus:ring-[#1A2F23] focus:border-[#1A2F23] transition bg-[#F5F2EB]/50">
                     </div>
                     <div>
                         <label for="referral-source" class="block text-sm font-medium text-[#1A2F23] mb-2">您是如何認識我們的？*</label>
@@ -563,6 +563,7 @@
                 if (!name) { showFieldError('name', '請填寫您的署名'); hasError = true; }
                 if (!email) { showFieldError('email', '請填寫 Email'); hasError = true; }
                 else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showFieldError('email', 'Email 格式不正確'); hasError = true; }
+                if (!phone) { showFieldError('phone', '請填寫聯絡電話'); hasError = true; }
                 if (!referralSource) { showFieldError('referral-source', '請填寫您是如何認識我們的'); hasError = true; }
                 if (!terms) {
                     showFieldError('terms', '請同意合作條款');

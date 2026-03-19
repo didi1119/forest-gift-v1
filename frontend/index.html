@@ -29,6 +29,8 @@
             color: #1A2F23;
             overflow-x: hidden;
             position: relative;
+            letter-spacing: 0.02em;
+            -webkit-font-smoothing: antialiased;
         }
 
         /* Grain texture overlay - 移除 feTurbulence SVG filter（效能殺手，會讓瀏覽器卡死） */
@@ -286,12 +288,16 @@
 
             <!-- 過渡引言：為禮物定位（與 Hero 拉開呼吸空間） -->
             <div class="text-center section-fade-in pt-4 sm:pt-8">
-                <div class="flex items-center justify-center gap-4 mb-5">
-                    <div class="w-8 h-px bg-[#C5A065]/40"></div>
-                    <span class="text-[0.6rem] tracking-[0.4em] text-[#C5A065] uppercase font-serif">Before You Arrive</span>
-                    <div class="w-8 h-px bg-[#C5A065]/40"></div>
+                <div class="flex items-center justify-center gap-5 mb-6">
+                    <div class="w-10 h-px bg-gradient-to-r from-transparent to-[#C5A065]/30"></div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-1 h-1 rounded-full bg-[#C5A065]/30"></div>
+                        <span class="text-[0.55rem] tracking-[0.5em] text-[#C5A065]/80 uppercase font-serif">Before You Arrive</span>
+                        <div class="w-1 h-1 rounded-full bg-[#C5A065]/30"></div>
+                    </div>
+                    <div class="w-10 h-px bg-gradient-to-l from-transparent to-[#C5A065]/30"></div>
                 </div>
-                <p class="font-serif text-[#1A2F23]/50 text-sm leading-relaxed max-w-sm mx-auto">
+                <p class="font-serif text-[#1A2F23]/40 text-sm leading-relaxed max-w-sm mx-auto tracking-wide">
                     出發之前，先收下幾份來自森林的禮物。
                 </p>
             </div>
@@ -471,11 +477,12 @@
 
             <!-- 情境 CTA：Gift 01 後 -->
             <div class="text-center section-fade-in">
-                <p class="font-serif text-[#1A2F23]/50 text-sm mb-4 tracking-wide">寫完了嗎？如果你已經準備好⋯⋯</p>
+                <p class="font-serif text-[#1A2F23]/35 text-xs sm:text-sm mb-5 tracking-[0.1em]">寫完了嗎？如果你已經準備好⋯⋯</p>
                 <button onclick="goToLineCoupon()"
-                    class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-serif tracking-[0.1em] transition-all duration-400 hover:-translate-y-0.5 text-[#4A675A] border border-[#4A675A]/30 hover:bg-[#4A675A]/5">
+                    class="inline-flex items-center gap-2.5 px-7 py-2.5 rounded-full text-xs sm:text-sm font-serif tracking-[0.15em] transition-all duration-500 hover:-translate-y-0.5 text-[#4A675A] hover:text-[#1A2F23] border border-[#C5A065]/25 hover:border-[#C5A065]/50 hover:shadow-[0_4px_16px_rgba(197,160,101,0.1)]"
+                    style="background: linear-gradient(135deg, rgba(197,160,101,0.04), rgba(197,160,101,0.08));">
                     去森林住一晚
-                    <span class="text-sm">→</span>
+                    <span class="text-sm transition-transform duration-300 group-hover:translate-x-0.5">→</span>
                 </button>
             </div>
 
@@ -580,14 +587,14 @@
             <section id="line-cta" class="section-fade-in pb-12 sm:pb-20 mt-8 sm:mt-12">
                 <div class="max-w-3xl mx-auto">
 
-                    <div class="flex items-center justify-center gap-4 mb-10">
-                        <div class="w-12 h-px bg-[#C5A065]/30"></div>
-                        <div class="w-1.5 h-1.5 rounded-full bg-[#C5A065]/40"></div>
-                        <div class="w-12 h-px bg-[#C5A065]/30"></div>
+                    <div class="flex items-center justify-center gap-5 mb-10">
+                        <div class="w-10 h-px bg-gradient-to-r from-transparent to-[#C5A065]/30"></div>
+                        <div class="w-1 h-1 rounded-full bg-[#C5A065]/30"></div>
+                        <div class="w-10 h-px bg-gradient-to-l from-transparent to-[#C5A065]/30"></div>
                     </div>
 
                     <!-- Cabin photo with soft fade edges -->
-                    <div class="relative mx-auto mb-10 max-w-2xl overflow-hidden rounded-2xl" style="mask-image: radial-gradient(ellipse 90% 85% at center, black 50%, transparent 100%); -webkit-mask-image: radial-gradient(ellipse 90% 85% at center, black 50%, transparent 100%);">
+                    <div class="relative mx-auto mb-12 max-w-2xl overflow-hidden rounded-2xl shadow-[0_8px_40px_rgba(26,47,35,0.08)]" style="mask-image: radial-gradient(ellipse 92% 88% at center, black 55%, transparent 100%); -webkit-mask-image: radial-gradient(ellipse 92% 88% at center, black 55%, transparent 100%);">
                         <img src="images/cabin-interior.png" alt="靜謐森林小屋內部"
                             class="w-full h-80 sm:h-[28rem] object-cover"
                             style="object-position: center 65%;">
@@ -622,8 +629,16 @@
             </section>
         </main>
 
-        <footer class="text-center mt-12 sm:mt-24 pt-10 sm:pt-12 border-t border-stone-200/50 section-fade-in pb-12">
-            <p class="font-serif text-lg sm:text-xl text-[#1A2F23] mb-2">願森林的寧靜，與您同在。</p>
+        <footer class="text-center mt-12 sm:mt-24 pt-10 sm:pt-12 section-fade-in pb-12">
+            <div class="flex items-center justify-center gap-3 mb-8">
+                <div class="w-6 h-px bg-[#1A2F23]/10"></div>
+                <div class="w-0.5 h-0.5 rounded-full bg-[#C5A065]/40"></div>
+                <div class="w-0.5 h-0.5 rounded-full bg-[#C5A065]/30"></div>
+                <div class="w-0.5 h-0.5 rounded-full bg-[#C5A065]/40"></div>
+                <div class="w-6 h-px bg-[#1A2F23]/10"></div>
+            </div>
+            <p class="font-serif text-base sm:text-lg text-[#1A2F23]/60 tracking-[0.1em]">願森林的寧靜，與您同在。</p>
+            <p class="font-serif text-[0.6rem] text-[#1A2F23]/20 tracking-[0.3em] uppercase mt-3">Serene Forest</p>
         </footer>
     </div>
 

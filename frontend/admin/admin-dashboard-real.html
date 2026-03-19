@@ -2267,12 +2267,23 @@
             }[status] || 'bg-stone-100 text-stone-700';
         }
 
+        function getApplicationNumericSeed(application) {
+            return String(application?.id || Date.now()).replace(/\D/g, '').slice(-4).padStart(4, '0');
+        }
+
         function generateSuggestedPartnerCode(application) {
             const explicitCode = application?.partner_code_assigned;
             if (explicitCode) return explicitCode;
 
-            const numericId = String(application?.id || Date.now()).replace(/\D/g, '').slice(-4).padStart(4, '0');
-            return `FOREST${numericId}`;
+            return `AMB${getApplicationNumericSeed(application)}`;
+        }
+
+        function generateSuggestedCouponCode(application) {
+            const explicitCode = application?.coupon_code;
+            if (explicitCode) return explicitCode;
+
+            const numericSeed = getApplicationNumericSeed(application).slice(-3);
+            return `FOREST${numericSeed}`;
         }
 
         function getOnboardingDraft(application) {
@@ -2281,7 +2292,7 @@
             if (!onboardingState.draftByApplicationId[application.id]) {
                 onboardingState.draftByApplicationId[application.id] = {
                     partnerCode: application.partner_code_assigned || generateSuggestedPartnerCode(application),
-                    couponCode: application.coupon_code || '',
+                    couponCode: application.coupon_code || generateSuggestedCouponCode(application),
                     couponUrl: application.coupon_url || ''
                 };
             }

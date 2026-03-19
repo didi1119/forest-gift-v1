@@ -5,6 +5,10 @@
 const SHEETS_ID = (process.env.GOOGLE_SHEETS_ID || '1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4').trim();
 const GITHUB_PAGES_URL = process.env.GITHUB_PAGES_URL || 'https://forest-ambassador.vercel.app/frontend/index.html';
 const DEFAULT_LINE_COUPON_URL = process.env.DEFAULT_LINE_COUPON_URL || 'https://lin.ee/q38pqot';
+const DEFAULT_LINE_COUPON_TITLE = process.env.LINE_COUPON_TITLE || '土地的厚愛';
+const DEFAULT_LINE_COUPON_DESCRIPTION = process.env.LINE_COUPON_DESCRIPTION || '獲贈 [山城地瓜包] 乙份 ＆ [延時退房一小時]。\n\n這是我們想送給你的兩份禮物：\n一份是紮實飽滿的在地滋味，\n一份是悠哉退房的自由時光。\n希望你在這裡，像在家一樣自在。';
+const DEFAULT_LINE_COUPON_USAGE_CONDITION = process.env.LINE_COUPON_USAGE_CONDITION || '出示此券即可兌換，每組訂單限用一次。';
+const DEFAULT_LINE_COUPON_VALID_DAYS = parseInt(process.env.LINE_COUPON_VALID_DAYS || '365', 10);
 
 // 佣金等級對照表
 const COMMISSION_RATES = {
@@ -74,6 +78,14 @@ const DataModels = {
       'bank_name', 'bank_code', 'bank_branch', 'bank_account_name', 'bank_account_number',
       'application_status', 'review_notes', 'reviewed_by', 'reviewed_at',
       'partner_code_assigned', 'partner_link_sent', 'created_at', 'updated_at']
+  },
+  LineCouponBinding: {
+    tableName: 'Line_Coupon_Bindings',
+    fields: ['id', 'partner_code', 'coupon_code', 'normalized_coupon_code',
+      'line_coupon_id', 'line_coupon_status', 'line_keyword_status',
+      'coupon_title', 'coupon_description', 'coupon_usage_condition',
+      'reply_count', 'last_replied_at', 'line_coupon_closed_at',
+      'is_active', 'last_error', 'created_at', 'updated_at']
   }
 };
 
@@ -81,6 +93,10 @@ module.exports = {
   SHEETS_ID,
   GITHUB_PAGES_URL,
   DEFAULT_LINE_COUPON_URL,
+  DEFAULT_LINE_COUPON_TITLE,
+  DEFAULT_LINE_COUPON_DESCRIPTION,
+  DEFAULT_LINE_COUPON_USAGE_CONDITION,
+  DEFAULT_LINE_COUPON_VALID_DAYS,
   COMMISSION_RATES,
   FIRST_REFERRAL_BONUS,
   LEVEL_REQUIREMENTS,

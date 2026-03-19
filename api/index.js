@@ -2,7 +2,7 @@
 // Vercel Serverless Function — 統一 API 入口
 // ========================================
 
-const { route, handleRedirect } = require('./_lib/backend');
+const { route, handleRedirect, handleLineWebhook } = require('./_lib/backend');
 
 module.exports = async function handler(req, res) {
   // CORS preflight
@@ -16,6 +16,10 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   try {
+    if (req.method === 'POST' && ((req.headers['x-line-signature'] || req.headers['X-Line-Signature']) || (req.body && Array.isArray(req.body.events)))) {
+      return await handleLineWebhook(req, res);
+    }
+
     // GET: 點擊追蹤重導向
     if (req.method === 'GET' && (req.query.ref || req.query.pid || req.query.subid)) {
       // 如果沒有 action，當作重導向處理

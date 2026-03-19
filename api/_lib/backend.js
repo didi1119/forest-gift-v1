@@ -4,9 +4,12 @@
 // 資料層透過 data-adapter 抽象，支援 Sheets / Supabase 切換
 // ========================================
 
+const crypto = require('crypto');
 const db = require('./data-adapter');
 const {
   SHEETS_ID, GITHUB_PAGES_URL, DEFAULT_LINE_COUPON_URL,
+  DEFAULT_LINE_COUPON_TITLE, DEFAULT_LINE_COUPON_DESCRIPTION,
+  DEFAULT_LINE_COUPON_USAGE_CONDITION, DEFAULT_LINE_COUPON_VALID_DAYS,
   COMMISSION_RATES, FIRST_REFERRAL_BONUS, LEVEL_REQUIREMENTS,
   LEVEL_RETENTION_REQUIREMENTS, DataModels
 } = require('./config');
@@ -16,6 +19,12 @@ let CALL_DEPTH = 0;
 const MAX_CALL_DEPTH = 5;
 const BUSINESS_TIMEZONE = 'Asia/Taipei';
 const LEVEL_SEQUENCE = ['LV1_INSIDER', 'LV2_GUIDE', 'LV3_GUARDIAN'];
+const LINE_COUPON_BINDING_TABLE = 'Line_Coupon_Bindings';
+const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
+const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || '';
+const LINE_COUPON_VISIBILITY = 'UNLISTED';
+const LINE_COUPON_TIMEZONE = 'ASIA_TAIPEI';
+const LINE_COUPON_IMAGE_URL = process.env.LINE_COUPON_IMAGE_URL || '';
 
 // ========================================
 // 通用數據訪問函數（adapter 薄包裝）
@@ -35,6 +44,14 @@ async function updateRecord(sheetName, id, updates) {
 
 async function createRecord(sheetName, data) {
   return db.create(sheetName, data);
+}
+
+async function upsertRecord(sheetName, data, onConflictColumn) {
+  return db.upsert(sheetName, data, onConflictColumn);
+}
+
+async function ensureTable(sheetName, fields) {
+  return db.ensureTable(sheetName, fields);
 }
 
 // ========================================
@@ -132,6 +149,315 @@ async function createShortUrl(originalUrl) {
   }
 
   return originalUrl;
+}
+
+function normalizeCouponKeyword(value) {
+  return String(value || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+function buildLineCouponTimestamps(now = new Date()) {
+  const startTimestamp = Math.floor(now.getTime() / 1000);
+  const validDays = Number.isFinite(DEFAULT_LINE_COUPON_VALID_DAYS) && DEFAULT_LINE_COUPON_VALID_DAYS > 0
+    ? DEFAULT_LINE_COUPON_VALID_DAYS
+    : 365;
+  const endTimestamp = startTimestamp + (validDays * 24 * 60 * 60);
+  return { startTimestamp, endTimestamp };
+}
+
+function hasLineCouponApiConfigured() {
+  return Boolean(LINE_CHANNEL_ACCESS_TOKEN);
+}
+
+function canVerifyLineWebhookSignature() {
+  return Boolean(LINE_CHANNEL_SECRET);
+}
+
+function isMissingTableError(error) {
+  const message = String(error && error.message || error || '');
+  return (
+    /relation .* does not exist/i.test(message) ||
+    /schema cache/i.test(message) ||
+    /Could not find the table/i.test(message) ||
+    /Sheet .* not found/i.test(message) ||
+    /not found or empty/i.test(message)
+  );
+}
+
+function buildDefaultLineCouponPayload(partner) {
+  const { startTimestamp, endTimestamp } = buildLineCouponTimestamps();
+  const payload = {
+    title: DEFAULT_LINE_COUPON_TITLE,
+    description: DEFAULT_LINE_COUPON_DESCRIPTION,
+    acquisitionCondition: { type: 'normal' },
+    maxUseCountPerTicket: 1,
+    startTimestamp,
+    endTimestamp,
+    timezone: LINE_COUPON_TIMEZONE,
+    reward: { type: 'gift' },
+    visibility: LINE_COUPON_VISIBILITY,
+    couponCode: String(partner.coupon_code || '').slice(0, 16),
+    usageCondition: DEFAULT_LINE_COUPON_USAGE_CONDITION
+  };
+
+  if (LINE_COUPON_IMAGE_URL) {
+    payload.imageUrl = LINE_COUPON_IMAGE_URL;
+  }
+
+  return payload;
+}
+
+async function callLineApi(method, path, body) {
+  if (!hasLineCouponApiConfigured()) {
+    throw new Error('LINE_CHANNEL_ACCESS_TOKEN 未設定');
+  }
+
+  const response = await fetch(`https://api.line.me${path}`, {
+    method,
+    headers: {
+      'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
+
+  const text = await response.text();
+  let parsed = {};
+  if (text) {
+    try {
+      parsed = JSON.parse(text);
+    } catch (error) {
+      parsed = {};
+    }
+  }
+  if (!response.ok) {
+    throw new Error(`LINE API ${method} ${path} 失敗: ${response.status} ${text}`);
+  }
+
+  return parsed;
+}
+
+async function ensureLineCouponBindingsTable() {
+  try {
+    await ensureTable(LINE_COUPON_BINDING_TABLE, DataModels.LineCouponBinding.fields);
+    if (typeof db.getFields === 'function') {
+      await db.getFields(LINE_COUPON_BINDING_TABLE);
+    } else {
+      await db.getAllRecords(LINE_COUPON_BINDING_TABLE);
+    }
+    return true;
+  } catch (error) {
+    if (isMissingTableError(error)) return false;
+    throw error;
+  }
+}
+
+async function getLineCouponBindingByPartnerCode(partnerCode) {
+  try {
+    const results = await findRecordsByField(LINE_COUPON_BINDING_TABLE, 'partner_code', partnerCode);
+    return results.length ? results[0].data : null;
+  } catch (error) {
+    if (isMissingTableError(error)) return null;
+    throw error;
+  }
+}
+
+async function getActiveLineCouponBindingByKeyword(input) {
+  const normalized = normalizeCouponKeyword(input);
+  if (!normalized) return null;
+
+  try {
+    const results = await findRecordsByField(LINE_COUPON_BINDING_TABLE, 'normalized_coupon_code', normalized);
+    const row = results.find(item => item.data && item.data.is_active !== false && item.data.line_keyword_status !== 'INACTIVE');
+    return row ? row.data : null;
+  } catch (error) {
+    if (isMissingTableError(error)) return null;
+    throw error;
+  }
+}
+
+async function upsertLineCouponBinding(binding) {
+  const ensured = await ensureLineCouponBindingsTable();
+  if (!ensured) {
+    return { success: false, skipped: true, error: 'line_coupon_bindings table is missing' };
+  }
+
+  const payload = {
+    partner_code: binding.partner_code,
+    coupon_code: binding.coupon_code,
+    normalized_coupon_code: normalizeCouponKeyword(binding.coupon_code),
+    line_coupon_id: binding.line_coupon_id || '',
+    line_coupon_status: binding.line_coupon_status || 'PENDING',
+    line_keyword_status: binding.line_keyword_status || 'ACTIVE',
+    coupon_title: binding.coupon_title || DEFAULT_LINE_COUPON_TITLE,
+    coupon_description: binding.coupon_description || DEFAULT_LINE_COUPON_DESCRIPTION,
+    coupon_usage_condition: binding.coupon_usage_condition || DEFAULT_LINE_COUPON_USAGE_CONDITION,
+    reply_count: toInt(binding.reply_count, 0),
+    last_replied_at: binding.last_replied_at || '',
+    line_coupon_closed_at: binding.line_coupon_closed_at || '',
+    is_active: binding.is_active !== false,
+    last_error: binding.last_error || ''
+  };
+
+  try {
+    const data = await upsertRecord(LINE_COUPON_BINDING_TABLE, payload, 'partner_code');
+    return { success: true, data };
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return { success: false, skipped: true, error: 'line_coupon_bindings table is missing' };
+    }
+    throw error;
+  }
+}
+
+async function discontinueLineCouponBinding(binding, reason = '') {
+  if (!binding) return { success: false, skipped: true, error: 'binding not found' };
+
+  let lastError = '';
+  let lineApiClosed = false;
+
+  if (binding.line_coupon_id && hasLineCouponApiConfigured()) {
+    try {
+      await callLineApi('PUT', `/v2/bot/coupon/${encodeURIComponent(binding.line_coupon_id)}/close`);
+      lineApiClosed = true;
+    } catch (error) {
+      // 410 means the coupon was already closed.
+      if (String(error.message || '').includes('410')) {
+        lineApiClosed = true;
+      } else {
+        lastError = error.message || String(error);
+      }
+    }
+  }
+
+  const updateResult = await upsertLineCouponBinding({
+    ...binding,
+    line_coupon_status: lineApiClosed ? 'CLOSED' : (binding.line_coupon_status || 'ERROR'),
+    line_keyword_status: 'INACTIVE',
+    is_active: false,
+    line_coupon_closed_at: getValueAsDateString(new Date()) || new Date().toISOString(),
+    last_error: lastError || reason || binding.last_error || ''
+  });
+
+  return {
+    success: lineApiClosed || !binding.line_coupon_id,
+    data: updateResult.data,
+    error: lastError || null
+  };
+}
+
+async function provisionLineCouponForPartner(rawPartner, options = {}) {
+  const partner = normalizePartnerRecord(rawPartner);
+  const storageReady = await ensureLineCouponBindingsTable();
+  if (!storageReady) {
+    return { success: false, skipped: true, error: 'line_coupon_bindings table is missing' };
+  }
+
+  const existingBinding = await getLineCouponBindingByPartnerCode(partner.partner_code);
+
+  if (existingBinding && options.recreate !== true &&
+      existingBinding.is_active !== false &&
+      existingBinding.line_coupon_status === 'ACTIVE' &&
+      String(existingBinding.coupon_code || '') === String(partner.coupon_code || '')) {
+    return { success: true, binding: existingBinding, skipped: true };
+  }
+
+  if (existingBinding && options.recreate === true) {
+    await discontinueLineCouponBinding(existingBinding, options.reason || 'Reprovision requested');
+  }
+
+  if (!hasLineCouponApiConfigured()) {
+    const fallbackBinding = await upsertLineCouponBinding({
+      ...(existingBinding || {}),
+      partner_code: partner.partner_code,
+      coupon_code: partner.coupon_code,
+      line_coupon_status: 'DISABLED',
+      line_keyword_status: 'INACTIVE',
+      is_active: false,
+      last_error: 'LINE_CHANNEL_ACCESS_TOKEN 未設定'
+    });
+    return { success: false, skipped: true, binding: fallbackBinding.data, error: 'LINE_CHANNEL_ACCESS_TOKEN 未設定' };
+  }
+
+  const payload = buildDefaultLineCouponPayload(partner);
+
+  try {
+    const response = await callLineApi('POST', '/v2/bot/coupon', payload);
+    const bindingResult = await upsertLineCouponBinding({
+      ...(existingBinding || {}),
+      partner_code: partner.partner_code,
+      coupon_code: partner.coupon_code,
+      line_coupon_id: response.couponId,
+      line_coupon_status: 'ACTIVE',
+      line_keyword_status: 'ACTIVE',
+      coupon_title: payload.title,
+      coupon_description: payload.description,
+      coupon_usage_condition: payload.usageCondition,
+      is_active: true,
+      last_error: ''
+    });
+
+    return { success: true, binding: bindingResult.data };
+  } catch (error) {
+    const bindingResult = await upsertLineCouponBinding({
+      ...(existingBinding || {}),
+      partner_code: partner.partner_code,
+      coupon_code: partner.coupon_code,
+      line_coupon_id: existingBinding?.line_coupon_id || '',
+      line_coupon_status: 'ERROR',
+      line_keyword_status: 'INACTIVE',
+      coupon_title: payload.title,
+      coupon_description: payload.description,
+      coupon_usage_condition: payload.usageCondition,
+      is_active: false,
+      last_error: error.message || String(error)
+    });
+
+    return { success: false, binding: bindingResult.data, error: error.message || String(error) };
+  }
+}
+
+async function updateLineCouponReplyStats(binding) {
+  if (!binding || !binding.partner_code) return null;
+  const result = await upsertLineCouponBinding({
+    ...binding,
+    reply_count: toInt(binding.reply_count, 0) + 1,
+    last_replied_at: new Date().toISOString(),
+    is_active: true,
+    line_keyword_status: binding.line_keyword_status || 'ACTIVE'
+  });
+  return result.data;
+}
+
+function extractCouponKeywordCandidates(text) {
+  const raw = String(text || '').trim();
+  if (!raw) return [];
+
+  const candidates = new Set();
+  const direct = normalizeCouponKeyword(raw);
+  if (direct) candidates.add(direct);
+
+  const matches = raw.match(/[A-Za-z0-9]{3,16}/g) || [];
+  for (const match of matches) {
+    const normalized = normalizeCouponKeyword(match);
+    if (normalized) candidates.add(normalized);
+  }
+
+  return Array.from(candidates);
+}
+
+function verifyLineSignature(rawBody, signature) {
+  if (!canVerifyLineWebhookSignature()) return true;
+  if (!rawBody || !signature) return false;
+
+  const expected = crypto
+    .createHmac('sha256', LINE_CHANNEL_SECRET)
+    .update(rawBody)
+    .digest('base64');
+
+  return expected === signature;
 }
 
 function getValueAsDateString(value) {
@@ -996,7 +1322,7 @@ async function handleUseAccommodationPoints(data) {
 
 async function handleGetAllData() {
   const data = {};
-  const sheetNames = ['Bookings', 'Partners', 'Payouts', 'Accommodation_Usage', 'Clicks'];
+  const sheetNames = ['Bookings', 'Partners', 'Payouts', 'Accommodation_Usage', 'Clicks', LINE_COUPON_BINDING_TABLE];
 
   for (const sheetName of sheetNames) {
     try {
@@ -1581,6 +1907,8 @@ async function handleUpdatePartner(data) {
 
   const oldLevel = partner.partner_level;
   const oldPreference = partner.commission_preference;
+  const oldCouponCode = String(partner.coupon_code || '').trim();
+  const oldIsActive = partner.is_active !== false;
   const currentYear = getBusinessYear();
 
   if (data.partner_level && data.partner_level !== oldLevel) {
@@ -1606,14 +1934,52 @@ async function handleUpdatePartner(data) {
     });
   }
 
+  if (data.coupon_code !== undefined) {
+    const nextCouponCode = String(data.coupon_code || '').trim();
+    if (nextCouponCode && nextCouponCode.toLowerCase() === String(partnerCode).toLowerCase()) {
+      throw new Error('優惠券代碼不可與大使代碼相同');
+    }
+  }
+
+  let lineCouponProvision = null;
+  let lineCouponDeactivation = null;
+
   const updated = await updateRecord('Partners', partnerCode, data);
+  const mergedPartner = normalizePartnerRecord({ ...partner, ...updated });
+
+  if (data.is_active !== undefined) {
+    const nextIsActive = data.is_active !== false && data.is_active !== 'false';
+    if (oldIsActive && !nextIsActive) {
+      lineCouponDeactivation = await discontinueLineCouponBinding(
+        await getLineCouponBindingByPartnerCode(partnerCode),
+        'Partner suspended'
+      );
+    } else if (!oldIsActive && nextIsActive) {
+      lineCouponProvision = await provisionLineCouponForPartner(mergedPartner, {
+        recreate: true,
+        reason: 'Partner reactivated'
+      });
+    }
+  }
+
+  if (data.coupon_code !== undefined) {
+    const nextCouponCode = String(data.coupon_code || '').trim();
+    if (nextCouponCode && nextCouponCode !== oldCouponCode && mergedPartner.is_active !== false) {
+      lineCouponProvision = await provisionLineCouponForPartner(mergedPartner, {
+        recreate: true,
+        reason: 'Coupon code updated'
+      });
+    }
+  }
 
   return {
     success: true, message: 'Partner updated successfully', data: updated,
     changes: {
       levelChanged: data.partner_level && data.partner_level !== oldLevel,
       preferenceChanged: data.commission_preference && data.commission_preference !== oldPreference
-    }
+    },
+    line_coupon_provision: lineCouponProvision,
+    line_coupon_deactivation: lineCouponDeactivation
   };
 }
 
@@ -1749,6 +2115,7 @@ async function handleCreatePartner(data) {
   if (existing) throw new Error('Partner code already exists');
 
   const partner = await createRecord('Partners', partnerData);
+  const lineCouponProvision = await provisionLineCouponForPartner(partner);
 
   if (applicationId) {
     await ensureApplicationsSheet();
@@ -1761,7 +2128,13 @@ async function handleCreatePartner(data) {
     }
   }
 
-  return { success: true, message: 'Partner created successfully', partner_code: partner.partner_code, data: partner };
+  return {
+    success: true,
+    message: 'Partner created successfully',
+    partner_code: partner.partner_code,
+    data: partner,
+    line_coupon_provision: lineCouponProvision
+  };
 }
 
 // ========================================
@@ -1772,6 +2145,7 @@ async function handleRedirect(req, res) {
   const params = req.query || {};
   const destination = params.dest || 'landing';
   const subid = params.pid || params.subid || '';
+  const partner = subid ? await findPartnerByCode(subid) : null;
 
   // 非同步記錄點擊（不等待完成）
   recordClick(params).catch(err => console.error('recordClick error:', err));
@@ -1782,11 +2156,12 @@ async function handleRedirect(req, res) {
     if (targetUrl) {
       redirectUrl = decodeURIComponent(targetUrl);
     } else {
-      const partner = subid ? await findPartnerByCode(subid) : null;
-      redirectUrl = (partner && partner.line_coupon_url) ? partner.line_coupon_url : DEFAULT_LINE_COUPON_URL;
+      redirectUrl = (partner && partner.is_active !== false && partner.line_coupon_url) ? partner.line_coupon_url : DEFAULT_LINE_COUPON_URL;
     }
   } else {
-    if (req.url && req.url.includes('?')) {
+    if (partner && partner.is_active === false) {
+      redirectUrl = GITHUB_PAGES_URL;
+    } else if (req.url && req.url.includes('?')) {
       const queryString = req.url.split('?')[1];
       redirectUrl = GITHUB_PAGES_URL + '?' + queryString;
     } else if (subid) {
@@ -2058,6 +2433,7 @@ async function handleVerifyPartnerLogin(data) {
   });
 
   if (!partner) return { success: false, error: '登入資訊不正確' };
+  if (partner.is_active === false) return { success: false, error: '此大使帳號已停用，請聯繫管理員協助' };
 
   // 計算點擊數
   let totalClicks = 0;
@@ -2096,6 +2472,7 @@ async function handleGetPartnerDashboardData(data) {
 
   const partner = await findPartnerByCodeCaseInsensitive(partnerCodeInput);
   if (!partner) return { success: false, error: 'Partner not found' };
+  if (partner.is_active === false) return { success: false, error: '此大使帳號已停用' };
 
   const partnerCode = partner.partner_code;
 
@@ -2387,7 +2764,8 @@ async function handlePromoteToPartner(data) {
     contact_email: record.data.email || ''
   };
 
-  await createRecord('Partners', partnerData);
+  const partner = await createRecord('Partners', partnerData);
+  const lineCouponProvision = await provisionLineCouponForPartner(partner);
 
   await updateRecord(APPLICATION_SHEET, appId, {
     partner_code_assigned: partnerCode,
@@ -2401,8 +2779,80 @@ async function handlePromoteToPartner(data) {
     landing_link: landingLink,
     coupon_link: couponLink,
     short_landing_link: shortLandingLink,
-    short_coupon_link: shortCouponLink
+    short_coupon_link: shortCouponLink,
+    line_coupon_provision: lineCouponProvision
   };
+}
+
+function getRawBodyFromRequest(req) {
+  if (typeof req.rawBody === 'string') return req.rawBody;
+  if (Buffer.isBuffer(req.rawBody)) return req.rawBody.toString('utf8');
+  if (typeof req.body === 'string') return req.body;
+  if (Buffer.isBuffer(req.body)) return req.body.toString('utf8');
+  if (req.body && typeof req.body === 'object') return JSON.stringify(req.body);
+  return '';
+}
+
+async function replyLineCoupon(replyToken, couponId) {
+  if (!replyToken || !couponId) return;
+  await callLineApi('POST', '/v2/bot/message/reply', {
+    replyToken,
+    messages: [
+      {
+        type: 'coupon',
+        couponId
+      }
+    ]
+  });
+}
+
+async function handleLineWebhook(req, res) {
+  const rawBody = getRawBodyFromRequest(req);
+  const signature = req.headers['x-line-signature'] || req.headers['X-Line-Signature'];
+
+  if (canVerifyLineWebhookSignature() && !verifyLineSignature(rawBody, signature)) {
+    return res.status(401).json({ success: false, error: 'Invalid LINE signature' });
+  }
+
+  const events = Array.isArray(req.body && req.body.events) ? req.body.events : [];
+
+  for (const event of events) {
+    if (!event || event.type !== 'message' || !event.message || event.message.type !== 'text' || !event.replyToken) {
+      continue;
+    }
+
+    const candidates = extractCouponKeywordCandidates(event.message.text);
+    let binding = null;
+    for (const candidate of candidates) {
+      binding = await getActiveLineCouponBindingByKeyword(candidate);
+      if (binding) break;
+    }
+
+    if (!binding || !binding.line_coupon_id) {
+      continue;
+    }
+
+    const partner = await findPartnerByCode(binding.partner_code).catch(() => null);
+    if (!partner || partner.is_active === false) {
+      await discontinueLineCouponBinding(binding, 'Partner inactive during webhook reply');
+      continue;
+    }
+
+    try {
+      await replyLineCoupon(event.replyToken, binding.line_coupon_id);
+      await updateLineCouponReplyStats(binding);
+    } catch (error) {
+      await upsertLineCouponBinding({
+        ...binding,
+        line_coupon_status: 'ERROR',
+        last_error: error.message || String(error),
+        is_active: binding.is_active !== false
+      }).catch(err => console.error('Failed to persist LINE reply error:', err.message || err));
+      console.error('LINE webhook reply failed:', error.message || error);
+    }
+  }
+
+  return res.status(200).json({ success: true });
 }
 
 async function route(action, data) {
@@ -2461,6 +2911,7 @@ async function route(action, data) {
 module.exports = {
   route,
   handleRedirect,
+  handleLineWebhook,
   __test__: {
     normalizeLevel,
     maxLevel,

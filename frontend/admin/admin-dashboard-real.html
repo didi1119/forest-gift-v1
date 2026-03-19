@@ -1205,7 +1205,8 @@
             partners: [],
             bookings: [],
             payouts: [],
-            clicks: []
+            clicks: [],
+            line_coupon_bindings: []
         };
 
         let onboardingState = {
@@ -1293,7 +1294,8 @@
                             bookings: (data.data.bookings || []).map(booking => BookingDataManager.normalizeBooking(booking)),
                             payouts: data.data.payouts || [],
                             clicks: data.data.clicks || [],
-                            accommodation_usage: data.data.accommodation_usage || []
+                            accommodation_usage: data.data.accommodation_usage || [],
+                            line_coupon_bindings: data.data.line_coupon_bindings || []
                         };
                     console.log('✅ 載入真實數據成功:');
                     console.log('- Partners:', allData.partners?.length || 0);
@@ -1571,13 +1573,15 @@
             const totalClicks = getPartnerClicks(f.code);
             const accommodationBalance = f.availablePoints;  // 使用統一計算的值
             const pendingCash = f.pendingCash;
+            const lineCouponMeta = getLineCouponStatusMeta(partner);
+            const isInactive = partner.is_active === false;
 
             // --- 呼叫操作按鈕生成函式 ---
             const smartActions = generateSmartActions(partner);
 
             // --- HTML 結構 ---
             return `
-                <div class="brand-card transition-shadow duration-200 hover:shadow-lg" data-partner-code="${partner.partner_code}">
+                <div class="brand-card transition-shadow duration-200 hover:shadow-lg ${isInactive ? 'opacity-75' : ''}" data-partner-code="${partner.partner_code}">
                     <div class="p-6 flex flex-col lg:flex-row items-start lg:items-center gap-6">
                         
                         <!-- 結構一：左側夥伴基本資訊 -->
@@ -1592,11 +1596,14 @@
                                         ${f.name}
                                     </h3>
                                     <span class="text-sm text-stone-500 font-mono">${f.code}</span>
+                                    ${isInactive ? '<span class="px-2 py-1 rounded-full text-[11px] bg-stone-800 text-white">已停用</span>' : ''}
                                 </div>
-                                <div class="mt-1">
+                                <div class="mt-1 flex flex-wrap gap-2">
                                     <span class="px-3 py-1 rounded-full text-xs font-medium ${levelClass}">${levelText}</span>
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium ${lineCouponMeta.className}">${lineCouponMeta.label}</span>
                                 </div>
                                 <div class="mt-2 space-y-1 text-xs text-stone-500">
+                                    <div>對外優惠碼：${escapeHtml(partner.coupon_code || '未設定')}</div>
                                     <div>年初基準：${getLevelText(f.baseLevelForYear)}</div>
                                     <div>資格有效至：${formatDate(f.levelValidUntil)}</div>
                                 </div>
@@ -1658,11 +1665,12 @@
             const accommodationBalance = parseFloat(partner.available_points) || 0;
             const pendingCash = parseFloat(partner.pending_commission) || 0;
             const dropdownId = `actions-dropdown-${partner.partner_code}`;
+            const isInactive = partner.is_active === false;
             
             // --- 邏輯一：動態生成「使用點數」按鈕 ---
             // 根據是否有可用點數，決定按鈕是可點擊還是禁用狀態。
             let usePointsButtonHTML = '';
-            if (accommodationBalance > 0) {
+            if (accommodationBalance > 0 && !isInactive) {
                 // **關鍵**：onclick 事件綁定原有的 `showPartnerActionsModal` 函式
                 usePointsButtonHTML = `
                     <button onclick="showPartnerActionsModal('${partner.partner_code}', 'accommodation')" class="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all">
@@ -1690,8 +1698,11 @@
                         
                         <!-- 簡化的下拉選單：只保留必要功能 -->
                         <div id="${dropdownId}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
-                            <a href="#" onclick="viewPartnerDetails('${partner.partner_code}')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">查看詳情</a>
-                            ${pendingCash > 0 ? `<a href="#" onclick="showPartnerActionsModal('${partner.partner_code}', 'cash')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">處理結算</a>` : ''}
+                            <a href="#" onclick="viewPartnerDetails('${partner.partner_code}'); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">查看詳情</a>
+                            ${pendingCash > 0 && !isInactive ? `<a href="#" onclick="showPartnerActionsModal('${partner.partner_code}', 'cash'); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">處理結算</a>` : ''}
+                            ${isInactive
+                                ? `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', true); return false;" class="block px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50">恢復夥伴</a>`
+                                : `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', false); return false;" class="block px-4 py-2 text-sm text-rose-700 hover:bg-rose-50">停用夥伴</a>`}
                         </div>
                     </div>
                 </div>
@@ -2177,6 +2188,67 @@
                 'ADJUSTMENT': '調整'
             };
             return m[type] || type || '其他';
+        }
+
+        function getLineCouponBinding(partnerCode) {
+            if (!partnerCode || !Array.isArray(allData.line_coupon_bindings)) return null;
+            return allData.line_coupon_bindings.find(binding => binding.partner_code === partnerCode) || null;
+        }
+
+        function getLineCouponStatusMeta(partner, binding = getLineCouponBinding(partner?.partner_code)) {
+            if (partner?.is_active === false) {
+                return {
+                    label: 'LINE 券已停用',
+                    className: 'bg-stone-200 text-stone-700',
+                    detail: '大使目前已停用，LINE 優惠券與關鍵字回應同步關閉。'
+                };
+            }
+
+            if (!binding) {
+                return {
+                    label: '尚未建立 LINE 券',
+                    className: 'bg-stone-100 text-stone-600',
+                    detail: '目前還沒有看到綁定紀錄。若剛建立，可重新整理後再確認。'
+                };
+            }
+
+            if (binding.line_coupon_status === 'ACTIVE' && binding.line_keyword_status !== 'INACTIVE') {
+                return {
+                    label: 'LINE 券已綁定',
+                    className: 'bg-emerald-100 text-emerald-800',
+                    detail: `輸入代碼 ${binding.coupon_code || partner?.coupon_code || '未設定'} 時，會自動回覆這張券。`
+                };
+            }
+
+            if (binding.line_coupon_status === 'ERROR') {
+                return {
+                    label: 'LINE 建立失敗',
+                    className: 'bg-rose-100 text-rose-700',
+                    detail: binding.last_error || 'LINE API 建立或回覆時發生錯誤。'
+                };
+            }
+
+            if (binding.line_coupon_status === 'DISABLED') {
+                return {
+                    label: 'LINE 尚未啟用',
+                    className: 'bg-amber-100 text-amber-800',
+                    detail: '尚未設定 LINE Channel Access Token，因此目前不會自動建券。'
+                };
+            }
+
+            if (binding.line_coupon_status === 'CLOSED' || binding.line_keyword_status === 'INACTIVE' || binding.is_active === false) {
+                return {
+                    label: 'LINE 券已關閉',
+                    className: 'bg-stone-200 text-stone-700',
+                    detail: '此券與關鍵字回應已停止使用。'
+                };
+            }
+
+            return {
+                label: binding.line_coupon_status || 'LINE 狀態待確認',
+                className: 'bg-stone-100 text-stone-700',
+                detail: 'LINE 券紀錄存在，但目前不是可直接使用的狀態。'
+            };
         }
 
         const FIRST_REFERRAL_BONUS = 1500;
@@ -2774,6 +2846,7 @@
                     '以下是你的登入資訊與常用入口，之後合作時可直接從這裡開始：',
                     loginEmail ? `登入 Email：${loginEmail}` : '登入 Email：你建立資料時提供的 Email',
                     partnerCode ? `你的大使代碼：${partnerCode}` : null,
+                    partner?.coupon_code ? `你的對外優惠代碼：${partner.coupon_code}` : null,
                     phoneHint ? `登入驗證：請搭配你留存手機的後 4 碼（${String(phoneHint).slice(-4)}）` : '登入驗證：請搭配你留存手機的後 4 碼',
                     '登入時可使用 Email 或大使代碼擇一輸入。',
                     '大使代碼屬於你的私人識別資訊，建議保留給自己使用；若一時忘記，也可以直接用 Email 登入。',
@@ -2784,6 +2857,7 @@
                     '',
                     '查看推薦紀錄、點數與佣金時，請由大使登入頁進入。',
                     '對外分享時，直接使用你的分享工具包；若有指定活動，也可以搭配專屬優惠券連結。',
+                    partner?.coupon_code ? `若朋友在官方 LINE 想直接領券，也可以輸入你的優惠代碼：${partner.coupon_code}` : null,
                     '之後若想調整分享方式、素材方向或合作安排，也都歡迎隨時與我們聯繫。'
                 ].filter(Boolean).join('\n')
             };
@@ -3241,6 +3315,8 @@
             const bookings = allData.bookings.filter(b => b.partner_code === partner.partner_code);
             const totalRevenue = bookings.reduce((sum, b) => sum + (b.room_price || 0), 0);
             const levelSummary = getPartnerLevelSummary(partner);
+            const lineCouponBinding = getLineCouponBinding(partner.partner_code);
+            const lineCouponMeta = getLineCouponStatusMeta(partner, lineCouponBinding);
             
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -3392,6 +3468,35 @@
                                         <p class="text-xs break-all bg-gray-100 p-2 rounded">${partner.coupon_url}</p>
                                     </div>
                                 ` : ''}
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-4">
+                            <div class="flex items-center justify-between gap-3 mb-3">
+                                <h4 class="font-semibold">LINE 優惠券綁定</h4>
+                                <span class="px-3 py-1 rounded-full text-xs font-medium ${lineCouponMeta.className}">${lineCouponMeta.label}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <p class="text-sm text-gray-600">對外優惠碼</p>
+                                    <p class="font-semibold">${escapeHtml(partner.coupon_code || '未設定')}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">LINE Coupon ID</p>
+                                    <p class="font-semibold break-all">${escapeHtml(lineCouponBinding?.line_coupon_id || '尚未建立')}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">關鍵字回應</p>
+                                    <p class="font-semibold">${escapeHtml(lineCouponBinding?.line_keyword_status || '未建立')}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">回覆次數</p>
+                                    <p class="font-semibold">${Number(lineCouponBinding?.reply_count || 0).toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 rounded-lg bg-stone-50 border border-stone-200 p-3 text-sm text-stone-600">
+                                ${escapeHtml(lineCouponMeta.detail)}
+                                ${lineCouponBinding?.last_error ? `<div class="mt-2 text-rose-700">最後錯誤：${escapeHtml(lineCouponBinding.last_error)}</div>` : ''}
                             </div>
                         </div>
                         
@@ -6540,39 +6645,60 @@
             }
         }
 
-        // 停用夥伴
-        function suspendPartner(partnerCode) {
+        async function togglePartnerActive(partnerCode, nextIsActive) {
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到夥伴資料');
                 return;
             }
 
-            const confirmed = confirm(`⚠️ 停用帳戶 - ${partner.name || partner.partner_code}
+            const actionLabel = nextIsActive ? '恢復' : '停用';
+            const impactLines = nextIsActive
+                ? [
+                    '• 重新啟用登入與推薦追蹤',
+                    '• 若 LINE 已設定，會重新建立專屬優惠券與關鍵字回應',
+                    '• 既有資料與佣金紀錄會保留'
+                ]
+                : [
+                    '• 無法獲得新的佣金',
+                    '• 推薦連結失效',
+                    '• 無法登入管理介面',
+                    '• LINE 優惠券與關鍵字回應會同步停用'
+                ];
 
-停用後該夥伴將：
-• 無法獲得新的佣金
-• 推薦連結失效
-• 無法登入管理介面
+            const confirmed = confirm(`⚠️ ${actionLabel}帳戶 - ${partner.name || partner.partner_code}
 
-此操作可復原。確定要停用嗎？`);
+${actionLabel}後該夥伴將：
+${impactLines.join('\n')}
+
+此操作可復原。確定要繼續嗎？`);
             
             if (!confirmed) return;
 
             try {
-                // 暫時標記為停用狀態
-                const partnerIndex = allData.partners.findIndex(p => p.partner_code === partnerCode);
-                if (partnerIndex !== -1) {
-                    allData.partners[partnerIndex].status = 'SUSPENDED';
-                }
+                const responseData = await submitToBackendViaForm({
+                    action: 'update_partner',
+                    partner_code: partnerCode,
+                    is_active: nextIsActive
+                });
+                console.log(`${actionLabel}夥伴 - 後端已回應:`, responseData);
 
-                showSuccessMessage(`✅ 已停用夥伴：${partner.name || partner.partner_code}`);
+                await forceReloadCurrentData();
                 displayPartners(allData.partners);
+                if (document.getElementById('partnerModal')) {
+                    closeModal('partnerModal');
+                }
+                showSuccessMessage(`✅ 已${actionLabel}夥伴：${partner.name || partner.partner_code}`);
 
             } catch (error) {
-                console.error('停用失敗:', error);
-                showErrorMessage('❌ 停用失敗：' + error.message);
+                console.error(`${actionLabel}失敗:`, error);
+                showErrorMessage(`❌ ${actionLabel}失敗：` + error.message);
             }
+        }
+
+        // 停用夥伴
+        function suspendPartner(partnerCode) {
+            return togglePartnerActive(partnerCode, false);
         }
 
         // ========== 備用函數定義 (防止外部JS載入失敗) ==========

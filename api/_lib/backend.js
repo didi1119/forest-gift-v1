@@ -242,6 +242,46 @@ async function callLineApi(method, path, body) {
   return parsed;
 }
 
+async function fetchLineProfileByUserId(lineUserId) {
+  const normalizedUserId = String(lineUserId || '').trim();
+  if (!normalizedUserId || !hasLineCouponApiConfigured()) return null;
+
+  try {
+    const profile = await callLineApi('GET', `/v2/bot/profile/${encodeURIComponent(normalizedUserId)}`);
+    return {
+      userId: normalizedUserId,
+      displayName: String(profile && profile.displayName || '').trim()
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+async function fetchLineProfileForEventSource(source) {
+  if (!source || !source.userId || !hasLineCouponApiConfigured()) return null;
+
+  const sourceType = String(source.type || 'user').trim().toLowerCase();
+  const userId = String(source.userId || '').trim();
+  if (!userId) return null;
+
+  try {
+    let path = `/v2/bot/profile/${encodeURIComponent(userId)}`;
+    if (sourceType === 'group' && source.groupId) {
+      path = `/v2/bot/group/${encodeURIComponent(source.groupId)}/member/${encodeURIComponent(userId)}`;
+    } else if (sourceType === 'room' && source.roomId) {
+      path = `/v2/bot/room/${encodeURIComponent(source.roomId)}/member/${encodeURIComponent(userId)}`;
+    }
+
+    const profile = await callLineApi('GET', path);
+    return {
+      userId,
+      displayName: String(profile && profile.displayName || '').trim()
+    };
+  } catch (error) {
+    return fetchLineProfileByUserId(userId);
+  }
+}
+
 async function ensureLineCouponBindingsTable() {
   try {
     await ensureTable(LINE_COUPON_BINDING_TABLE, DataModels.LineCouponBinding.fields);
@@ -539,6 +579,64 @@ async function getLineReferralClaimsByLineUserId(lineUserId) {
 async function getLatestLineReferralClaimByLineUserId(lineUserId) {
   const claims = await getLineReferralClaimsByLineUserId(lineUserId);
   return selectLatestLineReferralClaim(claims);
+}
+
+async function syncLineClaimProfiles(options = {}) {
+  const storageReady = await ensureLineReferralClaimsTable();
+  if (!storageReady) {
+    return { success: false, skipped: true, error: 'line_referral_claims table is missing' };
+  }
+  if (!hasLineCouponApiConfigured()) {
+    return { success: false, skipped: true, error: 'LINE_CHANNEL_ACCESS_TOKEN 未設定' };
+  }
+
+  const onlyMissing = options.onlyMissing !== false;
+  const limit = Math.max(1, Math.min(toInt(options.limit, 50), 200));
+  const claims = await db.getAllRecords(LINE_REFERRAL_CLAIM_TABLE).catch(() => []);
+  const newestFirst = sortLineClaimsNewestFirst(claims.map(item => item.data || item).filter(Boolean));
+  const seen = new Set();
+  const targets = [];
+
+  for (const claim of newestFirst) {
+    const lineUserId = String(claim.line_user_id || '').trim();
+    if (!lineUserId || seen.has(lineUserId)) continue;
+    seen.add(lineUserId);
+    const missingDisplayName = !String(claim.line_display_name || '').trim();
+    if (onlyMissing && !missingDisplayName) continue;
+    targets.push({ lineUserId, sourceType: claim.line_source_type || 'user' });
+    if (targets.length >= limit) break;
+  }
+
+  let updatedUsers = 0;
+  let updatedClaims = 0;
+  const errors = [];
+
+  for (const target of targets) {
+    const profile = await fetchLineProfileByUserId(target.lineUserId);
+    const displayName = String(profile && profile.displayName || '').trim();
+    if (!displayName) {
+      errors.push({ line_user_id: target.lineUserId, error: 'displayName not available' });
+      continue;
+    }
+
+    const relatedClaims = newestFirst.filter(claim => String(claim.line_user_id || '').trim() === target.lineUserId);
+    for (const claim of relatedClaims) {
+      const result = await upsertLineReferralClaim({
+        ...claim,
+        line_display_name: displayName
+      });
+      if (result.success) updatedClaims += 1;
+    }
+    updatedUsers += 1;
+  }
+
+  return {
+    success: true,
+    updated_users: updatedUsers,
+    updated_claims: updatedClaims,
+    attempted_users: targets.length,
+    errors
+  };
 }
 
 async function findActivePartnerByCouponCode(input) {
@@ -3081,6 +3179,12 @@ async function handleLineWebhook(req, res) {
 
     const claimTimestamp = new Date().toISOString();
     const lineUserId = event.source && event.source.userId ? event.source.userId : '';
+    const sourceProfile = await fetchLineProfileForEventSource(event.source || {});
+    const resolvedDisplayName = String(
+      sourceProfile && sourceProfile.displayName ||
+      event.source && event.source.displayName ||
+      ''
+    ).trim();
     const claimKey = buildLineReferralClaimKey(lineUserId, event.message.id, matchedPartner.partner_code);
     const existingClaims = lineUserId
       ? await findRecordsByField(LINE_REFERRAL_CLAIM_TABLE, 'claim_key', claimKey).catch(() => [])
@@ -3092,7 +3196,7 @@ async function handleLineWebhook(req, res) {
       claim_key: claimKey,
       line_user_id: lineUserId,
       line_source_type: event.source && event.source.type ? event.source.type : 'user',
-      line_display_name: event.source && event.source.displayName ? event.source.displayName : '',
+      line_display_name: resolvedDisplayName || String(existingClaim && existingClaim.line_display_name || '').trim(),
       line_message_id: event.message.id || '',
       entered_code: matchedCode,
       partner_code: matchedPartner.partner_code,
@@ -3112,7 +3216,7 @@ async function handleLineWebhook(req, res) {
         claim_key: claimKey,
         line_user_id: lineUserId,
         line_source_type: event.source && event.source.type ? event.source.type : 'user',
-        line_display_name: event.source && event.source.displayName ? event.source.displayName : '',
+        line_display_name: resolvedDisplayName || String(claimResult.data && claimResult.data.line_display_name || '').trim(),
         line_message_id: event.message.id || '',
         entered_code: matchedCode,
         partner_code: matchedPartner.partner_code,
@@ -3135,7 +3239,7 @@ async function handleLineWebhook(req, res) {
         claim_key: claimKey,
         line_user_id: lineUserId,
         line_source_type: event.source && event.source.type ? event.source.type : 'user',
-        line_display_name: event.source && event.source.displayName ? event.source.displayName : '',
+        line_display_name: resolvedDisplayName || String(claimResult.data && claimResult.data.line_display_name || '').trim(),
         line_message_id: event.message.id || '',
         entered_code: matchedCode,
         partner_code: matchedPartner.partner_code,
@@ -3155,7 +3259,7 @@ async function handleLineWebhook(req, res) {
         claim_key: claimKey,
         line_user_id: lineUserId,
         line_source_type: event.source && event.source.type ? event.source.type : 'user',
-        line_display_name: event.source && event.source.displayName ? event.source.displayName : '',
+        line_display_name: resolvedDisplayName || String(claimResult.data && claimResult.data.line_display_name || '').trim(),
         line_message_id: event.message.id || '',
         entered_code: matchedCode,
         partner_code: matchedPartner.partner_code,
@@ -3221,6 +3325,7 @@ async function route(action, data) {
     'get_applications': handleGetApplications,
     'review_application': handleReviewApplication,
     'promote_to_partner': handlePromoteToPartner,
+    'sync_line_claim_profiles': syncLineClaimProfiles,
   };
 
   const handler = handlers[action];

@@ -358,12 +358,11 @@ forest-gift-v1/                          ← GitHub repo root
 
 ### 8.1 已知風險（依嚴重度排序）
 
-| 嚴重度 | 問題 | 位置 | 建議 |
+| 嚴重度 | 問題 | 位置 | 狀態 |
 |--------|------|------|------|
-| **高** | reurl.cc API Key 暴露在前端 | partner-dashboard.html, link-generator-form.html, test-*.html（共 4 個檔案） | 移到 Vercel Function，前端透過 `/api` 代理 |
-| **高** | 管理後台無真正認證 | 所有 admin/*.html | 加入 Vercel Edge Middleware 或 OAuth |
-| **中** | .env.local 包含 Supabase Service Key | 根目錄 | 確認 .gitignore 有排除（目前看起來沒有） |
-| **中** | Admin 密碼只有 4 位數 | ADMIN_SECRET=1499 | 改用更強的密碼或 OAuth |
+| ~~高~~ | ~~reurl.cc API Key 暴露在前端~~ | ~~5 個 HTML 檔案~~ | ✅ **已修復**（2026-03-20）— 改用 `/api` 後端代理 `shorten_url` action |
+| **高** | 管理後台無真正認證 | 所有 admin/*.html | 待改善 — 建議加入 Vercel Edge Middleware 或 OAuth |
+| **中** | Admin 密碼只有 4 位數 | ADMIN_SECRET=1499 | 待改善 — 改用更強的密碼或 OAuth |
 | **低** | 大使登入只用手機末 4 碼 | partner-login.html | 對當前規模足夠，但不建議擴大使用 |
 
 ### 8.2 PII 資料
@@ -399,12 +398,11 @@ forest-gift-v1/                          ← GitHub repo root
 | 項目 | 現況 | 建議 |
 |------|------|------|
 | `backend.js` 41,000+ 行 | 所有商業邏輯在單一檔案 | 拆分為模組（booking.js, commission.js, partner.js 等） |
-| reurl.cc API Key 前端暴露 | 4 個 HTML 檔案含 API key | 移到 Vercel Function 代理 |
+| ~~reurl.cc API Key 前端暴露~~ | ~~4 個 HTML 檔案含 API key~~ | ✅ 已修復 — 改用 `/api` shorten_url 代理 |
 | 管理後台認證 | 僅 4 位數密碼 prompt | OAuth 或 Edge Middleware |
-| CLAUDE.md 過時 | 仍描述 Google Apps Script 為後端 | 更新為 Vercel Function + 雙資料庫架構 |
+| ~~CLAUDE.md 過時~~ | ~~仍描述 Google Apps Script 為後端~~ | ✅ 已重寫 — 反映 Vercel + Sheets/Supabase 架構 |
 | GA4 整合 | 程式碼已預埋但 Measurement ID 未啟用 | 建立 GA4 Property 並啟用 |
 | 等級年度降級審核 | 升級已實作，但年度降級邏輯未確認是否完整 | 驗證 yearly_referrals 重設 + 降級觸發 |
-| .env.local 在版控中 | 含 Supabase Service Key | 加入 .gitignore 並旋轉金鑰 |
 
 ### 9.3 ❌ 尚未實作
 
@@ -505,6 +503,52 @@ vercel --prod
 
 ---
 
+## 十三、架構決策紀錄
+
+重大架構決策記錄於此，幫助未來開發者（包含 AI agent）理解「為什麼」。
+
+### 2025 初期 — 從 Google Apps Script 遷移到 Vercel Serverless
+
+**背景：** 初版後端使用 Google Apps Script，但遇到多項限制。
+**決策：** 遷移到 Vercel Serverless Function（Node.js）。
+**替代方案：** 繼續修補 GAS（放棄），使用 AWS Lambda（學習成本高），使用 Netlify Functions（曾嘗試，後放棄）。
+**原因：**
+1. GAS 有 CORS 限制，前端必須用 `form.submit()` 繞過，體驗差
+2. GAS 執行時間限制 6 分鐘，不適合複雜佣金計算
+3. GAS 無法整合 Supabase 等現代資料庫
+4. GAS 缺乏本地開發環境，除錯困難
+**影響：** `backend/` 整個目錄棄用，新後端在 `api/` 目錄。
+
+### 2025 中期 — Google Sheets 為主、Supabase 為備
+
+**背景：** 需要選擇資料庫方案。
+**決策：** Google Sheets 為主要資料庫，Supabase PostgreSQL 為備用/未來遷移目標。
+**原因：**
+1. 業主已習慣在 Google Sheets 直接查看和手動編輯資料
+2. 資料量小（數十位大使、數百筆訂房），Sheets 性能足夠
+3. Supabase 提供 SQL 查詢能力，為未來規模化做準備
+**影響：** 建立了 `data-adapter.js` 抽象層，透過 `DATA_BACKEND` 環境變數切換，所有 handler 不直接呼叫資料庫。
+
+### 2026-03-20 — reurl.cc API Key 移到後端代理
+
+**背景：** reurl.cc API Key 直接寫在 5 個前端 HTML 檔案中，任何人都能從瀏覽器 DevTools 取得。
+**決策：** 在 `api/_lib/backend.js` 新增 `shorten_url` action 作為代理，前端改為呼叫 `/api`。
+**替代方案：** 直接刪除短網址功能（不可行，大使連結需要短網址）、改用免費不需 key 的服務（穩定性差）。
+**影響：** `partner-dashboard.html`、`link-generator-form.html`、`test-coupon-flow.html`、`test-shorturl.html`、`test-reurl-api.html` 全部改為呼叫 `/api` proxy。
+
+### 2026-03-20 — 專案文件架構確立
+
+**背景：** 經過 300+ 次 commit，累積 14+ 份 markdown、多份過時 GAS 文件，新進開發者無法分辨哪些是最新的。
+**決策：** 確立三層文件架構：
+1. `CLAUDE.md` — AI agent 的技術速覽入口（自動讀取）
+2. `HANDOVER.md` — 人類開發者的完整交接文件（含商業背景和決策紀錄）
+3. Memory 系統 — 跨對話的用戶偏好與反饋持久化
+**影響：** 歸檔 `docs/APPLICATION_SYSTEM_SETUP.md`、`docs/COMPLETE_SYSTEM_GUIDE.md`、`link-generator-form-old.html` 至 `docs/archive/`。
+
+---
+
 > 此文件旨在讓接手的開發主管能在不詢問原作者的情況下，完全理解專案的現狀、架構決策與下一步方向。
 >
 > 最關鍵的商業邏輯在 `api/_lib/backend.js`（41,000+ 行）和 `COMMISSION-SYSTEM-ARCHITECTURE.md`。建議先讀後者理解規則，再讀前者理解實作。
+>
+> **給 AI Agent：** 請先讀 `CLAUDE.md` 取得技術架構速覽，再視需要讀本文件取得完整背景。修改守則和協作機制見 `CLAUDE.md` 最末的「Agent 協作守則」段落。

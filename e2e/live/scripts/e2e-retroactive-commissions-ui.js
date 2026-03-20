@@ -146,6 +146,8 @@ async function showBookingsFor(page, searchTerm) {
     // Scenario A: first referral bonus transfer
     await apiAction('create_partner', {
       partner_code: firstBonusPartner,
+      coupon_code: `CP${firstBonusPartner.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: `Retro Bonus ${suffix}`,
       phone: '0912111001',
       email: `${firstBonusPartner}@example.com`,
@@ -169,6 +171,8 @@ async function showBookingsFor(page, searchTerm) {
     // Scenario B: cash level retroactive recalculation
     await apiAction('create_partner', {
       partner_code: cashPartner,
+      coupon_code: `CP${cashPartner.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: `Retro Cash ${suffix}`,
       phone: '0912111004',
       email: `${cashPartner}@example.com`,

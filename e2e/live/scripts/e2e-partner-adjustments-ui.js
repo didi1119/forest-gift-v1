@@ -83,6 +83,8 @@ function expectIncludes(text, needle, label) {
 
     await apiAction('create_partner', {
       partner_code: partnerCode,
+      coupon_code: `CP${partnerCode.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: partnerName,
       phone: '0922334455',
       email: `${partnerCode}@example.com`,
@@ -127,6 +129,7 @@ function expectIncludes(text, needle, label) {
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1500);
+    await page.evaluate(() => window.showTab('overview'));
     const partnerCard = page.locator(`[data-partner-code="${partnerCode}"]`).first();
     await partnerCard.waitFor({ timeout: 30000 });
 

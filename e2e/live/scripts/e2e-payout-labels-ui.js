@@ -95,6 +95,8 @@ async function waitForInitialData(page) {
     await cleanup().catch(() => {});
     await apiAction('create_partner', {
       partner_code: partnerCode,
+      coupon_code: `CP${partnerCode.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: partnerName,
       phone: '0911666001',
       email: `${partnerCode}@example.com`,
@@ -126,6 +128,7 @@ async function waitForInitialData(page) {
     });
 
     await waitForInitialData(page);
+    await page.evaluate(() => window.showTab('overview'));
 
     const partnerCard = page.locator(`[data-partner-code="${partnerCode}"]`).first();
     await partnerCard.waitFor({ timeout: 10000 });

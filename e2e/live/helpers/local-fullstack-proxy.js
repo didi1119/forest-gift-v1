@@ -68,6 +68,11 @@ async function handleApi(req, res, url) {
         writeHead(status, headers) { res.writeHead(status, headers); },
         end(payload) { res.end(payload); },
         setHeader(key, value) { res.setHeader(key, value); },
+        redirect(statusOrUrl, maybeUrl) {
+          const statusCode = typeof statusOrUrl === 'number' ? statusOrUrl : 302;
+          const location = typeof statusOrUrl === 'number' ? maybeUrl : statusOrUrl;
+          send(res, statusCode, '', { Location: location });
+        },
         status(code) {
           return {
             json(payload) { send(res, code, JSON.stringify(payload), { 'Content-Type': 'application/json; charset=utf-8' }); },

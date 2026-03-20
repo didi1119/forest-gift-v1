@@ -4,7 +4,7 @@ const path = require('path');
 
 const siteOrigin = process.env.SITE_ORIGIN || 'https://forest-ambassador.vercel.app';
 const invitationUrl = `${siteOrigin}/frontend/invitation.html`;
-const reviewUrl = `${siteOrigin}/frontend/admin/application-review-dashboard.html`;
+const adminUrl = `${siteOrigin}/frontend/admin/admin-dashboard-real.html`;
 const loginUrl = `${siteOrigin}/frontend/partner-login.html`;
 const apiBase = process.env.API_BASE || `${siteOrigin}/api`;
 const adminSecret = process.env.ADMIN_SECRET;
@@ -20,6 +20,8 @@ const applicantEmail = `pf${suffix}@example.com`;
 const applicantPhone = `0912${suffix.slice(-6)}`;
 const phoneLast4 = applicantPhone.slice(-4);
 const partnerCode = `pf${suffix}`;
+const couponCode = `gift${suffix}`;
+const couponUrl = `https://example.com/coupon/public-funnel-${suffix}`;
 const reviewNote = `PF_REVIEW_${suffix}`;
 const screenshotsDir = path.join('/tmp/codex-browser-test', `public-funnel-${ts}`);
 fs.mkdirSync(screenshotsDir, { recursive: true });
@@ -40,6 +42,31 @@ async function waitFor(check, timeoutMs = 30000, intervalMs = 800) {
     await new Promise(resolve => setTimeout(resolve, intervalMs));
   }
   throw new Error(`Condition not met within ${timeoutMs}ms`);
+}
+async function setOnboardingDraftValues(page, nextPartnerCode, nextCouponCode, nextCouponUrl) {
+  await page.waitForFunction(() => {
+    return Boolean(document.getElementById('workflowPartnerCode') && document.getElementById('workflowCouponCode') && document.getElementById('workflowCouponUrl'));
+  }, { timeout: 30000 });
+
+  await page.evaluate(({ partnerCodeValue, couponCodeValue, couponUrlValue }) => {
+    const partnerCodeInput = document.getElementById('workflowPartnerCode');
+    const couponCodeInput = document.getElementById('workflowCouponCode');
+    const couponUrlInput = document.getElementById('workflowCouponUrl');
+    if (!partnerCodeInput || !couponCodeInput || !couponUrlInput) {
+      throw new Error('workflow draft inputs not found');
+    }
+
+    partnerCodeInput.value = partnerCodeValue;
+    partnerCodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+    couponCodeInput.value = couponCodeValue;
+    couponCodeInput.dispatchEvent(new Event('input', { bubbles: true }));
+    couponUrlInput.value = couponUrlValue;
+    couponUrlInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }, {
+    partnerCodeValue: nextPartnerCode,
+    couponCodeValue: nextCouponCode,
+    couponUrlValue: nextCouponUrl
+  });
 }
 async function apiAction(action, payload) {
   const params = new URLSearchParams({ action, admin_secret: adminSecret });
@@ -109,8 +136,20 @@ async function cleanup() {
       lastDialogMessage = dialog.message();
       dialogMessages.push(dialog.message());
       log('DIALOG', dialog.type(), dialog.message());
-      if (dialog.type() === 'prompt') await dialog.accept(adminSecret);
-      else await dialog.accept();
+      if (dialog.type() === 'prompt') {
+        const message = dialog.message() || '';
+        if (message.includes('管理密碼') || message.includes('admin_secret')) {
+          await dialog.accept(adminSecret);
+        } else if (message.includes('核准備註')) {
+          await dialog.accept(reviewNote);
+        } else if (message.includes('拒絕原因')) {
+          await dialog.accept(`AUTO_REJECT_${suffix}`);
+        } else {
+          await dialog.accept('');
+        }
+      } else {
+        await dialog.accept();
+      }
     });
     page.on('console', message => {
       if (['error', 'warning'].includes(message.type())) log(`BROWSER_${message.type().toUpperCase()}`, message.text());
@@ -139,22 +178,28 @@ async function cleanup() {
     });
     ensure(application.application_status === 'PENDING', `application should be PENDING: ${JSON.stringify(application)}`);
 
-    // Review dashboard approve + promote
-    await page.goto(reviewUrl, { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction((email) => document.body.innerText.includes(email), applicantEmail, { timeout: 30000 });
-    await page.selectOption('#status-filter', 'ALL');
-    await page.locator('#filter-btn').click();
-    await page.waitForTimeout(800);
-    const reviewText = await page.locator('body').innerText();
-    includes(reviewText, applicantName, 'review dashboard applicant');
-    includes(reviewText, '待審核', 'review dashboard status');
-    await shot(page, '03_review_dashboard_pending');
+    // Onboarding approve + promote
+    await page.goto(adminUrl, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => !document.body.innerText.includes('載入數據中...'), { timeout: 30000 });
+    await waitFor(async () => {
+      await page.getByRole('button', { name: /重新整理工作台/ }).click();
+      const bodyText = await page.locator('body').innerText();
+      return bodyText.includes(applicantEmail) ? true : null;
+    }, 30000, 1500);
 
-    await page.evaluate((appId) => openReviewModal(appId), application.id);
-    await page.locator('#review-modal').waitFor({ timeout: 10000 });
-    await page.locator('#review-notes').fill(reviewNote);
-    await shot(page, '04_review_modal');
-    await page.getByRole('button', { name: /核准申請/ }).click();
+    const applicationCard = page.locator('.onboarding-focus-card', { hasText: applicantEmail }).first();
+    await applicationCard.waitFor({ timeout: 30000 });
+    const selectButton = applicationCard.getByRole('button', { name: /選取處理|已選取/ }).first();
+    if (await selectButton.isVisible().catch(() => false)) {
+      await selectButton.click();
+    }
+    await page.waitForFunction((name) => {
+      const workspace = document.getElementById('onboardingWorkspace');
+      return workspace && workspace.innerText.includes(name);
+    }, applicantName, { timeout: 30000 });
+    await shot(page, '03_onboarding_pending');
+
+    await page.locator('#onboardingWorkspace').getByRole('button', { name: /核准/ }).click();
     await waitFor(async () => {
       const rows = await supabaseQuery('applications', `select=id,application_status,review_notes,reviewed_by,partner_link_sent&email=eq.${encodeURIComponent(applicantEmail)}&limit=1`);
       return rows[0] && rows[0].application_status === 'APPROVED' ? rows[0] : null;
@@ -162,36 +207,27 @@ async function cleanup() {
 
     const approvedApp = (await supabaseQuery('applications', `select=id,application_status,review_notes,reviewed_by,partner_link_sent&email=eq.${encodeURIComponent(applicantEmail)}&limit=1`))[0];
     ensure(approvedApp.review_notes === reviewNote, `review note mismatch: ${JSON.stringify(approvedApp)}`);
-    await page.waitForFunction(() => document.getElementById('loading')?.classList.contains('hidden'), { timeout: 30000 });
-    await page.selectOption('#status-filter', 'APPROVED');
-    await page.locator('#filter-btn').click();
-    await page.waitForFunction(() => document.getElementById('loading')?.classList.contains('hidden'), { timeout: 30000 });
-    await shot(page, '05_review_dashboard_after_filter');
-    log('APPROVED_BODY', (await page.locator('body').innerText()).slice(0, 1200));
-    await page.waitForFunction((email) => {
-      const text = document.body.innerText || '';
-      return text.includes(email) && text.includes('已核准') && text.includes('生成大使連結');
-    }, applicantEmail, { timeout: 30000 });
-    await page.getByRole('button', { name: /生成大使連結/ }).waitFor({ timeout: 30000 });
-    await shot(page, '06_review_dashboard_approved');
+    await setOnboardingDraftValues(page, partnerCode, couponCode, couponUrl);
+    await shot(page, '04_onboarding_approved');
 
-    await page.evaluate((appId) => openLinkModal(appId), application.id);
-    await page.locator('#link-modal').waitFor({ timeout: 10000 });
-    await page.locator('#partner-code').fill(partnerCode);
-    await page.locator('#coupon-url').fill('https://example.com/coupon/test');
-    await shot(page, '07_promote_modal');
-    lastDialogMessage = '';
-    dialogMessages.length = 0;
-    await page.locator('#generate-link-btn').click();
+    await page.waitForFunction(() => {
+      return Boolean(document.querySelector('#onboardingWorkspace button[onclick*="quickPromoteSelectedApplication"]'));
+    }, { timeout: 30000 });
+    await page.evaluate(() => {
+      const button = document.querySelector('#onboardingWorkspace button[onclick*="quickPromoteSelectedApplication"]');
+      if (!button) throw new Error('找不到直接建立基本大使按鈕');
+      button.click();
+    });
     await waitFor(async () => {
       const rows = await supabaseQuery('partners', `select=partner_code,partner_name,name,contact_phone,contact_email,commission_preference,landing_link,coupon_link,total_clicks,yearly_referrals,partner_level&partner_code=eq.${encodeURIComponent(partnerCode)}&limit=1`);
       return rows[0] ? rows[0] : null;
     });
-    await waitFor(() => dialogMessages.some(message => String(message).includes('大使連結已生成')) ? true : null, 10000, 200);
+    await shot(page, '05_onboarding_promoted');
 
-    const partner = (await supabaseQuery('partners', `select=partner_code,name,contact_phone,contact_email,commission_preference,landing_link,coupon_link,total_clicks,yearly_referrals,partner_level,available_points,total_commission_earned&partner_code=eq.${encodeURIComponent(partnerCode)}&limit=1`))[0];
+    const partner = (await supabaseQuery('partners', `select=partner_code,name,contact_phone,contact_email,commission_preference,landing_link,coupon_link,short_landing_link,short_coupon_link,coupon_code,total_clicks,yearly_referrals,partner_level,available_points,total_commission_earned&partner_code=eq.${encodeURIComponent(partnerCode)}&limit=1`))[0];
     ensure(partner.commission_preference === 'ACCOMMODATION', `partner preference mismatch: ${JSON.stringify(partner)}`);
     ensure(String(partner.contact_phone || '').endsWith(phoneLast4), `partner phone mismatch: ${JSON.stringify(partner)}`);
+    ensure(partner.coupon_code === couponCode, `partner coupon code mismatch: ${JSON.stringify(partner)}`);
 
     // Seed one completed booking for partner dashboard display
     const createBooking = await apiAction('create_booking', {
@@ -212,10 +248,10 @@ async function cleanup() {
     await apiAction('confirm_checkin_completion', { booking_id: bookingId, confirmed_by: 'PF_UI' });
 
     // Trigger click tracking on both links
-    const landingResponse = await fetch(partner.landing_link, { redirect: 'manual' });
-    const couponResponse = await fetch(partner.coupon_link, { redirect: 'manual' });
-    ensure([301,302,303,307,308].includes(landingResponse.status), `landing redirect failed: ${landingResponse.status}`);
-    ensure([301,302,303,307,308].includes(couponResponse.status), `coupon redirect failed: ${couponResponse.status}`);
+    const landingResponse = await fetch(`${apiBase}?dest=landing&pid=${encodeURIComponent(partnerCode)}`, { redirect: 'manual' });
+    const couponResponse = await fetch(`${apiBase}?dest=coupon&pid=${encodeURIComponent(partnerCode)}`, { redirect: 'manual' });
+    ensure([200,301,302,303,307,308].includes(landingResponse.status), `landing redirect failed: ${landingResponse.status}`);
+    ensure([200,301,302,303,307,308].includes(couponResponse.status), `coupon redirect failed: ${couponResponse.status}`);
 
     const clickStats = await waitFor(async () => {
       const rows = await supabaseQuery('partners', `select=partner_code,yearly_referrals,successful_referrals,total_successful_referrals,available_points,total_commission_earned&partner_code=eq.${encodeURIComponent(partnerCode)}&limit=1`);
@@ -238,12 +274,12 @@ async function cleanup() {
     await page.waitForFunction(() => document.getElementById('errorMessage') && !document.getElementById('errorMessage').classList.contains('hidden'), { timeout: 10000 });
     const invalidText = await page.locator('#errorMessage').innerText();
     includes(invalidText, '不正確', 'invalid login error');
-    await shot(page, '07_partner_login_invalid');
+    await shot(page, '06_partner_login_invalid');
 
     await page.locator('#phone').fill(phoneLast4);
     await page.getByRole('button', { name: /登入|載入中/ }).click();
     await page.waitForURL(/partner-dashboard\.html/, { timeout: 30000 });
-    await shot(page, '08_partner_dashboard_initial');
+    await shot(page, '07_partner_dashboard_initial');
     log('PARTNER_DASHBOARD_BODY', (await page.locator('body').innerText()).slice(0, 2000));
     await page.waitForFunction(() => {
       const totalReferrals = document.getElementById('totalReferrals')?.textContent?.trim();
@@ -253,7 +289,7 @@ async function cleanup() {
         totalCommission && totalCommission !== '-' &&
         totalClicks && totalClicks !== '-';
     }, { timeout: 30000 });
-    await shot(page, '09_partner_dashboard_loaded');
+    await shot(page, '08_partner_dashboard_loaded');
 
     const overviewText = await page.locator('#tab-overview').innerText();
     includes(overviewText, '$2,500', 'partner dashboard total commission');
@@ -261,7 +297,7 @@ async function cleanup() {
     includes(overviewText, '1 / 4', 'partner dashboard level progress');
     ensure((await page.locator('#partnerCode').innerText()).includes(partnerCode), 'partner dashboard code mismatch');
     ensure((await page.locator('#partnerLevel').innerText()).includes('LV1 知音大使'), 'partner dashboard level mismatch');
-    await shot(page, '10_partner_dashboard_overview');
+    await shot(page, '09_partner_dashboard_overview');
 
     await page.evaluate(() => switchTab('tab-referral', document.querySelectorAll('.nav-tab')[1]));
     await page.waitForFunction(() => document.getElementById('tab-referral')?.classList.contains('active'), { timeout: 10000 });
@@ -279,7 +315,7 @@ async function cleanup() {
     includes(overviewCode, partnerCode, 'partner dashboard referral code');
     ensure(referralLink && referralLink.length > 10, `missing referral link: ${referralLink}`);
     ensure(couponLink && couponLink.length > 10, `missing coupon link: ${couponLink}`);
-    await shot(page, '11_partner_dashboard_referral');
+    await shot(page, '10_partner_dashboard_referral');
 
     await page.evaluate(() => switchTab('tab-records', document.querySelectorAll('.nav-tab')[2]));
     await page.waitForFunction(() => document.getElementById('tab-records')?.classList.contains('active'), { timeout: 10000 });
@@ -289,7 +325,7 @@ async function cleanup() {
     includes(recordsText, '已完成', 'partner dashboard booking status');
     includes(recordsText, '$2,500', 'partner dashboard booking price');
     includes(recordsText, '住宿金佣金', 'partner dashboard payout history');
-    await shot(page, '12_partner_dashboard_records');
+    await shot(page, '11_partner_dashboard_records');
 
     await cleanup();
     log('E2E_PUBLIC_FUNNEL_RESULT PASS', JSON.stringify({ screenshotsDir }));

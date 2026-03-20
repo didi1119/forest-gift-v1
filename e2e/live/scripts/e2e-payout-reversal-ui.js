@@ -100,6 +100,8 @@ async function waitForInitialData(page) {
 
     await apiAction('create_partner', {
       partner_code: cashPartnerCode,
+      coupon_code: `CP${cashPartnerCode.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: cashPartnerName,
       phone: '0911555001',
       email: `${cashPartnerCode}@example.com`,
@@ -116,6 +118,8 @@ async function waitForInitialData(page) {
     });
     await apiAction('create_partner', {
       partner_code: pointsPartnerCode,
+      coupon_code: `CP${pointsPartnerCode.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: pointsPartnerName,
       phone: '0911555002',
       email: `${pointsPartnerCode}@example.com`,

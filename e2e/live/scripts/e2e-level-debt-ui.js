@@ -71,6 +71,23 @@ async function supabaseDelete(table, query) {
   });
   if (!res.ok && res.status !== 204) throw new Error(`Supabase delete ${table} failed: ${await res.text()}`);
 }
+async function createCompletedBooking(partnerCode, guestName, phone, email, note) {
+  const bookingId = await createCheckinBooking(partnerCode, guestName, phone, email, note);
+  await apiAction('confirm_checkin_completion', { booking_id: bookingId, confirmed_by: 'E2E_SEED' });
+  return bookingId;
+}
+async function seedCompletedReferrals(partnerCode, count, prefix) {
+  for (let index = 1; index <= count; index += 1) {
+    const guestName = `${prefix}${String(index).padStart(2, '0')}_${suffix}`;
+    await createCompletedBooking(
+      partnerCode,
+      guestName,
+      `09${String(index).padStart(8, '0')}`,
+      `${guestName}@example.com`,
+      `seed completed referral ${index}/${count}`,
+    );
+  }
+}
 async function cleanup() {
   for (const code of Object.values(codes)) {
     await supabaseDelete('accommodation_usage', `partner_code=eq.${encodeURIComponent(code)}`).catch(() => {});
@@ -165,38 +182,30 @@ async function deleteSingleVisibleBooking(page) {
 
     await apiAction('create_partner', {
       partner_code: codes.upLv2,
+      coupon_code: `CP${codes.upLv2.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: `Upgrade LV2 ${suffix}`,
       phone: '0911000001',
       email: `${codes.upLv2}@example.com`,
       partner_level: 'LV1_INSIDER',
       commission_preference: 'ACCOMMODATION',
-      successful_referrals: 3,
-      total_successful_referrals: 3,
-      yearly_referrals: 3,
-      available_points: 0,
-      pending_commission: 0,
-      total_commission_earned: 0,
-      total_commission_paid: 0
     });
 
     await apiAction('create_partner', {
       partner_code: codes.upLv3,
+      coupon_code: `CP${codes.upLv3.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: `Upgrade LV3 ${suffix}`,
       phone: '0911000002',
       email: `${codes.upLv3}@example.com`,
-      partner_level: 'LV2_GUIDE',
+      partner_level: 'LV1_INSIDER',
       commission_preference: 'CASH',
-      successful_referrals: 9,
-      total_successful_referrals: 9,
-      yearly_referrals: 9,
-      available_points: 0,
-      pending_commission: 0,
-      total_commission_earned: 0,
-      total_commission_paid: 0
     });
 
     await apiAction('create_partner', {
       partner_code: codes.debtCash,
+      coupon_code: `CP${codes.debtCash.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: `Debt Cash ${suffix}`,
       phone: '0911000003',
       email: `${codes.debtCash}@example.com`,
@@ -206,15 +215,18 @@ async function deleteSingleVisibleBooking(page) {
 
     await apiAction('create_partner', {
       partner_code: codes.debtPoints,
+      coupon_code: `CP${codes.debtPoints.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: `Debt Points ${suffix}`,
       phone: '0911000004',
       email: `${codes.debtPoints}@example.com`,
       partner_level: 'LV1_INSIDER',
-      commission_preference: 'ACCOMMODATION',
-      successful_referrals: 1,
-      total_successful_referrals: 1,
-      yearly_referrals: 1
+      commission_preference: 'ACCOMMODATION'
     });
+
+    await seedCompletedReferrals(codes.upLv2, 3, 'SL2');
+    await seedCompletedReferrals(codes.upLv3, 9, 'SL3');
+    await seedCompletedReferrals(codes.debtPoints, 1, 'SDP');
 
     const upLv2Booking4Name = `UL2A_${suffix}`;
     const upLv2Booking5Name = `UL2B_${suffix}`;
@@ -234,7 +246,7 @@ async function deleteSingleVisibleBooking(page) {
     await apiAction('confirm_checkin_completion', { booking_id: debtPointsBookingId, confirmed_by: 'DEBT_POINTS' });
     await apiAction('use_accommodation_points', {
       partner_code: codes.debtPoints,
-      deduct_amount: 1000,
+      deduct_amount: 3500,
       guest_name: `SELF_${suffix}`,
       checkin_date: '2026-03-20',
       checkout_date: '2026-03-21',

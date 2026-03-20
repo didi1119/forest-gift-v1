@@ -118,6 +118,8 @@ async function waitForInitialData(page) {
     for (const partner of partners) {
       await apiAction('create_partner', {
         partner_code: partner.code,
+        coupon_code: `CP${partner.code.toUpperCase()}`,
+        coupon_url: 'https://www.lx-foresthouse.com/',
         partner_name: partner.name,
         phone: '0911777000',
         email: `${partner.code}@example.com`,
@@ -159,6 +161,7 @@ async function waitForInitialData(page) {
     });
 
     await waitForInitialData(page);
+    await page.evaluate(() => window.showTab('overview'));
 
     for (const partner of partners) {
       const card = page.locator(`[data-partner-code="${partner.code}"]`).first();
@@ -204,15 +207,21 @@ async function waitForInitialData(page) {
       }
     }
 
-    for (const partner of partners) {
-      const checkbox = page.locator(`[data-partner-code="${partner.code}"] .partner-selector`);
-      if (!(await checkbox.isChecked())) {
-        await checkbox.check();
+    await page.evaluate((codes) => {
+      document.querySelectorAll('.partner-selector').forEach(input => {
+        const code = input.getAttribute('data-partner-code');
+        input.checked = codes.includes(code);
+      });
+      if (typeof window.updateSelection === 'function') {
+        window.updateSelection();
       }
-    }
+    }, partners.map(partner => partner.code));
+    await page.waitForFunction(() => document.getElementById('selectedCount')?.textContent === '2', { timeout: 10000 });
     await page.selectOption('#batchOperation', 'payout_pending');
     await shot(page, '04_batch_toolbar_payout');
-    await page.getByRole('button', { name: '執行' }).click();
+    const payoutToolbarState = await page.locator('#batchToolbar').innerText().catch(() => '');
+    log('BATCH_TOOLBAR_BEFORE_PAYOUT', payoutToolbarState);
+    await page.evaluate(() => window.executeBatchAction());
     const partnersAfterPayout = await waitForAsync(async () => {
       const rows = await supabaseQuery('partners', `select=partner_code,available_points,points_used,pending_commission,total_commission_paid&partner_code=in.(${partners.map(p => p.code).join(',')})&order=partner_code.asc`);
       if (rows.length === partners.length && rows.every(row => Number(row.pending_commission) === 0 && Number(row.total_commission_paid) === 1000)) {

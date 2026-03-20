@@ -157,6 +157,8 @@ function computePartnerClickCounts(data) {
 
     await apiAction('create_partner', {
       partner_code: partnerCodes[0],
+      coupon_code: `CP${partnerCodes[0].toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: partnerNames[0],
       phone: '0911000001',
       email: `${partnerCodes[0]}@example.com`,
@@ -173,6 +175,8 @@ function computePartnerClickCounts(data) {
     });
     await apiAction('create_partner', {
       partner_code: partnerCodes[1],
+      coupon_code: `CP${partnerCodes[1].toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: partnerNames[1],
       phone: '0911000002',
       email: `${partnerCodes[1]}@example.com`,
@@ -268,6 +272,7 @@ function computePartnerClickCounts(data) {
       expectedPartners: overviewExpected.totalPartners,
       expectedClicks: overviewExpected.totalClicks,
     }, { timeout: 30000 });
+    await page.evaluate(() => window.showTab('overview'));
 
     const overviewActual = {
       totalPartners: (await page.locator('#totalPartners').innerText()).trim(),

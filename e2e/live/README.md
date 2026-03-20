@@ -18,6 +18,7 @@
 
 ```bash
 export NODE_PATH=/tmp/codex-browser-test/node_modules
+export PLAYWRIGHT_NODE_MODULES=/tmp/codex-browser-test/node_modules
 ```
 
 ## 環境變數
@@ -37,7 +38,7 @@ export NODE_PATH=/tmp/codex-browser-test/node_modules
 
 ```bash
 cd e2e/live
-node scripts/e2e-admin-ui.js
+/Users/kobe/.nvm/versions/node/v22.14.0/bin/node scripts/e2e-admin-ui.js
 ```
 
 整套：
@@ -46,6 +47,8 @@ node scripts/e2e-admin-ui.js
 cd e2e/live
 ./run-suite.sh
 ```
+
+`run-suite.sh` 會優先使用本機的 Node 22，並在偵測到 `/tmp/codex-browser-test/node_modules` 時自動補上 `NODE_PATH / PLAYWRIGHT_NODE_MODULES`。
 
 ## 本地頁面 + 正式 API
 

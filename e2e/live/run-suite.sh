@@ -1,7 +1,20 @@
 #!/bin/sh
 set -eu
 
-NODE_BIN="${NODE_BIN:-node}"
+DEFAULT_NODE_BIN="/Users/kobe/.nvm/versions/node/v22.14.0/bin/node"
+if [ -z "${NODE_BIN:-}" ]; then
+  if [ -x "$DEFAULT_NODE_BIN" ]; then
+    NODE_BIN="$DEFAULT_NODE_BIN"
+  else
+    NODE_BIN="node"
+  fi
+fi
+
+PLAYWRIGHT_NODE_MODULES="${PLAYWRIGHT_NODE_MODULES:-/tmp/codex-browser-test/node_modules}"
+if [ -z "${NODE_PATH:-}" ] && [ -d "$PLAYWRIGHT_NODE_MODULES" ]; then
+  export NODE_PATH="$PLAYWRIGHT_NODE_MODULES"
+fi
+export PLAYWRIGHT_NODE_MODULES
 
 SCRIPTS="
  scripts/e2e-admin-ui.js

@@ -80,6 +80,8 @@ async function cleanup() {
     // Scenario 1: cancel_accommodation_usage
     await apiAction('create_partner', {
       partner_code: codes.usage,
+      coupon_code: `CP${codes.usage.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: `Usage ${suffix}`,
       phone: '0911000101',
       email: `${codes.usage}@example.com`,
@@ -129,6 +131,8 @@ async function cleanup() {
     // Scenario 2: partial_refund
     await apiAction('create_partner', {
       partner_code: codes.refund,
+      coupon_code: `CP${codes.refund.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: `Refund ${suffix}`,
       phone: '0911000103',
       email: `${codes.refund}@example.com`,
@@ -160,6 +164,8 @@ async function cleanup() {
     // Scenario 3: batch_cancel
     await apiAction('create_partner', {
       partner_code: codes.batch,
+      coupon_code: `CP${codes.batch.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: `Batch ${suffix}`,
       phone: '0911000105',
       email: `${codes.batch}@example.com`,

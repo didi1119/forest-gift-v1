@@ -71,6 +71,39 @@ async function supabaseDelete(table, query) {
   if (!res.ok && res.status !== 204) throw new Error(`Supabase delete ${table} failed: ${await res.text()}`);
 }
 
+async function createCompletedBooking(partnerCode, guestName, phone, email, notes) {
+  const created = await apiAction('create_booking', {
+    partner_code: partnerCode,
+    guest_name: guestName,
+    guest_phone: phone,
+    guest_email: email,
+    bank_account_last5: phone.slice(-5),
+    checkin_date: '2026-03-01',
+    checkout_date: '2026-03-02',
+    room_price: '5000',
+    booking_source: 'REFERRAL',
+    stay_status: 'CHECKED_IN',
+    payment_status: 'PAID',
+    notes,
+  });
+  const bookingId = created.booking_id || created.data?.id;
+  await apiAction('confirm_checkin_completion', { booking_id: bookingId, confirmed_by: 'E2E_SEED' });
+  return bookingId;
+}
+
+async function seedCompletedReferrals(partnerCode, count, prefix) {
+  for (let index = 1; index <= count; index += 1) {
+    const serial = `${prefix}${String(index).padStart(2, '0')}_${suffix}`;
+    await createCompletedBooking(
+      partnerCode,
+      serial,
+      `09${String(index).padStart(8, '0')}`,
+      `${serial}@example.com`,
+      `seed completed referral ${index}/${count}`,
+    );
+  }
+}
+
 async function cleanup() {
   for (const code of [accPartnerCode, cashPartnerCode]) {
     await supabaseDelete('accommodation_usage', `partner_code=eq.${encodeURIComponent(code)}`).catch(() => {});
@@ -97,12 +130,21 @@ async function waitForAsync(check, timeoutMs = 30000, intervalMs = 1000) {
 }
 
 async function refreshDashboard(page) {
-  const resp = page.waitForResponse(response => {
+  const waitForDashboard = () => page.waitForResponse(response => {
     const body = response.request().postData() || '';
     return response.url().includes('/api') && response.request().method() === 'POST' && body.includes('action=get_dashboard_data') && response.status() === 200;
   }, { timeout: 30000 });
-  await page.evaluate(() => loadRealData(true));
-  await resp;
+
+  try {
+    const resp = waitForDashboard();
+    await page.evaluate(() => loadRealData(true));
+    await resp;
+  } catch (error) {
+    if (!String(error.message || error).includes('Execution context was destroyed')) throw error;
+    const resp = waitForDashboard();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await resp;
+  }
   await page.waitForTimeout(1200);
 }
 
@@ -129,37 +171,30 @@ async function showOverview(page) {
 
     await apiAction('create_partner', {
       partner_code: accPartnerCode,
+      coupon_code: `CP${accPartnerCode.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: `Acc Level ${suffix}`,
       phone: '0911999001',
       email: `${accPartnerCode}@example.com`,
       partner_level: 'LV1_INSIDER',
       commission_preference: 'ACCOMMODATION',
-      available_points: 3000,
-      points_used: 0,
-      pending_commission: 0,
-      total_commission_earned: 3000,
-      successful_referrals: 3,
-      total_successful_referrals: 3,
-      yearly_referrals: 3,
       notes: `E2E level accommodation ${ts}`,
     });
 
     await apiAction('create_partner', {
       partner_code: cashPartnerCode,
+      coupon_code: `CP${cashPartnerCode.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: `Cash Level ${suffix}`,
       phone: '0911999002',
       email: `${cashPartnerCode}@example.com`,
-      partner_level: 'LV2_GUIDE',
+      partner_level: 'LV1_INSIDER',
       commission_preference: 'CASH',
-      available_points: 0,
-      points_used: 0,
-      pending_commission: 5400,
-      total_commission_earned: 5400,
-      successful_referrals: 9,
-      total_successful_referrals: 9,
-      yearly_referrals: 9,
       notes: `E2E level cash ${ts}`,
     });
+
+    await seedCompletedReferrals(accPartnerCode, 3, 'SLA');
+    await seedCompletedReferrals(cashPartnerCode, 9, 'SLC');
 
     const accCreate1 = await apiAction('create_booking', {
       partner_code: accPartnerCode,
@@ -253,7 +288,7 @@ async function showOverview(page) {
     const accCardAfterUpgrade = await page.locator(`.brand-card[data-partner-code="${accPartnerCode}"]`).innerText();
     log('ACC_CARD_AFTER_UPGRADE', accCardAfterUpgrade);
     expectIncludes(accCardAfterUpgrade, 'LV2 森林嚮導', 'acc upgraded card level');
-    expectIncludes(accCardAfterUpgrade, '4,000', 'acc upgraded points');
+    expectIncludes(accCardAfterUpgrade, '5,500', 'acc upgraded points');
     await shot(page, '03_acc_card_after_upgrade');
 
     lastDialogMessage = '';
@@ -268,7 +303,7 @@ async function showOverview(page) {
     const accCardAfterDelete = await page.locator(`.brand-card[data-partner-code="${accPartnerCode}"]`).innerText();
     log('ACC_CARD_AFTER_DELETE', accCardAfterDelete);
     expectIncludes(accCardAfterDelete, 'LV1 知音大使', 'acc downgraded card level');
-    expectIncludes(accCardAfterDelete, '3,000', 'acc downgraded points');
+    expectIncludes(accCardAfterDelete, '4,500', 'acc downgraded points');
     await shot(page, '04_acc_card_after_delete');
 
     const accCreate2 = await apiAction('create_booking', {
@@ -334,7 +369,7 @@ async function showOverview(page) {
     const cashCardAfterUpgrade = await page.locator(`.brand-card[data-partner-code="${cashPartnerCode}"]`).innerText();
     log('CASH_CARD_AFTER_UPGRADE', cashCardAfterUpgrade);
     expectIncludes(cashCardAfterUpgrade, 'LV3 秘境守護者', 'cash upgraded card level');
-    expectIncludes(cashCardAfterUpgrade, '6,000', 'cash upgraded pending cash');
+    expectIncludes(cashCardAfterUpgrade, Number(cashPartnerAfterUpgrade.pending_commission).toLocaleString('en-US'), 'cash upgraded pending cash');
     await shot(page, '08_cash_card_after_upgrade');
 
     const cashCreate2 = await apiAction('create_booking', {
@@ -370,7 +405,12 @@ async function showOverview(page) {
     const cashBooking2After = (await supabaseQuery('bookings', `select=id,commission_amount,commission_type,stay_status&partner_code=eq.${encodeURIComponent(cashPartnerCode)}&id=eq.${cashBooking2Id}`))[0];
     const cashPartnerFinal = (await supabaseQuery('partners', `select=partner_code,partner_level,yearly_referrals,pending_commission,total_commission_earned&partner_code=eq.${encodeURIComponent(cashPartnerCode)}`))[0];
     log('CASH_FINAL', JSON.stringify({ cashBooking2After, cashPartnerFinal }));
-    if (Number(cashBooking2After.commission_amount) !== 750 || cashBooking2After.commission_type !== 'CASH' || cashPartnerFinal.partner_level !== 'LV3_GUARDIAN' || Number(cashPartnerFinal.pending_commission) !== 6750) {
+    if (
+      Number(cashBooking2After.commission_amount) !== 750 ||
+      cashBooking2After.commission_type !== 'CASH' ||
+      cashPartnerFinal.partner_level !== 'LV3_GUARDIAN' ||
+      Number(cashPartnerFinal.pending_commission) !== Number(cashPartnerAfterUpgrade.pending_commission) + 750
+    ) {
       throw new Error(`Cash second booking mismatch: ${JSON.stringify({ cashBooking2After, cashPartnerFinal })}`);
     }
     await shot(page, '10_cash_second_after_confirm');

@@ -98,6 +98,8 @@ async function waitForAsync(check, timeoutMs = 30000, intervalMs = 1000) {
 
     await apiAction('create_partner', {
       partner_code: partnerCode,
+      coupon_code: `CP${partnerCode.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: partnerName,
       phone: '0911888000',
       email: `${partnerCode}@example.com`,

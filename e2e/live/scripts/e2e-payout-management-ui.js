@@ -85,6 +85,8 @@ function expectIncludes(text, needle, label) {
 
     await apiAction('create_partner', {
       partner_code: partnerCode,
+      coupon_code: `CP${partnerCode.toUpperCase()}`,
+      coupon_url: 'https://www.lx-foresthouse.com/',
       partner_name: partnerName,
       phone: '0911222333',
       email: `${partnerCode}@example.com`,

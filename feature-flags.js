@@ -4,14 +4,9 @@
 class FeatureFlags {
     constructor() {
         // 預設功能旗標設定
+        // 如需新增 flag：在此加入 FLAG_NAME: false，
+        // 並在 handleFlagChange() 中加入對應處理
         this.defaultFlags = {
-            // 額外功能旗標 1：特殊節日模式
-            EXTRA_FEATURE_1: false,
-            
-            // 額外功能旗標 2：進階分析
-            EXTRA_FEATURE_2: false,
-            
-            // 其他功能旗標
             ENHANCED_TRACKING: true,
             PERSONALIZED_GREETINGS: true,
             JOURNAL_SYNC: false,
@@ -101,12 +96,6 @@ class FeatureFlags {
     // 處理特定旗標的變更
     handleFlagChange(flagName, enabled) {
         switch (flagName) {
-            case 'EXTRA_FEATURE_1':
-                this.handleExtraFeature1(enabled);
-                break;
-            case 'EXTRA_FEATURE_2':
-                this.handleExtraFeature2(enabled);
-                break;
             case 'ENHANCED_TRACKING':
                 this.handleEnhancedTracking(enabled);
                 break;
@@ -118,66 +107,7 @@ class FeatureFlags {
                 break;
         }
     }
-    
-    // 處理額外功能 1：節日模式
-    handleExtraFeature1(enabled) {
-        const holidayElements = document.querySelectorAll('.holiday-mode');
-        
-        if (enabled) {
-            // 顯示節日特色元素
-            holidayElements.forEach(el => {
-                el.style.display = 'block';
-            });
-            
-            // 追蹤事件
-            if (typeof trackEvent === 'function') {
-                trackEvent('extra_feature_use', {
-                    feature: 'holiday_mode',
-                    action: 'enabled'
-                });
-            }
-            
-            // 添加節日樣式
-            document.body.classList.add('holiday-mode');
-            
-        } else {
-            // 隱藏節日特色元素
-            holidayElements.forEach(el => {
-                el.style.display = 'none';
-            });
-            
-            document.body.classList.remove('holiday-mode');
-        }
-    }
-    
-    // 處理額外功能 2：進階分析
-    handleExtraFeature2(enabled) {
-        const analyticsElements = document.querySelectorAll('.advanced-analytics');
-        
-        if (enabled) {
-            // 顯示進階分析功能
-            analyticsElements.forEach(el => {
-                el.style.display = 'block';
-            });
-            
-            // 啟用進階追蹤
-            if (typeof trackEvent === 'function') {
-                trackEvent('extra_feature_use', {
-                    feature: 'advanced_analytics',
-                    action: 'enabled'
-                });
-            }
-            
-            console.log('進階分析功能已啟用');
-            
-        } else {
-            // 隱藏進階分析功能
-            analyticsElements.forEach(el => {
-                el.style.display = 'none';
-            });
-        }
-    }
-    
+
     // 處理增強追蹤
     handleEnhancedTracking(enabled) {
         if (enabled) {
@@ -244,14 +174,12 @@ Feature Flags 開發工具：
 - debugFeatureFlags.reset() - 重設所有旗標
 
 可用的功能旗標：
-- EXTRA_FEATURE_1: 節日模式
-- EXTRA_FEATURE_2: 進階分析
 - ENHANCED_TRACKING: 增強追蹤
 - PERSONALIZED_GREETINGS: 個人化問候
 - JOURNAL_SYNC: 週記同步
 - REWARD_NOTIFICATIONS: 獎勵通知
 
-範例：debugFeatureFlags.enable('EXTRA_FEATURE_1')
+範例：debugFeatureFlags.enable('JOURNAL_SYNC')
             `);
         }
     };

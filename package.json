@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "python3 -m http.server 8000",
     "build": "echo 'No build needed for static site'",
-    "deploy": "netlify deploy --prod"
+    "deploy": "vercel --prod",
+    "deploy:netlify": "netlify deploy --prod"
   },
   "dependencies": {
     "google-auth-library": "^9.15.1",
@@ -19,7 +20,7 @@
     "forest",
     "ambassador",
     "automation",
-    "netlify",
+    "vercel",
     "google-sheets"
   ],
   "author": "靜謐森林團隊",

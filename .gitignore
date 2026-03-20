@@ -34,5 +34,7 @@ yarn-error.log*
 
 # 私密憑證
 credentials.json
-service-account.json
+config/credentials.js
+service-account*.json
+*.json.key
 知音.txt

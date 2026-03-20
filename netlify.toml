@@ -2,11 +2,10 @@
   publish = "."
   command = "echo 'No build needed for static site'"
 
-[context.production.environment]
-  GOOGLE_SHEET_ID = "1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4"
-  GOOGLE_CLIENT_EMAIL = "forest-ambassador@foresthouse-468510.iam.gserviceaccount.com"
-  NETLIFY_ACCESS_TOKEN = "nfp_cxYU84jTiBMztvaWoG7czxtTRCApay2Q1dee"
-  GITHUB_REPO_URL = "https://github.com/didi1119/forest-gift.git"
+# 備用部署平台（主要使用 Vercel）
+# 環境變數請在 Netlify Dashboard > Site Settings > Environment variables 設定：
+#   GOOGLE_SHEET_ID, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY,
+#   NETLIFY_ACCESS_TOKEN, GITHUB_REPO_URL
 
 [build.environment]
   NODE_VERSION = "18"

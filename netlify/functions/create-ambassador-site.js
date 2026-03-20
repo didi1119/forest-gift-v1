@@ -1,6 +1,20 @@
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { GoogleAuth } = require('google-auth-library');
-const config = require('../../config/credentials');
+
+// 所有憑證從環境變數讀取（在 Netlify Dashboard 設定）
+const config = {
+  googleSheets: {
+    sheetId: process.env.GOOGLE_SHEET_ID,
+    clientEmail: process.env.GOOGLE_CLIENT_EMAIL,
+    privateKey: process.env.GOOGLE_PRIVATE_KEY,
+  },
+  netlify: {
+    accessToken: process.env.NETLIFY_ACCESS_TOKEN,
+  },
+  github: {
+    repoUrl: process.env.GITHUB_REPO_URL,
+  },
+};
 
 exports.handler = async (event, context) => {
   const headers = {

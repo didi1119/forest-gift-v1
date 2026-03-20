@@ -2,8 +2,8 @@
 // 部署為 Web App，處理 GET（轉址）與 POST（週記）請求
 
 const SPREADSHEET_ID = '1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4';
-const GITHUB_PAGES_URL = 'https://你的網址.github.io/知音計畫'; // 待更新
-const LINE_COUPON_BASE = 'https://line.me/R/ti/p/%40your_line_account'; // 待更新
+const GITHUB_PAGES_URL = ''; // TODO: 設定為實際部署的網站 URL（如 https://forest-ambassador.vercel.app）
+const LINE_COUPON_BASE = ''; // TODO: 設定為實際的 LINE Official Account 優惠券連結
 
 function doGet(e) {
   try {

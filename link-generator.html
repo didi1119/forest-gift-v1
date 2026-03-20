@@ -134,11 +134,12 @@
         </div>
     </div>
 
+    <script src="js/config.js"></script>
     <script>
-        // 設定值
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzaMMHbo1zesnAP4Go3Iz1R1z3702Ct4cuEJOdJpHArHpVpnCgvMIfeWx_PzRTWj8F/exec'; 
-        const GITHUB_PAGES_URL = 'https://didi1119.github.io/forest-gift-v1'; 
-        const DEFAULT_LINE_COUPON_URL = 'https://lin.ee/q38pqot';
+        // 從集中設定檔讀取（見 js/config.js）
+        const APPS_SCRIPT_URL = ForestConfig.APPS_SCRIPT_URL;
+        const GITHUB_PAGES_URL = ForestConfig.SITE_BASE_URL;
+        const DEFAULT_LINE_COUPON_URL = ForestConfig.DEFAULT_LINE_COUPON_URL;
         
         let generatedData = null;
         

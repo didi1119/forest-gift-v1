@@ -672,125 +672,44 @@
         <!-- 數據分析標籤內容 -->
         <div id="content-analytics" class="tab-content hidden">
             <div class="space-y-8">
-                
+
+                <!-- 操作按鈕 -->
+                <div class="flex justify-end space-x-3">
+                    <button onclick="refreshAnalyticsData()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
+                        🔄 重新整理
+                    </button>
+                    <button onclick="exportAnalyticsReport()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                        📊 匯出 CSV
+                    </button>
+                </div>
+
                 <!-- 核心指標概覽 -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="brand-card p-6 text-center">
-                        <div class="text-3xl font-bold text-green-600" id="totalConversionRate">-</div>
-                        <div class="text-sm text-stone-600 mt-1">整體轉換率</div>
-                        <div class="text-xs text-stone-500 mt-1">點擊→入住完成</div>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="brand-card p-5 text-center">
+                        <div class="text-3xl font-bold text-blue-600" id="analyticsTotalPartners">-</div>
+                        <div class="text-sm text-stone-600 mt-1">大使總數</div>
                     </div>
-                    <div class="brand-card p-6 text-center">
-                        <div class="text-3xl font-bold text-blue-600" id="avgCommissionPerBooking">-</div>
-                        <div class="text-sm text-stone-600 mt-1">平均佣金</div>
-                        <div class="text-xs text-stone-500 mt-1">每筆完成訂房</div>
+                    <div class="brand-card p-5 text-center">
+                        <div class="text-3xl font-bold text-green-600" id="analyticsTotalClicks">-</div>
+                        <div class="text-sm text-stone-600 mt-1">總點擊數</div>
                     </div>
-                    <div class="brand-card p-6 text-center">
-                        <div class="text-3xl font-bold text-purple-600" id="topAmbassadorConversion">-</div>
-                        <div class="text-sm text-stone-600 mt-1">最佳大使轉換率</div>
-                        <div class="text-xs text-stone-500 mt-1" id="topAmbassadorName">-</div>
+                    <div class="brand-card p-5 text-center">
+                        <div class="text-3xl font-bold text-purple-600" id="analyticsTotalBookings">-</div>
+                        <div class="text-sm text-stone-600 mt-1">總訂房數</div>
                     </div>
-                    <div class="brand-card p-6 text-center">
-                        <div class="text-3xl font-bold text-amber-600" id="mostPopularGift">-</div>
-                        <div class="text-sm text-stone-600 mt-1">最受歡迎禮物</div>
-                        <div class="text-xs text-stone-500 mt-1">禮物點擊統計</div>
+                    <div class="brand-card p-5 text-center">
+                        <div class="text-3xl font-bold text-amber-600" id="analyticsTotalCompleted">-</div>
+                        <div class="text-sm text-stone-600 mt-1">完成入住</div>
                     </div>
-                </div>
-
-                <!-- 大使表現分析 -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- 大使績效排行 -->
-                    <div class="brand-card p-8">
-                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">大使績效排行</h2>
-                        <div class="chart-container" style="position: relative; height: 300px;">
-                            <canvas id="ambassadorPerformanceChart"></canvas>
-                        </div>
-                        <div class="mt-4">
-                            <div class="flex justify-between text-sm text-stone-600 mb-2">
-                                <span>排序方式：</span>
-                                <select id="performanceSort" onchange="updateAmbassadorChart()" class="text-xs border rounded px-2 py-1">
-                                    <option value="conversion">轉換率</option>
-                                    <option value="clicks">點擊數</option>
-                                    <option value="commission">佣金總額</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 大使等級分佈 -->
-                    <div class="brand-card p-8">
-                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">大使等級分佈</h2>
-                        <div class="chart-container" style="position: relative; height: 300px;">
-                            <canvas id="levelDistributionChart"></canvas>
-                        </div>
-                        <div class="mt-4 space-y-2">
-                            <div class="flex justify-between">
-                                <span class="text-sm flex items-center">
-                                    <span class="w-3 h-3 bg-green-500 rounded mr-2"></span>
-                                    LV1 知音大使
-                                </span>
-                                <span class="text-sm font-semibold" id="lv1Count">-</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm flex items-center">
-                                    <span class="w-3 h-3 bg-blue-500 rounded mr-2"></span>
-                                    LV2 森林嚮導
-                                </span>
-                                <span class="text-sm font-semibold" id="lv2Count">-</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-sm flex items-center">
-                                    <span class="w-3 h-3 bg-purple-500 rounded mr-2"></span>
-                                    LV3 秘境守護者
-                                </span>
-                                <span class="text-sm font-semibold" id="lv3Count">-</span>
-                            </div>
-                        </div>
+                    <div class="brand-card p-5 text-center">
+                        <div class="text-3xl font-bold text-red-600" id="analyticsTotalCommission">-</div>
+                        <div class="text-sm text-stone-600 mt-1">累計佣金發放</div>
                     </div>
                 </div>
 
-                <!-- 森林禮物點擊分析 -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- 禮物點擊統計 -->
-                    <div class="brand-card p-8">
-                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">森林禮物點擊統計</h2>
-                        <div class="chart-container" style="position: relative; height: 300px;">
-                            <canvas id="giftClickChart"></canvas>
-                        </div>
-                        <div class="mt-4 text-center">
-                            <div class="text-sm text-stone-600">
-                                總點擊次數：<span id="totalGiftClicks" class="font-semibold">-</span>
-                            </div>
-                            <div class="text-xs text-stone-500 mt-1">
-                                來自 index.html 的四個禮物
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 熱門禮物排行 -->
-                    <div class="brand-card p-8">
-                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">熱門禮物排行</h2>
-                        <div id="popularGiftsRanking" class="space-y-3">
-                            <div class="text-center py-8 text-stone-500">
-                                <div class="text-lg font-semibold text-blue-800 mb-2">🚧 開發中</div>
-                                <p class="text-sm text-blue-600 mb-4">此功能將追蹤 index.html 中四個禮物的使用者點擊偏好</p>
-                                <div class="grid grid-cols-2 gap-2 text-xs">
-                                    <div class="bg-blue-50 p-2 rounded">🎵 聲音的風景</div>
-                                    <div class="bg-green-50 p-2 rounded">📖 文字的羅盤</div>
-                                    <div class="bg-purple-50 p-2 rounded">🔮 森林的指引</div>
-                                    <div class="bg-amber-50 p-2 rounded">📚 獨家的故事</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-4 text-xs text-stone-600 bg-blue-50 p-3 rounded-lg">
-                            💡 未來功能：分析用戶對不同禮物的偏好，作為內容優化依據
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 轉換漏斗分析 -->
+                <!-- 轉換漏斗 -->
                 <div class="brand-card p-8">
-                    <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">轉換漏斗分析</h2>
+                    <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">轉換漏斗</h2>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div class="text-center">
                             <div class="bg-blue-100 rounded-lg p-6 mb-3">
@@ -802,62 +721,110 @@
                         <div class="text-center">
                             <div class="bg-green-100 rounded-lg p-6 mb-3">
                                 <div class="text-3xl font-bold text-green-600" id="funnelBookings">-</div>
-                                <div class="text-sm text-green-700">完成訂房</div>
+                                <div class="text-sm text-green-700">建立訂房</div>
                             </div>
-                            <div class="text-xs text-stone-500" id="bookingConversionRate">-%</div>
+                            <div class="text-xs text-stone-500" id="analyticsBookingRate">-%</div>
                         </div>
                         <div class="text-center">
                             <div class="bg-purple-100 rounded-lg p-6 mb-3">
-                                <div class="text-3xl font-bold text-purple-600" id="funnelCheckedIn">-</div>
-                                <div class="text-sm text-purple-700">實際入住</div>
+                                <div class="text-3xl font-bold text-purple-600" id="funnelCompleted">-</div>
+                                <div class="text-sm text-purple-700">完成入住</div>
                             </div>
-                            <div class="text-xs text-stone-500" id="checkinConversionRate">-%</div>
+                            <div class="text-xs text-stone-500" id="analyticsCompletionRate">-%</div>
                         </div>
                         <div class="text-center">
                             <div class="bg-amber-100 rounded-lg p-6 mb-3">
-                                <div class="text-3xl font-bold text-amber-600" id="funnelCompleted">-</div>
-                                <div class="text-sm text-amber-700">完成入住</div>
+                                <div class="text-3xl font-bold text-amber-600" id="funnelPaid">-</div>
+                                <div class="text-sm text-amber-700">佣金已結算</div>
                             </div>
-                            <div class="text-xs text-stone-500" id="completionConversionRate">-%</div>
+                            <div class="text-xs text-stone-500" id="analyticsPaidRate">-%</div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 圖表區：大使績效 + 等級分佈 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="brand-card p-8">
+                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-4">大使績效排行</h2>
+                        <div class="mb-3">
+                            <select id="performanceSort" onchange="updateAmbassadorChart()" class="text-sm border rounded px-3 py-1">
+                                <option value="referrals">成功推薦數</option>
+                                <option value="commission">累計佣金</option>
+                                <option value="clicks">點擊數</option>
+                            </select>
+                        </div>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="ambassadorPerformanceChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="brand-card p-8">
+                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-4">大使等級分佈</h2>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="levelDistributionChart"></canvas>
+                        </div>
+                        <div class="mt-4 space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-sm flex items-center"><span class="w-3 h-3 bg-green-500 rounded mr-2"></span>LV1 知音大使</span>
+                                <span class="text-sm font-semibold" id="lv1Count">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm flex items-center"><span class="w-3 h-3 bg-blue-500 rounded mr-2"></span>LV2 森林嚮導</span>
+                                <span class="text-sm font-semibold" id="lv2Count">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm flex items-center"><span class="w-3 h-3 bg-purple-500 rounded mr-2"></span>LV3 秘境守護者</span>
+                                <span class="text-sm font-semibold" id="lv3Count">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 圖表區：佣金類型 + 訂房狀態 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="brand-card p-8">
+                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-4">佣金類型分佈</h2>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="commissionTypeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="brand-card p-8">
+                        <h2 class="font-serif text-2xl font-semibold brand-accent mb-4">訂房狀態分佈</h2>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="bookingStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 點擊趨勢 -->
+                <div class="brand-card p-8">
+                    <h2 class="font-serif text-2xl font-semibold brand-accent mb-4">點擊趨勢（近 30 天）</h2>
+                    <div class="chart-container" style="position: relative; height: 350px;">
+                        <canvas id="clickTrendChart"></canvas>
                     </div>
                 </div>
 
                 <!-- 詳細數據表格 -->
                 <div class="brand-card p-8">
-                    <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">詳細數據分析</h2>
+                    <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">大使詳細數據</h2>
                     <div class="overflow-x-auto">
-                        <table class="w-full">
+                        <table class="w-full text-sm">
                             <thead>
-                                <tr class="border-b">
-                                    <th class="text-left py-3 px-4">大使代碼</th>
-                                    <th class="text-center py-3 px-4">等級</th>
-                                    <th class="text-center py-3 px-4">點擊數</th>
-                                    <th class="text-center py-3 px-4">訂房數</th>
-                                    <th class="text-center py-3 px-4">完成數</th>
-                                    <th class="text-center py-3 px-4">轉換率</th>
-                                    <th class="text-center py-3 px-4">累積佣金</th>
-                                    <th class="text-center py-3 px-4">平均客單價</th>
+                                <tr class="border-b text-left">
+                                    <th class="py-3 px-3">大使</th>
+                                    <th class="py-3 px-3 text-center">等級</th>
+                                    <th class="py-3 px-3 text-center">點擊</th>
+                                    <th class="py-3 px-3 text-center">訂房</th>
+                                    <th class="py-3 px-3 text-center">完成</th>
+                                    <th class="py-3 px-3 text-center">轉換率</th>
+                                    <th class="py-3 px-3 text-right">累計佣金</th>
+                                    <th class="py-3 px-3 text-right">待付現金</th>
+                                    <th class="py-3 px-3 text-right">住宿金餘額</th>
                                 </tr>
                             </thead>
                             <tbody id="detailedAnalyticsTable">
-                                <tr>
-                                    <td colspan="8" class="text-center py-8 text-stone-500">載入中...</td>
-                                </tr>
+                                <tr><td colspan="9" class="text-center py-8 text-stone-500">載入中...</td></tr>
                             </tbody>
                         </table>
-                    </div>
-                </div>
-                
-                <!-- 快速連結 -->
-                <div class="brand-card p-6">
-                    <div class="flex justify-center space-x-4">
-                        <a href="resources.html" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                            🌲 資源中心
-                        </a>
-                        <button onclick="exportAnalyticsReport()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                            匯出分析報表
-                        </button>
                     </div>
                 </div>
             </div>
@@ -2002,20 +1969,6 @@
             }).join('');
         }
 
-        // 載入分析數據
-        async function loadAnalyticsData() {
-            // 只在第一次或快取過期時載入
-            if (!dataCache.isDataLoaded) {
-                await loadRealData();
-            }
-            displayAnalytics();
-        }
-
-        // 顯示分析數據
-        function displayAnalytics() {
-            // TODO: 實作圖表顯示
-            console.log('顯示分析數據');
-        }
 
         // 更新統計數據
         function updateStats() {
@@ -7376,327 +7329,287 @@ ${impactLines.join('\n')}
             }
         });
 
-        // ===== 數據分析功能 =====
+        // ===== 數據分析功能（整合自 analytics-dashboard） =====
         let analyticsCharts = {};
-        
-        // 載入分析數據（使用真實數據）
+
         function loadAnalyticsData() {
             try {
-                // 檢查數據是否已載入
                 if (!dataCache.isDataLoaded || !allData || !allData.partners) {
-                    console.log('等待數據載入...');
-                    // 如果數據未載入，先載入數據
                     if (!dataCache.isDataLoaded) {
-                        loadRealData().then(() => {
-                            loadAnalyticsData();  // 載入完成後重新呼叫
-                        });
+                        loadRealData().then(() => loadAnalyticsData());
                     }
                     return;
                 }
-                
-                updateAnalyticsMetrics();
-                
-                // 只在圖表尚未初始化時才初始化
-                if (!analyticsCharts.ambassadorPerformance && !analyticsCharts.levelDistribution && !analyticsCharts.giftClick) {
-                    initializeAnalyticsCharts();
-                }
-                
-                updateAllAnalyticsCharts();
-                updateAnalyticsDetailedTable();
-                
+                renderAnalyticsAll();
             } catch (error) {
                 console.error('載入分析數據失敗:', error);
             }
         }
-        
-        // 更新核心指標
-        function updateAnalyticsMetrics() {
-            // 計算整體轉換率（假設點擊數據暫時為0，未來實現）
-            const totalBookings = allData.bookings.length;
-            const completedBookings = allData.bookings.filter(b => b.stay_status === 'COMPLETED').length;
-            const conversionRate = totalBookings > 0 ? ((completedBookings / totalBookings) * 100).toFixed(1) : '0.0';
-            
-            // 計算平均佣金
-            const totalCommission = allData.bookings
-                .filter(b => b.stay_status === 'COMPLETED')
-                .reduce((sum, b) => sum + (parseFloat(b.commission_amount) || 0), 0);
-            const avgCommission = completedBookings > 0 ? Math.round(totalCommission / completedBookings) : 0;
-            
-            // 找出最佳大使
-            const partnerStats = calculateAnalyticsPartnerStats();
-            const topAmbassador = partnerStats.length > 0 ? partnerStats[0] : { conversionRate: 0, name: '-' };
-            
-            // 更新顯示
-            document.getElementById('totalConversionRate').textContent = conversionRate + '%';
-            document.getElementById('avgCommissionPerBooking').textContent = '$' + avgCommission;
-            document.getElementById('topAmbassadorConversion').textContent = topAmbassador.conversionRate.toFixed(1) + '%';
-            document.getElementById('topAmbassadorName').textContent = topAmbassador.name || '-';
-            document.getElementById('mostPopularGift').textContent = '🚧 開發中';
+
+        function refreshAnalyticsData() {
+            loadRealData(true).then(() => renderAnalyticsAll());
         }
 
-        // 計算夥伴統計
-        function calculateAnalyticsPartnerStats() {
-            return allData.partners.map(partner => {
-                const partnerBookings = allData.bookings.filter(b => b.partner_code === partner.partner_code);
-                const completedBookings = partnerBookings.filter(b => b.stay_status === 'COMPLETED').length;
-                
+        function renderAnalyticsAll() {
+            renderAnalyticsKPIs();
+            renderAnalyticsFunnel();
+            renderAnalyticsAmbassadorChart();
+            renderAnalyticsLevelChart();
+            renderAnalyticsCommissionTypeChart();
+            renderAnalyticsBookingStatusChart();
+            renderAnalyticsClickTrend();
+            renderAnalyticsDetailedTable();
+        }
+
+        // ---- KPI 卡片 ----
+        function renderAnalyticsKPIs() {
+            const { partners, bookings, clicks, payouts } = allData;
+            const completed = bookings.filter(b => b.stay_status === 'COMPLETED');
+            const totalEarned = partners.reduce((s, p) => s + (parseFloat(p.total_commission_earned) || 0), 0);
+
+            document.getElementById('analyticsTotalPartners').textContent = partners.length;
+            document.getElementById('analyticsTotalClicks').textContent = clicks.length.toLocaleString();
+            document.getElementById('analyticsTotalBookings').textContent = bookings.length;
+            document.getElementById('analyticsTotalCompleted').textContent = completed.length;
+            document.getElementById('analyticsTotalCommission').textContent = '$' + Math.round(totalEarned).toLocaleString();
+        }
+
+        // ---- 轉換漏斗 ----
+        function renderAnalyticsFunnel() {
+            const { bookings, clicks, payouts } = allData;
+            const totalClicks = clicks.length;
+            const totalBookings = bookings.length;
+            const completed = bookings.filter(b => b.stay_status === 'COMPLETED').length;
+            const paidPayouts = payouts.filter(p => p.payout_status === 'COMPLETED').length;
+
+            document.getElementById('funnelClicks').textContent = totalClicks.toLocaleString();
+            document.getElementById('funnelBookings').textContent = totalBookings;
+            document.getElementById('funnelCompleted').textContent = completed;
+            document.getElementById('funnelPaid').textContent = paidPayouts;
+
+            const fmt = (a, b) => b > 0 ? ((a / b) * 100).toFixed(1) + '%' : '0%';
+            document.getElementById('analyticsBookingRate').textContent = fmt(totalBookings, totalClicks);
+            document.getElementById('analyticsCompletionRate').textContent = fmt(completed, totalClicks);
+            document.getElementById('analyticsPaidRate').textContent = fmt(paidPayouts, totalClicks);
+        }
+
+        // ---- 大使績效排行 ----
+        function getAnalyticsPartnerStats() {
+            return allData.partners.map(p => {
+                const code = p.partner_code;
+                const clickCount = allData.clicks.filter(c => c.partner_code === code).length;
+                const pBookings = allData.bookings.filter(b => b.partner_code === code);
+                const completedCount = pBookings.filter(b => b.stay_status === 'COMPLETED').length;
                 return {
-                    ...partner,
-                    bookings: partnerBookings.length,
-                    completed: completedBookings,
-                    conversionRate: partnerBookings.length > 0 ? (completedBookings / partnerBookings.length) * 100 : 0,
-                    avgOrderValue: completedBookings > 0 ? 
-                        partnerBookings.filter(b => b.stay_status === 'COMPLETED')
-                                     .reduce((sum, b) => sum + (parseFloat(b.room_price) || 0), 0) / completedBookings : 0
+                    code,
+                    name: p.name || code,
+                    level: p.level || p.partner_level || 'LV1_INSIDER',
+                    clicks: clickCount,
+                    bookings: pBookings.length,
+                    completed: completedCount,
+                    totalEarned: parseFloat(p.total_commission_earned) || 0,
+                    pendingCash: parseFloat(p.pending_commission) || 0,
+                    points: parseFloat(p.available_points) || 0
                 };
-            }).sort((a, b) => b.conversionRate - a.conversionRate);
-        }
-
-        // 初始化圖表
-        function initializeAnalyticsCharts() {
-            if (typeof Chart === 'undefined') {
-                console.log('Chart.js 未載入，跳過圖表初始化');
-                return;
-            }
-
-            // 銷毀現有圖表以避免重複創建
-            if (analyticsCharts.ambassadorPerformance) {
-                analyticsCharts.ambassadorPerformance.destroy();
-            }
-            if (analyticsCharts.levelDistribution) {
-                analyticsCharts.levelDistribution.destroy();
-            }
-            if (analyticsCharts.giftClick) {
-                analyticsCharts.giftClick.destroy();
-            }
-
-            // 大使績效圖表
-            const ctx1 = document.getElementById('ambassadorPerformanceChart');
-            if (ctx1) {
-                analyticsCharts.ambassadorPerformance = new Chart(ctx1, {
-                    type: 'bar',
-                    data: { labels: [], datasets: [{ data: [], backgroundColor: '#2E4B36' }] },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } }
-                    }
-                });
-            }
-
-            // 等級分佈圖表
-            const ctx2 = document.getElementById('levelDistributionChart');
-            if (ctx2) {
-                analyticsCharts.levelDistribution = new Chart(ctx2, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['LV1 知音大使', 'LV2 森林嚮導', 'LV3 秘境守護者'],
-                        datasets: [{
-                            data: [],
-                            backgroundColor: ['#10B981', '#3B82F6', '#8B5CF6']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
-
-            // 禮物點擊圖表（未來功能）
-            const ctx3 = document.getElementById('giftClickChart');
-            if (ctx3) {
-                analyticsCharts.giftClick = new Chart(ctx3, {
-                    type: 'pie',
-                    data: { 
-                        labels: ['聲音的風景', '文字的羅盤', '森林的指引', '獨家的故事'],
-                        datasets: [{ 
-                            data: [0, 0, 0, 0], 
-                            backgroundColor: ['#2E4B36', '#4B7C4B', '#8B5CF6', '#F59E0B']
-                        }] 
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return context.label + ': 開發中';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        // 更新所有分析圖表
-        function updateAllAnalyticsCharts() {
-            updateAnalyticsAmbassadorChart();
-            updateAnalyticsLevelChart();
-            updateAnalyticsFunnelAnalysis();
-        }
-
-        // 更新大使圖表
-        function updateAnalyticsAmbassadorChart() {
-            if (!analyticsCharts.ambassadorPerformance) return;
-            
-            const sortBy = document.getElementById('performanceSort')?.value || 'conversion';
-            const partnerStats = calculateAnalyticsPartnerStats();
-            
-            let sortedStats;
-            switch (sortBy) {
-                case 'conversion':
-                    sortedStats = partnerStats.sort((a, b) => b.conversionRate - a.conversionRate);
-                    break;
-                case 'clicks':
-                    sortedStats = partnerStats.sort((a, b) => b.bookings - a.bookings);
-                    break;
-                case 'commission':
-                    sortedStats = partnerStats.sort((a, b) => (parseFloat(b.total_commission_earned) || 0) - (parseFloat(a.total_commission_earned) || 0));
-                    break;
-                default:
-                    sortedStats = partnerStats;
-            }
-            
-            const top5 = sortedStats.slice(0, 5);
-            
-            analyticsCharts.ambassadorPerformance.data.labels = top5.map(p => p.partner_code);
-            analyticsCharts.ambassadorPerformance.data.datasets[0].data = top5.map(p => {
-                switch (sortBy) {
-                    case 'conversion': return p.conversionRate;
-                    case 'clicks': return p.bookings;
-                    case 'commission': return parseFloat(p.total_commission_earned) || 0;
-                    default: return p.conversionRate;
-                }
             });
-            analyticsCharts.ambassadorPerformance.update();
         }
 
-        // 更新等級分佈圖表
-        function updateAnalyticsLevelChart() {
-            if (!analyticsCharts.levelDistribution) return;
-            
-            const levelCounts = {
-                'LV1_INSIDER': allData.partners.filter(p => p.level === 'LV1_INSIDER').length,
-                'LV2_GUIDE': allData.partners.filter(p => p.level === 'LV2_GUIDE').length,
-                'LV3_GUARDIAN': allData.partners.filter(p => p.level === 'LV3_GUARDIAN').length
-            };
-            
-            analyticsCharts.levelDistribution.data.datasets[0].data = [
-                levelCounts.LV1_INSIDER,
-                levelCounts.LV2_GUIDE,
-                levelCounts.LV3_GUARDIAN
-            ];
-            analyticsCharts.levelDistribution.update();
-            
-            // 更新計數顯示
+        function renderAnalyticsAmbassadorChart() {
+            const ctx = document.getElementById('ambassadorPerformanceChart');
+            if (!ctx) return;
+            if (analyticsCharts.ambassador) analyticsCharts.ambassador.destroy();
+            updateAnalyticsAmbassadorChartData(ctx.getContext('2d'), getAnalyticsPartnerStats());
+        }
+
+        function updateAmbassadorChart() {
+            const ctx = document.getElementById('ambassadorPerformanceChart');
+            if (!ctx) return;
+            if (analyticsCharts.ambassador) analyticsCharts.ambassador.destroy();
+            updateAnalyticsAmbassadorChartData(ctx.getContext('2d'), getAnalyticsPartnerStats());
+        }
+
+        function updateAnalyticsAmbassadorChartData(ctx, stats) {
+            const sortBy = document.getElementById('performanceSort')?.value || 'referrals';
+            const key = sortBy === 'referrals' ? 'completed' : sortBy === 'commission' ? 'totalEarned' : 'clicks';
+            const sorted = [...stats].sort((a, b) => b[key] - a[key]).slice(0, 10);
+            const labelMap = { referrals: '成功推薦', commission: '累計佣金 ($)', clicks: '點擊數' };
+
+            analyticsCharts.ambassador = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(s => s.name || s.code),
+                    datasets: [{ label: labelMap[sortBy], data: sorted.map(s => Math.round(s[key])), backgroundColor: '#2E4B36' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+        }
+
+        // ---- 等級分佈 ----
+        function renderAnalyticsLevelChart() {
+            const ctx = document.getElementById('levelDistributionChart');
+            if (!ctx) return;
+            if (analyticsCharts.level) analyticsCharts.level.destroy();
+
+            const counts = { LV1: 0, LV2: 0, LV3: 0 };
+            allData.partners.forEach(p => {
+                const lvl = (p.level || p.partner_level || '').toUpperCase();
+                if (lvl.includes('LV3') || lvl.includes('GUARDIAN')) counts.LV3++;
+                else if (lvl.includes('LV2') || lvl.includes('GUIDE')) counts.LV2++;
+                else counts.LV1++;
+            });
+
+            analyticsCharts.level = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['LV1 知音大使', 'LV2 森林嚮導', 'LV3 秘境守護者'],
+                    datasets: [{ data: [counts.LV1, counts.LV2, counts.LV3], backgroundColor: ['#10B981', '#3B82F6', '#8B5CF6'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
             const lv1El = document.getElementById('lv1Count');
             const lv2El = document.getElementById('lv2Count');
             const lv3El = document.getElementById('lv3Count');
-            
-            if (lv1El) lv1El.textContent = levelCounts.LV1_INSIDER + ' 人';
-            if (lv2El) lv2El.textContent = levelCounts.LV2_GUIDE + ' 人';
-            if (lv3El) lv3El.textContent = levelCounts.LV3_GUARDIAN + ' 人';
+            if (lv1El) lv1El.textContent = counts.LV1 + ' 人';
+            if (lv2El) lv2El.textContent = counts.LV2 + ' 人';
+            if (lv3El) lv3El.textContent = counts.LV3 + ' 人';
         }
 
-        // 更新漏斗分析
-        function updateAnalyticsFunnelAnalysis() {
-            const totalBookings = allData.bookings.length;
-            const checkedIn = allData.bookings.filter(b => b.stay_status === 'CHECKED_IN' || b.stay_status === 'COMPLETED').length;
-            const completed = allData.bookings.filter(b => b.stay_status === 'COMPLETED').length;
-            
-            const funnelClicksEl = document.getElementById('funnelClicks');
-            const funnelBookingsEl = document.getElementById('funnelBookings');
-            const funnelCheckedInEl = document.getElementById('funnelCheckedIn');
-            const funnelCompletedEl = document.getElementById('funnelCompleted');
-            
-            if (funnelClicksEl) funnelClicksEl.textContent = '開發中';
-            if (funnelBookingsEl) funnelBookingsEl.textContent = totalBookings;
-            if (funnelCheckedInEl) funnelCheckedInEl.textContent = checkedIn;
-            if (funnelCompletedEl) funnelCompletedEl.textContent = completed;
-            
-            // 計算轉換率
-            const checkinRate = totalBookings > 0 ? ((checkedIn / totalBookings) * 100).toFixed(1) : '0.0';
-            const completionRate = checkedIn > 0 ? ((completed / checkedIn) * 100).toFixed(1) : '0.0';
-            
-            const bookingRateEl = document.getElementById('bookingConversionRate');
-            const checkinRateEl = document.getElementById('checkinConversionRate');
-            const completionRateEl = document.getElementById('completionConversionRate');
-            
-            if (bookingRateEl) bookingRateEl.textContent = '開發中';
-            if (checkinRateEl) checkinRateEl.textContent = checkinRate + '%';
-            if (completionRateEl) completionRateEl.textContent = completionRate + '%';
+        // ---- 佣金類型分佈 ----
+        function renderAnalyticsCommissionTypeChart() {
+            const ctx = document.getElementById('commissionTypeChart');
+            if (!ctx) return;
+            if (analyticsCharts.commType) analyticsCharts.commType.destroy();
+
+            const types = {};
+            allData.payouts.forEach(p => {
+                const t = p.payout_type || 'OTHER';
+                types[t] = (types[t] || 0) + (parseFloat(p.amount) || 0);
+            });
+            const labels = Object.keys(types);
+            const labelMap = {
+                ACCOMMODATION: '住宿金', CASH: '現金佣金', REVERSAL: '回沖',
+                ADJUSTMENT: '手動調整', CONVERSION: '轉換', CASH_CONVERSION: '點數轉現金',
+                POINTS_ADJUSTMENT: '點數調整'
+            };
+
+            analyticsCharts.commType = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels.map(l => labelMap[l] || l),
+                    datasets: [{ data: labels.map(l => Math.round(types[l])), backgroundColor: ['#10B981', '#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6', '#EC4899', '#6B7280'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+            });
         }
 
-        // 更新詳細數據表格
-        function updateAnalyticsDetailedTable() {
-            const partnerStats = calculateAnalyticsPartnerStats();
-            const table = document.getElementById('detailedAnalyticsTable');
-            
-            if (!table) return;
-            
-            if (partnerStats.length === 0) {
-                table.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-stone-500">暫無數據</td></tr>';
+        // ---- 訂房狀態分佈 ----
+        function renderAnalyticsBookingStatusChart() {
+            const ctx = document.getElementById('bookingStatusChart');
+            if (!ctx) return;
+            if (analyticsCharts.bookingStatus) analyticsCharts.bookingStatus.destroy();
+
+            const statuses = {};
+            allData.bookings.forEach(b => { const s = b.stay_status || 'UNKNOWN'; statuses[s] = (statuses[s] || 0) + 1; });
+            const statusMap = { PENDING: '待入住', COMPLETED: '已完成', CANCELLED: '已取消', NO_SHOW: '未到' };
+            const colorMap = { PENDING: '#F59E0B', COMPLETED: '#10B981', CANCELLED: '#EF4444', NO_SHOW: '#6B7280' };
+            const keys = Object.keys(statuses);
+
+            analyticsCharts.bookingStatus = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: keys.map(k => statusMap[k] || k),
+                    datasets: [{ data: keys.map(k => statuses[k]), backgroundColor: keys.map(k => colorMap[k] || '#9CA3AF') }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+            });
+        }
+
+        // ---- 點擊趨勢（近 30 天）----
+        function renderAnalyticsClickTrend() {
+            const ctx = document.getElementById('clickTrendChart');
+            if (!ctx) return;
+            if (analyticsCharts.trend) analyticsCharts.trend.destroy();
+
+            const dailyCounts = {};
+            const now = new Date();
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(now); d.setDate(d.getDate() - i);
+                dailyCounts[d.toISOString().slice(0, 10)] = 0;
+            }
+            allData.clicks.forEach(c => {
+                const day = (c.timestamp || c.created_at || '').slice(0, 10);
+                if (day in dailyCounts) dailyCounts[day]++;
+            });
+
+            const labels = Object.keys(dailyCounts).map(d => {
+                const dt = new Date(d + 'T00:00:00');
+                return dt.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
+            });
+
+            analyticsCharts.trend = new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{ label: '每日點擊', data: Object.values(dailyCounts), borderColor: '#2E4B36', backgroundColor: 'rgba(46,75,54,0.1)', fill: true, tension: 0.3 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // ---- 詳細表格 ----
+        function renderAnalyticsDetailedTable() {
+            const stats = getAnalyticsPartnerStats().sort((a, b) => b.totalEarned - a.totalEarned);
+            const tbody = document.getElementById('detailedAnalyticsTable');
+            if (!tbody) return;
+
+            if (stats.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center py-8 text-stone-500">暫無數據</td></tr>';
                 return;
             }
-            
-            table.innerHTML = partnerStats.map(partner => `
+
+            const levelLabel = (lvl) => {
+                const l = (lvl || '').toUpperCase();
+                if (l.includes('LV3') || l.includes('GUARDIAN')) return '<span class="px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-800">LV3</span>';
+                if (l.includes('LV2') || l.includes('GUIDE')) return '<span class="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">LV2</span>';
+                return '<span class="px-2 py-0.5 rounded text-xs bg-green-100 text-green-800">LV1</span>';
+            };
+
+            tbody.innerHTML = stats.map(s => `
                 <tr class="border-b hover:bg-stone-50">
-                    <td class="py-3 px-4 font-medium">${partner.partner_code}</td>
-                    <td class="py-3 px-4 text-center">
-                        <span class="px-2 py-1 rounded text-xs ${getLevelClass(partner.partner_level || partner.level)}">
-                            ${getLevelText(partner.partner_level || partner.level)}
-                        </span>
+                    <td class="py-2 px-3">
+                        <div class="font-medium">${s.name || s.code}</div>
+                        <div class="text-xs text-stone-400">${s.code}</div>
                     </td>
-                    <td class="py-3 px-4 text-center text-stone-400">開發中</td>
-                    <td class="py-3 px-4 text-center">${partner.bookings}</td>
-                    <td class="py-3 px-4 text-center font-semibold text-green-600">${partner.completed}</td>
-                    <td class="py-3 px-4 text-center">${partner.conversionRate.toFixed(1)}%</td>
-                    <td class="py-3 px-4 text-center">$${(parseFloat(partner.total_commission_earned) || 0).toLocaleString()}</td>
-                    <td class="py-3 px-4 text-center">$${Math.round(partner.avgOrderValue).toLocaleString()}</td>
+                    <td class="py-2 px-3 text-center">${levelLabel(s.level)}</td>
+                    <td class="py-2 px-3 text-center">${s.clicks}</td>
+                    <td class="py-2 px-3 text-center">${s.bookings}</td>
+                    <td class="py-2 px-3 text-center font-semibold text-green-600">${s.completed}</td>
+                    <td class="py-2 px-3 text-center">${s.clicks > 0 ? ((s.completed / s.clicks) * 100).toFixed(1) + '%' : '-'}</td>
+                    <td class="py-2 px-3 text-right">$${Math.round(s.totalEarned).toLocaleString()}</td>
+                    <td class="py-2 px-3 text-right">$${Math.round(s.pendingCash).toLocaleString()}</td>
+                    <td class="py-2 px-3 text-right">$${Math.round(s.points).toLocaleString()}</td>
                 </tr>
             `).join('');
         }
-        
-        // 更新大使圖表（當下拉選單改變時）
-        function updateAmbassadorChart() {
-            updateAnalyticsAmbassadorChart();
-        }
-        
-        // 匯出分析報表
+
+        // ---- 匯出 CSV ----
         function exportAnalyticsReport() {
-            const partnerStats = calculateAnalyticsPartnerStats();
-            const reportData = partnerStats.map(p => ({
-                '大使代碼': p.partner_code,
-                '姓名': p.name || '-',
-                '等級': getLevelText(p.partner_level || p.level),
-                '點擊數': '開發中',
-                '訂房數': p.bookings,
-                '完成數': p.completed,
-                '轉換率': p.conversionRate.toFixed(1) + '%',
-                '累積佣金': parseFloat(p.total_commission_earned) || 0,
-                '平均客單價': Math.round(p.avgOrderValue)
+            const stats = getAnalyticsPartnerStats().sort((a, b) => b.totalEarned - a.totalEarned);
+            const rows = stats.map(s => ({
+                '大使代碼': s.code, '姓名': s.name, '等級': s.level,
+                '點擊數': s.clicks, '訂房數': s.bookings, '完成數': s.completed,
+                '轉換率': s.clicks > 0 ? ((s.completed / s.clicks) * 100).toFixed(1) + '%' : '0%',
+                '累計佣金': Math.round(s.totalEarned), '待付現金': Math.round(s.pendingCash),
+                '住宿金餘額': Math.round(s.points)
             }));
-            
-            downloadCSV(reportData, '知音計畫分析報表.csv');
-        }
-        
-        function downloadCSV(data, filename) {
-            if (data.length === 0) return;
-            
-            const headers = Object.keys(data[0]);
-            const csvContent = [
-                headers.join(','),
-                ...data.map(row => headers.map(header => row[header]).join(','))
-            ].join('\n');
-            
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            if (rows.length === 0) return alert('無數據可匯出');
+            const headers = Object.keys(rows[0]);
+            const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => headers.map(h => r[h]).join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = filename;
+            link.download = `知音計畫分析報表_${new Date().toISOString().slice(0, 10)}.csv`;
             link.click();
         }
 

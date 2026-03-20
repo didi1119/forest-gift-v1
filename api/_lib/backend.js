@@ -3279,12 +3279,20 @@ async function handleLineWebhook(req, res) {
   return res.status(200).json({ success: true });
 }
 
+async function handleShortenUrl(data) {
+  const url = data.url;
+  if (!url) throw new Error('缺少 url 參數');
+  const shortUrl = await createShortUrl(url);
+  return { success: true, short_url: shortUrl };
+}
+
 async function route(action, data) {
   // 公開 action（不需要 admin_secret）
   const PUBLIC_ACTIONS = new Set([
     'submit_application',
     'verify_partner_login',
-    'get_partner_dashboard_data'
+    'get_partner_dashboard_data',
+    'shorten_url'
   ]);
 
   // 管理類 action 需要 admin_secret 驗證
@@ -3326,6 +3334,7 @@ async function route(action, data) {
     'review_application': handleReviewApplication,
     'promote_to_partner': handlePromoteToPartner,
     'sync_line_claim_profiles': syncLineClaimProfiles,
+    'shorten_url': handleShortenUrl,
   };
 
   const handler = handlers[action];

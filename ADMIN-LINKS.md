@@ -59,7 +59,7 @@ https://didi1119.github.io/forest-gift-v1/frontend/admin/resources.html
 ## 🧪 測試工具
 
 ### 🔗 短網址測試
-**功能：** 測試 reurl.cc 和 is.gd 短網址服務
+**功能：** 測試後端短網址代理服務（POST /api shorten_url）
 ```
 https://didi1119.github.io/forest-gift-v1/frontend/admin/test-shorturl.html
 ```
@@ -82,8 +82,8 @@ https://didi1119.github.io/forest-gift-v1/frontend/admin/comprehensive-test-suit
 https://didi1119.github.io/forest-gift-v1/frontend/admin/field-mapping-test.html
 ```
 
-### 🧪 reurl.cc API 測試
-**功能：** 快速測試短網址 API
+### 🧪 短網址 API 測試
+**功能：** 快速測試後端短網址代理
 ```
 https://didi1119.github.io/forest-gift-v1/test-reurl-api.html
 ```
@@ -145,11 +145,11 @@ https://didi1119.github.io/forest-gift-v1/frontend/invitation.html
 ## 🔐 重要提醒
 
 - 這些是管理後台連結，請妥善保管
-- 目前沒有身份驗證機制，知道連結的人都可以訪問
-- 建議不要公開分享這些連結
-- 未來會添加身份驗證功能
+- 管理後台有簡易密碼驗證（admin_secret），API 每次請求都會檢查
+- 大使端有 Email/代碼 + 手機末 4 碼驗證
+- 建議不要公開分享管理連結
 
 ---
 
-**最後更新：** 2026-02-02
+**最後更新：** 2026-03-20
 **GitHub Repository：** https://github.com/didi1119/forest-gift-v1

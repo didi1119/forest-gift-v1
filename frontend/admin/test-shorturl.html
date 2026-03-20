@@ -40,27 +40,23 @@
 
             let html = '';
 
-            // Test 1: reurl.cc API
+            // Test 1: Backend proxy (shorten_url action)
             html += '<div class="border-b pb-4">';
-            html += '<h3 class="font-semibold mb-2">1️⃣ reurl.cc API 測試（主要服務）</h3>';
+            html += '<h3 class="font-semibold mb-2">1️⃣ 後端 Proxy 測試（POST /api shorten_url）</h3>';
             try {
                 const start1 = Date.now();
-                const response1 = await fetch('https://api.reurl.cc/shorten', {
+                const response1 = await fetch('/api', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'reurl-api-key': '4070ff49d794e43515523b663c974755ecd7b335959e04df8a38b58d65165567c4f5d6'
-                    },
-                    body: JSON.stringify({ url: url })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'shorten_url', url: url })
                 });
                 const time1 = Date.now() - start1;
 
                 if (response1.ok) {
                     const data = await response1.json();
-                    if (data.res === 'success' && data.short_url) {
+                    if (data.success && data.short_url) {
                         html += `<p class="text-green-600">✅ 成功 (${time1}ms)</p>`;
                         html += `<p class="text-sm bg-green-50 p-2 rounded mt-2 break-all">${data.short_url}</p>`;
-                        html += `<p class="text-xs text-gray-500 mt-1">原始連結: ${data.original_url}</p>`;
                     } else {
                         html += `<p class="text-red-600">❌ 回應異常</p>`;
                         html += `<p class="text-sm text-gray-600">回應: ${JSON.stringify(data)}</p>`;
@@ -73,34 +69,9 @@
             }
             html += '</div>';
 
-            // Test 2: is.gd (backup)
-            html += '<div class="border-b pb-4 mt-4">';
-            html += '<h3 class="font-semibold mb-2">2️⃣ is.gd 服務測試（備用服務）</h3>';
-            try {
-                const start2 = Date.now();
-                const response2 = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(url));
-                const time2 = Date.now() - start2;
-
-                if (response2.ok) {
-                    const shortUrl = await response2.text();
-                    if (shortUrl && shortUrl.startsWith('https://is.gd/')) {
-                        html += `<p class="text-green-600">✅ 成功 (${time2}ms)</p>`;
-                        html += `<p class="text-sm bg-green-50 p-2 rounded mt-2 break-all">${shortUrl}</p>`;
-                    } else {
-                        html += `<p class="text-red-600">❌ 回應格式錯誤</p>`;
-                        html += `<p class="text-sm text-gray-600">回應: ${shortUrl}</p>`;
-                    }
-                } else {
-                    html += `<p class="text-red-600">❌ HTTP ${response2.status}</p>`;
-                }
-            } catch (error) {
-                html += `<p class="text-red-600">❌ 錯誤: ${error.message}</p>`;
-            }
-            html += '</div>';
-
-            // Test 3: Combined function
+            // Test 2: Combined function
             html += '<div class="mt-4">';
-            html += '<h3 class="font-semibold mb-2">3️⃣ 整合函數測試（實際使用的邏輯）</h3>';
+            html += '<h3 class="font-semibold mb-2">2️⃣ 整合函數測試（實際使用的邏輯）</h3>';
             try {
                 const start3 = Date.now();
                 const shortUrl = await createShortUrl(url);
@@ -122,46 +93,25 @@
             contentDiv.innerHTML = html;
         }
 
-        // Same function as in link-generator-form.html
+        // Same function as in link-generator-form.html — uses backend proxy
         async function createShortUrl(originalUrl) {
-            // Try reurl.cc API (professional service, no ads)
             try {
-                const response = await fetch('https://api.reurl.cc/shorten', {
+                const response = await fetch('/api', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'reurl-api-key': '4070ff49d794e43515523b663c974755ecd7b335959e04df8a38b58d65165567c4f5d6'
-                    },
-                    body: JSON.stringify({ url: originalUrl })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'shorten_url', url: originalUrl })
                 });
-
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.res === 'success' && data.short_url) {
-                        console.log('✅ reurl.cc 短網址生成成功:', data.short_url);
+                    if (data.success && data.short_url) {
+                        console.log('✅ 短網址生成成功:', data.short_url);
                         return data.short_url;
                     }
                 }
             } catch (error) {
-                console.warn('⚠️ reurl.cc API 錯誤:', error);
+                console.warn('⚠️ 短網址生成失敗:', error);
             }
-
-            // Fallback: Try is.gd
-            try {
-                const response = await fetch('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(originalUrl));
-                if (response.ok) {
-                    const shortUrl = await response.text();
-                    if (shortUrl && shortUrl.startsWith('https://is.gd/')) {
-                        console.log('✅ is.gd 短網址生成成功 (備用):', shortUrl);
-                        return shortUrl;
-                    }
-                }
-            } catch (error) {
-                console.warn('⚠️ is.gd 短網址生成失敗:', error);
-            }
-
-            // If all services fail, return original URL
-            console.error('❌ 所有短網址服務都失敗，返回原始 URL');
+            console.error('❌ 短網址服務失敗，返回原始 URL');
             return originalUrl;
         }
     </script>

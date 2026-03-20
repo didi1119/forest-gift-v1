@@ -307,16 +307,16 @@
                     <div class="text-red-400 text-2xl">⚠️</div>
                 </div>
                 <div class="ml-3 flex-1">
-                    <h3 class="text-lg font-medium text-red-800">Google Apps Script 連線問題</h3>
+                    <h3 class="text-lg font-medium text-red-800">API 連線問題</h3>
                     <p class="mt-1 text-sm text-red-700">
-                        偵測到 403 權限錯誤，確認入住和編輯功能可能無法正常運作。
+                        偵測到 API 連線錯誤，部分功能可能無法正常運作。請確認 Vercel 部署狀態和環境變數設定。
                     </p>
                     <div class="mt-3 flex space-x-3">
-                        <button onclick="window.open('./google-apps-script-fix.html', '_blank')" 
+                        <button onclick="retryConnection()"
                             class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-800 bg-red-100 border border-red-300 rounded-md hover:bg-red-200">
-                            🔧 修復指南
+                            🔄 重試連接
                         </button>
-                        <button onclick="hideErrorBanner()" 
+                        <button onclick="hideErrorBanner()"
                             class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 bg-white border border-red-300 rounded-md hover:bg-red-50">
                             隱藏提示
                         </button>
@@ -1205,12 +1205,11 @@
                 console.log('✅ Apps Script 連線測試完成');
                 return true;
             } catch (error) {
-                console.error('❌ Apps Script 連線失敗:', error);
-                showErrorMessage(`Apps Script 連線失敗。請檢查：
-1. 開啟 google-apps-script-fix.html 查看修復指南
-2. 確認 Apps Script 已正確部署
-3. 權限設定為「任何人」
-4. 執行身分為「我」`);
+                console.error('❌ API 連線失敗:', error);
+                showErrorMessage(`API 連線失敗。請檢查：
+1. Vercel 部署是否正常
+2. 環境變數是否已正確設定
+3. 網路連線是否正常`);
                 return false;
             }
         }
@@ -4252,21 +4251,7 @@
                 
                 if (error.message.includes('403')) {
                     // 403 錯誤特殊處理
-                    showErrorMessage(`❌ Google Apps Script 權限錯誤 (403)\n\n可能原因：\n1. Apps Script 部署權限設定不正確\n2. 需要重新授權應用程式\n3. 部署 URL 已過期\n\n請按照以下步驟修復：\n1. 前往 Google Apps Script 控制台\n2. 重新部署應用程式\n3. 設定執行身分為「我」\n4. 設定存取權限為「任何人」\n5. 更新前端的 APPS_SCRIPT_URL`);
-                    
-                    // 提供快速連結到修復指南
-                    const fixGuideBtn = document.createElement('button');
-                    fixGuideBtn.textContent = '🔧 查看修復指南';
-                    fixGuideBtn.className = 'mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
-                    fixGuideBtn.onclick = () => {
-                        window.open('./google-apps-script-fix.html', '_blank');
-                    };
-                    
-                    // 如果有錯誤顯示區域，添加按鈕
-                    const errorDisplay = document.querySelector('.error-message');
-                    if (errorDisplay) {
-                        errorDisplay.appendChild(fixGuideBtn);
-                    }
+                    showErrorMessage(`❌ API 權限錯誤 (403)\n\n可能原因：\n1. admin_secret 不正確\n2. Vercel 環境變數未設定\n3. API 部署異常\n\n請檢查 Vercel Dashboard 確認部署狀態和環境變數。`);
                 } else {
                     showErrorMessage('❌ 更新失敗：' + error.message);
                 }
@@ -5532,11 +5517,7 @@
                         </div>
                         
                         <div class="flex justify-end space-x-3">
-                            <button onclick="window.open('google-apps-script-fix.html', '_blank')" 
-                                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                                📖 查看詳細修復指南
-                            </button>
-                            <button onclick="retryConnection()" 
+                            <button onclick="retryConnection()"
                                 class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
                                 🔄 重試連接
                             </button>
@@ -5803,9 +5784,9 @@
                         <div class="bg-blue-50 p-4 rounded-lg mb-6">
                             <h3 class="font-bold mb-3">建議解決方案：</h3>
                             <ul class="space-y-2 text-sm">
-                                <li>1. 如果結算記錄為空，請到 <a href="payouts-diagnostic.html" target="_blank" class="text-blue-600 underline">結算診斷工具</a> 修復</li>
+                                <li>1. 如果結算記錄為空，請使用佣金審計工具（commission-audit.html）修復</li>
                                 <li>2. 如果有記錄但沒有 ID，系統會自動使用索引作為備用</li>
-                                <li>3. 如果遇到 403 錯誤，請檢查 Google Apps Script 部署設定</li>
+                                <li>3. 如果遇到 403 錯誤，請檢查 admin_secret 和 Vercel 環境變數</li>
                                 <li>4. 建議重新載入數據後再試</li>
                             </ul>
                         </div>
@@ -6523,8 +6504,8 @@
                 const alertDiv = document.createElement('div');
                 alertDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50';
                 alertDiv.innerHTML = `
-                    <strong>⚠️ Apps Script 連線問題</strong><br>
-                    <a href="google-apps-script-fix.html" target="_blank" class="underline">點此查看修復指南</a>
+                    <strong>⚠️ API 連線問題</strong><br>
+                    請檢查 Vercel 部署狀態和環境變數設定。
                 `;
                 document.body.appendChild(alertDiv);
             }

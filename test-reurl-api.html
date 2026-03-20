@@ -16,20 +16,17 @@
             resultDiv.innerHTML = '測試中...';
 
             try {
-                const response = await fetch('https://api.reurl.cc/shorten', {
+                const response = await fetch('/api', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'reurl-api-key': '4070ff49d794e43515523b663c974755ecd7b335959e04df8a38b58d65165567c4f5d6'
-                    },
-                    body: JSON.stringify({ url: testUrl })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'shorten_url', url: testUrl })
                 });
 
                 console.log('Response status:', response.status);
                 const data = await response.json();
                 console.log('Response data:', data);
 
-                if (data.res === 'success') {
+                if (data.success && data.short_url) {
                     resultDiv.innerHTML = `
                         <h2>✅ 成功!</h2>
                         <p>原始網址: ${testUrl}</p>
@@ -39,8 +36,6 @@
                 } else {
                     resultDiv.innerHTML = `
                         <h2>❌ 失敗</h2>
-                        <p>錯誤代碼: ${data.code || 'unknown'}</p>
-                        <p>錯誤訊息: ${data.msg || 'unknown'}</p>
                         <pre>${JSON.stringify(data, null, 2)}</pre>
                     `;
                 }

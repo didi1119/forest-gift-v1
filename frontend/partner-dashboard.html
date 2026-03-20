@@ -1058,17 +1058,14 @@
 
         async function createShortUrl(originalUrl) {
             try {
-                const response = await fetch('https://api.reurl.cc/shorten', {
+                const response = await fetch('/api', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'reurl-api-key': '4070ff49d794e43515523b663c974755ecd7b335959e04df8a38b58d65165567c4f5d6'
-                    },
-                    body: JSON.stringify({ url: originalUrl })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'shorten_url', url: originalUrl })
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.res === 'success' && data.short_url) return data.short_url;
+                    if (data.success && data.short_url) return data.short_url;
                 }
             } catch (e) { /* fallback */ }
             return originalUrl;

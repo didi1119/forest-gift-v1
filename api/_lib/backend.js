@@ -458,6 +458,89 @@ function buildLineReferralClaimKey(lineUserId, lineMessageId, partnerCode) {
   return `${userKey}:${partnerCode}`;
 }
 
+function getSortableTimestamp(value) {
+  const ts = new Date(value || '').getTime();
+  return Number.isFinite(ts) ? ts : 0;
+}
+
+function sortLineClaimsNewestFirst(claims = []) {
+  return [...claims].sort((a, b) => {
+    const aTs = Math.max(
+      getSortableTimestamp(a && a.last_claimed_at),
+      getSortableTimestamp(a && a.last_replied_at),
+      getSortableTimestamp(a && a.created_at)
+    );
+    const bTs = Math.max(
+      getSortableTimestamp(b && b.last_claimed_at),
+      getSortableTimestamp(b && b.last_replied_at),
+      getSortableTimestamp(b && b.created_at)
+    );
+    if (aTs !== bTs) return bTs - aTs;
+    return String(b && b.id || '').localeCompare(String(a && a.id || ''));
+  });
+}
+
+function selectLatestLineReferralClaim(claims = []) {
+  return sortLineClaimsNewestFirst(claims)[0] || null;
+}
+
+function determineBookingAttribution(input = {}, latestClaim = null, options = {}) {
+  const requestedPartnerCode = String(input.partner_code || '').trim();
+  const lineUserId = String(input.line_user_id || '').trim();
+  const lineDisplayName = String(input.line_display_name || '').trim();
+  const latestPartnerCode = String(latestClaim && latestClaim.partner_code || '').trim();
+  const explicitEmptyPartnerClears = options.explicitEmptyPartnerClears === true;
+  const hasExplicitPartnerField = options.hasExplicitPartnerField === true;
+
+  let resolvedPartnerCode = requestedPartnerCode;
+  let attributionSource = '';
+
+  if (!requestedPartnerCode && !explicitEmptyPartnerClears && lineUserId && latestPartnerCode) {
+    resolvedPartnerCode = latestPartnerCode;
+    attributionSource = 'LATEST_LINE_CLAIM';
+  } else if (lineUserId && latestPartnerCode && requestedPartnerCode && requestedPartnerCode !== latestPartnerCode) {
+    attributionSource = 'MANUAL_OVERRIDE';
+  } else if (lineUserId && latestPartnerCode && requestedPartnerCode === latestPartnerCode) {
+    attributionSource = 'LATEST_LINE_CLAIM';
+  } else if (lineUserId && !latestPartnerCode && requestedPartnerCode) {
+    attributionSource = 'MANUAL_NO_CLAIM';
+  } else if (lineUserId && !latestPartnerCode && !requestedPartnerCode) {
+    attributionSource = 'LINE_USER_NO_MATCH';
+  } else if (explicitEmptyPartnerClears && hasExplicitPartnerField && !requestedPartnerCode) {
+    attributionSource = lineUserId ? 'MANUAL_CLEAR' : '';
+    resolvedPartnerCode = '';
+  } else if (requestedPartnerCode) {
+    attributionSource = 'MANUAL';
+  }
+
+  return {
+    partner_code: resolvedPartnerCode || null,
+    line_user_id: lineUserId,
+    line_display_name: lineDisplayName || String(latestClaim && latestClaim.line_display_name || '').trim(),
+    attribution_source: attributionSource,
+    attribution_claimed_at: latestClaim && latestClaim.last_claimed_at ? latestClaim.last_claimed_at : '',
+    attribution_entered_code: latestClaim && latestClaim.entered_code ? latestClaim.entered_code : ''
+  };
+}
+
+async function getLineReferralClaimsByLineUserId(lineUserId) {
+  const normalizedLineUserId = String(lineUserId || '').trim();
+  if (!normalizedLineUserId) return [];
+
+  try {
+    const results = await findRecordsByField(LINE_REFERRAL_CLAIM_TABLE, 'line_user_id', normalizedLineUserId);
+    return results.map(item => item.data || item).filter(Boolean);
+  } catch (error) {
+    if (isMissingTableError(error)) return [];
+    throw error;
+  }
+}
+
+async function getLatestLineReferralClaimByLineUserId(lineUserId) {
+  const claims = await getLineReferralClaimsByLineUserId(lineUserId);
+  return selectLatestLineReferralClaim(claims);
+}
+
 async function findActivePartnerByCouponCode(input) {
   const normalized = normalizeCouponKeyword(input);
   if (!normalized) return null;
@@ -1264,16 +1347,43 @@ async function reconcilePartnerCompletedReferralBookings(partnerCode, context = 
 // ========================================
 
 async function handleCreateBooking(data) {
+  const selfUseBooking = data.booking_source === 'SELF_USE';
+  const latestClaim = (!selfUseBooking && data.line_user_id)
+    ? await getLatestLineReferralClaimByLineUserId(data.line_user_id)
+    : null;
+  const attribution = selfUseBooking
+    ? {
+        partner_code: data.partner_code || null,
+        line_user_id: '',
+        line_display_name: '',
+        attribution_source: '',
+        attribution_claimed_at: '',
+        attribution_entered_code: ''
+      }
+    : determineBookingAttribution(data, latestClaim, {
+        hasExplicitPartnerField: Object.prototype.hasOwnProperty.call(data, 'partner_code')
+      });
+
+  if (attribution.partner_code) {
+    const partner = await findPartnerByCode(attribution.partner_code);
+    if (!partner) throw new Error(`找不到推薦大使：${attribution.partner_code}`);
+  }
+
   let bookingSource = 'DIRECT';
-  if (data.booking_source === 'SELF_USE') bookingSource = 'SELF_USE';
-  else if (data.partner_code) bookingSource = 'REFERRAL';
+  if (selfUseBooking) bookingSource = 'SELF_USE';
+  else if (attribution.partner_code) bookingSource = 'REFERRAL';
 
   const bookingData = {
-    partner_code: data.partner_code || null,
+    partner_code: attribution.partner_code,
     guest_name: data.guest_name || '',
     guest_phone: data.guest_phone || '',
     guest_email: data.guest_email || '',
     bank_account_last5: data.bank_account_last5 || '',
+    line_user_id: attribution.line_user_id || '',
+    line_display_name: attribution.line_display_name || '',
+    attribution_source: attribution.attribution_source || '',
+    attribution_claimed_at: attribution.attribution_claimed_at || '',
+    attribution_entered_code: attribution.attribution_entered_code || '',
     checkin_date: data.checkin_date || '',
     checkout_date: data.checkout_date || '',
     room_price: parseInt(data.room_price) || 0,
@@ -1292,8 +1402,8 @@ async function handleCreateBooking(data) {
 
   const booking = await createRecord('Bookings', bookingData);
 
-  if (data.partner_code && bookingSource !== 'SELF_USE') {
-    await updatePartnerReferralStats(data.partner_code, 1);
+  if (attribution.partner_code && bookingSource !== 'SELF_USE') {
+    await updatePartnerReferralStats(attribution.partner_code, 1);
   }
 
   return { success: true, message: '訂房記錄建立成功', booking_id: booking.id || booking.ID, data: booking };
@@ -1450,6 +1560,35 @@ async function handleUpdateBooking(data) {
     delete data.action; delete data.booking_id; delete data.id;
     delete data.created_at; delete data._internal_call; delete data.admin_secret;
     delete data.original_guest_name; delete data.original_guest_phone;
+
+    if (oldBooking.booking_source !== 'SELF_USE') {
+      const lineUserIdForResolution = String(
+        Object.prototype.hasOwnProperty.call(data, 'line_user_id')
+          ? data.line_user_id
+          : oldBooking.line_user_id || ''
+      ).trim();
+      const latestClaim = lineUserIdForResolution
+        ? await getLatestLineReferralClaimByLineUserId(lineUserIdForResolution)
+        : null;
+      const attribution = determineBookingAttribution(
+        {
+          ...oldBooking,
+          ...data
+        },
+        latestClaim,
+        {
+          hasExplicitPartnerField: Object.prototype.hasOwnProperty.call(data, 'partner_code'),
+          explicitEmptyPartnerClears: Object.prototype.hasOwnProperty.call(data, 'partner_code')
+        }
+      );
+
+      data.partner_code = attribution.partner_code;
+      data.line_user_id = attribution.line_user_id || '';
+      data.line_display_name = attribution.line_display_name || '';
+      data.attribution_source = attribution.attribution_source || '';
+      data.attribution_claimed_at = attribution.attribution_claimed_at || '';
+      data.attribution_entered_code = attribution.attribution_entered_code || '';
+    }
 
     const changes = analyzeBookingChanges(oldBooking, data);
 
@@ -3103,6 +3242,9 @@ module.exports = {
     groupPartnerCompletedBookings,
     buildLegacyLevelSnapshot,
     simulatePartnerLevelSnapshot,
-    buildCompletedBookingLevelTimeline
+    buildCompletedBookingLevelTimeline,
+    sortLineClaimsNewestFirst,
+    selectLatestLineReferralClaim,
+    determineBookingAttribution
   }
 };

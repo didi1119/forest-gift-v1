@@ -36,7 +36,9 @@ const DataModels = {
   Booking: {
     tableName: 'Bookings',
     fields: ['id', 'partner_code', 'guest_name', 'guest_phone', 'guest_email',
-      'bank_account_last5', 'checkin_date', 'checkout_date', 'room_price',
+      'bank_account_last5', 'line_user_id', 'line_display_name',
+      'attribution_source', 'attribution_claimed_at', 'attribution_entered_code',
+      'checkin_date', 'checkout_date', 'room_price',
       'booking_source', 'stay_status', 'payment_status', 'commission_status',
       'commission_amount', 'commission_type', 'is_first_referral_bonus',
       'first_referral_bonus_amount', 'manually_confirmed_by',

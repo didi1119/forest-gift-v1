@@ -72,6 +72,11 @@ CREATE TABLE IF NOT EXISTS bookings (
   guest_phone TEXT DEFAULT '',
   guest_email TEXT DEFAULT '',
   bank_account_last5 TEXT DEFAULT '',
+  line_user_id TEXT DEFAULT '',
+  line_display_name TEXT DEFAULT '',
+  attribution_source TEXT DEFAULT '',
+  attribution_claimed_at TEXT DEFAULT '',
+  attribution_entered_code TEXT DEFAULT '',
   checkin_date TEXT DEFAULT '',
   checkout_date TEXT DEFAULT '',
   room_price NUMERIC DEFAULT 0,
@@ -91,10 +96,18 @@ CREATE TABLE IF NOT EXISTS bookings (
   updated_at TEXT DEFAULT ''
 );
 
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS line_user_id TEXT DEFAULT '';
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS line_display_name TEXT DEFAULT '';
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS attribution_source TEXT DEFAULT '';
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS attribution_claimed_at TEXT DEFAULT '';
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS attribution_entered_code TEXT DEFAULT '';
+
 CREATE INDEX IF NOT EXISTS idx_bookings_partner_code ON bookings(partner_code);
 CREATE INDEX IF NOT EXISTS idx_bookings_stay_status ON bookings(stay_status);
 CREATE INDEX IF NOT EXISTS idx_bookings_guest_name ON bookings(guest_name);
 CREATE INDEX IF NOT EXISTS idx_bookings_guest_phone ON bookings(guest_phone);
+CREATE INDEX IF NOT EXISTS idx_bookings_line_user_id ON bookings(line_user_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_attribution_source ON bookings(attribution_source);
 
 -- 3. Payouts
 CREATE TABLE IF NOT EXISTS payouts (

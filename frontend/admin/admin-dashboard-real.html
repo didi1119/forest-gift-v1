@@ -915,26 +915,31 @@
                 'guest_phone',                  // D列 - 房客電話  
                 'guest_email',                  // E列 - 房客Email
                 'bank_account_last5',           // F列 - 銀行帳號後5碼
-                'checkin_date',                 // G列 - 入住日期
-                'checkout_date',                // H列 - 退房日期
-                'room_price',                   // I列 - 房價（數字）
-                'booking_source',               // J列 - 訂房來源
-                'stay_status',                  // K列 - 住宿狀態
-                'payment_status',               // L列 - 付款狀態
-                'commission_status',            // M列 - 佣金狀態
-                'commission_amount',            // N列 - 佣金金額（數字）
-                'commission_type',              // O列 - 佣金類型
-                'is_first_referral_bonus',      // P列 - 是否首次推薦獎勵
-                'first_referral_bonus_amount',  // Q列 - 首次推薦獎勵金額
-                'manually_confirmed_by',        // R列 - 手動確認者
-                'manually_confirmed_at',        // S列 - 手動確認時間
-                'notes',                        // T列 - 備註
-                'created_at',                   // U列 - 創建時間
-                'updated_at',                   // V列 - 更新時間
-                'original_room_price',          // W列 - 原始房價（恢復時使用）
-                'original_commission_amount',   // X列 - 原始佣金金額（恢復時使用）
-                'restored_at',                  // Y列 - 恢復時間
-                'restored_by'                   // Z列 - 恢復操作者
+                'line_user_id',                 // G列 - LINE 使用者 ID
+                'line_display_name',            // H列 - LINE 顯示名稱
+                'attribution_source',           // I列 - 歸因來源
+                'attribution_claimed_at',       // J列 - 最近 claim 時間
+                'attribution_entered_code',     // K列 - 最近輸入代碼
+                'checkin_date',                 // L列 - 入住日期
+                'checkout_date',                // M列 - 退房日期
+                'room_price',                   // N列 - 房價（數字）
+                'booking_source',               // O列 - 訂房來源
+                'stay_status',                  // P列 - 住宿狀態
+                'payment_status',               // Q列 - 付款狀態
+                'commission_status',            // R列 - 佣金狀態
+                'commission_amount',            // S列 - 佣金金額（數字）
+                'commission_type',              // T列 - 佣金類型
+                'is_first_referral_bonus',      // U列 - 是否首次推薦獎勵
+                'first_referral_bonus_amount',  // V列 - 首次推薦獎勵金額
+                'manually_confirmed_by',        // W列 - 手動確認者
+                'manually_confirmed_at',        // X列 - 手動確認時間
+                'notes',                        // Y列 - 備註
+                'created_at',                   // Z列 - 創建時間
+                'updated_at',                   // AA列 - 更新時間
+                'original_room_price',          // AB列 - 原始房價（恢復時使用）
+                'original_commission_amount',   // AC列 - 原始佣金金額（恢復時使用）
+                'restored_at',                  // AD列 - 恢復時間
+                'restored_by'                   // AE列 - 恢復操作者
             ],
             
             // 欄位預設值
@@ -944,6 +949,11 @@
                 commission_type: 'ACCOMMODATION',
                 is_first_referral_bonus: false,
                 first_referral_bonus_amount: 0,
+                line_user_id: '',
+                line_display_name: '',
+                attribution_source: '',
+                attribution_claimed_at: '',
+                attribution_entered_code: '',
                 manually_confirmed_by: '',
                 manually_confirmed_at: '',
                 notes: ''
@@ -1045,6 +1055,11 @@
                     guest_phone: formData.guest_phone?.trim() || '',
                     guest_email: formData.guest_email?.trim() || '',
                     bank_account_last5: formData.bank_account_last5?.trim() || '',
+                    line_user_id: formData.line_user_id?.trim() || '',
+                    line_display_name: formData.line_display_name?.trim() || '',
+                    attribution_source: formData.attribution_source?.trim() || '',
+                    attribution_claimed_at: formData.attribution_claimed_at?.trim() || '',
+                    attribution_entered_code: formData.attribution_entered_code?.trim() || '',
                     checkin_date: formData.checkin_date || '',
                     checkout_date: formData.checkout_date || '',
                     room_price: Number(formData.room_price) || 0,
@@ -2210,6 +2225,46 @@
                 totalReplyCount: claims.reduce((sum, claim) => sum + (Number(claim.coupon_reply_count) || 0), 0),
                 lastClaim: claims[0] || null
             };
+        }
+
+        function getLineClaimsByUser(lineUserId) {
+            if (!lineUserId || !Array.isArray(allData.line_referral_claims)) return [];
+            return allData.line_referral_claims
+                .filter(claim => String(claim.line_user_id || '').trim() === String(lineUserId || '').trim())
+                .sort((a, b) => String(b.last_claimed_at || b.created_at || '').localeCompare(String(a.last_claimed_at || a.created_at || '')));
+        }
+
+        function getLatestLineClaimByUser(lineUserId) {
+            return getLineClaimsByUser(lineUserId)[0] || null;
+        }
+
+        function getLatestLineClaimProfiles(limit = 40) {
+            if (!Array.isArray(allData.line_referral_claims)) return [];
+
+            const grouped = new Map();
+            allData.line_referral_claims.forEach(claim => {
+                const lineUserId = String(claim.line_user_id || '').trim();
+                if (!lineUserId) return;
+                if (!grouped.has(lineUserId)) grouped.set(lineUserId, []);
+                grouped.get(lineUserId).push(claim);
+            });
+
+            return [...grouped.entries()]
+                .map(([lineUserId, claims]) => {
+                    const sortedClaims = claims.sort((a, b) => String(b.last_claimed_at || b.created_at || '').localeCompare(String(a.last_claimed_at || a.created_at || '')));
+                    const latestClaim = sortedClaims[0] || null;
+                    const distinctPartners = [...new Set(sortedClaims.map(claim => claim.partner_code).filter(Boolean))];
+                    return {
+                        lineUserId,
+                        lineDisplayName: latestClaim?.line_display_name || '',
+                        latestClaim,
+                        claimHistoryCount: sortedClaims.length,
+                        totalClaimCount: sortedClaims.reduce((sum, claim) => sum + (Number(claim.claim_count) || 0), 0),
+                        distinctPartners
+                    };
+                })
+                .sort((a, b) => String(b.latestClaim?.last_claimed_at || b.latestClaim?.created_at || '').localeCompare(String(a.latestClaim?.last_claimed_at || a.latestClaim?.created_at || '')))
+                .slice(0, limit);
         }
 
         function getLineClaimStatusMeta(partner) {
@@ -4222,6 +4277,11 @@
                             </div>
                         `}
 
+                        <div class="bg-stone-50 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-2">LINE 歸因資訊</h4>
+                            ${getBookingAttributionSummaryHtml(booking)}
+                        </div>
+
                         ${expectedCommission ? `
                             <div class="bg-blue-50 p-4 rounded-lg">
                                 <h4 class="font-semibold mb-2">佣金資訊</h4>
@@ -4338,17 +4398,36 @@
                         <!-- 推薦大使資訊 -->
                         <div class="bg-green-50 p-4 rounded-lg">
                             <h4 class="font-semibold mb-3 text-green-800">🤝 推薦大使</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">推薦大使</label>
-                                    <select id="edit_partner_code" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500"
-                                        onchange="updatePartnerInfo()">
-                                        <option value="">無推薦大使</option>
-                                        ${partnersOptions}
-                                    </select>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">LINE 使用者 ID</label>
+                                        <input type="text" id="edit_line_user_id" value="${booking.line_user_id || ''}" 
+                                            class="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500"
+                                            placeholder="若此客人曾在官方 LINE 輸入代碼，可貼上 userId">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">LINE 顯示名稱</label>
+                                        <input type="text" id="edit_line_display_name" value="${booking.line_display_name || ''}" 
+                                            class="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500"
+                                            placeholder="例如：王小森">
+                                    </div>
                                 </div>
-                                <div id="editPartnerInfo" class="text-sm">
-                                    ${booking.partner_code ? getPartnerInfoHtml(booking.partner_code) : '<p class="text-gray-500">無推薦大使</p>'}
+                                <div class="rounded-lg border border-green-200 bg-white p-3">
+                                    ${getBookingAttributionSummaryHtml(booking)}
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">推薦大使</label>
+                                        <select id="edit_partner_code" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500"
+                                            onchange="updatePartnerInfo()">
+                                            <option value="">無推薦大使</option>
+                                            ${partnersOptions}
+                                        </select>
+                                    </div>
+                                    <div id="editPartnerInfo" class="text-sm">
+                                        ${booking.partner_code ? getPartnerInfoHtml(booking.partner_code) : '<p class="text-gray-500">無推薦大使</p>'}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -4542,6 +4621,8 @@
                     guest_phone: document.getElementById('edit_guest_phone').value.trim(),
                     guest_email: document.getElementById('edit_guest_email').value.trim(),
                     bank_account_last5: document.getElementById('edit_bank_account_last5').value.trim(),
+                    line_user_id: document.getElementById('edit_line_user_id').value.trim(),
+                    line_display_name: document.getElementById('edit_line_display_name').value.trim(),
                     partner_code: document.getElementById('edit_partner_code').value || null,
                     checkin_date: document.getElementById('edit_checkin_date').value,
                     checkout_date: document.getElementById('edit_checkout_date').value,
@@ -4781,6 +4862,26 @@
                             <div class="bg-green-50 p-6 rounded-lg">
                                 <h3 class="text-lg font-semibold text-green-800 mb-4">👤 推薦大使資訊</h3>
                                 <div class="grid grid-cols-1 gap-4">
+                                    <div class="rounded-lg border border-emerald-200 bg-white/80 p-4 space-y-3">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">從近期 LINE 歸因帶入</label>
+                                            <select id="modal_line_claim_selector" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none">
+                                                <option value="">請選擇最近輸入過代碼的客人（選填）</option>
+                                            </select>
+                                            <p class="text-xs text-gray-500 mt-1">預設會採用這位客人的最新推薦者；若現場確認不同，你仍可在下方改成其他大使。</p>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">LINE 使用者 ID <span class="text-xs text-gray-500">（選填）</span></label>
+                                                <input type="text" id="modal_line_user_id" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none" placeholder="可直接貼上 LINE userId">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">LINE 顯示名稱</label>
+                                                <input type="text" id="modal_line_display_name" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none" placeholder="例如：王小森">
+                                            </div>
+                                        </div>
+                                        <div id="modal_line_claim_info" class="rounded-lg bg-stone-50 border border-stone-200 p-3"></div>
+                                    </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">推薦大使代碼</label>
                                         <select id="modal_partner_code" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none">
@@ -4872,6 +4973,9 @@
             tomorrow.setDate(tomorrow.getDate() + 1);
             document.getElementById('modal_checkout_date').value = tomorrow.toISOString().split('T')[0];
 
+            const claimSelector = document.getElementById('modal_line_claim_selector');
+            const lineUserInput = document.getElementById('modal_line_user_id');
+            const lineDisplayInput = document.getElementById('modal_line_display_name');
             // 填充大使下拉選單
             const partnerSelect = document.getElementById('modal_partner_code');
             if (allData && allData.partners) {
@@ -4884,6 +4988,31 @@
                     }
                 });
             }
+
+            getLatestLineClaimProfiles().forEach(profile => {
+                const option = document.createElement('option');
+                option.value = profile.lineUserId;
+                option.textContent = `${profile.lineDisplayName || profile.lineUserId} ｜ 最新 ${profile.latestClaim?.partner_code || '-'} ｜ ${profile.latestClaim?.last_claimed_at || ''}`;
+                claimSelector.appendChild(option);
+            });
+
+            claimSelector.addEventListener('change', function() {
+                const lineUserId = this.value;
+                lineUserInput.value = lineUserId;
+                const latestClaim = getLatestLineClaimByUser(lineUserId);
+                lineDisplayInput.value = latestClaim?.line_display_name || '';
+                syncManualBookingClaimSelection({ forcePartner: true });
+            });
+
+            lineUserInput.addEventListener('change', function() {
+                syncManualBookingClaimSelection({ forcePartner: true });
+            });
+            lineUserInput.addEventListener('blur', function() {
+                syncManualBookingClaimSelection({ forcePartner: true });
+            });
+            lineDisplayInput.addEventListener('change', function() {
+                syncManualBookingClaimSelection();
+            });
 
             // 設定大使選擇監聽器
             partnerSelect.addEventListener('change', function() {
@@ -4926,6 +5055,8 @@
                 e.preventDefault();
                 await submitManualBooking();
             };
+
+            syncManualBookingClaimSelection();
         }
 
         // 提交手動訂房
@@ -4948,6 +5079,8 @@
                     guest_phone: document.getElementById('modal_guest_phone').value.trim(),
                     guest_email: document.getElementById('modal_guest_email').value.trim(),
                     bank_account_last5: document.getElementById('modal_bank_account_last5').value.trim(),
+                    line_user_id: document.getElementById('modal_line_user_id').value.trim(),
+                    line_display_name: document.getElementById('modal_line_display_name').value.trim(),
                     checkin_date: document.getElementById('modal_checkin_date').value,
                     checkout_date: document.getElementById('modal_checkout_date').value,
                     room_price: document.getElementById('modal_room_price').value,
@@ -5025,6 +5158,127 @@
                 'LV3_GUARDIAN': 'NT$1,500 住宿金（可轉換 NT$750現金）'
             };
             return commissionMap[level] || '依等級計算';
+        }
+
+        function getAttributionSourceLabel(source) {
+            const labels = {
+                'LATEST_LINE_CLAIM': '依最新 LINE claim 預設',
+                'MANUAL': '手動指定',
+                'MANUAL_OVERRIDE': '人工覆蓋最新推薦者',
+                'MANUAL_NO_CLAIM': '手動指定，找不到 claim',
+                'LINE_USER_NO_MATCH': '有 LINE user，但尚無 claim',
+                'MANUAL_CLEAR': '人工清除歸因'
+            };
+            return labels[source] || '未設定';
+        }
+
+        function getBookingAttributionSummaryHtml(booking) {
+            if (!booking || (!booking.line_user_id && !booking.attribution_source && !booking.attribution_entered_code)) {
+                return '<p class="text-gray-500">目前沒有 LINE 歸因資訊</p>';
+            }
+
+            return `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <p class="text-gray-600">LINE 使用者 ID</p>
+                        <p class="font-medium break-all">${escapeHtml(booking.line_user_id || '未記錄')}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">LINE 顯示名稱</p>
+                        <p class="font-medium">${escapeHtml(booking.line_display_name || '未記錄')}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">歸因方式</p>
+                        <p class="font-medium">${escapeHtml(getAttributionSourceLabel(booking.attribution_source))}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600">最近 claim 時間</p>
+                        <p class="font-medium">${escapeHtml(booking.attribution_claimed_at || '未記錄')}</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <p class="text-gray-600">最近輸入代碼</p>
+                        <p class="font-medium">${escapeHtml(booking.attribution_entered_code || '未記錄')}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function buildManualBookingClaimInfo(profile) {
+            if (!profile || !profile.latestClaim) {
+                return `
+                    <div class="text-sm text-stone-500 leading-6">
+                        若你知道客人剛在官方 LINE 輸入過哪位大使的優惠碼，可從這裡帶入最新歸因。建立訂房時會預設採用最新推薦者，你仍可手動改成其他大使。
+                    </div>
+                `;
+            }
+
+            const latestClaim = profile.latestClaim;
+            const partner = allData.partners.find(p => p.partner_code === latestClaim.partner_code);
+            return `
+                <div class="text-sm text-stone-700">
+                    <p class="font-semibold text-emerald-800">已抓到最新 LINE claim</p>
+                    <div class="grid grid-cols-2 gap-3 mt-2">
+                        <div>
+                            <p class="text-stone-500">LINE 顯示名稱</p>
+                            <p>${escapeHtml(profile.lineDisplayName || '未提供')}</p>
+                        </div>
+                        <div>
+                            <p class="text-stone-500">最近輸入時間</p>
+                            <p>${escapeHtml(latestClaim.last_claimed_at || latestClaim.created_at || '-')}</p>
+                        </div>
+                        <div>
+                            <p class="text-stone-500">預設推薦大使</p>
+                            <p>${escapeHtml(latestClaim.partner_code || '未找到')}</p>
+                        </div>
+                        <div>
+                            <p class="text-stone-500">最近輸入代碼</p>
+                            <p>${escapeHtml(latestClaim.entered_code || '-')}</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-emerald-800">
+                        建單時會先套用 ${escapeHtml(latestClaim.partner_code || '這位大使')}。若你確認實際應歸給別人，直接在下方改推薦大使即可。
+                        ${partner ? `<div class="mt-2 text-sm text-emerald-700">目前等級：${escapeHtml(getLevelText(partner.partner_level || partner.level))}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function syncManualBookingClaimSelection(options = {}) {
+            const lineUserInput = document.getElementById('modal_line_user_id');
+            const lineDisplayInput = document.getElementById('modal_line_display_name');
+            const partnerSelect = document.getElementById('modal_partner_code');
+            const claimInfo = document.getElementById('modal_line_claim_info');
+            if (!lineUserInput || !lineDisplayInput || !partnerSelect || !claimInfo) return;
+
+            const lineUserId = lineUserInput.value.trim();
+            const latestClaim = getLatestLineClaimByUser(lineUserId);
+            const profile = latestClaim ? {
+                lineUserId,
+                lineDisplayName: latestClaim.line_display_name || lineDisplayInput.value.trim(),
+                latestClaim
+            } : null;
+
+            if (profile) {
+                if (!lineDisplayInput.value.trim()) {
+                    lineDisplayInput.value = profile.lineDisplayName || '';
+                }
+                if (options.forcePartner || !partnerSelect.value) {
+                    partnerSelect.value = profile.latestClaim.partner_code || '';
+                }
+                claimInfo.innerHTML = buildManualBookingClaimInfo(profile);
+            } else {
+                if (lineUserId) {
+                    claimInfo.innerHTML = `
+                        <div class="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+                            這個 LINE 使用者目前還沒有可用的 claim 記錄。你仍可手動指定推薦大使，或先留空。
+                        </div>
+                    `;
+                } else {
+                    claimInfo.innerHTML = buildManualBookingClaimInfo(null);
+                }
+            }
+
+            partnerSelect.dispatchEvent(new Event('change'));
         }
 
         // 顯示 Apps Script 修復指導

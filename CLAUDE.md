@@ -83,6 +83,15 @@ forest-gift-v1/
 
 所有 API 統一為 `POST /api`，透過 `action` 參數分派：
 
+### 公開操作（不需 admin_secret）
+
+| action | 說明 |
+|--------|------|
+| `verify_partner_login` | 大使登入（Email/代碼 + 手機末 4 碼） |
+| `get_partner_dashboard_data` | 大使儀表板資料 |
+| `submit_application` | 提交大使申請 |
+| `shorten_url` | 短網址代理（reurl.cc / is.gd） |
+
 ### 管理員操作（需 admin_secret）
 
 | action | 說明 |
@@ -90,29 +99,31 @@ forest-gift-v1/
 | `create_booking` | 建立訂房 |
 | `update_booking` | 修改訂房（32 個可編輯欄位） |
 | `delete_booking` | 取消訂房（含佣金回沖） |
-| `confirm_checkin` | 確認入住完成（觸發佣金計算） |
-| `process_payout` | 處理結算（銀行匯款確認） |
-| `adjust_partner_commission` | 手動調整佣金 |
+| `restore_booking` | 恢復已刪除的訂房 |
+| `confirm_checkin_completion` | 確認入住完成（觸發佣金計算） |
+| `partial_refund` | 部分退款 |
+| `batch_cancel` | 批次取消多筆訂房 |
+| `create_partner` | 建立大使記錄 |
+| `update_partner` | 更新大使資料 |
+| `update_partner_commission` | 手動調整佣金 |
 | `use_accommodation_points` | 使用住宿金 |
-| `approve_application` | 核准大使申請 |
-| `reject_application` | 駁回大使申請 |
-| `save_partner_link` | 儲存大使連結 |
-| `get_all_data` | 取得全部資料 |
-| `get_analytics_data` | 取得分析數據 |
-| `audit_commissions` | 佣金審計 |
-
-### 大使/公開操作
-
-| action | 說明 |
-|--------|------|
-| `verify_partner_login` | 大使登入（Email/代碼 + 手機末 4 碼） |
-| `get_partner_dashboard_data` | 大使儀表板資料 |
-| `submit_partner_application` | 提交大使申請 |
-| `update_partner` | 大使更新自己的資料 |
+| `deduct_accommodation_points` | 同上（別名） |
+| `cancel_accommodation_usage` | 取消住宿金使用記錄 |
 | `convert_points_to_cash` | 住宿金轉現金（2:1） |
-| `cancel_payout` | 大使取消結算（7 天寬限期） |
+| `revert_cash_to_points` | 現金轉回住宿金 |
+| `create_payout` | 建立結算記錄 |
+| `update_payout` | 更新結算記錄 |
+| `cancel_payout` | 取消結算（7 天寬限期） |
+| `process_payout` | 處理結算（銀行匯款確認） |
+| `get_all_data` | 取得全部資料（管理後台） |
+| `get_dashboard_data` | 同上（別名） |
+| `get_click_stats` | 取得點擊統計 |
+| `get_applications` | 取得所有大使申請 |
+| `review_application` | 審核大使申請（核准/駁回） |
+| `promote_to_partner` | 將申請人轉為正式大使 |
+| `sync_line_claim_profiles` | 同步 LINE 用戶歸因資料 |
 
-### 點擊追蹤
+### 點擊追蹤（GET）
 
 - `GET /api?ref=XXX` 或 `?pid=XXX`：記錄點擊 → 跳轉到主頁
 

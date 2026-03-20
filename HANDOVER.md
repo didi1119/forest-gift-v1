@@ -90,29 +90,45 @@
 
 所有 API 集中在 `POST /api`，透過 `action` 欄位分派：
 
-| action | 說明 | 需 admin_secret |
-|--------|------|----------------|
-| `create_booking` | 建立訂房 | ✅ |
-| `update_booking` | 修改訂房（32 個可編輯欄位） | ✅ |
-| `delete_booking` | 取消訂房（含佣金回沖） | ✅ |
-| `confirm_checkin` | 確認入住（觸發佣金計算） | ✅ |
-| `process_payout` | 處理結算（銀行匯款確認） | ✅ |
-| `adjust_partner_commission` | 手動調整佣金 | ✅ |
-| `use_accommodation_points` | 使用住宿金 | ✅ |
-| `convert_points_to_cash` | 住宿金轉現金（2:1） | ✅ |
-| `approve_application` | 核准大使申請 | ✅ |
-| `reject_application` | 駁回大使申請 | ✅ |
-| `get_all_data` | 取得全部資料（管理後台） | ✅ |
-| `get_analytics_data` | 取得分析數據 | ✅ |
-| `audit_commissions` | 佣金審計 | ✅ |
-| `verify_partner_login` | 大使登入驗證 | — |
-| `get_partner_dashboard_data` | 大使儀表板資料 | — |
-| `submit_partner_application` | 提交大使申請 | — |
-| `update_partner` | 大使更新自己的資料 | — |
-| `cancel_payout` | 大使取消結算（7 天寬限期）| — |
-| `save_partner_link` | 儲存大使連結 | ✅ |
+**公開操作（不需 admin_secret）：**
 
-GET `/api?ref=XXX` 或 `?pid=XXX`：點擊追蹤 + 跳轉。
+| action | 說明 |
+|--------|------|
+| `verify_partner_login` | 大使登入驗證（Email/代碼 + 手機末 4 碼） |
+| `get_partner_dashboard_data` | 大使儀表板資料 |
+| `submit_application` | 提交大使申請 |
+| `shorten_url` | 短網址代理（reurl.cc / is.gd） |
+
+**管理員操作（需 admin_secret）：**
+
+| action | 說明 |
+|--------|------|
+| `create_booking` | 建立訂房 |
+| `update_booking` | 修改訂房（32 個可編輯欄位） |
+| `delete_booking` | 取消訂房（含佣金回沖） |
+| `restore_booking` | 恢復已刪除的訂房 |
+| `confirm_checkin_completion` | 確認入住完成（觸發佣金計算） |
+| `partial_refund` | 部分退款 |
+| `batch_cancel` | 批次取消多筆訂房 |
+| `create_partner` | 建立大使記錄 |
+| `update_partner` | 更新大使資料 |
+| `update_partner_commission` | 手動調整佣金 |
+| `use_accommodation_points` | 使用住宿金（別名：`deduct_accommodation_points`） |
+| `cancel_accommodation_usage` | 取消住宿金使用記錄 |
+| `convert_points_to_cash` | 住宿金轉現金（2:1） |
+| `revert_cash_to_points` | 現金轉回住宿金 |
+| `create_payout` | 建立結算記錄 |
+| `update_payout` | 更新結算記錄 |
+| `cancel_payout` | 取消結算（7 天寬限期） |
+| `process_payout` | 處理結算（銀行匯款確認） |
+| `get_all_data` | 取得全部資料（別名：`get_dashboard_data`） |
+| `get_click_stats` | 取得點擊統計 |
+| `get_applications` | 取得所有大使申請 |
+| `review_application` | 審核大使申請（核准/駁回） |
+| `promote_to_partner` | 將申請人轉為正式大使 |
+| `sync_line_claim_profiles` | 同步 LINE 用戶歸因資料 |
+
+**點擊追蹤（GET）：** `/api?ref=XXX` 或 `?pid=XXX` → 記錄點擊 + 跳轉。
 
 ---
 
@@ -398,11 +414,10 @@ forest-gift-v1/                          ← GitHub repo root
 | 項目 | 現況 | 建議 |
 |------|------|------|
 | `backend.js` 41,000+ 行 | 所有商業邏輯在單一檔案 | 拆分為模組（booking.js, commission.js, partner.js 等） |
-| ~~reurl.cc API Key 前端暴露~~ | ~~4 個 HTML 檔案含 API key~~ | ✅ 已修復 — 改用 `/api` shorten_url 代理 |
 | 管理後台認證 | 僅 4 位數密碼 prompt | OAuth 或 Edge Middleware |
-| ~~CLAUDE.md 過時~~ | ~~仍描述 Google Apps Script 為後端~~ | ✅ 已重寫 — 反映 Vercel + Sheets/Supabase 架構 |
 | GA4 整合 | 程式碼已預埋但 Measurement ID 未啟用 | 建立 GA4 Property 並啟用 |
 | 等級年度降級審核 | 升級已實作，但年度降級邏輯未確認是否完整 | 驗證 yearly_referrals 重設 + 降級觸發 |
+| 無 CI/CD 自動化測試 | 測試需手動執行 | 加入 GitHub Actions 跑測試 |
 
 ### 9.3 ❌ 尚未實作
 
@@ -479,11 +494,12 @@ vercel --prod
 |------|------|
 | `COMMISSION-SYSTEM-ARCHITECTURE.md` | 佣金制度完整架構（660+ 行，最重要的商業文件） |
 | `ADMIN-LINKS.md` | 所有管理後台 URL 清單 |
-| `BOOKING_MANAGEMENT_FEATURES.md` | 訂房管理功能說明 |
-| `ORDER_EDIT_FEATURES.md` | 訂單編輯功能說明 |
 | `coupon-link-flow-explanation.md` | LINE 優惠券 6 步跳轉流程 |
-| `ID_SAFETY_GUIDE.md` | 資料完整性與 ID 安全指南 |
-| `TEST_PLAN_ID.md` | 測試計畫與邊際案例 |
+| `docs/BOOKING_MANAGEMENT_FEATURES.md` | 訂房管理功能說明 |
+| `docs/ORDER_EDIT_FEATURES.md` | 訂單編輯功能說明 |
+| `docs/ID_SAFETY_GUIDE.md` | 資料完整性與 ID 安全指南 |
+| `docs/VERIFIED-COMMISSION-SPEC.md` | 已驗證的佣金規格（2026-03-13） |
+| `test/TEST_PLAN_ID.md` | ID 測試計畫與邊際案例 |
 | `test/README.md` | API 測試框架使用指南 |
 
 ---

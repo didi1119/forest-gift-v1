@@ -2267,6 +2267,63 @@
                 .slice(0, limit);
         }
 
+        function buildLineClaimOptionLabel(profile) {
+            const displayLabel = profile.lineDisplayName || `未命名 (${profile.lineUserId.slice(-6)})`;
+            return `${displayLabel} ｜ 最新 ${profile.latestClaim?.partner_code || '-'} ｜ 代碼 ${profile.latestClaim?.entered_code || '-'} ｜ ${profile.latestClaim?.last_claimed_at || ''}`;
+        }
+
+        function refreshManualBookingClaimSelector(options = {}) {
+            const claimSelector = document.getElementById('modal_line_claim_selector');
+            if (!claimSelector) return;
+
+            const preserveValue = options.preserveValue !== false ? String(options.selectedValue !== undefined ? options.selectedValue : claimSelector.value || '').trim() : '';
+            claimSelector.innerHTML = '';
+
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = '請選擇最近輸入過代碼的客人（選填）';
+            claimSelector.appendChild(emptyOption);
+
+            const profiles = getLatestLineClaimProfiles();
+            profiles.forEach(profile => {
+                const option = document.createElement('option');
+                option.value = profile.lineUserId;
+                option.textContent = buildLineClaimOptionLabel(profile);
+                claimSelector.appendChild(option);
+            });
+
+            if (preserveValue && profiles.some(profile => profile.lineUserId === preserveValue)) {
+                claimSelector.value = preserveValue;
+            } else {
+                claimSelector.value = '';
+            }
+        }
+
+        function formatLineClaimSyncMessage(result = {}) {
+            const updatedUsers = Number(result.updated_users) || 0;
+            const updatedClaims = Number(result.updated_claims) || 0;
+            const attemptedUsers = Number(result.attempted_users) || 0;
+            const errors = Array.isArray(result.errors) ? result.errors : [];
+            const summaryParts = [`✅ 已同步 ${updatedUsers} 位 LINE 使用者名稱`];
+
+            if (updatedClaims > 0) {
+                summaryParts.push(`更新 ${updatedClaims} 筆 claim`);
+            }
+
+            if (errors.length > 0) {
+                const errorPreview = errors.slice(0, 3).map(item => {
+                    const tail = String(item.line_user_id || '').trim();
+                    const shortTail = tail ? `(${tail.slice(-6)})` : '';
+                    return `${shortTail || '未知使用者'} ${item.error || '同步失敗'}`.trim();
+                }).join('；');
+                summaryParts.push(`另有 ${errors.length}/${attemptedUsers || errors.length} 位未同步：${errorPreview}`);
+            } else if (attemptedUsers > 0 && updatedUsers === 0) {
+                summaryParts.push('目前沒有需要補同步的 LINE 名稱');
+            }
+
+            return summaryParts.join('；');
+        }
+
         async function syncLineClaimProfilesFromAdmin() {
             try {
                 const result = await submitToBackendViaForm({
@@ -2275,7 +2332,12 @@
                     limit: 80
                 });
                 await loadRealData(true);
-                showSuccessMessage(`✅ 已同步 ${result.updated_users || 0} 位 LINE 使用者名稱`);
+                const lineUserInput = document.getElementById('modal_line_user_id');
+                refreshManualBookingClaimSelector({
+                    selectedValue: lineUserInput ? lineUserInput.value.trim() : ''
+                });
+                syncManualBookingClaimSelection();
+                showSuccessMessage(formatLineClaimSyncMessage(result));
                 return result;
             } catch (error) {
                 alert(`❌ 同步 LINE 顯示名稱失敗：${error.message}`);
@@ -5124,14 +5186,7 @@
                 resultId: 'modal_partner_search_result',
                 placeholder: '請選擇推薦大使（無推薦請留空）'
             });
-
-            getLatestLineClaimProfiles().forEach(profile => {
-                const option = document.createElement('option');
-                option.value = profile.lineUserId;
-                const displayLabel = profile.lineDisplayName || `未命名 (${profile.lineUserId.slice(-6)})`;
-                option.textContent = `${displayLabel} ｜ 最新 ${profile.latestClaim?.partner_code || '-'} ｜ 代碼 ${profile.latestClaim?.entered_code || '-'} ｜ ${profile.latestClaim?.last_claimed_at || ''}`;
-                claimSelector.appendChild(option);
-            });
+            refreshManualBookingClaimSelector();
 
             claimSelector.addEventListener('change', function() {
                 const lineUserId = this.value;

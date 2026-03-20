@@ -7,9 +7,10 @@
 ehthumbs.db
 Thumbs.db
 
-# 編輯器文件
+# 編輯器 / 開發工具
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 *~

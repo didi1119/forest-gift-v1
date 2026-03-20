@@ -4435,11 +4435,15 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">推薦大使</label>
+                                        <input type="search" id="edit_partner_search" class="w-full mb-2 p-2 border rounded-md focus:ring-2 focus:ring-green-500" placeholder="輸入代碼、姓名、電話或 Email 搜尋大使">
                                         <select id="edit_partner_code" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500"
                                             onchange="updatePartnerInfo()">
                                             <option value="">無推薦大使</option>
                                             ${partnersOptions}
                                         </select>
+                                        <div class="flex justify-end mt-1 text-xs text-gray-500">
+                                            <p id="edit_partner_search_result"></p>
+                                        </div>
                                     </div>
                                     <div id="editPartnerInfo" class="text-sm">
                                         ${booking.partner_code ? getPartnerInfoHtml(booking.partner_code) : '<p class="text-gray-500">無推薦大使</p>'}
@@ -4532,6 +4536,13 @@
                 saveBookingChanges(currentBookingIdentifier);
             });
 
+            initPartnerSearchableSelect({
+                searchInputId: 'edit_partner_search',
+                selectId: 'edit_partner_code',
+                resultId: 'edit_partner_search_result',
+                placeholder: '無推薦大使'
+            });
+
             return modal;
         }
 
@@ -4550,6 +4561,90 @@
                     <p class="text-xs text-blue-600">佣金：住宿金 $${expectedCommission.accommodation}（可轉換現金 $${expectedCommission.cash}）</p>
                 </div>
             `;
+        }
+
+        function getPartnerSearchText(partner) {
+            return [
+                partner.partner_code,
+                partner.partner_name,
+                partner.name,
+                partner.contact_phone,
+                partner.phone,
+                partner.contact_email,
+                partner.email,
+                partner.coupon_code
+            ].map(value => String(value || '').trim().toLowerCase()).join(' ');
+        }
+
+        function buildPartnerOptionLabel(partner) {
+            return `${partner.partner_code} - ${partner.partner_name || partner.name || '未設定姓名'} (${getLevelText(partner.partner_level || partner.level)})`;
+        }
+
+        function populatePartnerSelectOptions(selectEl, partners, options = {}) {
+            if (!selectEl) return;
+
+            const placeholder = options.placeholder || '請選擇推薦大使（無推薦請留空）';
+            const selectedCode = options.selectedCode !== undefined ? options.selectedCode : selectEl.value;
+
+            selectEl.innerHTML = '';
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = placeholder;
+            selectEl.appendChild(emptyOption);
+
+            partners.forEach(partner => {
+                if (!partner || !partner.partner_code) return;
+                const option = document.createElement('option');
+                option.value = partner.partner_code;
+                option.textContent = buildPartnerOptionLabel(partner);
+                selectEl.appendChild(option);
+            });
+
+            if (selectedCode && partners.some(partner => partner.partner_code === selectedCode)) {
+                selectEl.value = selectedCode;
+            } else {
+                selectEl.value = '';
+            }
+        }
+
+        function initPartnerSearchableSelect(config) {
+            const searchInput = document.getElementById(config.searchInputId);
+            const selectEl = document.getElementById(config.selectId);
+            const resultEl = document.getElementById(config.resultId);
+            if (!searchInput || !selectEl) return;
+
+            const partners = (allData?.partners || []).filter(partner => partner && partner.partner_code);
+            const placeholder = config.placeholder || '請選擇推薦大使（無推薦請留空）';
+
+            const applyFilter = () => {
+                const keyword = searchInput.value.trim().toLowerCase();
+                const filtered = keyword
+                    ? partners.filter(partner => getPartnerSearchText(partner).includes(keyword))
+                    : partners;
+                const currentValue = selectEl.value;
+                populatePartnerSelectOptions(selectEl, filtered, {
+                    placeholder,
+                    selectedCode: currentValue
+                });
+
+                if (resultEl) {
+                    const summary = keyword
+                        ? `找到 ${filtered.length} 位符合`
+                        : `共 ${partners.length} 位大使`;
+                    resultEl.textContent = summary;
+                }
+
+                if (keyword && filtered.length === 1 && !currentValue) {
+                    selectEl.value = filtered[0].partner_code;
+                    selectEl.dispatchEvent(new Event('change'));
+                } else if (currentValue && filtered.every(partner => partner.partner_code !== currentValue)) {
+                    selectEl.dispatchEvent(new Event('change'));
+                }
+            };
+
+            searchInput.addEventListener('input', applyFilter);
+            searchInput.addEventListener('search', applyFilter);
+            applyFilter();
         }
 
         // 獲取佣金預覽HTML
@@ -4905,10 +5000,14 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">推薦大使代碼</label>
+                                        <input type="search" id="modal_partner_search" class="w-full mb-2 p-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none" placeholder="輸入代碼、姓名、電話或 Email 搜尋大使">
                                         <select id="modal_partner_code" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none">
                                             <option value="">請選擇推薦大使（無推薦請留空）</option>
                                         </select>
-                                        <p class="text-xs text-gray-500 mt-1">選擇推薦大使或留空表示非大使推薦</p>
+                                        <div class="flex items-center justify-between text-xs text-gray-500 mt-1">
+                                            <p>選擇推薦大使或留空表示非大使推薦</p>
+                                            <p id="modal_partner_search_result"></p>
+                                        </div>
                                         <div id="modal_partner_info" class="mt-2 p-3 bg-gray-50 rounded-lg hidden">
                                             <!-- 選中大使的詳細資訊會顯示在這裡 -->
                                         </div>
@@ -4997,18 +5096,13 @@
             const claimSelector = document.getElementById('modal_line_claim_selector');
             const lineUserInput = document.getElementById('modal_line_user_id');
             const lineDisplayInput = document.getElementById('modal_line_display_name');
-            // 填充大使下拉選單
             const partnerSelect = document.getElementById('modal_partner_code');
-            if (allData && allData.partners) {
-                allData.partners.forEach(partner => {
-                    if (partner && partner.partner_code) {
-                        const option = document.createElement('option');
-                        option.value = partner.partner_code;
-                        option.textContent = `${partner.partner_code} - ${partner.partner_name || partner.name || '未設定姓名'} (${getLevelText(partner.partner_level || partner.level)})`;
-                        partnerSelect.appendChild(option);
-                    }
-                });
-            }
+            initPartnerSearchableSelect({
+                searchInputId: 'modal_partner_search',
+                selectId: 'modal_partner_code',
+                resultId: 'modal_partner_search_result',
+                placeholder: '請選擇推薦大使（無推薦請留空）'
+            });
 
             getLatestLineClaimProfiles().forEach(profile => {
                 const option = document.createElement('option');
@@ -5023,6 +5117,11 @@
                 lineUserInput.value = lineUserId;
                 const latestClaim = getLatestLineClaimByUser(lineUserId);
                 lineDisplayInput.value = latestClaim?.line_display_name || '';
+                const partnerSearchInput = document.getElementById('modal_partner_search');
+                if (partnerSearchInput) {
+                    partnerSearchInput.value = latestClaim?.partner_code || '';
+                    partnerSearchInput.dispatchEvent(new Event('input'));
+                }
                 syncManualBookingClaimSelection({ forcePartner: true });
             });
 

@@ -2088,6 +2088,20 @@ async function handleRevertCashToPoints(data) {
   const partnerCode = data.partner_code;
   if (!partnerCode) throw new Error('Partner code is required');
 
+  // 季度截止日檢查：僅限當季截止日（3/31、6/30、9/30、12/31）前可撤回
+  const now = new Date();
+  const quarter = Math.floor(now.getMonth() / 3); // 0=Q1, 1=Q2, 2=Q3, 3=Q4
+  const quarterEndDates = [
+    new Date(now.getFullYear(), 2, 31, 23, 59, 59),  // Q1: 3/31
+    new Date(now.getFullYear(), 5, 30, 23, 59, 59),  // Q2: 6/30
+    new Date(now.getFullYear(), 8, 30, 23, 59, 59),  // Q3: 9/30
+    new Date(now.getFullYear(), 11, 31, 23, 59, 59)  // Q4: 12/31
+  ];
+  const quarterEnd = quarterEndDates[quarter];
+  if (now > quarterEnd) {
+    throw new Error(`已超過當季截止日（${quarterEnd.toISOString().slice(0, 10)}），無法撤回轉換`);
+  }
+
   const partner = await findPartnerByCode(partnerCode);
   if (!partner) throw new Error('Partner not found');
 
@@ -2321,7 +2335,9 @@ async function handleConvertPointsToCash(data) {
   const convertAmount = parseFloat(data.points_used || data.amount || 0);
   const EXCHANGE_RATE = 0.5;
 
+  const MIN_CONVERT_POINTS = 1000;
   if (!partnerCode || convertAmount <= 0) throw new Error('參數無效');
+  if (convertAmount < MIN_CONVERT_POINTS) throw new Error(`最低轉換金額為 ${MIN_CONVERT_POINTS} 點，您輸入了 ${convertAmount} 點`);
 
   const partner = await findPartnerByCode(partnerCode);
   if (!partner) throw new Error('找不到大使: ' + partnerCode);

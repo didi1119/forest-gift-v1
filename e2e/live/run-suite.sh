@@ -5,6 +5,7 @@ NODE_BIN="${NODE_BIN:-node}"
 
 SCRIPTS="
  scripts/e2e-admin-ui.js
+ scripts/e2e-booking-line-attribution-ui.js
  scripts/e2e-partner-financial-ui.js
  scripts/e2e-partner-adjustments-ui.js
  scripts/e2e-overview-batch-ui.js

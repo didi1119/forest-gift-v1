@@ -71,6 +71,11 @@ export API_BASE=http://127.0.0.1:4173/api
   - 編輯訂房
   - 確認入住
   - 刪除訂房
+- `e2e-booking-line-attribution-ui.js`
+  - 手動訂房 modal 選取近期 LINE claim
+  - 預設採用最新推薦者
+  - 編輯訂單時手動覆蓋推薦者
+  - 回查 Supabase 驗證 `LATEST_LINE_CLAIM / MANUAL_OVERRIDE`
 - `e2e-partner-financial-ui.js`
   - 使用住宿金
   - 點數轉現金

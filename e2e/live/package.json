@@ -4,6 +4,7 @@
   "type": "commonjs",
   "scripts": {
     "admin-ui": "node scripts/e2e-admin-ui.js",
+    "booking-line-attribution": "node scripts/e2e-booking-line-attribution-ui.js",
     "partner-financial": "node scripts/e2e-partner-financial-ui.js",
     "partner-adjustments": "node scripts/e2e-partner-adjustments-ui.js",
     "overview-batch": "node scripts/e2e-overview-batch-ui.js",

@@ -4919,6 +4919,27 @@
             };
         }
 
+        function shouldAutoOpenManualBooking() {
+            const params = new URLSearchParams(window.location.search);
+            return ['1', 'true', 'yes'].includes(String(params.get('openManualBooking') || '').toLowerCase());
+        }
+
+        function clearManualBookingDeepLink() {
+            const params = new URLSearchParams(window.location.search);
+            if (!params.has('openManualBooking')) return;
+            params.delete('openManualBooking');
+            const nextQuery = params.toString();
+            const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash || ''}`;
+            window.history.replaceState({}, document.title, nextUrl);
+        }
+
+        function handleInitialAdminDeepLinks() {
+            if (!shouldAutoOpenManualBooking()) return;
+            showTab('bookings');
+            openManualBookingModal();
+            clearManualBookingDeepLink();
+        }
+
         // 開啟手動訂房模態框
         window.openManualBookingModal = function() {
             createManualBookingModal();
@@ -7697,12 +7718,20 @@ ${impactLines.join('\n')}
             console.log('🚀 頁面載入完成，初始化應用程式');
             // 預先載入資料
             loadRealData().then(() => {
-                // 顯示預設的 onboarding 標籤
-                showTab('onboarding');
+                if (shouldAutoOpenManualBooking()) {
+                    handleInitialAdminDeepLinks();
+                } else {
+                    // 顯示預設的 onboarding 標籤
+                    showTab('onboarding');
+                }
             }).catch(error => {
                 console.error('初始載入失敗:', error);
-                // 即使失敗也顯示 onboarding 標籤
-                showTab('onboarding');
+                if (shouldAutoOpenManualBooking()) {
+                    handleInitialAdminDeepLinks();
+                } else {
+                    // 即使失敗也顯示 onboarding 標籤
+                    showTab('onboarding');
+                }
             });
         });
 

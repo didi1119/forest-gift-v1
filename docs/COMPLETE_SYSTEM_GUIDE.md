@@ -64,7 +64,7 @@ trackCardUsage(card.name);
 ### 步驟 4：部署管理後台
 將以下檔案上傳到您的網站：
 
-- `manual-booking.html` - 手動訂房登記系統
+- `admin-dashboard-real.html?openManualBooking=1` - 手動訂房登記入口
 - `manual-checkin-confirm.html` - 入住確認系統  
 - `admin-dashboard-real.html` - 後台管理系統
 - `analytics-dashboard.html` - 數據分析儀表板
@@ -92,7 +92,7 @@ trackCardUsage(card.name);
 ### 日常管理流程：
 
 1. **新大使加入** → 使用 `link-generator-form.html` 生成專屬連結
-2. **有客人入住** → 使用 `manual-booking.html` 登記訂房（如需要）  
+2. **有客人入住** → 使用 `admin-dashboard-real.html?openManualBooking=1` 登記訂房（如需要）  
 3. **確認入住完成** → 使用 `manual-checkin-confirm.html` 確認並自動計算佣金
 4. **查看績效數據** → 使用 `admin-dashboard-real.html` 監控整體狀況
 5. **深度數據分析** → 使用 `analytics-dashboard.html` 分析趨勢和偏好

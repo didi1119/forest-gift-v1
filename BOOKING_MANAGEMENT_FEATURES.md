@@ -7,7 +7,7 @@
 ## ✨ 新增功能
 
 ### 1. 🔍 推薦大使代碼驗證
-**位置**: [手動訂房登記頁面](https://didi1119.github.io/forest-gift-v1/frontend/admin/manual-booking.html)
+**位置**: [手動訂房登記入口](https://didi1119.github.io/forest-gift-v1/frontend/admin/admin-dashboard-real.html?openManualBooking=1)
 
 **功能特點**:
 - 即時驗證推薦大使代碼是否存在於系統中
@@ -146,7 +146,7 @@
 
 - **主站**: https://didi1119.github.io/forest-gift-v1
 - **管理後台**: https://didi1119.github.io/forest-gift-v1/frontend/admin/admin-dashboard-real.html
-- **手動訂房**: https://didi1119.github.io/forest-gift-v1/frontend/admin/manual-booking.html
+- **手動訂房**: https://didi1119.github.io/forest-gift-v1/frontend/admin/admin-dashboard-real.html?openManualBooking=1
 
 ## 🔮 未來規劃
 

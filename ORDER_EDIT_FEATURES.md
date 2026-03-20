@@ -194,7 +194,7 @@
 ## 📱 線上測試
 
 - **管理後台**: https://didi1119.github.io/forest-gift-v1/frontend/admin/admin-dashboard-real.html
-- **手動訂房**: https://didi1119.github.io/forest-gift-v1/frontend/admin/manual-booking.html
+- **手動訂房**: https://didi1119.github.io/forest-gift-v1/frontend/admin/admin-dashboard-real.html?openManualBooking=1
 
 ## 💪 優勢總結
 

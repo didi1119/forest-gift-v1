@@ -22,7 +22,7 @@
 - 「已完成」和「已取消」的訂單無法再次操作
 
 ### 2. 📋 推薦大使下拉選單
-**位置**: [手動訂房登記](https://didi1119.github.io/forest-gift-v1/frontend/admin/manual-booking.html)
+**位置**: [手動訂房登記](https://didi1119.github.io/forest-gift-v1/frontend/admin/admin-dashboard-real.html?openManualBooking=1)
 
 **功能改進**:
 - 推薦大使代碼改為下拉選單形式
@@ -111,7 +111,7 @@
 ## 📱 線上測試連結
 
 - **管理後台**: https://didi1119.github.io/forest-gift-v1/frontend/admin/admin-dashboard-real.html
-- **手動訂房**: https://didi1119.github.io/forest-gift-v1/frontend/admin/manual-booking.html
+- **手動訂房**: https://didi1119.github.io/forest-gift-v1/frontend/admin/admin-dashboard-real.html?openManualBooking=1
 
 ## 🎯 使用建議
 

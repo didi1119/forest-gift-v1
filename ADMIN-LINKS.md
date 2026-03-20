@@ -21,7 +21,7 @@ https://didi1119.github.io/forest-gift-v1/frontend/admin/link-generator-form.htm
 ### 📝 手動訂房登記
 **功能：** 手動登記新訂房記錄
 ```
-https://didi1119.github.io/forest-gift-v1/frontend/admin/manual-booking.html
+https://didi1119.github.io/forest-gift-v1/frontend/admin/admin-dashboard-real.html?openManualBooking=1
 ```
 
 ### ✅ 入住確認
@@ -114,7 +114,7 @@ https://didi1119.github.io/forest-gift-v1/frontend/invitation.html
 
 1. ⭐ **主控制台** - admin-dashboard-real.html
 2. ⭐ **連結生成器** - link-generator-form.html
-3. ⭐ **手動訂房** - manual-booking.html
+3. ⭐ **手動訂房** - admin-dashboard-real.html?openManualBooking=1
 4. ⭐ **入住確認** - manual-checkin-confirm.html
 
 ---

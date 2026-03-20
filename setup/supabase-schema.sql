@@ -203,6 +203,37 @@ CREATE INDEX IF NOT EXISTS idx_line_coupon_bindings_partner_code ON line_coupon_
 CREATE INDEX IF NOT EXISTS idx_line_coupon_bindings_coupon_code ON line_coupon_bindings(coupon_code);
 CREATE INDEX IF NOT EXISTS idx_line_coupon_bindings_status ON line_coupon_bindings(line_coupon_status);
 
+-- 8. Line Referral Claims
+CREATE TABLE IF NOT EXISTS line_referral_claims (
+  id BIGSERIAL PRIMARY KEY,
+  claim_key TEXT NOT NULL UNIQUE,
+  line_user_id TEXT DEFAULT '',
+  line_source_type TEXT DEFAULT 'user',
+  line_display_name TEXT DEFAULT '',
+  line_message_id TEXT DEFAULT '',
+  entered_code TEXT DEFAULT '',
+  normalized_entered_code TEXT DEFAULT '',
+  partner_code TEXT DEFAULT '',
+  shared_coupon_id TEXT DEFAULT '',
+  claim_status TEXT DEFAULT 'CLAIMED',
+  claim_count INTEGER DEFAULT 1,
+  coupon_reply_count INTEGER DEFAULT 0,
+  first_claimed_at TEXT DEFAULT '',
+  last_claimed_at TEXT DEFAULT '',
+  last_replied_at TEXT DEFAULT '',
+  last_reply_status TEXT DEFAULT '',
+  booking_id TEXT DEFAULT '',
+  notes TEXT DEFAULT '',
+  last_error TEXT DEFAULT '',
+  created_at TEXT DEFAULT '',
+  updated_at TEXT DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS idx_line_referral_claims_partner_code ON line_referral_claims(partner_code);
+CREATE INDEX IF NOT EXISTS idx_line_referral_claims_line_user_id ON line_referral_claims(line_user_id);
+CREATE INDEX IF NOT EXISTS idx_line_referral_claims_normalized_code ON line_referral_claims(normalized_entered_code);
+CREATE INDEX IF NOT EXISTS idx_line_referral_claims_status ON line_referral_claims(claim_status);
+
 -- ========================================
 -- updated_at 自動更新 trigger
 -- ========================================
@@ -219,7 +250,7 @@ DO $$
 DECLARE
   tbl TEXT;
 BEGIN
-  FOR tbl IN SELECT unnest(ARRAY['partners', 'bookings', 'payouts', 'accommodation_usage', 'clicks', 'applications', 'line_coupon_bindings'])
+  FOR tbl IN SELECT unnest(ARRAY['partners', 'bookings', 'payouts', 'accommodation_usage', 'clicks', 'applications', 'line_coupon_bindings', 'line_referral_claims'])
   LOOP
     EXECUTE format('
       DROP TRIGGER IF EXISTS set_updated_at ON %I;

@@ -187,6 +187,7 @@ async function supabaseDeleteBy(table, where) {
 
 async function cleanup() {
   if (!hasSupabase) return;
+  await supabaseDeleteBy('line_referral_claims', `partner_code=eq.${encodeURIComponent(partnerCode)}`).catch(() => {});
   await supabaseDeleteBy('line_coupon_bindings', `partner_code=eq.${encodeURIComponent(partnerCode)}`).catch(() => {});
   await supabaseDeleteBy('accommodation_usage', `partner_code=eq.${encodeURIComponent(partnerCode)}`).catch(() => {});
   await supabaseDeleteBy('payouts', `partner_code=eq.${encodeURIComponent(partnerCode)}`).catch(() => {});
@@ -403,16 +404,6 @@ async function cleanup() {
     ensure((partner.line_coupon_url || partner.coupon_url) === couponUrl, `partner coupon target mismatch: ${JSON.stringify(partner)}`);
     ensure(Boolean(partner.short_landing_link), `short_landing_link should be populated: ${JSON.stringify(partner)}`);
     ensure(Boolean(partner.short_coupon_link), `short_coupon_link should be populated: ${JSON.stringify(partner)}`);
-
-    const lineCouponBindingRows = await supabaseMaybeQuery(
-      'line_coupon_bindings',
-      `select=partner_code,coupon_code,line_coupon_status,line_keyword_status,line_coupon_id&partner_code=eq.${encodeURIComponent(partnerCode)}&limit=1`
-    );
-    if (lineCouponBindingRows) {
-      const lineCouponBinding = lineCouponBindingRows[0] || null;
-      ensure(lineCouponBinding, 'line_coupon_bindings should contain the created partner when table is available');
-      ensure(lineCouponBinding.coupon_code === couponCode, `line coupon binding coupon_code mismatch: ${JSON.stringify(lineCouponBinding)}`);
-    }
 
     const linkedApplication = await waitFor(async () => {
       const rows = await supabaseQuery(

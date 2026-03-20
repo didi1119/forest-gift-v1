@@ -9,6 +9,7 @@ const DEFAULT_LINE_COUPON_TITLE = process.env.LINE_COUPON_TITLE || '土地的厚
 const DEFAULT_LINE_COUPON_DESCRIPTION = process.env.LINE_COUPON_DESCRIPTION || '獲贈 [山城地瓜包] 乙份 ＆ [延時退房一小時]。\n\n這是我們想送給你的兩份禮物：\n一份是紮實飽滿的在地滋味，\n一份是悠哉退房的自由時光。\n希望你在這裡，像在家一樣自在。';
 const DEFAULT_LINE_COUPON_USAGE_CONDITION = process.env.LINE_COUPON_USAGE_CONDITION || '出示此券即可兌換，每組訂單限用一次。';
 const DEFAULT_LINE_COUPON_VALID_DAYS = parseInt(process.env.LINE_COUPON_VALID_DAYS || '365', 10);
+const DEFAULT_LINE_SHARED_CLAIM_STATUS = 'CLAIMED';
 
 // 佣金等級對照表
 const COMMISSION_RATES = {
@@ -86,6 +87,16 @@ const DataModels = {
       'coupon_title', 'coupon_description', 'coupon_usage_condition',
       'reply_count', 'last_replied_at', 'line_coupon_closed_at',
       'is_active', 'last_error', 'created_at', 'updated_at']
+  },
+  LineReferralClaim: {
+    tableName: 'Line_Referral_Claims',
+    fields: ['id', 'claim_key', 'line_user_id', 'line_source_type',
+      'line_display_name', 'line_message_id', 'entered_code',
+      'normalized_entered_code', 'partner_code', 'shared_coupon_id',
+      'claim_status', 'claim_count', 'coupon_reply_count',
+      'first_claimed_at', 'last_claimed_at', 'last_replied_at',
+      'last_reply_status', 'booking_id', 'notes', 'last_error',
+      'created_at', 'updated_at']
   }
 };
 
@@ -97,6 +108,7 @@ module.exports = {
   DEFAULT_LINE_COUPON_DESCRIPTION,
   DEFAULT_LINE_COUPON_USAGE_CONDITION,
   DEFAULT_LINE_COUPON_VALID_DAYS,
+  DEFAULT_LINE_SHARED_CLAIM_STATUS,
   COMMISSION_RATES,
   FIRST_REFERRAL_BONUS,
   LEVEL_REQUIREMENTS,

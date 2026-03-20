@@ -1206,7 +1206,8 @@
             bookings: [],
             payouts: [],
             clicks: [],
-            line_coupon_bindings: []
+            line_coupon_bindings: [],
+            line_referral_claims: []
         };
 
         let onboardingState = {
@@ -1295,7 +1296,8 @@
                             payouts: data.data.payouts || [],
                             clicks: data.data.clicks || [],
                             accommodation_usage: data.data.accommodation_usage || [],
-                            line_coupon_bindings: data.data.line_coupon_bindings || []
+                            line_coupon_bindings: data.data.line_coupon_bindings || [],
+                            line_referral_claims: data.data.line_referral_claims || []
                         };
                     console.log('✅ 載入真實數據成功:');
                     console.log('- Partners:', allData.partners?.length || 0);
@@ -1573,7 +1575,8 @@
             const totalClicks = getPartnerClicks(f.code);
             const accommodationBalance = f.availablePoints;  // 使用統一計算的值
             const pendingCash = f.pendingCash;
-            const lineCouponMeta = getLineCouponStatusMeta(partner);
+            const lineClaimMeta = getLineClaimStatusMeta(partner);
+            const claimSummary = getPartnerLineClaimSummary(partner.partner_code);
             const isInactive = partner.is_active === false;
 
             // --- 呼叫操作按鈕生成函式 ---
@@ -1600,10 +1603,11 @@
                                 </div>
                                 <div class="mt-1 flex flex-wrap gap-2">
                                     <span class="px-3 py-1 rounded-full text-xs font-medium ${levelClass}">${levelText}</span>
-                                    <span class="px-3 py-1 rounded-full text-xs font-medium ${lineCouponMeta.className}">${lineCouponMeta.label}</span>
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium ${lineClaimMeta.className}">${lineClaimMeta.label}</span>
                                 </div>
                                 <div class="mt-2 space-y-1 text-xs text-stone-500">
                                     <div>對外優惠碼：${escapeHtml(partner.coupon_code || '未設定')}</div>
+                                    <div>LINE 歸因數：${claimSummary.totalClaimCount.toLocaleString()}</div>
                                     <div>年初基準：${getLevelText(f.baseLevelForYear)}</div>
                                     <div>資格有效至：${formatDate(f.levelValidUntil)}</div>
                                 </div>
@@ -2190,64 +2194,55 @@
             return m[type] || type || '其他';
         }
 
-        function getLineCouponBinding(partnerCode) {
-            if (!partnerCode || !Array.isArray(allData.line_coupon_bindings)) return null;
-            return allData.line_coupon_bindings.find(binding => binding.partner_code === partnerCode) || null;
+        function getLineReferralClaimsByPartner(partnerCode) {
+            if (!partnerCode || !Array.isArray(allData.line_referral_claims)) return [];
+            return allData.line_referral_claims
+                .filter(claim => claim.partner_code === partnerCode)
+                .sort((a, b) => String(b.last_claimed_at || b.created_at || '').localeCompare(String(a.last_claimed_at || a.created_at || '')));
         }
 
-        function getLineCouponStatusMeta(partner, binding = getLineCouponBinding(partner?.partner_code)) {
+        function getPartnerLineClaimSummary(partnerCode) {
+            const claims = getLineReferralClaimsByPartner(partnerCode);
+            return {
+                claims,
+                totalClaims: claims.length,
+                totalClaimCount: claims.reduce((sum, claim) => sum + (Number(claim.claim_count) || 0), 0),
+                totalReplyCount: claims.reduce((sum, claim) => sum + (Number(claim.coupon_reply_count) || 0), 0),
+                lastClaim: claims[0] || null
+            };
+        }
+
+        function getLineClaimStatusMeta(partner) {
+            const claimSummary = getPartnerLineClaimSummary(partner?.partner_code);
+
             if (partner?.is_active === false) {
                 return {
-                    label: 'LINE 券已停用',
+                    label: 'LINE 代碼停用中',
                     className: 'bg-stone-200 text-stone-700',
-                    detail: '大使目前已停用，LINE 優惠券與關鍵字回應同步關閉。'
+                    detail: '大使目前已停用，客人在官方 LINE 輸入此代碼時不會再被記入歸因。'
                 };
             }
 
-            if (!binding) {
+            if (!partner?.coupon_code) {
                 return {
-                    label: '尚未建立 LINE 券',
+                    label: '未設定優惠代碼',
                     className: 'bg-stone-100 text-stone-600',
-                    detail: '目前還沒有看到綁定紀錄。若剛建立，可重新整理後再確認。'
+                    detail: '先設定對外優惠代碼，客人才能在官方 LINE 輸入並建立歸因紀錄。'
                 };
             }
 
-            if (binding.line_coupon_status === 'ACTIVE' && binding.line_keyword_status !== 'INACTIVE') {
+            if (claimSummary.totalClaimCount > 0) {
                 return {
-                    label: 'LINE 券已綁定',
+                    label: `LINE 已歸因 ${claimSummary.totalClaimCount} 次`,
                     className: 'bg-emerald-100 text-emerald-800',
-                    detail: `輸入代碼 ${binding.coupon_code || partner?.coupon_code || '未設定'} 時，會自動回覆這張券。`
-                };
-            }
-
-            if (binding.line_coupon_status === 'ERROR') {
-                return {
-                    label: 'LINE 建立失敗',
-                    className: 'bg-rose-100 text-rose-700',
-                    detail: binding.last_error || 'LINE API 建立或回覆時發生錯誤。'
-                };
-            }
-
-            if (binding.line_coupon_status === 'DISABLED') {
-                return {
-                    label: 'LINE 尚未啟用',
-                    className: 'bg-amber-100 text-amber-800',
-                    detail: '尚未設定 LINE Channel Access Token，因此目前不會自動建券。'
-                };
-            }
-
-            if (binding.line_coupon_status === 'CLOSED' || binding.line_keyword_status === 'INACTIVE' || binding.is_active === false) {
-                return {
-                    label: 'LINE 券已關閉',
-                    className: 'bg-stone-200 text-stone-700',
-                    detail: '此券與關鍵字回應已停止使用。'
+                    detail: `客人在官方 LINE 輸入 ${partner.coupon_code} 後，系統會記錄歸因並回覆共用贈禮券。`
                 };
             }
 
             return {
-                label: binding.line_coupon_status || 'LINE 狀態待確認',
-                className: 'bg-stone-100 text-stone-700',
-                detail: 'LINE 券紀錄存在，但目前不是可直接使用的狀態。'
+                label: 'LINE 代碼已啟用',
+                className: 'bg-blue-100 text-blue-800',
+                detail: `客人在官方 LINE 輸入 ${partner.coupon_code} 後，系統會記錄歸因並回覆共用贈禮券。`
             };
         }
 
@@ -2857,7 +2852,7 @@
                     '',
                     '查看推薦紀錄、點數與佣金時，請由大使登入頁進入。',
                     '對外分享時，直接使用你的分享工具包；若有指定活動，也可以搭配專屬優惠券連結。',
-                    partner?.coupon_code ? `若朋友在官方 LINE 想直接領券，也可以輸入你的優惠代碼：${partner.coupon_code}` : null,
+                    partner?.coupon_code ? `若朋友在官方 LINE 想直接領券，也可以輸入你的優惠代碼：${partner.coupon_code}；系統會記錄推薦歸因，並回覆目前共用的官方贈禮券。` : null,
                     '之後若想調整分享方式、素材方向或合作安排，也都歡迎隨時與我們聯繫。'
                 ].filter(Boolean).join('\n')
             };
@@ -3315,8 +3310,8 @@
             const bookings = allData.bookings.filter(b => b.partner_code === partner.partner_code);
             const totalRevenue = bookings.reduce((sum, b) => sum + (b.room_price || 0), 0);
             const levelSummary = getPartnerLevelSummary(partner);
-            const lineCouponBinding = getLineCouponBinding(partner.partner_code);
-            const lineCouponMeta = getLineCouponStatusMeta(partner, lineCouponBinding);
+            const lineClaimSummary = getPartnerLineClaimSummary(partner.partner_code);
+            const lineClaimMeta = getLineClaimStatusMeta(partner);
             
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -3473,8 +3468,8 @@
 
                         <div class="border-t pt-4">
                             <div class="flex items-center justify-between gap-3 mb-3">
-                                <h4 class="font-semibold">LINE 優惠券綁定</h4>
-                                <span class="px-3 py-1 rounded-full text-xs font-medium ${lineCouponMeta.className}">${lineCouponMeta.label}</span>
+                                <h4 class="font-semibold">LINE 歸因摘要</h4>
+                                <span class="px-3 py-1 rounded-full text-xs font-medium ${lineClaimMeta.className}">${lineClaimMeta.label}</span>
                             </div>
                             <div class="grid grid-cols-2 gap-3 text-sm">
                                 <div>
@@ -3482,22 +3477,37 @@
                                     <p class="font-semibold">${escapeHtml(partner.coupon_code || '未設定')}</p>
                                 </div>
                                 <div>
-                                    <p class="text-sm text-gray-600">LINE Coupon ID</p>
-                                    <p class="font-semibold break-all">${escapeHtml(lineCouponBinding?.line_coupon_id || '尚未建立')}</p>
+                                    <p class="text-sm text-gray-600">累積 claim 次數</p>
+                                    <p class="font-semibold">${lineClaimSummary.totalClaimCount.toLocaleString()}</p>
                                 </div>
                                 <div>
-                                    <p class="text-sm text-gray-600">關鍵字回應</p>
-                                    <p class="font-semibold">${escapeHtml(lineCouponBinding?.line_keyword_status || '未建立')}</p>
+                                    <p class="text-sm text-gray-600">回券次數</p>
+                                    <p class="font-semibold">${lineClaimSummary.totalReplyCount.toLocaleString()}</p>
                                 </div>
                                 <div>
-                                    <p class="text-sm text-gray-600">回覆次數</p>
-                                    <p class="font-semibold">${Number(lineCouponBinding?.reply_count || 0).toLocaleString()}</p>
+                                    <p class="text-sm text-gray-600">最近 claim</p>
+                                    <p class="font-semibold">${escapeHtml(lineClaimSummary.lastClaim?.last_claimed_at || '尚未有人輸入')}</p>
                                 </div>
                             </div>
                             <div class="mt-3 rounded-lg bg-stone-50 border border-stone-200 p-3 text-sm text-stone-600">
-                                ${escapeHtml(lineCouponMeta.detail)}
-                                ${lineCouponBinding?.last_error ? `<div class="mt-2 text-rose-700">最後錯誤：${escapeHtml(lineCouponBinding.last_error)}</div>` : ''}
+                                ${escapeHtml(lineClaimMeta.detail)}
+                                ${lineClaimSummary.lastClaim?.last_error ? `<div class="mt-2 text-rose-700">最後錯誤：${escapeHtml(lineClaimSummary.lastClaim.last_error)}</div>` : ''}
                             </div>
+                            ${lineClaimSummary.claims.length ? `
+                                <div class="mt-4 space-y-2">
+                                    ${lineClaimSummary.claims.slice(0, 5).map(claim => `
+                                        <div class="rounded-lg border border-stone-200 px-3 py-2 text-sm">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <div class="font-medium text-stone-800">${escapeHtml(claim.line_display_name || claim.line_user_id || 'LINE 使用者')}</div>
+                                                <div class="text-xs text-stone-500">${escapeHtml(claim.last_claimed_at || '')}</div>
+                                            </div>
+                                            <div class="mt-1 text-xs text-stone-500">
+                                                輸入代碼：${escapeHtml(claim.entered_code || partner.coupon_code || '')} ・ 回券狀態：${escapeHtml(claim.last_reply_status || '未回覆')}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
                         </div>
                         
                         <div class="border-t pt-4">

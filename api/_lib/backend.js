@@ -10,6 +10,7 @@ const {
   SHEETS_ID, GITHUB_PAGES_URL, DEFAULT_LINE_COUPON_URL,
   DEFAULT_LINE_COUPON_TITLE, DEFAULT_LINE_COUPON_DESCRIPTION,
   DEFAULT_LINE_COUPON_USAGE_CONDITION, DEFAULT_LINE_COUPON_VALID_DAYS,
+  DEFAULT_LINE_SHARED_CLAIM_STATUS,
   COMMISSION_RATES, FIRST_REFERRAL_BONUS, LEVEL_REQUIREMENTS,
   LEVEL_RETENTION_REQUIREMENTS, DataModels
 } = require('./config');
@@ -20,8 +21,10 @@ const MAX_CALL_DEPTH = 5;
 const BUSINESS_TIMEZONE = 'Asia/Taipei';
 const LEVEL_SEQUENCE = ['LV1_INSIDER', 'LV2_GUIDE', 'LV3_GUARDIAN'];
 const LINE_COUPON_BINDING_TABLE = 'Line_Coupon_Bindings';
+const LINE_REFERRAL_CLAIM_TABLE = 'Line_Referral_Claims';
 const LINE_CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || '';
 const LINE_CHANNEL_SECRET = process.env.LINE_CHANNEL_SECRET || '';
+const LINE_SHARED_COUPON_ID = process.env.LINE_SHARED_COUPON_ID || '';
 const LINE_COUPON_VISIBILITY = 'UNLISTED';
 const LINE_COUPON_TIMEZONE = 'ASIA_TAIPEI';
 const LINE_COUPON_IMAGE_URL = process.env.LINE_COUPON_IMAGE_URL || '';
@@ -429,6 +432,93 @@ async function updateLineCouponReplyStats(binding) {
     line_keyword_status: binding.line_keyword_status || 'ACTIVE'
   });
   return result.data;
+}
+
+function hasSharedLineCouponConfigured() {
+  return Boolean(LINE_SHARED_COUPON_ID);
+}
+
+async function ensureLineReferralClaimsTable() {
+  try {
+    await ensureTable(LINE_REFERRAL_CLAIM_TABLE, DataModels.LineReferralClaim.fields);
+    if (typeof db.getFields === 'function') {
+      await db.getFields(LINE_REFERRAL_CLAIM_TABLE);
+    } else {
+      await db.getAllRecords(LINE_REFERRAL_CLAIM_TABLE);
+    }
+    return true;
+  } catch (error) {
+    if (isMissingTableError(error)) return false;
+    throw error;
+  }
+}
+
+function buildLineReferralClaimKey(lineUserId, lineMessageId, partnerCode) {
+  const userKey = String(lineUserId || '').trim() || `msg:${String(lineMessageId || '').trim() || 'unknown'}`;
+  return `${userKey}:${partnerCode}`;
+}
+
+async function findActivePartnerByCouponCode(input) {
+  const normalized = normalizeCouponKeyword(input);
+  if (!normalized) return null;
+
+  const exactMatches = await findRecordsByField('Partners', 'coupon_code', normalized).catch(() => []);
+  for (const match of exactMatches) {
+    const partner = normalizePartnerRecord(match.data || match);
+    if (partner.is_active !== false && normalizeCouponKeyword(partner.coupon_code) === normalized) {
+      return partner;
+    }
+  }
+
+  const partners = await db.getAllRecords('Partners');
+  for (const rawPartner of partners) {
+    const partner = normalizePartnerRecord(rawPartner);
+    if (partner.is_active === false) continue;
+    if (normalizeCouponKeyword(partner.coupon_code) === normalized) {
+      return partner;
+    }
+  }
+
+  return null;
+}
+
+async function upsertLineReferralClaim(claim) {
+  const ensured = await ensureLineReferralClaimsTable();
+  if (!ensured) {
+    return { success: false, skipped: true, error: 'line_referral_claims table is missing' };
+  }
+
+  const payload = {
+    claim_key: claim.claim_key,
+    line_user_id: claim.line_user_id || '',
+    line_source_type: claim.line_source_type || 'user',
+    line_display_name: claim.line_display_name || '',
+    line_message_id: claim.line_message_id || '',
+    entered_code: claim.entered_code || '',
+    normalized_entered_code: normalizeCouponKeyword(claim.entered_code),
+    partner_code: claim.partner_code || '',
+    shared_coupon_id: claim.shared_coupon_id || '',
+    claim_status: claim.claim_status || DEFAULT_LINE_SHARED_CLAIM_STATUS,
+    claim_count: toInt(claim.claim_count, 1),
+    coupon_reply_count: toInt(claim.coupon_reply_count, 0),
+    first_claimed_at: claim.first_claimed_at || '',
+    last_claimed_at: claim.last_claimed_at || '',
+    last_replied_at: claim.last_replied_at || '',
+    last_reply_status: claim.last_reply_status || '',
+    booking_id: claim.booking_id || '',
+    notes: claim.notes || '',
+    last_error: claim.last_error || ''
+  };
+
+  try {
+    const data = await upsertRecord(LINE_REFERRAL_CLAIM_TABLE, payload, 'claim_key');
+    return { success: true, data };
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return { success: false, skipped: true, error: 'line_referral_claims table is missing' };
+    }
+    throw error;
+  }
 }
 
 function extractCouponKeywordCandidates(text) {
@@ -1322,7 +1412,7 @@ async function handleUseAccommodationPoints(data) {
 
 async function handleGetAllData() {
   const data = {};
-  const sheetNames = ['Bookings', 'Partners', 'Payouts', 'Accommodation_Usage', 'Clicks', LINE_COUPON_BINDING_TABLE];
+  const sheetNames = ['Bookings', 'Partners', 'Payouts', 'Accommodation_Usage', 'Clicks', LINE_COUPON_BINDING_TABLE, LINE_REFERRAL_CLAIM_TABLE];
 
   for (const sheetName of sheetNames) {
     try {
@@ -1955,23 +2045,28 @@ async function handleUpdatePartner(data) {
         await getLineCouponBindingByPartnerCode(partnerCode),
         'Partner suspended'
       );
-    } else if (!oldIsActive && nextIsActive) {
-      lineCouponProvision = await provisionLineCouponForPartner(mergedPartner, {
-        recreate: true,
-        reason: 'Partner reactivated'
-      });
     }
   }
 
   if (data.coupon_code !== undefined) {
     const nextCouponCode = String(data.coupon_code || '').trim();
-    if (nextCouponCode && nextCouponCode !== oldCouponCode && mergedPartner.is_active !== false) {
-      lineCouponProvision = await provisionLineCouponForPartner(mergedPartner, {
-        recreate: true,
-        reason: 'Coupon code updated'
-      });
+    if (nextCouponCode && nextCouponCode !== oldCouponCode) {
+      const legacyBinding = await getLineCouponBindingByPartnerCode(partnerCode);
+      if (legacyBinding && legacyBinding.is_active !== false) {
+        lineCouponDeactivation = await discontinueLineCouponBinding(
+          legacyBinding,
+          'Coupon code updated, legacy dedicated coupon closed'
+        );
+      }
     }
   }
+
+  lineCouponProvision = {
+    success: hasSharedLineCouponConfigured(),
+    skipped: true,
+    mode: 'shared_coupon_claim',
+    shared_coupon_id_configured: hasSharedLineCouponConfigured()
+  };
 
   return {
     success: true, message: 'Partner updated successfully', data: updated,
@@ -2116,7 +2211,6 @@ async function handleCreatePartner(data) {
   if (existing) throw new Error('Partner code already exists');
 
   const partner = await createRecord('Partners', partnerData);
-  const lineCouponProvision = await provisionLineCouponForPartner(partner);
 
   if (applicationId) {
     await ensureApplicationsSheet();
@@ -2134,7 +2228,12 @@ async function handleCreatePartner(data) {
     message: 'Partner created successfully',
     partner_code: partner.partner_code,
     data: partner,
-    line_coupon_provision: lineCouponProvision
+    line_coupon_provision: {
+      success: hasSharedLineCouponConfigured(),
+      skipped: true,
+      mode: 'shared_coupon_claim',
+      shared_coupon_id_configured: hasSharedLineCouponConfigured()
+    }
   };
 }
 
@@ -2766,7 +2865,6 @@ async function handlePromoteToPartner(data) {
   };
 
   const partner = await createRecord('Partners', partnerData);
-  const lineCouponProvision = await provisionLineCouponForPartner(partner);
 
   await updateRecord(APPLICATION_SHEET, appId, {
     partner_code_assigned: partnerCode,
@@ -2781,7 +2879,12 @@ async function handlePromoteToPartner(data) {
     coupon_link: couponLink,
     short_landing_link: shortLandingLink,
     short_coupon_link: shortCouponLink,
-    line_coupon_provision: lineCouponProvision
+    line_coupon_provision: {
+      success: hasSharedLineCouponConfigured(),
+      skipped: true,
+      mode: 'shared_coupon_claim',
+      shared_coupon_id_configured: hasSharedLineCouponConfigured()
+    }
   };
 }
 
@@ -2823,32 +2926,109 @@ async function handleLineWebhook(req, res) {
     }
 
     const candidates = extractCouponKeywordCandidates(event.message.text);
-    let binding = null;
+    let matchedPartner = null;
+    let matchedCode = '';
     for (const candidate of candidates) {
-      binding = await getActiveLineCouponBindingByKeyword(candidate);
-      if (binding) break;
+      matchedPartner = await findActivePartnerByCouponCode(candidate);
+      if (matchedPartner) {
+        matchedCode = candidate;
+        break;
+      }
     }
 
-    if (!binding || !binding.line_coupon_id) {
+    if (!matchedPartner || !matchedCode) {
       continue;
     }
 
-    const partner = await findPartnerByCode(binding.partner_code).catch(() => null);
-    if (!partner || partner.is_active === false) {
-      await discontinueLineCouponBinding(binding, 'Partner inactive during webhook reply');
+    const claimTimestamp = new Date().toISOString();
+    const lineUserId = event.source && event.source.userId ? event.source.userId : '';
+    const claimKey = buildLineReferralClaimKey(lineUserId, event.message.id, matchedPartner.partner_code);
+    const existingClaims = lineUserId
+      ? await findRecordsByField(LINE_REFERRAL_CLAIM_TABLE, 'claim_key', claimKey).catch(() => [])
+      : [];
+    const existingClaim = existingClaims.length ? existingClaims[0].data : null;
+
+    const claimResult = await upsertLineReferralClaim({
+      ...(existingClaim || {}),
+      claim_key: claimKey,
+      line_user_id: lineUserId,
+      line_source_type: event.source && event.source.type ? event.source.type : 'user',
+      line_display_name: event.source && event.source.displayName ? event.source.displayName : '',
+      line_message_id: event.message.id || '',
+      entered_code: matchedCode,
+      partner_code: matchedPartner.partner_code,
+      shared_coupon_id: LINE_SHARED_COUPON_ID,
+      claim_status: DEFAULT_LINE_SHARED_CLAIM_STATUS,
+      claim_count: toInt(existingClaim && existingClaim.claim_count, 0) + 1,
+      coupon_reply_count: toInt(existingClaim && existingClaim.coupon_reply_count, 0),
+      first_claimed_at: existingClaim && existingClaim.first_claimed_at ? existingClaim.first_claimed_at : claimTimestamp,
+      last_claimed_at: claimTimestamp,
+      last_reply_status: existingClaim && existingClaim.last_reply_status ? existingClaim.last_reply_status : '',
+      last_error: ''
+    });
+
+    if (!hasSharedLineCouponConfigured()) {
+      await upsertLineReferralClaim({
+        ...(claimResult.data || {}),
+        claim_key: claimKey,
+        line_user_id: lineUserId,
+        line_source_type: event.source && event.source.type ? event.source.type : 'user',
+        line_display_name: event.source && event.source.displayName ? event.source.displayName : '',
+        line_message_id: event.message.id || '',
+        entered_code: matchedCode,
+        partner_code: matchedPartner.partner_code,
+        shared_coupon_id: '',
+        claim_status: DEFAULT_LINE_SHARED_CLAIM_STATUS,
+        claim_count: toInt(claimResult.data && claimResult.data.claim_count, 1),
+        coupon_reply_count: toInt(claimResult.data && claimResult.data.coupon_reply_count, 0),
+        first_claimed_at: claimResult.data && claimResult.data.first_claimed_at ? claimResult.data.first_claimed_at : claimTimestamp,
+        last_claimed_at: claimTimestamp,
+        last_reply_status: 'NO_SHARED_COUPON',
+        last_error: 'LINE_SHARED_COUPON_ID 未設定'
+      }).catch(err => console.error('Failed to persist missing shared coupon state:', err.message || err));
       continue;
     }
 
     try {
-      await replyLineCoupon(event.replyToken, binding.line_coupon_id);
-      await updateLineCouponReplyStats(binding);
+      await replyLineCoupon(event.replyToken, LINE_SHARED_COUPON_ID);
+      await upsertLineReferralClaim({
+        ...(claimResult.data || {}),
+        claim_key: claimKey,
+        line_user_id: lineUserId,
+        line_source_type: event.source && event.source.type ? event.source.type : 'user',
+        line_display_name: event.source && event.source.displayName ? event.source.displayName : '',
+        line_message_id: event.message.id || '',
+        entered_code: matchedCode,
+        partner_code: matchedPartner.partner_code,
+        shared_coupon_id: LINE_SHARED_COUPON_ID,
+        claim_status: DEFAULT_LINE_SHARED_CLAIM_STATUS,
+        claim_count: toInt(claimResult.data && claimResult.data.claim_count, 1),
+        coupon_reply_count: toInt(claimResult.data && claimResult.data.coupon_reply_count, 0) + 1,
+        first_claimed_at: claimResult.data && claimResult.data.first_claimed_at ? claimResult.data.first_claimed_at : claimTimestamp,
+        last_claimed_at: claimTimestamp,
+        last_replied_at: claimTimestamp,
+        last_reply_status: 'SENT',
+        last_error: ''
+      });
     } catch (error) {
-      await upsertLineCouponBinding({
-        ...binding,
-        line_coupon_status: 'ERROR',
+      await upsertLineReferralClaim({
+        ...(claimResult.data || {}),
+        claim_key: claimKey,
+        line_user_id: lineUserId,
+        line_source_type: event.source && event.source.type ? event.source.type : 'user',
+        line_display_name: event.source && event.source.displayName ? event.source.displayName : '',
+        line_message_id: event.message.id || '',
+        entered_code: matchedCode,
+        partner_code: matchedPartner.partner_code,
+        shared_coupon_id: LINE_SHARED_COUPON_ID,
+        claim_status: DEFAULT_LINE_SHARED_CLAIM_STATUS,
+        claim_count: toInt(claimResult.data && claimResult.data.claim_count, 1),
+        coupon_reply_count: toInt(claimResult.data && claimResult.data.coupon_reply_count, 0),
+        first_claimed_at: claimResult.data && claimResult.data.first_claimed_at ? claimResult.data.first_claimed_at : claimTimestamp,
+        last_claimed_at: claimTimestamp,
+        last_reply_status: 'FAILED',
         last_error: error.message || String(error),
-        is_active: binding.is_active !== false
-      }).catch(err => console.error('Failed to persist LINE reply error:', err.message || err));
+      }).catch(err => console.error('Failed to persist LINE claim reply error:', err.message || err));
       console.error('LINE webhook reply failed:', error.message || error);
     }
   }

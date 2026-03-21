@@ -8325,7 +8325,7 @@ ${impactLines.join('\n')}
                 const res = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'get_all_data', admin_secret: adminSecret })
+                    body: JSON.stringify({ action: 'get_all_data' })
                 });
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error || '載入失敗');

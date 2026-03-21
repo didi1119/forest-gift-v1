@@ -103,199 +103,533 @@
                 border-bottom: none;
             }
         }
+        /* ─── Apple-style Onboarding Redesign ─── */
         .workflow-step {
-            background: linear-gradient(180deg, #ffffff 0%, #f6f3ee 100%);
-            border: 1px solid #e7dfd3;
-            border-radius: 1.25rem;
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 1rem;
+            transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
-        .onboarding-hero {
-            background:
-                radial-gradient(circle at top right, rgba(92, 138, 104, 0.18), transparent 28%),
-                linear-gradient(135deg, #f7f2e9 0%, #ffffff 55%, #f6faf5 100%);
-            border: 1px solid #e7dfd3;
-            border-radius: 2rem;
-            overflow: hidden;
-            position: relative;
+        .workflow-step:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
         }
-        .onboarding-section-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.35rem 0.75rem;
-            border-radius: 9999px;
-            background: #f2ece3;
-            color: #776a5a;
-            font-size: 0.75rem;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-        .onboarding-stat {
-            border: 1px solid #ebe2d5;
-            border-radius: 1.25rem;
-            background: rgba(255,255,255,0.82);
-            padding: 1rem 1.1rem;
-            backdrop-filter: blur(8px);
-        }
-        .onboarding-shell {
-            display: grid;
-            grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
-            gap: 1.5rem;
-            align-items: start;
-        }
-        .onboarding-sidebar {
-            position: sticky;
-            top: 1.5rem;
-        }
-        .onboarding-panel {
-            background: #fff;
-            border: 1px solid #eae3d8;
-            border-radius: 1.5rem;
-            box-shadow: 0 12px 34px rgba(60, 45, 24, 0.05);
-        }
-        .onboarding-panel-header {
+
+        /* Toolbar */
+        .ob-toolbar {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: space-between;
             gap: 1rem;
-            margin-bottom: 1.25rem;
+            padding: 1rem 0;
+            flex-wrap: wrap;
         }
-        .onboarding-chip {
-            border: 1px solid #d9d0c3;
+        .ob-toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .ob-toolbar-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            letter-spacing: -0.02em;
+        }
+        .ob-toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Stats row */
+        .ob-stats-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .ob-stat-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.3rem 0.75rem;
             border-radius: 9999px;
-            padding: 0.45rem 0.9rem;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: rgba(0,0,0,0.04);
+            color: #6e6e73;
             transition: all 0.2s ease;
+        }
+        .ob-stat-pill .ob-stat-num {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .ob-stat-pill.amber { background: #FFF8E1; color: #B8860B; }
+        .ob-stat-pill.green { background: #E8F5E9; color: #2E7D32; }
+
+        /* Segment control (filter) */
+        .ob-segment {
+            display: inline-flex;
+            background: rgba(0,0,0,0.04);
+            border-radius: 0.5rem;
+            padding: 2px;
+            gap: 1px;
+        }
+        .ob-segment-btn {
+            padding: 0.35rem 0.85rem;
+            border-radius: 0.4rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #6e6e73;
+            transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .ob-segment-btn:hover { color: #1d1d1f; }
+        .ob-segment-btn.active {
             background: #fff;
+            color: #1d1d1f;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
-        .onboarding-chip.active {
-            background-color: #2E4B36;
-            color: #fff;
-            border-color: #2E4B36;
+
+        /* Table list */
+        .ob-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
         }
-        .onboarding-action {
+        .ob-table thead th {
+            padding: 0.5rem 1rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #86868b;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            text-align: left;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .ob-table tbody tr {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .ob-table tbody tr:hover {
+            background: rgba(46, 75, 54, 0.03);
+        }
+        .ob-table tbody tr.ob-row-active {
+            background: rgba(46, 75, 54, 0.06);
+        }
+        .ob-table tbody td {
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            color: #1d1d1f;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            vertical-align: middle;
+        }
+        .ob-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Status dot */
+        .ob-status-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .ob-status-dot::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .ob-status-dot.pending::before { background: #F59E0B; }
+        .ob-status-dot.approved::before { background: #10B981; }
+        .ob-status-dot.rejected::before { background: #EF4444; }
+        .ob-status-dot.pending { color: #B45309; }
+        .ob-status-dot.approved { color: #059669; }
+        .ob-status-dot.rejected { color: #DC2626; }
+
+        /* Inline action buttons in table */
+        .ob-row-actions {
+            display: flex;
+            gap: 0.35rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .ob-table tbody tr:hover .ob-row-actions,
+        .ob-table tbody tr.ob-row-active .ob-row-actions {
+            opacity: 1;
+        }
+
+        /* Slide panel overlay */
+        .ob-slide-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.15);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            z-index: 90;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .ob-slide-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Slide panel */
+        .ob-slide-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: min(520px, 92vw);
+            height: 100vh;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(40px) saturate(1.8);
+            -webkit-backdrop-filter: blur(40px) saturate(1.8);
+            border-left: 1px solid rgba(0,0,0,0.08);
+            box-shadow: -20px 0 60px rgba(0,0,0,0.08);
+            z-index: 100;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+        .ob-slide-panel.open {
+            transform: translateX(0);
+        }
+        .ob-slide-panel-header {
+            position: sticky;
+            top: 0;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+        }
+        .ob-slide-close {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.06);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6e6e73;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+        }
+        .ob-slide-close:hover {
+            background: rgba(0,0,0,0.1);
+            color: #1d1d1f;
+        }
+        .ob-slide-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        /* Apple-style buttons */
+        .ob-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.45rem;
-            padding: 0.85rem 1rem;
-            border-radius: 1rem;
-            font-size: 0.95rem;
+            gap: 0.35rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
             font-weight: 500;
-            transition: all 0.2s ease;
+            transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer;
+            border: none;
+            white-space: nowrap;
         }
-        .onboarding-action.primary {
+        .ob-btn-primary {
             background: #2E4B36;
             color: #fff;
         }
-        .onboarding-action.primary:hover {
+        .ob-btn-primary:hover {
             background: #243c2b;
+            transform: scale(1.02);
         }
-        .onboarding-action.secondary {
-            background: #fff;
-            color: #5c544b;
-            border: 1px solid #ddd3c6;
+        .ob-btn-secondary {
+            background: rgba(0,0,0,0.05);
+            color: #1d1d1f;
         }
-        .onboarding-action.secondary:hover {
-            background: #faf7f2;
-            border-color: #c7b9a4;
+        .ob-btn-secondary:hover {
+            background: rgba(0,0,0,0.08);
         }
-        .onboarding-mini-card {
-            border: 1px solid #eee5da;
-            border-radius: 1.2rem;
-            background: #fcfaf7;
-            padding: 1rem;
-        }
-        .onboarding-empty {
-            border: 1px dashed #cfbfab;
-            border-radius: 1.25rem;
-            background: linear-gradient(180deg, #fffdfa 0%, #faf7f1 100%);
-            padding: 1.25rem;
-        }
-        .onboarding-focus-card {
-            border: 1px solid #e8dfd2;
-            border-radius: 1.4rem;
-            padding: 1.1rem;
-            background: linear-gradient(180deg, #ffffff 0%, #fbf8f3 100%);
-        }
-        .onboarding-progress {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.75rem;
-        }
-        .onboarding-progress-step {
-            border-radius: 1rem;
-            border: 1px solid #eadfce;
-            background: #fcf9f5;
-            padding: 0.8rem 0.9rem;
-        }
-        .onboarding-progress-step strong {
-            display: block;
+        .ob-btn-ghost {
+            background: transparent;
             color: #2E4B36;
-            font-size: 0.8rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            margin-bottom: 0.3rem;
+            padding: 0.4rem 0.6rem;
         }
-        .application-meta {
+        .ob-btn-ghost:hover {
+            background: rgba(46,75,54,0.06);
+        }
+        .ob-btn-danger {
+            background: rgba(239,68,68,0.08);
+            color: #DC2626;
+        }
+        .ob-btn-danger:hover {
+            background: rgba(239,68,68,0.14);
+        }
+        .ob-btn-sm {
+            padding: 0.3rem 0.65rem;
+            font-size: 0.75rem;
+            border-radius: 0.4rem;
+        }
+
+        /* Glass card */
+        .ob-glass {
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 0.85rem;
+            padding: 1rem 1.15rem;
+            transition: all 0.3s ease;
+        }
+        .ob-glass:hover {
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+
+        /* Section divider */
+        .ob-divider {
+            height: 1px;
+            background: rgba(0,0,0,0.06);
+            margin: 0.5rem 0;
+        }
+
+        /* Meta grid in slide panel */
+        .ob-meta-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.65rem;
-        }
-        .application-meta div {
-            border-radius: 0.9rem;
-            background: #f9f5ef;
-            padding: 0.7rem 0.8rem;
-        }
-        .onboarding-textarea {
-            margin-top: 1rem;
-            width: 100%;
-            border: 1px solid #e7ddd0;
-            border-radius: 1.2rem;
-            background: #fbf8f4;
-            color: #4f463f;
-            font-size: 0.9rem;
-            line-height: 1.65;
-            padding: 1rem;
-        }
-        .onboarding-link-grid {
-            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 0.75rem;
         }
-        .application-card-active {
-            border-color: #2E4B36;
-            box-shadow: 0 12px 30px rgba(46, 75, 54, 0.12);
+        .ob-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
         }
-        .packet-link {
+        .ob-meta-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #86868b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .ob-meta-value {
+            font-size: 0.85rem;
+            color: #1d1d1f;
+        }
+
+        /* Progress steps in slide panel */
+        .ob-progress-bar {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .ob-progress-step {
+            flex: 1;
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(0,0,0,0.08);
+            position: relative;
+            transition: background 0.3s ease;
+        }
+        .ob-progress-step.done {
+            background: #2E4B36;
+        }
+        .ob-progress-step.current {
+            background: linear-gradient(90deg, #2E4B36, rgba(46,75,54,0.3));
+        }
+
+        /* Input fields Apple-style */
+        .ob-input {
+            width: 100%;
+            padding: 0.6rem 0.85rem;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+            color: #1d1d1f;
+            background: rgba(255,255,255,0.8);
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        .ob-input:focus {
+            border-color: #2E4B36;
+            box-shadow: 0 0 0 3px rgba(46,75,54,0.1);
+        }
+        .ob-input-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #6e6e73;
+            margin-bottom: 0.35rem;
+        }
+
+        /* Textarea */
+        .ob-textarea {
+            margin-top: 0.75rem;
+            width: 100%;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 0.75rem;
+            background: rgba(248,248,248,0.6);
+            color: #1d1d1f;
+            font-size: 0.82rem;
+            line-height: 1.6;
+            padding: 0.85rem;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+        .ob-textarea:focus {
+            border-color: rgba(46,75,54,0.3);
+        }
+
+        /* Packet link in slide panel */
+        .ob-packet-link {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 1rem;
-            padding: 0.9rem 1rem;
-            border: 1px solid #ebe4da;
-            border-radius: 1rem;
-            background: #fcfaf7;
+            gap: 0.75rem;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 0.6rem;
+            background: rgba(255,255,255,0.6);
+            transition: all 0.2s ease;
         }
-        .packet-link:hover {
-            border-color: #c7b9a4;
+        .ob-packet-link:hover {
             background: #fff;
+            border-color: rgba(0,0,0,0.1);
         }
-        @media (max-width: 1279px) {
-            .onboarding-shell {
-                grid-template-columns: 1fr;
-            }
-            .onboarding-sidebar {
-                position: static;
-            }
+
+        /* Section label */
+        .ob-section-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #86868b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
         }
+
+        /* Empty state */
+        .ob-empty {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: #86868b;
+        }
+        .ob-empty-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.4;
+        }
+
+        /* Panels container — full width single column */
+        .ob-main-panel {
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        /* Collapsible sections */
+        .ob-section {
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .ob-section:last-child { border-bottom: none; }
+        .ob-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1.25rem;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .ob-section-header:hover {
+            background: rgba(0,0,0,0.02);
+        }
+        .ob-section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        .ob-section-content {
+            padding: 0 1.25rem 1rem;
+        }
+        .ob-section-chevron {
+            transition: transform 0.25s ease;
+            color: #86868b;
+            font-size: 0.75rem;
+        }
+        .ob-section-chevron.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        /* Animate row highlight */
+        @keyframes ob-row-flash {
+            0% { background: rgba(46,75,54,0.12); }
+            100% { background: transparent; }
+        }
+
+        /* Mobile responsive */
         @media (max-width: 767px) {
-            .onboarding-progress,
-            .application-meta {
-                grid-template-columns: 1fr;
+            .ob-meta-grid { grid-template-columns: 1fr; }
+            .ob-toolbar { flex-direction: column; align-items: flex-start; }
+            .ob-slide-panel { width: 100vw; }
+            .ob-table thead { display: none; }
+            .ob-table, .ob-table tbody, .ob-table tr, .ob-table td {
+                display: block;
+                width: 100%;
             }
-            .onboarding-panel-header {
-                flex-direction: column;
+            .ob-table tbody tr {
+                padding: 0.75rem;
+                border-bottom: 1px solid rgba(0,0,0,0.04);
             }
+            .ob-table tbody td {
+                padding: 0.2rem 0;
+                border-bottom: none;
+            }
+            .ob-row-actions { opacity: 1; }
         }
+
+        /* Legacy compat — keep old class names working for JS that uses them */
+        .onboarding-section-tag { display: none; }
+        .onboarding-shell { display: block; }
+        .onboarding-sidebar { display: none; }
+        .onboarding-panel { display: none; }
+        .onboarding-panel-header { display: none; }
+        .onboarding-chip { display: none; }
+        .onboarding-action { display: none; }
+        .onboarding-action.primary { display: none; }
+        .onboarding-mini-card { display: none; }
+        .onboarding-empty { display: none; }
+        .onboarding-focus-card { display: none; }
+        .onboarding-progress { display: none; }
+        .onboarding-progress-step { display: none; }
+        .application-meta { display: none; }
+        .onboarding-textarea { display: none; }
+        .onboarding-link-grid { display: none; }
+        .application-card-active { display: none; }
+        .packet-link { display: none; }
+        .onboarding-stat { display: none; }
+        .onboarding-hero { display: none; }
     </style>
 </head>
 <body class="antialiased min-h-screen py-12">
@@ -392,130 +726,86 @@
             </button>
         </div>
 
-        <!-- 大使 onboarding 標籤內容 -->
+        <!-- 大使 onboarding 標籤內容 — Apple-style redesign -->
         <div id="content-onboarding" class="tab-content">
-            <div class="space-y-8">
-                <div class="onboarding-hero p-8 lg:p-10">
-                    <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.2fr)_minmax(22rem,0.8fr)] gap-8 items-start">
-                        <div>
-                            <span class="onboarding-section-tag mb-4">Partner Workflow</span>
-                            <h2 class="font-serif text-3xl lg:text-4xl font-semibold brand-accent leading-tight">大使 onboarding 工作台</h2>
-                            <p class="text-stone-600 mt-4 max-w-3xl text-base lg:text-lg leading-8">
-                                把「邀請加入、審核申請、建立專屬連結、交付完整資源包」收斂成單一路徑。你只需要判斷對方現在在哪個階段，下一步就在眼前。
-                            </p>
-                            <div class="flex flex-wrap gap-3 mt-6">
-                                <button onclick="refreshOnboardingWorkspace()" class="onboarding-action primary">重新整理工作台</button>
-                                <button onclick="openStandaloneLinkGenerator()" class="onboarding-action secondary">直接手動建檔</button>
-                                <button onclick="copyOnboardingInviteMessage()" class="onboarding-action secondary">複製邀請文案</button>
-                                <a href="application-review-dashboard.html" target="_blank" class="onboarding-action secondary">開啟獨立審核頁</a>
+            <!-- Toolbar -->
+            <div class="ob-toolbar">
+                <div class="ob-toolbar-left">
+                    <h2 class="ob-toolbar-title">大使工作台</h2>
+                    <div class="ob-stats-row">
+                        <span class="ob-stat-pill amber"><span class="ob-stat-num" id="onboardingPendingCount">0</span> 待審核</span>
+                        <span class="ob-stat-pill green"><span class="ob-stat-num" id="onboardingApprovedCount">0</span> 已核准</span>
+                        <span class="ob-stat-pill"><span class="ob-stat-num" id="onboardingTotalCount">0</span> 總計</span>
+                    </div>
+                </div>
+                <div class="ob-toolbar-actions">
+                    <button onclick="refreshOnboardingWorkspace()" class="ob-btn ob-btn-secondary">↻ 重新整理</button>
+                    <button onclick="openStandaloneLinkGenerator()" class="ob-btn ob-btn-primary">＋ 手動建檔</button>
+                    <button onclick="copyOnboardingInviteMessage()" class="ob-btn ob-btn-ghost">複製邀請文案</button>
+                </div>
+            </div>
+
+            <!-- Main content — single column -->
+            <div class="ob-main-panel">
+                <!-- Queue section -->
+                <div class="ob-section" id="obSectionQueue">
+                    <div class="ob-section-header" onclick="toggleObSection('obSectionQueue')">
+                        <div style="display:flex;align-items:center;gap:0.75rem;">
+                            <span class="ob-section-title">申請佇列</span>
+                            <div class="ob-segment">
+                                <button type="button" class="ob-segment-btn active" data-onboarding-filter="PENDING" onclick="event.stopPropagation();setOnboardingFilter('PENDING')">待審核</button>
+                                <button type="button" class="ob-segment-btn" data-onboarding-filter="APPROVED" onclick="event.stopPropagation();setOnboardingFilter('APPROVED')">已核准</button>
+                                <button type="button" class="ob-segment-btn" data-onboarding-filter="REJECTED" onclick="event.stopPropagation();setOnboardingFilter('REJECTED')">已拒絕</button>
+                                <button type="button" class="ob-segment-btn" data-onboarding-filter="ALL" onclick="event.stopPropagation();setOnboardingFilter('ALL')">全部</button>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 gap-4">
-                            <div class="onboarding-stat">
-                                <div class="text-xs tracking-[0.14em] uppercase text-stone-400 mb-2">Step 1</div>
-                                <div class="font-serif text-xl text-stone-800 mb-2">邀請或收件</div>
-                                <p class="text-sm text-stone-600 leading-6">先發邀請頁給對方，或直接從待審核佇列接手。</p>
-                            </div>
-                            <div class="onboarding-stat">
-                                <div class="text-xs tracking-[0.14em] uppercase text-stone-400 mb-2">Step 2</div>
-                                <div class="font-serif text-xl text-stone-800 mb-2">建立專屬連結</div>
-                                <p class="text-sm text-stone-600 leading-6">核准後帶著預填資料進連結生成器，完成建檔與短網址。</p>
-                            </div>
-                            <div class="onboarding-stat">
-                                <div class="text-xs tracking-[0.14em] uppercase text-stone-400 mb-2">Step 3</div>
-                                <div class="font-serif text-xl text-stone-800 mb-2">完整交付</div>
-                                <p class="text-sm text-stone-600 leading-6">最後一次交付登入頁、工具包、規則頁與專屬連結。</p>
+                        <span class="ob-section-chevron">▼</span>
+                    </div>
+                    <div class="ob-section-content">
+                        <div id="onboardingApplications">
+                            <div class="ob-empty">
+                                <div class="ob-empty-icon">⏳</div>
+                                <p style="font-size:0.85rem;">載入申請佇列中...</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="onboarding-shell">
-                    <div class="space-y-6">
-                        <div class="onboarding-panel p-8">
-                            <div class="onboarding-panel-header">
-                                <div>
-                                    <span class="onboarding-section-tag mb-3">Queue</span>
-                                    <h3 class="font-serif text-2xl font-semibold brand-accent">申請佇列</h3>
-                                    <p class="text-sm text-stone-500 mt-2">優先處理待審核申請，核准後直接送進下一步。</p>
-                                </div>
-                                <div class="grid grid-cols-3 gap-3 text-center min-w-[18rem]">
-                                    <div class="onboarding-stat !p-3">
-                                        <div class="text-xs text-amber-700">待審核</div>
-                                        <div id="onboardingPendingCount" class="text-2xl font-bold text-amber-700">0</div>
-                                    </div>
-                                    <div class="onboarding-stat !p-3">
-                                        <div class="text-xs text-emerald-700">已核准</div>
-                                        <div id="onboardingApprovedCount" class="text-2xl font-bold text-emerald-700">0</div>
-                                    </div>
-                                    <div class="onboarding-stat !p-3">
-                                        <div class="text-xs text-stone-600">總申請</div>
-                                        <div id="onboardingTotalCount" class="text-2xl font-bold text-stone-700">0</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex flex-wrap gap-3 mb-6">
-                                <button type="button" class="onboarding-chip active" data-onboarding-filter="PENDING" onclick="setOnboardingFilter('PENDING')">待審核</button>
-                                <button type="button" class="onboarding-chip" data-onboarding-filter="APPROVED" onclick="setOnboardingFilter('APPROVED')">已核准</button>
-                                <button type="button" class="onboarding-chip" data-onboarding-filter="REJECTED" onclick="setOnboardingFilter('REJECTED')">已拒絕</button>
-                                <button type="button" class="onboarding-chip" data-onboarding-filter="ALL" onclick="setOnboardingFilter('ALL')">全部</button>
-                            </div>
-                            <div id="onboardingApplications" class="space-y-4">
-                                <div class="text-center py-10 text-stone-500">
-                                    <div class="loading-spinner mx-auto"></div>
-                                    <p class="mt-4">載入申請佇列中...</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="onboarding-panel p-8">
-                            <div class="onboarding-panel-header">
-                                <div>
-                                    <span class="onboarding-section-tag mb-3">Invite Kit</span>
-                                    <h3 class="font-serif text-2xl font-semibold brand-accent">邀請快捷台</h3>
-                                    <p class="text-sm text-stone-500 mt-2">用於邀請還沒申請的人，快速發送邀請頁、申請表和說明文案。</p>
-                                </div>
-                                <button onclick="copyOnboardingInviteMessage()" class="onboarding-action secondary">複製邀請文案</button>
-                            </div>
-                            <div id="onboardingInvitePanel" class="onboarding-link-grid">
-                                <div class="onboarding-empty text-sm text-stone-500">這裡會整理邀請頁、申請表與手動建檔捷徑。</div>
-                            </div>
-                            <textarea id="onboardingInviteMessage" class="onboarding-textarea h-48" readonly>這裡會產生可直接傳給潛在大使的邀請訊息。</textarea>
-                        </div>
+                <!-- Invite Kit section -->
+                <div class="ob-section" id="obSectionInvite">
+                    <div class="ob-section-header" onclick="toggleObSection('obSectionInvite')">
+                        <span class="ob-section-title">邀請快捷台</span>
+                        <span class="ob-section-chevron">▼</span>
                     </div>
-
-                    <div class="onboarding-sidebar space-y-6">
-                        <div class="onboarding-panel p-8">
-                            <div class="onboarding-panel-header">
-                                <div>
-                                    <span class="onboarding-section-tag mb-3">Workspace</span>
-                                    <h3 class="font-serif text-2xl font-semibold brand-accent">當前工作區</h3>
-                                    <p class="text-sm text-stone-500 mt-2">選一位申請者後，從這裡一路處理到交付完成；若對方還沒申請，也能直接手動建檔。</p>
-                                </div>
-                                <button onclick="clearOnboardingSelection()" class="text-sm text-stone-500 hover:text-stone-700">清除選取</button>
-                            </div>
-                            <div id="onboardingWorkspace" class="space-y-4">
-                                <div class="onboarding-empty text-sm text-stone-500">先從左側選擇一位申請者，這裡會顯示審核、連結生成與交付步驟。</div>
-                            </div>
+                    <div class="ob-section-content">
+                        <div id="onboardingInvitePanel" style="display:grid;gap:0.5rem;">
                         </div>
-
-                        <div class="onboarding-panel p-8">
-                            <div class="onboarding-panel-header">
-                                <div>
-                                    <span class="onboarding-section-tag mb-3">Delivery Kit</span>
-                                    <h3 class="font-serif text-2xl font-semibold brand-accent">交付資源包</h3>
-                                    <p class="text-sm text-stone-500 mt-2">完成建檔後，把這些頁面與連結一次交給大使。</p>
-                                </div>
-                                <button onclick="copyOnboardingPacketMessage()" class="onboarding-action secondary">複製交付訊息</button>
-                            </div>
-                            <div id="onboardingPacketPanel" class="onboarding-link-grid">
-                                <div class="onboarding-empty text-sm text-stone-500">完成夥伴建檔後，這裡會自動整理好登入頁、工具包、規則頁與專屬連結。</div>
-                            </div>
-                            <textarea id="onboardingPacketMessage" class="onboarding-textarea h-56" readonly>完成夥伴建檔後，這裡會產生可直接傳給大使的完整訊息。</textarea>
-                        </div>
+                        <textarea id="onboardingInviteMessage" class="ob-textarea" style="height:8rem;" readonly>這裡會產生可直接傳給潛在大使的邀請訊息。</textarea>
                     </div>
                 </div>
             </div>
+
+            <!-- Slide panel overlay -->
+            <div id="obSlideOverlay" class="ob-slide-overlay" onclick="closeObSlidePanel()"></div>
+
+            <!-- Slide panel -->
+            <div id="obSlidePanel" class="ob-slide-panel">
+                <div class="ob-slide-panel-header">
+                    <div>
+                        <div id="obSlideName" style="font-size:1.1rem;font-weight:700;color:#1d1d1f;"></div>
+                        <div id="obSlideSubtitle" style="font-size:0.8rem;color:#86868b;margin-top:0.15rem;"></div>
+                    </div>
+                    <button class="ob-slide-close" onclick="closeObSlidePanel()">✕</button>
+                </div>
+                <div class="ob-slide-body" id="obSlideBody">
+                    <!-- dynamically rendered -->
+                </div>
+            </div>
+
+            <!-- Hidden elements for backward compatibility -->
+            <div id="onboardingWorkspace" style="display:none;"></div>
+            <div id="onboardingPacketPanel" style="display:none;"></div>
+            <textarea id="onboardingPacketMessage" style="display:none;" readonly></textarea>
         </div>
 
         <!-- 概覽儀表標籤內容 -->
@@ -2502,6 +2792,32 @@
             });
         }
 
+        // ─── Apple-style slide panel helpers ───
+        function toggleObSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (!section) return;
+            const content = section.querySelector('.ob-section-content');
+            const chevron = section.querySelector('.ob-section-chevron');
+            if (content.style.display === 'none') {
+                content.style.display = '';
+                chevron.classList.remove('collapsed');
+            } else {
+                content.style.display = 'none';
+                chevron.classList.add('collapsed');
+            }
+        }
+
+        function openObSlidePanel() {
+            document.getElementById('obSlideOverlay')?.classList.add('open');
+            document.getElementById('obSlidePanel')?.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeObSlidePanel() {
+            document.getElementById('obSlideOverlay')?.classList.remove('open');
+            document.getElementById('obSlidePanel')?.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
         function setOnboardingFilter(filter) {
             onboardingState.filter = filter;
             updateOnboardingFilterButtons();
@@ -2515,12 +2831,17 @@
             renderOnboardingApplications();
             renderOnboardingWorkspace();
             renderOnboardingPacketPanel();
+            // If slide panel is open, refresh its content
+            if (document.getElementById('obSlidePanel')?.classList.contains('open')) {
+                openObSlidePanelForApp(applicationId);
+            }
         }
 
         function clearOnboardingSelection() {
             onboardingState.selectedApplicationId = null;
             onboardingState.manualPartnerCode = null;
             onboardingState.focusedApplication = null;
+            closeObSlidePanel();
             renderOnboardingApplications();
             renderOnboardingWorkspace();
             renderOnboardingPacketPanel();
@@ -2587,68 +2908,224 @@
 
             if (onboardingState.applications.length === 0) {
                 container.innerHTML = `
-                    <div class="onboarding-empty text-center text-stone-500">
-                        <div class="font-serif text-xl text-stone-700 mb-2">目前沒有符合此篩選條件的申請</div>
-                        <p class="text-sm">你可以切換篩選條件，或直接從右側走手動建檔路徑。</p>
+                    <div class="ob-empty">
+                        <div class="ob-empty-icon">📋</div>
+                        <p style="font-size:0.9rem;color:#1d1d1f;font-weight:500;margin-bottom:0.25rem;">沒有符合條件的申請</p>
+                        <p style="font-size:0.8rem;">切換篩選條件或直接手動建檔。</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = onboardingState.applications.map(application => {
-                const isActive = String(application.id) === String(onboardingState.selectedApplicationId);
-                const draft = getOnboardingDraft(application);
-                const partnerReady = Boolean(application.partner_code_assigned);
-                const hasMessage = Boolean(application.message);
-                return `
-                    <div class="onboarding-focus-card ${isActive ? 'application-card-active' : ''}">
-                        <div class="flex flex-col gap-4">
-                            <div class="flex items-start justify-between gap-4">
-                                <div>
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        <h4 class="font-serif text-xl text-stone-800">${escapeHtml(application.name || '未提供姓名')}</h4>
-                                        <span class="px-2 py-1 rounded-full text-xs ${getApplicationStatusClass(application.application_status)}">${getApplicationStatusText(application.application_status)}</span>
-                                        ${isActive ? '<span class="px-2 py-1 rounded-full text-xs bg-stone-900 text-white">目前處理中</span>' : ''}
+            const statusDotClass = (s) => s === 'PENDING' ? 'pending' : s === 'APPROVED' ? 'approved' : 'rejected';
+            const statusLabel = (s) => s === 'PENDING' ? '待審核' : s === 'APPROVED' ? '已核准' : '已拒絕';
+            const formatDate = (d) => d ? new Date(d).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' }) : '-';
+
+            container.innerHTML = `
+                <table class="ob-table">
+                    <thead><tr>
+                        <th>姓名</th>
+                        <th>Email</th>
+                        <th>社群</th>
+                        <th>狀態</th>
+                        <th>申請日期</th>
+                        <th style="text-align:right;">操作</th>
+                    </tr></thead>
+                    <tbody>
+                        ${onboardingState.applications.map(app => {
+                            const isActive = String(app.id) === String(onboardingState.selectedApplicationId);
+                            return `
+                            <tr class="${isActive ? 'ob-row-active' : ''}" onclick="selectOnboardingApplication(${app.id}); openObSlidePanelForApp(${app.id});">
+                                <td style="font-weight:600;">${escapeHtml(app.name || '未提供')}</td>
+                                <td style="color:#6e6e73;">${escapeHtml(app.email || '-')}</td>
+                                <td style="color:#6e6e73;font-size:0.8rem;">${escapeHtml(app.social_profile || app.line_name || '-')}</td>
+                                <td><span class="ob-status-dot ${statusDotClass(app.application_status)}">${statusLabel(app.application_status)}</span></td>
+                                <td style="color:#86868b;font-size:0.8rem;">${formatDate(app.created_at)}</td>
+                                <td style="text-align:right;">
+                                    <div class="ob-row-actions" style="justify-content:flex-end;">
+                                        ${app.application_status === 'PENDING' ? `
+                                            <button onclick="event.stopPropagation();reviewOnboardingApplication(${app.id}, 'APPROVED')" class="ob-btn ob-btn-primary ob-btn-sm">核准</button>
+                                            <button onclick="event.stopPropagation();reviewOnboardingApplication(${app.id}, 'REJECTED')" class="ob-btn ob-btn-danger ob-btn-sm">拒絕</button>
+                                        ` : `
+                                            <button onclick="event.stopPropagation();selectOnboardingApplication(${app.id}); openObSlidePanelForApp(${app.id});" class="ob-btn ob-btn-ghost ob-btn-sm">查看 →</button>
+                                        `}
                                     </div>
-                                    <p class="text-sm text-stone-500 mt-1">${escapeHtml(application.email || '未提供 Email')}</p>
-                                    <p class="text-xs text-stone-400 mt-2">申請時間：${application.created_at ? new Date(application.created_at).toLocaleString('zh-TW') : '-'}</p>
-                                </div>
-                                <button onclick="selectOnboardingApplication(${application.id})" class="onboarding-action ${isActive ? 'primary' : 'secondary'}">
-                                    ${isActive ? '已選取' : '選取處理'}
-                                </button>
-                            </div>
-                            <div class="application-meta text-sm text-stone-600">
-                                <div>
-                                    <div class="text-xs text-stone-400 mb-1">電話</div>
-                                    <div>${escapeHtml(application.phone || '未提供')}</div>
-                                </div>
-                                <div>
-                                    <div class="text-xs text-stone-400 mb-1">LINE</div>
-                                    <div>${escapeHtml(application.line_name || '未提供')}</div>
-                                </div>
-                                <div>
-                                    <div class="text-xs text-stone-400 mb-1">建議代碼</div>
-                                    <div class="font-mono">${escapeHtml(draft.partnerCode)}</div>
-                                </div>
-                                <div>
-                                    <div class="text-xs text-stone-400 mb-1">建檔狀態</div>
-                                    <div>${partnerReady ? `已建立 <span class="font-mono">${escapeHtml(application.partner_code_assigned)}</span>` : '尚未建立夥伴檔案'}</div>
-                                </div>
-                            </div>
-                            ${hasMessage ? `<div class="onboarding-mini-card text-sm text-stone-600"><div class="text-xs uppercase tracking-[0.12em] text-stone-400 mb-2">申請留言</div>${escapeHtml(application.message)}</div>` : ''}
-                            <div class="flex flex-wrap gap-2">
-                                ${application.application_status === 'PENDING' ? `
-                                    <button onclick="reviewOnboardingApplication(${application.id}, 'APPROVED')" class="onboarding-action primary">核准</button>
-                                    <button onclick="reviewOnboardingApplication(${application.id}, 'REJECTED')" class="onboarding-action secondary">拒絕</button>
-                                ` : ''}
-                                ${application.application_status === 'APPROVED' ? `
-                                    <button onclick="selectOnboardingApplication(${application.id}); openLinkGeneratorForSelectedApplication();" class="onboarding-action primary">進入連結生成器</button>
-                                ` : ''}
-                            </div>
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function openObSlidePanelForApp(applicationId) {
+            const application = onboardingState.applications.find(app => String(app.id) === String(applicationId));
+            if (!application) return;
+
+            const draft = getOnboardingDraft(application);
+            const partner = getSelectedOnboardingPartner(application);
+            const hasPartner = Boolean(partner);
+
+            // Header
+            document.getElementById('obSlideName').textContent = application.name || '未提供姓名';
+            document.getElementById('obSlideSubtitle').textContent =
+                `${application.email || '未提供 Email'} · ${application.phone || '未提供電話'}`;
+
+            // Progress
+            const step1Done = application.application_status !== 'PENDING';
+            const step2Done = hasPartner;
+            const step3Done = hasPartner;
+
+            const body = document.getElementById('obSlideBody');
+            body.innerHTML = `
+                <!-- Progress bar -->
+                <div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+                        <span style="font-size:0.7rem;color:${step1Done ? '#2E4B36' : '#86868b'};font-weight:500;">審核</span>
+                        <span style="font-size:0.7rem;color:${step2Done ? '#2E4B36' : '#86868b'};font-weight:500;">建檔</span>
+                        <span style="font-size:0.7rem;color:${step3Done ? '#2E4B36' : '#86868b'};font-weight:500;">交付</span>
+                    </div>
+                    <div class="ob-progress-bar">
+                        <div class="ob-progress-step ${step1Done ? 'done' : 'current'}"></div>
+                        <div class="ob-progress-step ${step2Done ? 'done' : step1Done ? 'current' : ''}"></div>
+                        <div class="ob-progress-step ${step3Done ? 'done' : ''}"></div>
+                    </div>
+                </div>
+
+                <!-- Status & actions -->
+                <div class="ob-glass">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <span class="ob-status-dot ${application.application_status === 'PENDING' ? 'pending' : application.application_status === 'APPROVED' ? 'approved' : 'rejected'}">
+                            ${application.application_status === 'PENDING' ? '待審核' : application.application_status === 'APPROVED' ? '已核准' : '已拒絕'}
+                        </span>
+                        <div style="display:flex;gap:0.35rem;">
+                            ${application.application_status === 'PENDING' ? `
+                                <button onclick="reviewOnboardingApplication(${application.id}, 'APPROVED')" class="ob-btn ob-btn-primary ob-btn-sm">核准</button>
+                                <button onclick="reviewOnboardingApplication(${application.id}, 'REJECTED')" class="ob-btn ob-btn-danger ob-btn-sm">拒絕</button>
+                            ` : ''}
+                            ${hasPartner ? `<span style="font-size:0.75rem;color:#059669;font-weight:500;">✓ 已建檔</span>` : `<span style="font-size:0.75rem;color:#B45309;font-weight:500;">待建檔</span>`}
                         </div>
                     </div>
+                </div>
+
+                <!-- Meta info -->
+                <div>
+                    <div class="ob-section-label">申請資料</div>
+                    <div class="ob-meta-grid">
+                        <div class="ob-meta-item"><span class="ob-meta-label">來源</span><span class="ob-meta-value">${escapeHtml(application.referral_source || '未填寫')}</span></div>
+                        <div class="ob-meta-item"><span class="ob-meta-label">社群</span><span class="ob-meta-value">${escapeHtml(application.social_profile || '未填寫')}</span></div>
+                        <div class="ob-meta-item"><span class="ob-meta-label">LINE</span><span class="ob-meta-value">${escapeHtml(application.line_name || '未提供')}</span></div>
+                        <div class="ob-meta-item"><span class="ob-meta-label">申請時間</span><span class="ob-meta-value">${application.created_at ? new Date(application.created_at).toLocaleString('zh-TW') : '-'}</span></div>
+                    </div>
+                    ${application.message ? `
+                        <div style="margin-top:0.75rem;padding:0.65rem 0.85rem;background:rgba(0,0,0,0.02);border-radius:0.5rem;font-size:0.82rem;color:#1d1d1f;line-height:1.5;">
+                            <div style="font-size:0.65rem;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem;">留言</div>
+                            ${escapeHtml(application.message)}
+                        </div>
+                    ` : ''}
+                    ${application.review_notes ? `
+                        <div style="margin-top:0.5rem;padding:0.65rem 0.85rem;background:rgba(0,0,0,0.02);border-radius:0.5rem;font-size:0.82rem;color:#1d1d1f;line-height:1.5;">
+                            <div style="font-size:0.65rem;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem;">審核備註</div>
+                            ${escapeHtml(application.review_notes)}
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="ob-divider"></div>
+
+                <!-- Step 2: Link prep -->
+                <div>
+                    <div class="ob-section-label">連結準備</div>
+                    <div style="display:grid;gap:0.65rem;">
+                        <div>
+                            <label class="ob-input-label">大使代碼</label>
+                            <input class="ob-input" type="text" value="${escapeHtml(draft.partnerCode)}"
+                                oninput="syncOnboardingDraftField('partnerCode', this.value.trim())"
+                                placeholder="例如：forest_wang">
+                        </div>
+                        <div>
+                            <label class="ob-input-label">優惠券代碼</label>
+                            <input class="ob-input" type="text" value="${escapeHtml(draft.couponCode)}"
+                                oninput="syncOnboardingDraftField('couponCode', this.value.trim())"
+                                placeholder="例如：FORESTGIFT23">
+                        </div>
+                        <div>
+                            <label class="ob-input-label">優惠券連結</label>
+                            <input class="ob-input" type="url" value="${escapeHtml(draft.couponUrl)}"
+                                oninput="syncOnboardingDraftField('couponUrl', this.value.trim())"
+                                placeholder="https://lin.ee/...">
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:0.35rem;margin-top:0.75rem;flex-wrap:wrap;">
+                        <button onclick="openLinkGeneratorForSelectedApplication()" class="ob-btn ob-btn-primary">進入連結生成器</button>
+                        <button onclick="quickPromoteSelectedApplication()" class="ob-btn ob-btn-secondary">直接建立大使</button>
+                    </div>
+                    <p style="font-size:0.72rem;color:#86868b;margin-top:0.5rem;">
+                        ${hasPartner ? '已建立大使檔案，可直接複製交付訊息。' : '建議先進連結生成器完成短網址與資料儲存。'}
+                    </p>
+                </div>
+
+                <div class="ob-divider"></div>
+
+                <!-- Delivery Kit -->
+                <div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <span class="ob-section-label" style="margin-bottom:0;">交付資源包</span>
+                        <button onclick="copyOnboardingPacketMessage()" class="ob-btn ob-btn-ghost ob-btn-sm">複製訊息</button>
+                    </div>
+                    <div id="obSlidePacketLinks" style="display:grid;gap:0.5rem;margin-top:0.5rem;"></div>
+                    <textarea id="obSlidePacketMessage" class="ob-textarea" style="height:7rem;" readonly></textarea>
+                </div>
+            `;
+
+            // Render packet links in slide panel
+            renderObSlidePacket(application, partner);
+
+            openObSlidePanel();
+        }
+
+        function renderObSlidePacket(application, partner) {
+            const linksContainer = document.getElementById('obSlidePacketLinks');
+            const msgEl = document.getElementById('obSlidePacketMessage');
+            if (!linksContainer || !msgEl) return;
+
+            if (!partner) {
+                const loginUrl = getAbsoluteFrontendUrl('../partner-login.html');
+                const toolkitUrl = getAbsoluteFrontendUrl('../index.html');
+                linksContainer.innerHTML = `
+                    <div style="padding:0.6rem 0.85rem;border-radius:0.5rem;background:#FFF8E1;font-size:0.8rem;color:#B45309;">
+                        尚未完成建檔。先進連結生成器儲存資料。
+                    </div>
+                    <div class="ob-packet-link">
+                        <div><div style="font-weight:500;font-size:0.82rem;">大使登入頁</div></div>
+                        <a href="${loginUrl}" target="_blank" style="font-size:0.8rem;color:#2E4B36;">開啟</a>
+                    </div>
+                    <div class="ob-packet-link">
+                        <div><div style="font-weight:500;font-size:0.82rem;">贈禮工具包</div></div>
+                        <a href="${toolkitUrl}" target="_blank" style="font-size:0.8rem;color:#2E4B36;">開啟</a>
+                    </div>
                 `;
-            }).join('');
+                msgEl.value = '尚未完成建檔。';
+                return;
+            }
+
+            const packet = buildOnboardingPacket(application, partner);
+            linksContainer.innerHTML = packet.links.map(link => `
+                <div class="ob-packet-link">
+                    <div style="min-width:0;">
+                        <div style="font-weight:500;font-size:0.82rem;color:#1d1d1f;">${escapeHtml(link.label)}</div>
+                        <div style="font-size:0.7rem;color:#86868b;margin-top:0.1rem;">${escapeHtml(link.description)}</div>
+                    </div>
+                    ${link.url ? `<a href="${link.url}" target="_blank" style="font-size:0.8rem;color:#2E4B36;white-space:nowrap;">開啟</a>` : '<span style="font-size:0.7rem;color:#86868b;">待完成</span>'}
+                </div>
+            `).join('');
+            msgEl.value = packet.message;
+
+            // Also sync hidden legacy elements
+            const legacyPacketPanel = document.getElementById('onboardingPacketPanel');
+            const legacyPacketMsg = document.getElementById('onboardingPacketMessage');
+            if (legacyPacketPanel) legacyPacketPanel.innerHTML = linksContainer.innerHTML;
+            if (legacyPacketMsg) legacyPacketMsg.value = packet.message;
         }
 
         async function reviewOnboardingApplication(applicationId, status) {
@@ -2687,6 +3164,10 @@
                 renderOnboardingApplications();
                 renderOnboardingWorkspace();
                 renderOnboardingPacketPanel();
+                // Refresh slide panel if open
+                if (document.getElementById('obSlidePanel')?.classList.contains('open')) {
+                    openObSlidePanelForApp(applicationId);
+                }
                 await loadOnboardingApplications();
             } catch (error) {
                 showErrorMessage('❌ 審核失敗：' + error.message);
@@ -2863,6 +3344,67 @@
             `;
         }
 
+        function openObSlidePanelForManual() {
+            const partner = getManualOnboardingPartner();
+            if (!partner) return;
+
+            document.getElementById('obSlideName').textContent = partner.partner_name || partner.name || partner.partner_code || '未命名大使';
+            document.getElementById('obSlideSubtitle').textContent =
+                `${partner.contact_email || partner.email || '-'} · 手動建檔`;
+
+            const body = document.getElementById('obSlideBody');
+            body.innerHTML = `
+                <div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+                        <span style="font-size:0.7rem;color:#2E4B36;font-weight:500;">建檔</span>
+                        <span style="font-size:0.7rem;color:#2E4B36;font-weight:500;">檢查</span>
+                        <span style="font-size:0.7rem;color:#2E4B36;font-weight:500;">交付</span>
+                    </div>
+                    <div class="ob-progress-bar">
+                        <div class="ob-progress-step done"></div>
+                        <div class="ob-progress-step done"></div>
+                        <div class="ob-progress-step done"></div>
+                    </div>
+                </div>
+
+                <div class="ob-glass">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:0.8rem;color:#059669;font-weight:500;">✓ 已手動建檔</span>
+                        <span style="font-size:0.75rem;font-family:monospace;color:#6e6e73;">${escapeHtml(partner.partner_code || '')}</span>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="ob-section-label">大使資料</div>
+                    <div class="ob-meta-grid">
+                        <div class="ob-meta-item"><span class="ob-meta-label">姓名</span><span class="ob-meta-value">${escapeHtml(partner.partner_name || partner.name || '未提供')}</span></div>
+                        <div class="ob-meta-item"><span class="ob-meta-label">Email</span><span class="ob-meta-value">${escapeHtml(partner.contact_email || partner.email || '未提供')}</span></div>
+                        <div class="ob-meta-item"><span class="ob-meta-label">電話</span><span class="ob-meta-value">${escapeHtml(partner.contact_phone || partner.phone || '未提供')}</span></div>
+                        <div class="ob-meta-item"><span class="ob-meta-label">代碼</span><span class="ob-meta-value" style="font-family:monospace;">${escapeHtml(partner.partner_code || '-')}</span></div>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                    <button onclick="openStandaloneLinkGenerator()" class="ob-btn ob-btn-secondary">再開連結生成器</button>
+                    <button onclick="copyOnboardingPacketMessage()" class="ob-btn ob-btn-primary">複製交付訊息</button>
+                </div>
+
+                <div class="ob-divider"></div>
+
+                <div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <span class="ob-section-label" style="margin-bottom:0;">交付資源包</span>
+                        <button onclick="copyOnboardingPacketMessage()" class="ob-btn ob-btn-ghost ob-btn-sm">複製訊息</button>
+                    </div>
+                    <div id="obSlidePacketLinks" style="display:grid;gap:0.5rem;margin-top:0.5rem;"></div>
+                    <textarea id="obSlidePacketMessage" class="ob-textarea" style="height:7rem;" readonly></textarea>
+                </div>
+            `;
+
+            renderObSlidePacket(null, partner);
+            openObSlidePanel();
+        }
+
         function buildOnboardingInviteKit() {
             const invitationUrl = getAbsoluteFrontendUrl('../invitation.html');
             const manualLinkgenUrl = getAbsoluteFrontendUrl('link-generator-form.html');
@@ -2890,13 +3432,12 @@
 
             const inviteKit = buildOnboardingInviteKit();
             panel.innerHTML = inviteKit.links.map(link => `
-                <div class="packet-link">
-                    <div class="min-w-0">
-                        <div class="font-medium text-stone-800">${escapeHtml(link.label)}</div>
-                        <div class="text-xs text-stone-500 mt-1">${escapeHtml(link.description)}</div>
-                        <div class="text-xs text-stone-400 mt-2 break-all">${escapeHtml(link.url)}</div>
+                <div class="ob-packet-link">
+                    <div style="min-width:0;">
+                        <div style="font-weight:500;font-size:0.82rem;color:#1d1d1f;">${escapeHtml(link.label)}</div>
+                        <div style="font-size:0.7rem;color:#86868b;margin-top:0.1rem;">${escapeHtml(link.description)}</div>
                     </div>
-                    <a href="${link.url}" target="_blank" class="text-sm text-emerald-700 hover:underline whitespace-nowrap">開啟</a>
+                    <a href="${link.url}" target="_blank" style="font-size:0.8rem;color:#2E4B36;white-space:nowrap;">開啟</a>
                 </div>
             `).join('');
             textarea.value = inviteKit.message;
@@ -2946,59 +3487,40 @@
         function renderOnboardingPacketPanel() {
             const panel = document.getElementById('onboardingPacketPanel');
             const textarea = document.getElementById('onboardingPacketMessage');
-            if (!panel || !textarea) return;
 
             const application = getSelectedOnboardingApplication();
             const manualPartner = getManualOnboardingPartner();
+
+            // If the slide panel is open, update it too
+            if (document.getElementById('obSlidePanel')?.classList.contains('open') && application) {
+                const partner = getSelectedOnboardingPartner(application);
+                renderObSlidePacket(application, partner);
+            }
+
+            if (!panel || !textarea) return;
+
             if (!application) {
                 if (manualPartner) {
                     const packet = buildOnboardingPacket(null, manualPartner);
-                    panel.innerHTML = packet.links.map(link => `
-                        <div class="packet-link">
-                            <div class="min-w-0">
-                                <div class="font-medium text-stone-800">${escapeHtml(link.label)}</div>
-                                <div class="text-xs text-stone-500 mt-1">${escapeHtml(link.description)}</div>
-                                <div class="text-xs text-stone-400 mt-2 break-all">${escapeHtml(link.url || '尚未設定')}</div>
-                            </div>
-                            ${link.url ? `<a href="${link.url}" target="_blank" class="text-sm text-emerald-700 hover:underline whitespace-nowrap">開啟</a>` : '<span class="text-xs text-stone-400 whitespace-nowrap">待完成</span>'}
-                        </div>
-                    `).join('');
-                    textarea.value = packet.message;
+                    if (panel) panel.innerHTML = '';
+                    if (textarea) textarea.value = packet.message;
                     return;
                 }
-
-                panel.innerHTML = `<div class="rounded-2xl border border-dashed border-stone-300 p-6 text-sm text-stone-500">選取申請者後，這裡會整理交付資源包。</div>`;
-                textarea.value = '完成夥伴建檔後，這裡會產生可直接傳給大使的完整訊息。';
+                if (panel) panel.innerHTML = '';
+                if (textarea) textarea.value = '';
                 return;
             }
 
             const partner = getSelectedOnboardingPartner(application);
             if (!partner) {
-                const loginUrl = getAbsoluteFrontendUrl('../partner-login.html');
-                const toolkitUrl = getAbsoluteFrontendUrl('../index.html');
-                panel.innerHTML = `
-                    <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
-                        這位申請者尚未完成夥伴建檔。先進入連結生成器儲存資料，交付資源包才會自動帶入專屬連結。
-                    </div>
-                    <div class="packet-link"><div><div class="font-medium text-stone-800">大使登入頁</div><div class="text-xs text-stone-500">完成建檔後會用這裡登入</div></div><a href="${loginUrl}" target="_blank" class="text-sm text-emerald-700 hover:underline">開啟</a></div>
-                    <div class="packet-link"><div><div class="font-medium text-stone-800">知音大使贈禮工具包</div><div class="text-xs text-stone-500">完成建檔後會切成專屬分享連結</div></div><a href="${toolkitUrl}" target="_blank" class="text-sm text-emerald-700 hover:underline">開啟</a></div>
-                `;
-                textarea.value = '這位申請者尚未完成夥伴建檔。先進入連結生成器儲存資料，交付資源包才會自動帶入專屬連結。';
+                if (panel) panel.innerHTML = '';
+                if (textarea) textarea.value = '';
                 return;
             }
 
             const packet = buildOnboardingPacket(application, partner);
-            panel.innerHTML = packet.links.map(link => `
-                <div class="packet-link">
-                    <div class="min-w-0">
-                        <div class="font-medium text-stone-800">${escapeHtml(link.label)}</div>
-                        <div class="text-xs text-stone-500 mt-1">${escapeHtml(link.description)}</div>
-                        <div class="text-xs text-stone-400 mt-2 break-all">${escapeHtml(link.url || '尚未設定')}</div>
-                    </div>
-                    ${link.url ? `<a href="${link.url}" target="_blank" class="text-sm text-emerald-700 hover:underline whitespace-nowrap">開啟</a>` : '<span class="text-xs text-stone-400 whitespace-nowrap">待完成</span>'}
-                </div>
-            `).join('');
-            textarea.value = packet.message;
+            if (panel) panel.innerHTML = '';
+            if (textarea) textarea.value = packet.message;
         }
 
         function copyOnboardingInviteMessage() {
@@ -3014,15 +3536,21 @@
         }
 
         function copyOnboardingPacketMessage() {
-            const textarea = document.getElementById('onboardingPacketMessage');
+            // Try slide panel textarea first, then fallback to hidden legacy one
+            const slideTextarea = document.getElementById('obSlidePacketMessage');
+            const textarea = (slideTextarea && slideTextarea.value) ? slideTextarea : document.getElementById('onboardingPacketMessage');
             if (!textarea || !textarea.value) {
                 showErrorMessage('目前沒有可複製的交付訊息');
                 return;
             }
 
-            textarea.select();
-            document.execCommand('copy');
-            showSuccessMessage('✅ 已複製交付訊息');
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                showSuccessMessage('✅ 已複製交付訊息');
+            }).catch(() => {
+                textarea.select();
+                document.execCommand('copy');
+                showSuccessMessage('✅ 已複製交付訊息');
+            });
         }
 
         function openStandaloneLinkGenerator() {
@@ -7698,6 +8226,12 @@ ${impactLines.join('\n')}
                 }
                 await refreshOnboardingWorkspace();
                 showTab('onboarding');
+                // Open slide panel for manual partner if applicable
+                if (message.partnerCode && !message.applicationId) {
+                    openObSlidePanelForManual();
+                } else if (message.applicationId) {
+                    openObSlidePanelForApp(message.applicationId);
+                }
             }
         });
     </script>

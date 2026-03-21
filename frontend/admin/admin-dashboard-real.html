@@ -25,38 +25,43 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background-color: #FDFBF8;
-            color: #5C544B;
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
         }
         h1, h2, h3, .font-serif {
             font-family: 'Noto Serif TC', serif;
         }
         .brand-accent {
-            color: #2E4B36;
+            color: #1d1d1f;
         }
         .brand-card {
-            background-color: #FFFFFF;
-            border: 1px solid #EAE6E1;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 1rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
         }
         .tab-button {
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
+            padding: 0.45rem 1rem;
+            border-radius: 0.4rem;
             font-weight: 500;
-            color: #6B7280;
-            background-color: #F9FAFB;
-            border: 1px solid #E5E7EB;
-            transition: all 0.2s;
+            font-size: 0.82rem;
+            color: #6e6e73;
+            background: transparent;
+            border: none;
+            transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer;
+            white-space: nowrap;
         }
         .tab-button:hover {
-            background-color: #F3F4F6;
+            color: #1d1d1f;
         }
         .tab-button.active {
-            background-color: #2E4B36;
-            color: #FFFFFF;
-            border-color: #2E4B36;
+            background: #fff;
+            color: #1d1d1f;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
         }
         .tab-content {
             display: block;
@@ -659,71 +664,45 @@
             </div>
         </div>
         
-        <header class="text-center mb-12">
-            <h1 class="text-4xl font-bold brand-accent mb-4">知音大使管理後台</h1>
-            <p class="text-lg text-stone-600">即時監控所有知音大使的推廣成效</p>
-            <div class="bg-green-50 p-3 rounded-lg mt-4">
-                <p class="text-green-800 text-sm">🔄 連接真實 資料庫 數據</p>
-            </div>
+        <!-- Apple-style header -->
+        <header style="margin-bottom:2rem;">
+            <h1 style="font-size:2rem;font-weight:700;color:#1d1d1f;letter-spacing:-0.02em;">知音大使管理後台</h1>
+            <p style="font-size:0.85rem;color:#86868b;margin-top:0.25rem;">即時監控所有知音大使的推廣成效</p>
         </header>
 
-        <!-- 統計概覽 -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-            <div class="brand-card p-6 text-center">
-                <div class="text-3xl font-bold brand-accent" id="totalPartners">
-                    <div class="loading-spinner"></div>
-                </div>
-                <div class="text-sm text-stone-600 mt-1">總夥伴數</div>
+        <!-- Apple-style stats strip -->
+        <div style="display:flex;gap:1px;background:rgba(0,0,0,0.06);border-radius:0.85rem;overflow:hidden;margin-bottom:2rem;">
+            <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1rem 1.25rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:700;color:#1d1d1f;font-variant-numeric:tabular-nums;" id="totalPartners">-</div>
+                <div style="font-size:0.7rem;color:#86868b;font-weight:500;margin-top:0.15rem;">夥伴數</div>
             </div>
-            <div class="brand-card p-6 text-center">
-                <div class="text-3xl font-bold text-blue-600" id="totalClicks">
-                    <div class="loading-spinner"></div>
-                </div>
-                <div class="text-sm text-stone-600 mt-1">總點擊數</div>
+            <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1rem 1.25rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:700;color:#1d1d1f;font-variant-numeric:tabular-nums;" id="totalClicks">-</div>
+                <div style="font-size:0.7rem;color:#86868b;font-weight:500;margin-top:0.15rem;">點擊數</div>
             </div>
-            <div class="brand-card p-6 text-center">
-                <div class="text-3xl font-bold text-green-600" id="totalStayCompleted">
-                    <div class="loading-spinner"></div>
-                </div>
-                <div class="text-sm text-stone-600 mt-1">完成入住數</div>
+            <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1rem 1.25rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:700;color:#059669;font-variant-numeric:tabular-nums;" id="totalStayCompleted">-</div>
+                <div style="font-size:0.7rem;color:#86868b;font-weight:500;margin-top:0.15rem;">完成入住</div>
             </div>
-            <div class="brand-card p-6 text-center">
-                <div class="text-3xl font-bold text-purple-600" id="stayCompletionRate">
-                    <div class="loading-spinner"></div>
-                </div>
-                <div class="text-sm text-stone-600 mt-1">入住完成率</div>
+            <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1rem 1.25rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:700;color:#7C3AED;font-variant-numeric:tabular-nums;" id="stayCompletionRate">-</div>
+                <div style="font-size:0.7rem;color:#86868b;font-weight:500;margin-top:0.15rem;">完成率</div>
             </div>
-            <div class="brand-card p-6 text-center">
-                <div class="text-3xl font-bold text-amber-600" id="totalPayouts">
-                    <div class="loading-spinner"></div>
-                </div>
-                <div class="text-sm text-stone-600 mt-1">待支付現金總額</div>
+            <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1rem 1.25rem;text-align:center;">
+                <div style="font-size:1.5rem;font-weight:700;color:#D97706;font-variant-numeric:tabular-nums;" id="totalPayouts">-</div>
+                <div style="font-size:0.7rem;color:#86868b;font-weight:500;margin-top:0.15rem;">待付現金</div>
             </div>
         </div>
 
-        <!-- 導航標籤 -->
-        <div class="flex space-x-6 mb-8">
-            <button onclick="showTab('onboarding')" id="tab-onboarding" class="tab-button active">
-                大使 onboarding
-            </button>
-            <button onclick="showTab('overview')" id="tab-overview" class="tab-button">
-                概覽儀表
-            </button>
-            <button onclick="showTab('bookings')" id="tab-bookings" class="tab-button">
-                訂單管理
-            </button>
-            <button onclick="showTab('payouts')" id="tab-payouts" class="tab-button">
-                結算管理
-            </button>
-            <button onclick="showTab('analytics')" id="tab-analytics" class="tab-button">
-                數據分析
-            </button>
-            <button onclick="showTab('linkgen')" id="tab-linkgen" class="tab-button">
-                連結生成器
-            </button>
-            <button onclick="showTab('database')" id="tab-database" class="tab-button">
-                資料庫
-            </button>
+        <!-- Apple-style navigation tabs -->
+        <div style="display:flex;gap:1px;background:rgba(0,0,0,0.04);border-radius:0.5rem;padding:2px;margin-bottom:2rem;overflow-x:auto;">
+            <button onclick="showTab('onboarding')" id="tab-onboarding" class="tab-button active">工作台</button>
+            <button onclick="showTab('overview')" id="tab-overview" class="tab-button">概覽</button>
+            <button onclick="showTab('bookings')" id="tab-bookings" class="tab-button">訂單</button>
+            <button onclick="showTab('payouts')" id="tab-payouts" class="tab-button">結算</button>
+            <button onclick="showTab('analytics')" id="tab-analytics" class="tab-button">分析</button>
+            <button onclick="showTab('linkgen')" id="tab-linkgen" class="tab-button">連結生成</button>
+            <button onclick="showTab('database')" id="tab-database" class="tab-button">資料庫</button>
         </div>
 
         <!-- 大使 onboarding 標籤內容 — Apple-style redesign -->
@@ -808,57 +787,51 @@
             <textarea id="onboardingPacketMessage" style="display:none;" readonly></textarea>
         </div>
 
-        <!-- 概覽儀表標籤內容 -->
+        <!-- 概覽儀表標籤內容 — Apple-style -->
         <div id="content-overview" class="tab-content hidden">
-            <!-- 聯盟夥伴列表 -->
-            <div class="brand-card p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="font-serif text-2xl font-semibold brand-accent">聯盟夥伴列表</h2>
-                    <div class="flex space-x-4">
-                        <button onclick="exportPartnersData()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                            📥 匯出數據
-                        </button>
-                        <button onclick="refreshData()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                            🔄 重新載入
-                        </button>
-                    </div>
+            <!-- Toolbar -->
+            <div class="ob-toolbar">
+                <div class="ob-toolbar-left">
+                    <h2 class="ob-toolbar-title">聯盟夥伴</h2>
                 </div>
-
-                <!-- 批量操作工具列 -->
-                <div id="batchToolbar" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <div class="flex justify-between items-center">
-                        <div class="selection-info">
-                            已選擇 <span id="selectedCount" class="font-bold text-blue-600">0</span> 位夥伴
-                        </div>
-                        <div class="flex space-x-3">
-                            <select id="batchOperation" class="px-3 py-2 border rounded-lg">
-                                <option value="">選擇批量操作...</option>
-                                <option value="convert_all">全部轉為現金</option>
-                                <option value="payout_pending">結算待付現金</option>
-                                <option value="export_selected">匯出選中資料</option>
-                            </select>
-                            <button onclick="executeBatchAction()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">執行</button>
-                            <button onclick="clearSelection()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">取消選擇</button>
-                        </div>
-                    </div>
+                <div class="ob-toolbar-actions">
+                    <button onclick="refreshData()" class="ob-btn ob-btn-secondary">↻ 重新載入</button>
+                    <button onclick="exportPartnersData()" class="ob-btn ob-btn-ghost">匯出數據</button>
                 </div>
+            </div>
 
-                <!-- 卡片式夥伴列表 -->
-                <div id="partnersContainer" class="space-y-4">
-                    <div class="text-center py-12 text-stone-500">
-                        <div class="loading-spinner"></div>
-                        <p class="mt-4">載入夥伴資料中...</p>
+            <!-- Batch toolbar (hidden by default) -->
+            <div id="batchToolbar" class="hidden" style="background:rgba(46,75,54,0.04);border:1px solid rgba(46,75,54,0.12);border-radius:0.6rem;padding:0.65rem 1rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:0.82rem;color:#1d1d1f;">已選擇 <strong id="selectedCount" style="color:#2E4B36;">0</strong> 位夥伴</span>
+                <div style="display:flex;gap:0.35rem;align-items:center;">
+                    <select id="batchOperation" style="font-size:0.8rem;padding:0.3rem 0.5rem;border:1px solid rgba(0,0,0,0.1);border-radius:0.4rem;background:#fff;">
+                        <option value="">選擇操作...</option>
+                        <option value="convert_all">全部轉為現金</option>
+                        <option value="payout_pending">結算待付現金</option>
+                        <option value="export_selected">匯出選中資料</option>
+                    </select>
+                    <button onclick="executeBatchAction()" class="ob-btn ob-btn-primary ob-btn-sm">執行</button>
+                    <button onclick="clearSelection()" class="ob-btn ob-btn-ghost ob-btn-sm">取消</button>
+                </div>
+            </div>
+
+            <!-- Partner list — Apple table style -->
+            <div class="ob-main-panel">
+                <div id="partnersContainer">
+                    <div class="ob-empty">
+                        <div class="ob-empty-icon">⏳</div>
+                        <p style="font-size:0.85rem;">載入夥伴資料中...</p>
                     </div>
                 </div>
             </div>
 
-            <!-- 最近活動 -->
-            <div class="brand-card p-8 mt-8">
-                <h3 class="font-serif text-xl font-semibold brand-accent mb-4">最近活動記錄</h3>
-                <div id="recentActivity" class="space-y-2">
-                    <div class="text-center py-4 text-stone-500">
-                        <div class="loading-spinner"></div> 載入中...
-                    </div>
+            <!-- Recent activity -->
+            <div style="margin-top:1.5rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                    <span style="font-size:0.85rem;font-weight:600;color:#1d1d1f;">最近活動</span>
+                </div>
+                <div id="recentActivity" style="display:grid;gap:0.35rem;">
+                    <div style="text-align:center;padding:1rem;color:#86868b;font-size:0.82rem;">載入中...</div>
                 </div>
             </div>
         </div>
@@ -1778,24 +1751,39 @@
             allData.clicks = [];
         }
 
-        // 顯示夥伴列表 (全新卡片式設計)
+        // 顯示夥伴列表 (Apple table style)
         function displayPartners(partners) {
             const container = document.getElementById('partnersContainer');
-            
+
             if (!partners || partners.length === 0) {
                 container.innerHTML = `
-                    <div class="text-center py-12 text-stone-500">
-                        <div class="text-6xl mb-4">🏕️</div>
-                        <p class="text-lg font-medium mb-2">尚未有任何聯盟夥伴</p>
-                        <p class="text-sm">開始推廣您的森林住宿體驗吧！</p>
+                    <div class="ob-empty">
+                        <div class="ob-empty-icon">🏕️</div>
+                        <p style="font-size:0.9rem;color:#1d1d1f;font-weight:500;">尚未有任何聯盟夥伴</p>
+                        <p style="font-size:0.8rem;margin-top:0.25rem;">開始推廣您的森林住宿體驗吧！</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = partners.map(partner => {
-                return generatePartnerCard(partner);
-            }).join('');
+            container.innerHTML = `
+                <table class="ob-table">
+                    <thead><tr>
+                        <th style="width:2rem;"></th>
+                        <th>大使</th>
+                        <th>等級</th>
+                        <th style="text-align:right;">可用點數</th>
+                        <th style="text-align:right;">待付現金</th>
+                        <th style="text-align:center;">年度進度</th>
+                        <th style="text-align:center;">點擊</th>
+                        <th style="text-align:center;">完成入住</th>
+                        <th style="text-align:right;">操作</th>
+                    </tr></thead>
+                    <tbody>
+                        ${partners.map(partner => generatePartnerRow(partner)).join('')}
+                    </tbody>
+                </table>
+            `;
         }
 
         /**
@@ -1929,6 +1917,70 @@
             `;
         }
 
+
+        /**
+         * Apple-style table row for partner list
+         */
+        function generatePartnerRow(partner) {
+            const f = calculatePartnerFinancials(partner);
+            const levelText = getLevelText(f.level);
+            const totalClicks = getPartnerClicks(f.code);
+            const isInactive = partner.is_active === false;
+            const pendingCash = f.pendingCash;
+            const availablePoints = f.availablePoints;
+            const dropdownId = `actions-dropdown-${partner.partner_code}`;
+
+            // Level color
+            const levelColor = f.level.includes('LV3') ? '#7C3AED' : f.level.includes('LV2') ? '#2563EB' : '#059669';
+
+            return `
+                <tr style="${isInactive ? 'opacity:0.55;' : ''}" onclick="viewPartnerDetails('${f.code}')">
+                    <td style="width:2rem;" onclick="event.stopPropagation();">
+                        <input type="checkbox" class="partner-selector" style="width:14px;height:14px;accent-color:#2E4B36;"
+                               onchange="updateSelection()" data-partner-code="${partner.partner_code}">
+                    </td>
+                    <td>
+                        <div style="font-weight:600;font-size:0.85rem;color:#1d1d1f;">${escapeHtml(f.name)}</div>
+                        <div style="font-size:0.72rem;color:#86868b;font-family:monospace;">${escapeHtml(f.code)}</div>
+                    </td>
+                    <td>
+                        <span style="font-size:0.72rem;font-weight:600;color:${levelColor};background:${levelColor}12;padding:0.2rem 0.5rem;border-radius:9999px;">${levelText}</span>
+                    </td>
+                    <td style="text-align:right;font-variant-numeric:tabular-nums;">
+                        <span style="font-weight:600;color:${availablePoints > 0 ? '#2563EB' : '#86868b'};">${availablePoints.toLocaleString()}</span>
+                    </td>
+                    <td style="text-align:right;font-variant-numeric:tabular-nums;">
+                        ${pendingCash > 0
+                            ? `<span style="font-weight:600;color:#D97706;">$${pendingCash.toLocaleString()}</span>`
+                            : `<span style="color:#86868b;">$0</span>`}
+                    </td>
+                    <td style="text-align:center;">
+                        <span style="font-size:0.8rem;color:#1d1d1f;">${f.yearlyReferrals}<span style="color:#86868b;">/${getNextLevelRequirement(f.level)}</span></span>
+                    </td>
+                    <td style="text-align:center;color:#6e6e73;">${totalClicks}</td>
+                    <td style="text-align:center;">
+                        <span style="font-weight:500;color:${f.successfulReferrals > 0 ? '#059669' : '#86868b'};">${f.successfulReferrals}</span>
+                    </td>
+                    <td style="text-align:right;" onclick="event.stopPropagation();">
+                        <div class="ob-row-actions" style="justify-content:flex-end;">
+                            ${availablePoints > 0 && !isInactive
+                                ? `<button onclick="showPartnerActionsModal('${partner.partner_code}', 'accommodation')" class="ob-btn ob-btn-primary ob-btn-sm">使用點數</button>`
+                                : ''}
+                            <div style="position:relative;">
+                                <button onclick="toggleActionsDropdown('${dropdownId}', event)" class="ob-btn ob-btn-ghost ob-btn-sm" style="padding:0.25rem;">⋯</button>
+                                <div id="${dropdownId}" class="hidden" style="position:absolute;right:0;top:100%;margin-top:0.25rem;width:10rem;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:0.5rem;box-shadow:0 4px 16px rgba(0,0,0,0.1);z-index:20;overflow:hidden;">
+                                    <a href="#" onclick="viewPartnerDetails('${partner.partner_code}'); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#1d1d1f;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">查看詳情</a>
+                                    ${pendingCash > 0 && !isInactive ? `<a href="#" onclick="showPartnerActionsModal('${partner.partner_code}', 'cash'); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#1d1d1f;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">處理結算</a>` : ''}
+                                    ${isInactive
+                                        ? `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', true); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#059669;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">恢復夥伴</a>`
+                                        : `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', false); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#DC2626;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">停用夥伴</a>`}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
 
         /**
          * 生成智能操作按鈕 (極簡操作區，並完整保留原有功能)
@@ -2279,17 +2331,17 @@
         // 顯示最近活動
         function displayRecentActivity() {
             const container = document.getElementById('recentActivity');
-            
-            // 模擬最近活動
+
             const activities = [
                 { text: '系統已載入真實數據', time: '剛剛' },
                 { text: '等待更多活動記錄', time: '1 分鐘前' }
             ];
 
             container.innerHTML = activities.map(activity => `
-                <div class="flex justify-between items-center py-2 px-4 bg-stone-50 rounded">
-                    <span class="text-sm">${activity.text}</span>
-                    <span class="text-xs text-stone-500">${activity.time}</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.75rem;background:rgba(0,0,0,0.02);border-radius:0.4rem;transition:background 0.15s;"
+                     onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background='rgba(0,0,0,0.02)'">
+                    <span style="font-size:0.82rem;color:#1d1d1f;">${activity.text}</span>
+                    <span style="font-size:0.7rem;color:#86868b;">${activity.time}</span>
                 </div>
             `).join('');
         }

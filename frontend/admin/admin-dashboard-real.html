@@ -675,7 +675,7 @@
         <div id="script-error-banner" class="hidden mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
             <div class="flex items-start">
                 <div class="flex-shrink-0">
-                    <div class="text-red-400 text-2xl">⚠️</div>
+                    <div class="text-red-400 text-2xl" style="font-size:1.5rem;font-weight:700;">!</div>
                 </div>
                 <div class="ml-3 flex-1">
                     <h3 class="text-lg font-medium text-red-800">API 連線問題</h3>
@@ -3011,7 +3011,7 @@
             if (onboardingState.applications.length === 0) {
                 container.innerHTML = `
                     <div class="ob-empty">
-                        <div class="ob-empty-icon">📋</div>
+                        <div class="ob-empty-icon">文件</div>
                         <p style="font-size:0.9rem;color:#1d1d1f;font-weight:500;margin-bottom:0.25rem;">沒有符合條件的申請</p>
                         <p style="font-size:0.8rem;">切換篩選條件或直接手動建檔。</p>
                     </div>
@@ -3908,7 +3908,7 @@
                 }
                 cancelCouponTemplateForm();
                 showSuccessMessage(editingCouponTemplateId ? '優惠券已更新' : '優惠券已新增');
-                await loadRealData(true);
+                await refreshAfterOperation();
                 renderCouponTemplateList();
             } catch (e) {
                 showErrorMessage('儲存失敗：' + e.message);
@@ -3923,7 +3923,7 @@
                     is_default: true
                 });
                 showSuccessMessage('已設為預設券');
-                await loadRealData(true);
+                await refreshAfterOperation();
                 renderCouponTemplateList();
             } catch (e) {
                 showErrorMessage('設定失敗：' + e.message);
@@ -3956,25 +3956,26 @@
                     line_coupon_url: newUrl
                 });
                 showSuccessMessage('優惠券連結已更新');
-                await loadRealData(true);
+                await refreshAfterOperation();
             } catch (e) {
                 showErrorMessage('更新失敗：' + e.message);
             }
         }
 
         async function deleteCouponTemplate(id) {
-            if (!confirm('確定停用此優惠券？已使用此券的大使不受影響。')) return;
+            showConfirmModal('停用優惠券', '確定停用此優惠券？已使用此券的大使不受影響。', async () => {
             try {
                 await submitToBackendViaForm({
                     action: 'delete_coupon_template',
                     template_id: id
                 });
                 showSuccessMessage('優惠券已停用');
-                await loadRealData(true);
+                await refreshAfterOperation();
                 renderCouponTemplateList();
             } catch (e) {
                 showErrorMessage('停用失敗：' + e.message);
             }
+            }, { danger: true, confirmLabel: '停用' });
         }
 
         function showLoadingSpinner(message) {
@@ -4075,9 +4076,68 @@
             setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3600);
         }
 
+        // Apple-style 確認 Modal（取代原生 confirm()）
+        function showConfirmModal(title, message, onConfirm, options = {}) {
+            const existing = document.getElementById('appleConfirmModal');
+            if (existing) existing.remove();
+
+            const dangerClass = options.danger ? 'color:#d32f2f;' : 'color:#fff;';
+            const btnBg = options.danger ? 'background:#d32f2f;' : 'background:#2E4B36;';
+            const confirmLabel = options.confirmLabel || '確認';
+            const cancelLabel = options.cancelLabel || '取消';
+
+            const modal = document.createElement('div');
+            modal.id = 'appleConfirmModal';
+            Object.assign(modal.style, {
+                position: 'fixed', inset: '0', zIndex: '10000',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)', opacity: '0',
+                transition: 'opacity 0.2s ease'
+            });
+
+            const cleanMsg = String(message).replace(/^[✅❌⚠️💳🔄🏨\s]+/g, '').replace(/\n/g, '<br>');
+
+            modal.innerHTML = `
+                <div style="background:#fff;border-radius:1rem;padding:1.5rem;max-width:380px;width:90%;
+                    box-shadow:0 20px 60px rgba(0,0,0,0.15);transform:scale(0.95);transition:transform 0.2s ease;">
+                    <div style="font-size:1rem;font-weight:700;color:#1d1d1f;margin-bottom:0.5rem;">${escapeHtml(title)}</div>
+                    <div style="font-size:0.85rem;color:#6e6e73;line-height:1.5;margin-bottom:1.25rem;">${cleanMsg}</div>
+                    <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+                        <button id="acm-cancel" style="padding:0.5rem 1rem;border-radius:0.5rem;border:none;
+                            background:rgba(0,0,0,0.06);color:#1d1d1f;font-size:0.85rem;font-weight:500;cursor:pointer;">${cancelLabel}</button>
+                        <button id="acm-confirm" style="padding:0.5rem 1rem;border-radius:0.5rem;border:none;
+                            ${btnBg}color:#fff;font-size:0.85rem;font-weight:500;cursor:pointer;">${confirmLabel}</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            requestAnimationFrame(() => {
+                modal.style.opacity = '1';
+                modal.querySelector('div').style.transform = 'scale(1)';
+            });
+
+            function close() { modal.style.opacity = '0'; setTimeout(() => modal.remove(), 200); }
+
+            modal.querySelector('#acm-cancel').onclick = close;
+            modal.querySelector('#acm-confirm').onclick = () => { close(); onConfirm(); };
+            modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+        }
+
+        // 覆寫原生 confirm() 為 Apple-style（支援同步返回）
+        // 注意：這仍是同步的，但樣式改為 Apple 風格
+        const _nativeConfirm = window.confirm;
+        window.confirm = function(message) {
+            // 清理 emoji 前綴
+            const clean = String(message).replace(/^[✅❌⚠️💳🔄🏨📋\s]+/g, '');
+            return _nativeConfirm.call(window, clean);
+        };
+
         // 功能按鈕
         window.refreshData = function() {
-            console.log('🔄 強制重新載入所有數據');
+            console.log('強制重新載入所有數據');
             loadRealData(true).then(() => {  // 強制重新載入
                 // 更新當前顯示的標籤
                 const activeTab = document.querySelector('.tab-button.active');
@@ -4827,7 +4887,7 @@
             alertDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50 max-w-md';
             alertDiv.innerHTML = `
                 <div>
-                    <h4 class="font-bold">⚠️ 資料庫結構錯誤</h4>
+                    <h4 class="font-bold">資料庫結構錯誤</h4>
                     <p class="text-sm mt-1">檢測到 資料庫 欄位順序不正確，這會導致佣金顯示錯誤。</p>
                     <div class="mt-3 space-x-2">
                         <button onclick="diagnoseDatabase()" class="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700">
@@ -4939,7 +4999,7 @@
                         </div>
                         
                         <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                            <h4 class="font-bold mb-2">⚠️ 重要提醒：</h4>
+                            <h4 class="font-bold mb-2">重要提醒：</h4>
                             <ul class="list-disc list-inside space-y-1 text-sm">
                                 <li>修復後需要清除所有現有的訂房資料行（保留標題行）</li>
                                 <li>或者您可以嘗試重新排列現有資料以符合新的欄位順序</li>
@@ -5026,9 +5086,9 @@
 
             const partner = booking.partner_code ? allData.partners.find(p => p.partner_code === booking.partner_code) : null;
             if (!partner) {
-                if (confirm('此訂房沒有推薦大使，是否確認完成入住？')) {
+                showConfirmModal('確認入住', `${booking.guest_name} 此訂房沒有推薦大使，確認完成入住？`, async () => {
                     await updateBookingStatus(booking, 'COMPLETED', null);
-                }
+                });
                 return;
             }
 
@@ -5039,16 +5099,17 @@
                 ? expectedCommission.cash
                 : expectedCommission.accommodation;
             const commissionLabel = commissionPreference === 'CASH' ? '現金' : '住宿金';
-            
-            const confirmed = confirm(`確認 ${booking.guest_name} 完成入住？\n\n推薦大使：${booking.partner_code} (${partner.name})\n佣金：$${commissionAmount} ${commissionLabel}`);
 
-            if (confirmed) {
-                await updateBookingStatus(booking, 'COMPLETED', {
-                    commission_amount: commissionAmount,
-                    commission_type: commissionPreference,
-                    partner_code: booking.partner_code
-                });
-            }
+            showConfirmModal('確認入住',
+                `房客：${booking.guest_name}\n推薦大使：${booking.partner_code} (${partner.name})\n佣金：$${commissionAmount} ${commissionLabel}`,
+                async () => {
+                    await updateBookingStatus(booking, 'COMPLETED', {
+                        commission_amount: commissionAmount,
+                        commission_type: commissionPreference,
+                        partner_code: booking.partner_code
+                    });
+                }
+            );
         }
 
         // 更新訂房狀態（確認入住完成）
@@ -5091,17 +5152,16 @@
                 const responseData = await submitToBackendViaForm(submitData);
                 console.log('📡 確認入住 - 後端已回應:', responseData);
 
-                await loadRealData(true);
+                await refreshAfterOperation();
                 upsertBookingInMemory({
                     ...updatedBooking,
                     id: responseData.booking_id || normalizedBooking.id,
                     stay_status: status
                 });
-                showTab('bookings');
-                filterBookings();
-                showSuccessMessage('✅ 入住確認完成！' + (commissionData ? ' 佣金已計算。' : ''));
+                refreshCurrentTab();
+                showSuccessMessage('入住確認完成' + (commissionData ? '，佣金已計算' : ''));
             } catch (error) {
-                console.error('❌ 更新訂房狀態失敗:', error);
+                console.error('更新訂房狀態失敗:', error);
                 
                 if (error.message.includes('403')) {
                     // 403 錯誤特殊處理
@@ -5303,7 +5363,7 @@
                                         class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">💳 匯款帳號末五碼</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">匯款帳號末五碼</label>
                                     <input type="text" id="edit_bank_account_last5" value="${booking.bank_account_last5 || ''}" 
                                         maxlength="5" pattern="[0-9]{5}"
                                         class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
@@ -5678,11 +5738,9 @@
                 const responseData = await submitToBackendViaForm(submitData);
                 console.log('📡 編輯訂房 - 後端已回應:', responseData);
 
-                await loadRealData(true);
+                await refreshAfterOperation();
                 upsertBookingInMemory(responseData.data || { id: existingBooking.id, ...updatedBooking });
-                showTab('bookings');
-                filterBookings();
-                showSuccessMessage('✅ 訂單更新成功！');
+                showSuccessMessage('訂單更新成功');
                 closeModal('editBookingModal');
             } catch (error) {
                 console.error('更新訂單失敗:', error);
@@ -5698,12 +5756,9 @@
                 return;
             }
 
-            const confirmMessage = `⚠️ 確定要刪除以下訂房嗎？\n\n房客：${booking.guest_name}\n入住期間：${booking.checkin_date} ~ ${booking.checkout_date}\n${booking.partner_code ? `推薦大使：${booking.partner_code}` : '無推薦大使'}\n\n刪除後將無法復原！`;
-            
-            if (!confirm(confirmMessage)) {
-                return;
-            }
+            const confirmMessage = `房客：${booking.guest_name}\n入住期間：${booking.checkin_date} ~ ${booking.checkout_date}\n${booking.partner_code ? '推薦大使：' + booking.partner_code : '無推薦大使'}\n\n刪除後將無法復原`;
 
+            showConfirmModal('確定刪除訂房？', confirmMessage, async () => {
             try {
                 // 轉換為後端期望的格式
                 const formatDateForBackend = (dateStr) => {
@@ -5728,21 +5783,21 @@
                 
                 // 使用統一的後端提交函數
                 await submitToBackendViaForm(deleteData);
-                await loadRealData(true);
+                await refreshAfterOperation();
                 upsertBookingInMemory({
                     ...booking,
                     stay_status: 'CANCELLED',
                     commission_status: 'CANCELLED'
                 });
-                showTab('bookings');
-                filterBookings();
-                showSuccessMessage('✅ 訂單已成功刪除！');
+                refreshCurrentTab();
+                showSuccessMessage('訂單已成功刪除');
                 closeModal('editBookingModal');
                 
             } catch (error) {
                 console.error('刪除訂單失敗:', error);
                 showErrorMessage('刪除失敗：' + error.message);
             }
+            }, { danger: true, confirmLabel: '刪除' });
         }
 
         // 取得等級文字（已在上方定義，此處刪除重複以避免覆蓋）
@@ -5884,7 +5939,7 @@
                                         <input type="email" id="modal_guest_email" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none" placeholder="guest@example.com">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">💳 匯款帳號末五碼 <span class="text-xs text-gray-500">（選填）</span></label>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">匯款帳號末五碼 <span class="text-xs text-gray-500">（選填）</span></label>
                                         <input type="text" id="modal_bank_account_last5" maxlength="5" pattern="[0-9]{5}" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none" placeholder="例：12345" title="請輸入5位數字">
                                         <p class="text-xs text-gray-500 mt-1">用於對帳確認</p>
                                     </div>
@@ -6164,18 +6219,16 @@
                 
                 // 重新載入所有數據並切換到訂單管理頁
                 try {
-                    await loadRealData(true);
+                    await refreshAfterOperation();
                     const createdBookingId = result.booking_id || result.data?.id;
                     if (createdBookingId && !allData.bookings.some(booking => String(booking.id) === String(createdBookingId))) {
                         upsertBookingInMemory(result.data || { id: createdBookingId, ...bookingData });
                     }
                     showTab('bookings');
-                    filterBookings();
-                    console.log('✅ 手動訂房登記完成，已切換到訂單管理頁');
-                    showSuccessMessage('✅ 訂房記錄已成功登記！');
+                    showSuccessMessage('訂房記錄已成功登記');
                 } catch (error) {
                     console.error('載入數據失敗:', error);
-                    showSuccessMessage('✅ 訂房已登記，請手動重新載入頁面查看');
+                    showSuccessMessage('訂房已登記，請重新載入頁面查看');
                 }
             } catch (error) {
                 console.error('登記失敗:', error);
@@ -6394,7 +6447,7 @@
                 showSuccessMessage('✅ 連接成功！問題已解決。');
             }).catch(error => {
                 if (error.message.includes('403')) {
-                    showErrorMessage('⚠️ 仍有 403 錯誤，請按照修復指南重新部署 Apps Script');
+                    showErrorMessage('仍有 403 錯誤，請按照修復指南重新部署 Apps Script');
                 } else {
                     showErrorMessage('❌ 連接失敗: ' + error.message);
                 }
@@ -6446,7 +6499,7 @@
                 }
                 
                 return {
-                    text: '🏨 房客入住完成',
+                    text: '房客入住完成',
                     class: 'bg-green-100 text-green-800',
                     detail: guestInfo || `訂房ID: ${bookingIds[0]}`
                 };
@@ -6496,7 +6549,7 @@
                     </div>
                     
                     <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                        <h4 class="font-bold text-red-800 mb-2">⚠️ 發現問題：資料庫 欄位缺失</h4>
+                        <h4 class="font-bold text-red-800 mb-2">發現問題：資料庫 欄位缺失</h4>
                         <p class="text-red-700 text-sm">
                             根據你提供的資料，資料庫 中缺少 <code class="bg-red-100 px-2 py-1 rounded">bank_account_last5</code> 欄位，
                             導致匯款帳號末五碼被錯誤地放入 notes 欄位，並造成所有後續欄位錯位。
@@ -6800,7 +6853,7 @@
             modal.innerHTML = `
                 <div class="bg-white rounded-lg max-w-md w-full my-8 max-h-[90vh] flex flex-col">
                     <div class="px-6 py-4 border-b flex justify-between items-center flex-shrink-0">
-                        <h2 class="text-xl font-bold text-blue-800">🏨 使用住宿金折抵</h2>
+                        <h2 class="text-xl font-bold text-blue-800">使用住宿金折抵</h2>
                         <button onclick="closeModal('usePointsModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -7358,7 +7411,7 @@
                 const alertDiv = document.createElement('div');
                 alertDiv.className = 'fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50';
                 alertDiv.innerHTML = `
-                    <strong>⚠️ API 連線問題</strong><br>
+                    <strong>API 連線問題</strong><br>
                     請檢查 Vercel 部署狀態和環境變數設定。
                 `;
                 document.body.appendChild(alertDiv);
@@ -7633,9 +7686,7 @@
 
             const partnerCodes = Array.from(selectedPartners);
             const operationLabel = getBatchOperationLabel(operation);
-            const confirmed = confirm(`確定要對 ${partnerCodes.length} 位夥伴執行「${operationLabel}」操作嗎？`);
-            if (!confirmed) return;
-
+            showConfirmModal('批次操作確認', `確定要對 ${partnerCodes.length} 位夥伴執行「${operationLabel}」操作嗎？`, async () => {
             try {
                 for (const partnerCode of partnerCodes) {
                     switch (operation) {
@@ -7657,8 +7708,9 @@
                 
             } catch (error) {
                 console.error('批量操作失敗:', error);
-                showErrorMessage('❌ 批量操作失敗：' + error.message);
+                showErrorMessage('批量操作失敗：' + error.message);
             }
+            });
         }
 
         // 管理下拉選單切換
@@ -7703,20 +7755,22 @@
             const cashAmount = Math.floor(availablePoints * exchangeRate);
             
             if (!batchMode) {
-                // 單一操作顯示確認對話框
-                const confirmed = confirm(`轉換確認 - ${partner.name || partner.partner_code}
-
-住宿金：${availablePoints.toLocaleString()} 點
-    ↓
-現金：NT$ ${cashAmount.toLocaleString()}
-
-轉換後將在下月15日前轉帳給夥伴
-
-確定要轉換嗎？`);
-                
-                if (!confirmed) return;
+                return new Promise(resolve => {
+                    showConfirmModal('轉換確認', `${partner.name || partner.partner_code}\n\n住宿金：${availablePoints.toLocaleString()} 點 → 現金：NT$ ${cashAmount.toLocaleString()}\n\n轉換後將在下月15日前轉帳`, async () => {
+                        try {
+                            await _doConvertToCash(partnerCode, availablePoints, cashAmount, exchangeRate);
+                        } catch(e) { showErrorMessage('轉換失敗：' + e.message); }
+                        resolve();
+                    });
+                });
             }
 
+            try {
+                await _doConvertToCash(partnerCode, availablePoints, cashAmount, exchangeRate);
+            } catch(e) { showErrorMessage('轉換失敗：' + e.message); }
+        }
+
+        async function _doConvertToCash(partnerCode, availablePoints, cashAmount, exchangeRate) {
             try {
                 const submitData = {
                     action: 'convert_points_to_cash',
@@ -7766,7 +7820,7 @@
             }
 
             if (!batchMode) {
-                const confirmed = confirm(`💳 確認結算 - ${partner.name || partner.partner_code}
+                const confirmed = confirm(`確認結算 - ${partner.name || partner.partner_code}
 
 待支付金額：NT$ ${pendingAmount.toLocaleString()}
 
@@ -7783,7 +7837,7 @@
                     action: 'process_payout',
                     partner_code: partnerCode,
                     amount: pendingAmount,
-                    notes: `💳 現金結算 - ${new Date().toLocaleString()}`
+                    notes: `現金結算 - ${new Date().toLocaleString()}`
                 };
 
                 console.log('🚀 準備創建結算記錄:', submitData);
@@ -7904,7 +7958,7 @@
 
             const accommodationPoints = pendingCash * 2; // 50% 反向計算
 
-            const confirmed = confirm(`🔄 轉回住宿金 - ${partner.name || partner.partner_code}
+            const confirmed = confirm(`轉回住宿金 - ${partner.name || partner.partner_code}
 
 待支付現金：NT$ ${pendingCash.toLocaleString()}
     ↓
@@ -7962,7 +8016,7 @@
                     '• LINE 優惠券與關鍵字回應會同步停用'
                 ];
 
-            const confirmed = confirm(`⚠️ ${actionLabel}帳戶 - ${partner.name || partner.partner_code}
+            const confirmed = confirm(`${actionLabel}帳戶 - ${partner.name || partner.partner_code}
 
 ${actionLabel}後該夥伴將：
 ${impactLines.join('\n')}
@@ -8025,7 +8079,7 @@ ${impactLines.join('\n')}
                 modal.innerHTML = `
                     <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
                         <div class="flex justify-between items-start mb-6">
-                            <h3 class="text-xl font-bold">🏨 住宿金點數管理 - ${partner.partner_code}</h3>
+                            <h3 class="text-xl font-bold">住宿金點數管理 - ${partner.partner_code}</h3>
                             <button onclick="closeModal('accommodationPointsModal')" class="text-gray-500 hover:text-gray-700">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -8051,7 +8105,7 @@ ${impactLines.join('\n')}
                         
                         <!-- 點數抵扣 -->
                         <div class="bg-gray-50 p-4 rounded-lg mb-6">
-                            <h4 class="font-bold mb-3">💳 點數抵扣</h4>
+                            <h4 class="font-bold mb-3">點數抵扣</h4>
                             <form id="pointsDeductionForm" class="space-y-3">
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
@@ -8107,7 +8161,7 @@ ${impactLines.join('\n')}
                             </button>
                             <button type="button" onclick="processPointsDeduction('${partner.partner_code}')" 
                                 class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                                💳 執行抵扣
+                                執行抵扣
                             </button>
                         </div>
                     </div>
@@ -8155,7 +8209,7 @@ ${impactLines.join('\n')}
 
                     // 直接透過 Fetch 送出
                     const responseData = await submitToBackendViaForm(submitData);
-                    console.log('💳 點數抵扣 - 後端已回應:', responseData);
+                    console.log('點數抵扣 - 後端已回應:', responseData);
 
                     await forceReloadCurrentData();
                     
@@ -8516,24 +8570,33 @@ ${impactLines.join('\n')}
 
         // 標籤切換功能（修復版本，包含所有標籤的數據載入）
         // 將 showTab 設定為全域函數，確保 onclick 可以訪問
+        let _currentTab = 'onboarding';
+
         window.showTab = function(tabName) {
+            _currentTab = tabName;
+
+            // 記住 tab 到 URL hash（重新整理後不會跳回預設）
+            if (location.hash !== '#' + tabName) {
+                history.replaceState(null, '', '#' + tabName);
+            }
+
             // 隱藏所有標籤內容
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.add('hidden');
             });
-            
+
             // 移除所有標籤的 active 狀態
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.classList.remove('active');
             });
-            
+
             // 顯示選中的標籤內容
             const targetContent = document.getElementById(`content-${tabName}`);
             const targetButton = document.getElementById(`tab-${tabName}`);
-            
+
             if (targetContent) targetContent.classList.remove('hidden');
             if (targetButton) targetButton.classList.add('active');
-            
+
             // 根據標籤載入相應數據
             switch(tabName) {
                 case 'onboarding':
@@ -8547,7 +8610,6 @@ ${impactLines.join('\n')}
                     break;
                 case 'payouts':
                     loadPayoutsData();
-                    // 不自動刷新，使用本地數據即時更新
                     break;
                 case 'analytics':
                     loadAnalyticsData();
@@ -8557,25 +8619,56 @@ ${impactLines.join('\n')}
                     break;
             }
         }
+
+        // 刷新當前 tab 的 UI（不跳 tab、不全量重載）
+        function refreshCurrentTab() {
+            const tab = _currentTab;
+            switch(tab) {
+                case 'onboarding':
+                    refreshOnboardingWorkspace(false);
+                    break;
+                case 'overview':
+                    loadOverviewData();
+                    break;
+                case 'bookings':
+                    loadBookingsData();
+                    break;
+                case 'payouts':
+                    loadPayoutsData();
+                    break;
+                case 'analytics':
+                    loadAnalyticsData();
+                    break;
+            }
+        }
+
+        // 操作後智慧重載：拉最新資料 + 刷新當前 tab（不跳 tab）
+        async function refreshAfterOperation() {
+            await loadRealData(true);
+            refreshCurrentTab();
+        }
         
         // 頁面載入時初始化
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 頁面載入完成，初始化應用程式');
-            // 預先載入資料
+            console.log('頁面載入完成，初始化應用程式');
+
+            // 從 URL hash 還原上次的 tab
+            const validTabs = ['onboarding', 'overview', 'bookings', 'payouts', 'analytics', 'linkgen', 'database'];
+            const hashTab = location.hash.replace('#', '');
+            const initialTab = validTabs.includes(hashTab) ? hashTab : 'onboarding';
+
             loadRealData().then(() => {
                 if (shouldAutoOpenManualBooking()) {
                     handleInitialAdminDeepLinks();
                 } else {
-                    // 顯示預設的 onboarding 標籤
-                    showTab('onboarding');
+                    showTab(initialTab);
                 }
             }).catch(error => {
                 console.error('初始載入失敗:', error);
                 if (shouldAutoOpenManualBooking()) {
                     handleInitialAdminDeepLinks();
                 } else {
-                    // 即使失敗也顯示 onboarding 標籤
-                    showTab('onboarding');
+                    showTab(initialTab);
                 }
             });
         });

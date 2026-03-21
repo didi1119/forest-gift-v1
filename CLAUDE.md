@@ -11,9 +11,29 @@
 
 **規則：**
 - 進行任何測試、驗證 API、跑腳本時 → 一律使用 `.env.test` 的憑證
+- E2E 測試一律用 `SITE_ORIGIN=https://forest-ambassador-git-dev-kobees-projects.vercel.app`（dev 分支 Preview）
+- **絕對禁止**對正式 DB 執行寫入型測試（create/update/delete）
 - 只有在確認要操作正式資料時，才使用 `.env.local`
 - 若不確定，**預設用測試 DB**，不要預設用正式 DB
 - Vercel 已設定：Production 分支 → 正式 DB；Preview/Development → 測試 DB（自動）
+- `master` 分支已封存刪除，所有操作只在 `main`（正式）或 `dev`（測試）
+
+---
+
+## 待辦事項（下次對話接手）
+
+### UI 風格統一（高優先）
+1. **概覽 tab** — 操作欄按鈕被截斷/溢出，「使用點數」平時看不到
+2. **編輯訂單 modal** — 改為 Apple 風格（ob-input、移除 emoji 標題、統一按鈕）
+3. **訂單詳情 modal** — 移除綠底色塊、emoji、改用 Apple 卡片風格
+4. **手動登記 modal** — input/select 統一為 ob-input
+5. **結算/住宿金 modal** — 統一標題、按鈕、表單風格
+6. **概覽 tab 大使操作按鈕** — 舊 Tailwind 按鈕改 ob-btn
+7. **剩餘 3 個 confirm()** — processPayout、revertCashToPoints、togglePartnerActive 改為 showConfirmModal
+
+### E2E 測試更新（中優先）
+8. **更新 13 個 E2E 腳本選擇器** — 配合 Apple-style UI 重構後的新 HTML 結構
+9. **新增測試場景** — 住宿金完整生命週期、跨等級升級、部分退款+刪除+結算組合、大使登入驗證
 
 ---
 

@@ -23,6 +23,11 @@
             background: linear-gradient(90deg, transparent, #C5A065, transparent);
             margin: 0 auto;
         }
+        .gold-line-left {
+            width: 2rem;
+            height: 1px;
+            background: linear-gradient(90deg, #C5A065, transparent);
+        }
         .section-card {
             background: white;
             border: 1px solid rgba(26,47,35,0.08);
@@ -33,13 +38,20 @@
             border-left: 3px solid #C5A065;
             background: rgba(197,160,101,0.06);
         }
-        .callout-warn {
-            border-left: 3px solid #D97706;
-            background: rgba(217,119,6,0.05);
+        .callout-muted {
+            border-left: 3px solid #8B7355;
+            background: rgba(139,115,85,0.04);
         }
-        .callout-danger {
-            border-left: 3px solid #DC2626;
-            background: rgba(220,38,38,0.04);
+        .callout-subtle {
+            border-left: 3px solid rgba(26,47,35,0.25);
+            background: rgba(26,47,35,0.03);
+        }
+        .sub-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #C5A065;
         }
         .btn-brand {
             display: inline-flex;
@@ -58,6 +70,25 @@
             border-color: rgba(197,160,101,0.6);
             box-shadow: 0 0 20px rgba(197,160,101,0.15);
         }
+        .rule-grid li {
+            position: relative;
+            padding-left: 1.25rem;
+        }
+        .rule-grid li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.55em;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #C5A065;
+            opacity: 0.5;
+        }
+        .rule-grid-dark li::before {
+            background: #1A2F23;
+            opacity: 0.3;
+        }
     </style>
 </head>
 <body class="text-[#4A675A] antialiased">
@@ -65,7 +96,7 @@
     <!-- Header -->
     <header class="bg-[#1A2F23] text-[#F5F2EB]">
         <div class="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
-            <a href="invitation.html" class="font-serif text-lg text-[#F5F2EB] hover:text-[#C5A065] transition">← 靜謐森林</a>
+            <a href="invitation.html" class="font-serif text-lg text-[#F5F2EB] hover:text-[#C5A065] transition">&larr; 靜謐森林</a>
             <span class="text-xs text-[#F5F2EB]/50 tracking-wider">SOUL-MATE PARTNER TERMS</span>
         </div>
     </header>
@@ -74,22 +105,25 @@
 
         <!-- Title -->
         <div class="text-center mb-16">
-            <p class="text-xs font-bold tracking-[0.3em] text-[#C5A065] uppercase mb-4">Complete Terms</p>
+            <p class="sub-label mb-4">Complete Terms</p>
             <h1 class="text-3xl md:text-4xl font-bold mb-4">知音夥伴合作條款</h1>
             <div class="gold-line mb-4"></div>
             <p class="text-sm text-[#4A675A]/60">最後更新：2026 年 3 月</p>
         </div>
 
         <!-- 重要原則 -->
-        <div class="callout-gold rounded-lg p-6 mb-10">
+        <div class="callout-gold rounded-lg p-6 mb-12">
+            <p class="sub-label mb-2">Core Principle</p>
             <h2 class="text-lg font-bold mb-2">重要原則</h2>
             <p>本知音計畫採用<strong class="text-[#1A2F23]">「實際入住」計獎制</strong>，僅已付費且完成入住的訂房才算有效轉換。純點擊或未完成住宿的訂房均不計入獎勵。</p>
         </div>
 
         <!-- 參與資格 -->
         <section class="section-card p-6 md:p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-4">參與資格</h2>
-            <ul class="list-disc pl-6 space-y-2">
+            <p class="sub-label mb-2">Eligibility</p>
+            <h2 class="text-2xl font-bold mb-1">參與資格</h2>
+            <div class="gold-line-left mb-5"></div>
+            <ul class="rule-grid space-y-2.5 text-sm list-none pl-0">
                 <li>須為成年人（滿 18 歲）且具完全行為能力</li>
                 <li>認同靜謐森林的品牌理念與價值</li>
                 <li>同意遵守本條款的所有規定</li>
@@ -99,8 +133,9 @@
 
         <!-- 合作流程 -->
         <section class="section-card p-6 md:p-8 mb-8">
-            <p class="text-xs font-bold tracking-[0.2em] text-[#C5A065] uppercase mb-2">How It Works</p>
-            <h2 class="text-2xl font-bold mb-6">合作流程</h2>
+            <p class="sub-label mb-2">How It Works</p>
+            <h2 class="text-2xl font-bold mb-1">合作流程</h2>
+            <div class="gold-line-left mb-6"></div>
             <div class="grid md:grid-cols-2 gap-4 mb-6">
                 <div class="bg-[#F5F2EB] rounded-xl p-5">
                     <div class="w-10 h-10 rounded-full border border-[#C5A065]/30 flex items-center justify-center mb-3">
@@ -134,8 +169,8 @@
 
             <!-- 推薦成功的定義 -->
             <div class="callout-gold rounded-lg p-5 mb-4">
-                <h3 class="text-base font-bold mb-2">推薦成功的定義</h3>
-                <ul class="list-disc pl-6 space-y-1 text-sm">
+                <h3 class="text-sm font-bold mb-2">推薦成功的定義</h3>
+                <ul class="rule-grid space-y-1.5 text-sm list-none pl-0">
                     <li>客人透過您的專屬連結成功領取優惠券，並<strong class="text-[#1A2F23]">實際完成全額付款與住宿</strong></li>
                     <li>若客人後續取消訂單、未入住（No-Show）或產生退款，該筆推薦將視為無效</li>
                     <li>不得進行自我推薦（使用自己的連結為自己訂房）</li>
@@ -144,8 +179,8 @@
 
             <!-- 專屬工具 -->
             <div class="bg-[#F5F2EB] rounded-lg p-5">
-                <h3 class="text-base font-bold mb-2">您將獲得的專屬工具</h3>
-                <ul class="list-disc pl-6 space-y-1 text-sm">
+                <h3 class="text-sm font-bold mb-2">您將獲得的專屬工具</h3>
+                <ul class="rule-grid space-y-1.5 text-sm list-none pl-0">
                     <li><strong class="text-[#1A2F23]">專屬推薦連結</strong> — 朋友點擊後進入靜謐森林體驗頁面</li>
                     <li><strong class="text-[#1A2F23]">專屬優惠券連結</strong> — 朋友可直接領取 LINE 優惠券</li>
                     <li><strong class="text-[#1A2F23]">個人儀表板</strong> — 隨時查看點擊數、推薦成效、累積回饋與等級進度</li>
@@ -156,13 +191,15 @@
 
         <!-- 獎勵計算規則 -->
         <section class="section-card p-6 md:p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-6">獎勵計算規則</h2>
+            <p class="sub-label mb-2">Commission Rules</p>
+            <h2 class="text-2xl font-bold mb-1">獎勵計算規則</h2>
+            <div class="gold-line-left mb-6"></div>
 
             <div class="space-y-4">
                 <!-- 有效條件 -->
                 <div class="bg-[#F5F2EB] rounded-lg p-5">
-                    <h3 class="text-base font-bold mb-2">✅ 有效轉換條件</h3>
-                    <ul class="list-disc pl-6 space-y-1 text-sm">
+                    <h3 class="text-sm font-bold mb-2">有效轉換條件</h3>
+                    <ul class="rule-grid space-y-1.5 text-sm list-none pl-0">
                         <li>透過您的專屬連結完成訂房</li>
                         <li>客人已實際付費</li>
                         <li>客人已完成實際入住</li>
@@ -171,9 +208,9 @@
                 </div>
 
                 <!-- 不計獎勵 -->
-                <div class="callout-danger rounded-lg p-5">
-                    <h3 class="text-base font-bold text-[#DC2626]/80 mb-2">❌ 不計獎勵情況</h3>
-                    <ul class="list-disc pl-6 space-y-1 text-sm text-[#4A675A]">
+                <div class="callout-subtle rounded-lg p-5">
+                    <h3 class="text-sm font-bold mb-2">不計獎勵情況</h3>
+                    <ul class="rule-grid rule-grid-dark space-y-1.5 text-sm list-none pl-0">
                         <li>僅有點擊但未訂房</li>
                         <li>訂房但未付款</li>
                         <li>訂房後取消或退款</li>
@@ -184,8 +221,8 @@
 
                 <!-- 獎金發放 -->
                 <div class="bg-[#F5F2EB] rounded-lg p-5">
-                    <h3 class="text-base font-bold mb-2">💰 獎金發放方式</h3>
-                    <ul class="list-disc pl-6 space-y-1 text-sm">
+                    <h3 class="text-sm font-bold mb-2">獎金發放方式</h3>
+                    <ul class="rule-grid space-y-1.5 text-sm list-none pl-0">
                         <li>獎金金額由管理員手動審核並輸入</li>
                         <li>每季結算一次，發放日為 <strong class="text-[#1A2F23]">4/15、7/15、10/15、1/15</strong></li>
                         <li>須達最低結算門檻 <strong class="text-[#1A2F23]">NT$500</strong></li>
@@ -193,9 +230,9 @@
                 </div>
 
                 <!-- 合併限制 -->
-                <div class="callout-warn rounded-lg p-5">
-                    <h3 class="text-base font-bold text-[#D97706] mb-2">⚠️ 優惠方案合併限制</h3>
-                    <ul class="list-disc pl-6 space-y-1 text-sm">
+                <div class="callout-muted rounded-lg p-5">
+                    <h3 class="text-sm font-bold text-[#8B7355] mb-2">優惠方案合併限制</h3>
+                    <ul class="rule-grid rule-grid-dark space-y-1.5 text-sm list-none pl-0">
                         <li>本知音夥伴計畫之推薦回饋，<strong class="text-[#1A2F23]">不與其他優惠方案合併使用</strong></li>
                         <li>若被推薦之客人同時使用了其他折扣、優惠券或促銷活動（如平台折扣碼、早鳥優惠等），該筆推薦<strong class="text-[#1A2F23]">將不列入回饋計算</strong></li>
                         <li>此限制旨在確保回饋計算的公平性</li>
@@ -204,12 +241,12 @@
 
                 <!-- 住宿金規則 -->
                 <div class="bg-[#F5F2EB] rounded-lg p-5">
-                    <h3 class="text-base font-bold mb-2">🏡 住宿金規則</h3>
-                    <ul class="list-disc pl-6 space-y-2 text-sm">
-                        <li><strong class="text-[#1A2F23]">折抵住宿：</strong>住宿金以 1:1 全額折抵住宿費用，透過 LINE 官方帳號預訂即可使用</li>
-                        <li><strong class="text-[#1A2F23]">轉為現金：</strong>住宿金可轉換為現金，換算比例為 2:1（每 1,000 點可兌換 NT$500），每次最低轉換 1,000 點；轉換申請於當季截止日前可撤回，逾期不可逆</li>
-                        <li><strong class="text-[#1A2F23]">有效期限：</strong>住宿金自取得日起 2 年內有效，到期前 3 個月系統將發送提醒，逾期未使用之點數自動歸零</li>
-                        <li><strong class="text-[#1A2F23]">住宿取消：</strong>使用住宿金預訂後之取消，依現行觀光旅館業相關法規辦理，不另收取費用</li>
+                    <h3 class="text-sm font-bold mb-2">住宿金規則</h3>
+                    <ul class="rule-grid space-y-2 text-sm list-none pl-0">
+                        <li><strong class="text-[#1A2F23]">折抵住宿</strong> — 住宿金以 1:1 全額折抵住宿費用，透過 LINE 官方帳號預訂即可使用</li>
+                        <li><strong class="text-[#1A2F23]">轉為現金</strong> — 換算比例為 2:1（每 1,000 點可兌換 NT$500），每次最低轉換 1,000 點；轉換申請於當季截止日前可撤回，逾期不可逆</li>
+                        <li><strong class="text-[#1A2F23]">有效期限</strong> — 自取得日起 2 年內有效，到期前 3 個月系統將發送提醒，逾期未使用之點數自動歸零</li>
+                        <li><strong class="text-[#1A2F23]">住宿取消</strong> — 使用住宿金預訂後之取消，依現行觀光旅館業相關法規辦理，不另收取費用</li>
                     </ul>
                 </div>
             </div>
@@ -217,8 +254,10 @@
 
         <!-- 等級制度 -->
         <section class="section-card p-6 md:p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-6">等級制度</h2>
-            <div class="overflow-x-auto mb-4">
+            <p class="sub-label mb-2">Level System</p>
+            <h2 class="text-2xl font-bold mb-1">等級制度</h2>
+            <div class="gold-line-left mb-6"></div>
+            <div class="overflow-x-auto mb-5">
                 <table class="w-full text-sm border-collapse">
                     <thead>
                         <tr class="bg-[#1A2F23] text-[#C5A065]">
@@ -256,7 +295,7 @@
             </div>
 
             <div class="callout-gold rounded-lg p-5 mb-3">
-                <h3 class="text-base font-bold mb-1">🎁 首推獎勵</h3>
+                <h3 class="text-sm font-bold mb-1">首推獎勵</h3>
                 <p class="text-sm">LV1 大使首次成功推薦時，額外獲得 <strong class="text-[#1A2F23]">$1,500 住宿金</strong>（僅限住宿金偏好，現金偏好不適用）。</p>
             </div>
             <p class="text-xs text-[#4A675A]/60">* 未達維持條件者，於次年度起降為符合條件之等級。已累積之住宿金與現金不受影響。</p>
@@ -264,20 +303,22 @@
 
         <!-- 推廣規範 -->
         <section class="section-card p-6 md:p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-6">推廣規範</h2>
+            <p class="sub-label mb-2">Promotion Guidelines</p>
+            <h2 class="text-2xl font-bold mb-1">推廣規範</h2>
+            <div class="gold-line-left mb-6"></div>
             <div class="grid md:grid-cols-2 gap-4">
                 <div class="bg-[#F5F2EB] rounded-lg p-5">
-                    <h3 class="text-base font-bold mb-3">✅ 允許的推廣方式</h3>
-                    <ul class="list-disc pl-6 space-y-2 text-sm">
+                    <h3 class="text-sm font-bold mb-3">允許的推廣方式</h3>
+                    <ul class="rule-grid space-y-2 text-sm list-none pl-0">
                         <li>在個人社群媒體分享體驗心得</li>
                         <li>撰寫真實的住宿評價文章</li>
                         <li>向親友推薦靜謐森林</li>
                         <li>參與相關的旅遊或療癒主題討論</li>
                     </ul>
                 </div>
-                <div class="callout-danger rounded-lg p-5">
-                    <h3 class="text-base font-bold text-[#DC2626]/80 mb-3">❌ 禁止的推廣行為</h3>
-                    <ul class="list-disc pl-6 space-y-2 text-sm">
+                <div class="callout-subtle rounded-lg p-5">
+                    <h3 class="text-sm font-bold mb-3">禁止的推廣行為</h3>
+                    <ul class="rule-grid rule-grid-dark space-y-2 text-sm list-none pl-0">
                         <li>使用不實或誇大的宣傳內容</li>
                         <li>進行垃圾訊息或騷擾式行銷</li>
                         <li>冒用靜謐森林官方身份</li>
@@ -290,10 +331,12 @@
 
         <!-- 反作弊條款 -->
         <section class="section-card p-6 md:p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-6">反作弊條款</h2>
-            <div class="callout-warn rounded-lg p-5 mb-4">
-                <h3 class="text-base font-bold text-[#D97706] mb-2">⚠️ 作弊行為定義</h3>
-                <ul class="list-disc pl-6 space-y-1 text-sm">
+            <p class="sub-label mb-2">Anti-Fraud Policy</p>
+            <h2 class="text-2xl font-bold mb-1">反作弊條款</h2>
+            <div class="gold-line-left mb-6"></div>
+            <div class="callout-muted rounded-lg p-5 mb-4">
+                <h3 class="text-sm font-bold text-[#8B7355] mb-2">作弊行為定義</h3>
+                <ul class="rule-grid rule-grid-dark space-y-1.5 text-sm list-none pl-0">
                     <li>自己使用自己的推薦連結訂房</li>
                     <li>要求親友虛假訂房後取消</li>
                     <li>使用技術手段刷取點擊或轉換</li>
@@ -301,9 +344,9 @@
                     <li>與其他夥伴串通刷取獎勵</li>
                 </ul>
             </div>
-            <div class="callout-danger rounded-lg p-5">
-                <h3 class="text-base font-bold text-[#DC2626]/80 mb-2">🚫 違規後果</h3>
-                <ul class="list-disc pl-6 space-y-1 text-sm">
+            <div class="callout-subtle rounded-lg p-5">
+                <h3 class="text-sm font-bold mb-2">違規後果</h3>
+                <ul class="rule-grid rule-grid-dark space-y-1.5 text-sm list-none pl-0">
                     <li>立即停止推薦資格</li>
                     <li>扣回相關獎勵金額</li>
                     <li>永久禁止參與知音計畫</li>
@@ -314,8 +357,10 @@
 
         <!-- 資料與追蹤 -->
         <section class="section-card p-6 md:p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-4">資料與追蹤</h2>
-            <ul class="list-disc pl-6 space-y-2 text-sm">
+            <p class="sub-label mb-2">Data & Tracking</p>
+            <h2 class="text-2xl font-bold mb-1">資料與追蹤</h2>
+            <div class="gold-line-left mb-5"></div>
+            <ul class="rule-grid space-y-2.5 text-sm list-none pl-0">
                 <li>每位夥伴都有唯一的推薦代碼</li>
                 <li>所有點擊和轉換都會被系統記錄</li>
                 <li>每日自動彙整統計數據</li>
@@ -326,83 +371,89 @@
 
         <!-- 結算與發放 -->
         <section class="section-card p-6 md:p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-6">結算與發放</h2>
+            <p class="sub-label mb-2">Settlement & Payout</p>
+            <h2 class="text-2xl font-bold mb-1">結算與發放</h2>
+            <div class="gold-line-left mb-6"></div>
             <div class="grid md:grid-cols-2 gap-4 mb-4">
                 <div class="bg-[#F5F2EB] rounded-lg p-5">
-                    <h3 class="text-base font-bold mb-2">結算週期</h3>
-                    <ul class="space-y-1 text-sm">
-                        <li>・每季結算一次（1-3 月、4-6 月、7-9 月、10-12 月）</li>
-                        <li>・入住必須在結算期內完成</li>
-                        <li>・延遲入住計入實際入住季度</li>
+                    <h3 class="text-sm font-bold mb-2">結算週期</h3>
+                    <ul class="rule-grid space-y-1.5 text-sm list-none pl-0">
+                        <li>每季結算一次（1-3 月、4-6 月、7-9 月、10-12 月）</li>
+                        <li>入住必須在結算期內完成</li>
+                        <li>延遲入住計入實際入住季度</li>
                     </ul>
                 </div>
                 <div class="bg-[#F5F2EB] rounded-lg p-5">
-                    <h3 class="text-base font-bold mb-2">發放時程</h3>
-                    <ul class="space-y-1 text-sm">
-                        <li>・發放日：<strong class="text-[#1A2F23]">4/15、7/15、10/15、1/15</strong></li>
-                        <li>・發放日前 1-5 日：統計確認</li>
-                        <li>・如遇例假日順延至工作日</li>
+                    <h3 class="text-sm font-bold mb-2">發放時程</h3>
+                    <ul class="rule-grid space-y-1.5 text-sm list-none pl-0">
+                        <li>發放日：<strong class="text-[#1A2F23]">4/15、7/15、10/15、1/15</strong></li>
+                        <li>發放日前 1-5 日：統計確認</li>
+                        <li>如遇例假日順延至工作日</li>
                     </ul>
                 </div>
             </div>
 
-            <div class="callout-warn rounded-lg p-5 mb-4">
-                <h3 class="text-base font-bold text-[#D97706] mb-2">📋 轉現金申請規則</h3>
-                <ul class="space-y-1 text-sm">
-                    <li>・<strong class="text-[#1A2F23]">申請截止：</strong>每季截止日（3/31、6/30、9/30、12/31）前提交之申請，納入當期結算；逾期納入下一期</li>
-                    <li>・<strong class="text-[#1A2F23]">申請次數：</strong>每季限申請 1 次轉現金</li>
-                    <li>・<strong class="text-[#1A2F23]">最低門檻：</strong>每次轉換至少 1,000 點（對應 NT$500），允許部分轉換</li>
-                    <li>・<strong class="text-[#1A2F23]">可撤回期限：</strong>申請提交後，於當季截止日前可取消並還原為住宿金；截止日後不可撤回</li>
-                    <li>・<strong class="text-[#1A2F23]">匯款手續費：</strong>由靜謐森林吸收，不額外扣除</li>
+            <div class="callout-muted rounded-lg p-5 mb-4">
+                <h3 class="text-sm font-bold text-[#8B7355] mb-2">轉現金申請規則</h3>
+                <ul class="rule-grid rule-grid-dark space-y-1.5 text-sm list-none pl-0">
+                    <li><strong class="text-[#1A2F23]">申請截止</strong> — 每季截止日（3/31、6/30、9/30、12/31）前提交之申請，納入當期結算；逾期納入下一期</li>
+                    <li><strong class="text-[#1A2F23]">申請次數</strong> — 每季限申請 1 次轉現金</li>
+                    <li><strong class="text-[#1A2F23]">最低門檻</strong> — 每次轉換至少 1,000 點（對應 NT$500），允許部分轉換</li>
+                    <li><strong class="text-[#1A2F23]">可撤回期限</strong> — 申請提交後，於當季截止日前可取消並還原為住宿金；截止日後不可撤回</li>
+                    <li><strong class="text-[#1A2F23]">匯款手續費</strong> — 由靜謐森林吸收，不額外扣除</li>
                 </ul>
             </div>
 
             <div class="bg-[#F5F2EB] rounded-lg p-5">
-                <h3 class="text-base font-bold mb-2">🏦 匯款帳戶管理</h3>
-                <ul class="space-y-1 text-sm">
-                    <li>・首次申請轉現金前，須於個人儀表板完成銀行帳戶設定</li>
-                    <li>・銀行帳戶資訊每季限修改 1 次，變更後於下次撥款生效</li>
-                    <li>・因帳號錯誤、戶頭結清等原因導致匯款失敗，大使須於 7 日內更正帳戶資訊，該筆款項將重新排入下期結算</li>
-                    <li>・匯款失敗之責任歸屬於提供錯誤資訊之一方</li>
+                <h3 class="text-sm font-bold mb-2">匯款帳戶管理</h3>
+                <ul class="rule-grid space-y-1.5 text-sm list-none pl-0">
+                    <li>首次申請轉現金前，須於個人儀表板完成銀行帳戶設定</li>
+                    <li>銀行帳戶資訊每季限修改 1 次，變更後於下次撥款生效</li>
+                    <li>因帳號錯誤、戶頭結清等原因導致匯款失敗，大使須於 7 日內更正帳戶資訊，該筆款項將重新排入下期結算</li>
+                    <li>匯款失敗之責任歸屬於提供錯誤資訊之一方</li>
                 </ul>
             </div>
         </section>
 
         <!-- 退出與終止 -->
         <section class="section-card p-6 md:p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-6">退出與終止</h2>
+            <p class="sub-label mb-2">Termination</p>
+            <h2 class="text-2xl font-bold mb-1">退出與終止</h2>
+            <div class="gold-line-left mb-6"></div>
             <div class="grid md:grid-cols-2 gap-4 mb-4">
                 <div class="bg-[#F5F2EB] rounded-lg p-5">
-                    <h3 class="text-base font-bold mb-2">主動退出</h3>
-                    <ul class="space-y-1 text-sm">
-                        <li>・剩餘住宿金給予 90 天使用期，逾期歸零</li>
-                        <li>・待結算現金照常依排程撥付</li>
-                        <li>・退出後推薦連結將失效</li>
+                    <h3 class="text-sm font-bold mb-2">主動退出</h3>
+                    <ul class="rule-grid space-y-1.5 text-sm list-none pl-0">
+                        <li>剩餘住宿金給予 90 天使用期，逾期歸零</li>
+                        <li>待結算現金照常依排程撥付</li>
+                        <li>退出後推薦連結將失效</li>
                     </ul>
                 </div>
-                <div class="callout-danger rounded-lg p-5">
-                    <h3 class="text-base font-bold text-[#DC2626]/80 mb-2">違規終止</h3>
-                    <ul class="space-y-1 text-sm">
-                        <li>・住宿金立即凍結，不予使用或轉換</li>
-                        <li>・待結算現金扣除違規所得後結算</li>
-                        <li>・靜謐森林保留追究法律責任之權利</li>
+                <div class="callout-subtle rounded-lg p-5">
+                    <h3 class="text-sm font-bold mb-2">違規終止</h3>
+                    <ul class="rule-grid rule-grid-dark space-y-1.5 text-sm list-none pl-0">
+                        <li>住宿金立即凍結，不予使用或轉換</li>
+                        <li>待結算現金扣除違規所得後結算</li>
+                        <li>靜謐森林保留追究法律責任之權利</li>
                     </ul>
                 </div>
             </div>
             <div class="bg-[#F5F2EB] rounded-lg p-5">
-                <h3 class="text-base font-bold mb-2">長期不活躍</h3>
-                <ul class="space-y-1 text-sm">
-                    <li>・連續 12 個月無任何成功推薦，將自動降為 LV1</li>
-                    <li>・已累積之住宿金與現金不受影響，仍可正常使用</li>
-                    <li>・恢復推薦活動後可重新晉升等級</li>
+                <h3 class="text-sm font-bold mb-2">長期不活躍</h3>
+                <ul class="rule-grid space-y-1.5 text-sm list-none pl-0">
+                    <li>連續 12 個月無任何成功推薦，將自動降為 LV1</li>
+                    <li>已累積之住宿金與現金不受影響，仍可正常使用</li>
+                    <li>恢復推薦活動後可重新晉升等級</li>
                 </ul>
             </div>
         </section>
 
         <!-- 免責聲明 -->
         <section class="section-card p-6 md:p-8 mb-8">
-            <h2 class="text-2xl font-bold mb-4">免責聲明</h2>
-            <ul class="list-disc pl-6 space-y-2 text-sm">
+            <p class="sub-label mb-2">Disclaimer</p>
+            <h2 class="text-2xl font-bold mb-1">免責聲明</h2>
+            <div class="gold-line-left mb-5"></div>
+            <ul class="rule-grid space-y-2.5 text-sm list-none pl-0">
                 <li>靜謐森林保留隨時修改本條款的權利</li>
                 <li>重大變更將提前 30 天通知所有夥伴</li>
                 <li>系統維護期間可能影響追蹤準確性</li>
@@ -413,8 +464,10 @@
         </section>
 
         <!-- 聯繫方式 -->
-        <section class="section-card p-6 md:p-8 mb-12">
-            <h2 class="text-2xl font-bold mb-4">聯繫方式</h2>
+        <section class="section-card p-6 md:p-8 mb-14">
+            <p class="sub-label mb-2">Contact</p>
+            <h2 class="text-2xl font-bold mb-1">聯繫方式</h2>
+            <div class="gold-line-left mb-5"></div>
             <p class="mb-4 text-sm">如有任何疑問或需要協助，請聯繫：</p>
             <div class="grid md:grid-cols-2 gap-4">
                 <div class="bg-[#F5F2EB] rounded-lg p-5">
@@ -433,8 +486,8 @@
         <!-- Bottom CTA -->
         <div class="text-center space-y-4">
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="invitation.html" class="btn-brand">← 返回招募頁面</a>
-                <a href="partner-login.html" class="btn-brand">登入儀表板 →</a>
+                <a href="invitation.html" class="btn-brand">&larr; 返回招募頁面</a>
+                <a href="partner-login.html" class="btn-brand">登入儀表板 &rarr;</a>
             </div>
         </div>
 

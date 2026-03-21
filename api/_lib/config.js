@@ -99,6 +99,11 @@ const DataModels = {
       'first_claimed_at', 'last_claimed_at', 'last_replied_at',
       'last_reply_status', 'booking_id', 'notes', 'last_error',
       'created_at', 'updated_at']
+  },
+  CouponTemplate: {
+    tableName: 'Coupon_Templates',
+    fields: ['id', 'coupon_name', 'coupon_url', 'coupon_description',
+      'is_default', 'is_active', 'created_at', 'updated_at']
   }
 };
 

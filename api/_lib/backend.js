@@ -1620,7 +1620,7 @@ async function handleUseAccommodationPoints(data) {
 
 async function handleGetAllData() {
   const data = {};
-  const sheetNames = ['Bookings', 'Partners', 'Payouts', 'Accommodation_Usage', 'Clicks', LINE_COUPON_BINDING_TABLE, LINE_REFERRAL_CLAIM_TABLE];
+  const sheetNames = ['Bookings', 'Partners', 'Payouts', 'Accommodation_Usage', 'Clicks', LINE_COUPON_BINDING_TABLE, LINE_REFERRAL_CLAIM_TABLE, 'Coupon_Templates'];
 
   for (const sheetName of sheetNames) {
     try {
@@ -3142,7 +3142,22 @@ async function handlePromoteToPartner(data) {
   const baseUrl = GITHUB_PAGES_URL.replace('/frontend/index.html', '');
   const landingLink = `${baseUrl}/api?dest=landing&pid=${partnerCode}`;
   const couponLink = `${baseUrl}/api?dest=coupon&pid=${partnerCode}`;
-  const couponUrl = data.coupon_url || DEFAULT_LINE_COUPON_URL;
+  // 優惠券 URL 解析順序：coupon_template_id → coupon_url → 預設模板 → DEFAULT_LINE_COUPON_URL
+  let couponUrl = DEFAULT_LINE_COUPON_URL;
+  if (data.coupon_template_id) {
+    try {
+      const tpl = await findRecordById('Coupon_Templates', data.coupon_template_id);
+      if (tpl && tpl.data && tpl.data.coupon_url) couponUrl = tpl.data.coupon_url;
+    } catch (e) { console.error('coupon template lookup failed:', e.message); }
+  } else if (data.coupon_url) {
+    couponUrl = data.coupon_url;
+  } else {
+    try {
+      const allTemplates = await db.getAllRecords('Coupon_Templates');
+      const defaultTpl = allTemplates.find(t => t.data.is_default === true || t.data.is_default === 'true');
+      if (defaultTpl && defaultTpl.data.coupon_url) couponUrl = defaultTpl.data.coupon_url;
+    } catch (e) { /* fallback to DEFAULT_LINE_COUPON_URL */ }
+  }
   const [shortLandingLink, shortCouponLink] = await Promise.all([
     createShortUrl(landingLink),
     createShortUrl(couponLink)
@@ -3222,6 +3237,79 @@ async function handlePromoteToPartner(data) {
       shared_coupon_id_configured: hasSharedLineCouponConfigured()
     }
   };
+}
+
+// ========================================
+// 優惠券模板 CRUD
+// ========================================
+
+const COUPON_TEMPLATE_TABLE = 'Coupon_Templates';
+
+async function handleCreateCouponTemplate(data) {
+  if (!data.coupon_name) throw new Error('coupon_name 為必填');
+  if (!data.coupon_url) throw new Error('coupon_url 為必填');
+
+  // 若設為預設，先清除其他預設
+  if (data.is_default === true || data.is_default === 'true') {
+    await clearDefaultCouponTemplates();
+  }
+
+  const record = await createRecord(COUPON_TEMPLATE_TABLE, {
+    coupon_name: data.coupon_name,
+    coupon_url: data.coupon_url,
+    coupon_description: data.coupon_description || '',
+    is_default: data.is_default === true || data.is_default === 'true',
+    is_active: true
+  });
+
+  return { success: true, message: '優惠券模板已建立', data: record };
+}
+
+async function handleUpdateCouponTemplate(data) {
+  const templateId = data.template_id || data.id;
+  if (!templateId) throw new Error('template_id 為必填');
+
+  const existing = await findRecordById(COUPON_TEMPLATE_TABLE, templateId);
+  if (!existing) throw new Error('找不到該優惠券模板');
+
+  // 若設為預設，先清除其他預設
+  if (data.is_default === true || data.is_default === 'true') {
+    await clearDefaultCouponTemplates();
+  }
+
+  const updates = {};
+  if (data.coupon_name !== undefined) updates.coupon_name = data.coupon_name;
+  if (data.coupon_url !== undefined) updates.coupon_url = data.coupon_url;
+  if (data.coupon_description !== undefined) updates.coupon_description = data.coupon_description;
+  if (data.is_default !== undefined) updates.is_default = data.is_default === true || data.is_default === 'true';
+  if (data.is_active !== undefined) updates.is_active = data.is_active === true || data.is_active === 'true';
+
+  const updated = await updateRecord(COUPON_TEMPLATE_TABLE, templateId, updates);
+  return { success: true, message: '優惠券模板已更新', data: updated };
+}
+
+async function handleDeleteCouponTemplate(data) {
+  const templateId = data.template_id || data.id;
+  if (!templateId) throw new Error('template_id 為必填');
+
+  const existing = await findRecordById(COUPON_TEMPLATE_TABLE, templateId);
+  if (!existing) throw new Error('找不到該優惠券模板');
+
+  await updateRecord(COUPON_TEMPLATE_TABLE, templateId, { is_active: false });
+  return { success: true, message: '優惠券模板已停用' };
+}
+
+async function clearDefaultCouponTemplates() {
+  try {
+    const all = await db.getAllRecords(COUPON_TEMPLATE_TABLE);
+    for (const t of all) {
+      if (t.data.is_default === true || t.data.is_default === 'true') {
+        await updateRecord(COUPON_TEMPLATE_TABLE, t.id, { is_default: false });
+      }
+    }
+  } catch (e) {
+    console.error('clearDefaultCouponTemplates error:', e.message);
+  }
 }
 
 function getRawBodyFromRequest(req) {
@@ -3470,6 +3558,10 @@ async function route(action, data) {
     'promote_to_partner': handlePromoteToPartner,
     'sync_line_claim_profiles': syncLineClaimProfiles,
     'shorten_url': handleShortenUrl,
+
+    'create_coupon_template': handleCreateCouponTemplate,
+    'update_coupon_template': handleUpdateCouponTemplate,
+    'delete_coupon_template': handleDeleteCouponTemplate,
   };
 
   const handler = handlers[action];

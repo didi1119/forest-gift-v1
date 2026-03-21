@@ -782,6 +782,32 @@
                     </div>
                 </div>
 
+                <!-- Coupon Templates section -->
+                <div class="ob-section" id="obSectionCoupons">
+                    <div class="ob-section-header" onclick="toggleObSection('obSectionCoupons')">
+                        <span class="ob-section-title">優惠券管理</span>
+                        <span class="ob-section-chevron">▼</span>
+                    </div>
+                    <div class="ob-section-content">
+                        <div id="couponTemplateList" style="display:grid;gap:0.5rem;"></div>
+                        <div id="couponTemplateForm" style="display:none;margin-top:0.75rem;">
+                            <div style="display:grid;gap:0.5rem;">
+                                <input id="ctFormName" class="ob-input" type="text" placeholder="券名稱，例如：土地的厚愛">
+                                <input id="ctFormUrl" class="ob-input" type="url" placeholder="LINE 優惠券連結，例如：https://lin.ee/...">
+                                <input id="ctFormDesc" class="ob-input" type="text" placeholder="券內容描述，例如：山城地瓜包 + 延時退房">
+                                <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:#1d1d1f;">
+                                    <input id="ctFormDefault" type="checkbox"> 設為預設券
+                                </label>
+                            </div>
+                            <div style="display:flex;gap:0.35rem;margin-top:0.5rem;">
+                                <button onclick="saveCouponTemplate()" class="ob-btn ob-btn-primary ob-btn-sm">儲存</button>
+                                <button onclick="cancelCouponTemplateForm()" class="ob-btn ob-btn-secondary ob-btn-sm">取消</button>
+                            </div>
+                        </div>
+                        <button id="ctAddBtn" onclick="showCouponTemplateForm()" class="ob-btn ob-btn-secondary ob-btn-sm" style="margin-top:0.5rem;">新增優惠券</button>
+                    </div>
+                </div>
+
                 <!-- Invite Kit section -->
                 <div class="ob-section" id="obSectionInvite">
                     <div class="ob-section-header" onclick="toggleObSection('obSectionInvite')">
@@ -1489,7 +1515,8 @@
             payouts: [],
             clicks: [],
             line_coupon_bindings: [],
-            line_referral_claims: []
+            line_referral_claims: [],
+            coupon_templates: []
         };
 
         let onboardingState = {
@@ -1579,7 +1606,8 @@
                             clicks: data.data.clicks || [],
                             accommodation_usage: data.data.accommodation_usage || [],
                             line_coupon_bindings: data.data.line_coupon_bindings || [],
-                            line_referral_claims: data.data.line_referral_claims || []
+                            line_referral_claims: data.data.line_referral_claims || [],
+                            coupon_templates: data.data.coupon_templates || []
                         };
                     console.log('✅ 載入真實數據成功:');
                     console.log('- Partners:', allData.partners?.length || 0);
@@ -2379,6 +2407,7 @@
                     renderOnboardingWorkspace();
                     renderOnboardingInvitePanel();
                     renderOnboardingPacketPanel();
+                    renderCouponTemplateList();
                     break;
                 case 'overview':
                     updateStats();
@@ -2800,13 +2829,15 @@
         }
 
         function getOnboardingDraft(application) {
-            if (!application) return { partnerCode: '', couponCode: '', couponUrl: '' };
+            if (!application) return { partnerCode: '', couponCode: '', couponUrl: '', couponTemplateId: '' };
 
             if (!onboardingState.draftByApplicationId[application.id]) {
+                const defaultTpl = getDefaultCouponTemplate();
                 onboardingState.draftByApplicationId[application.id] = {
                     partnerCode: application.partner_code_assigned || generateSuggestedPartnerCode(application),
                     couponCode: application.coupon_code || generateSuggestedCouponCode(application),
-                    couponUrl: application.coupon_url || ''
+                    couponUrl: application.coupon_url || (defaultTpl ? defaultTpl.coupon_url : ''),
+                    couponTemplateId: defaultTpl ? String(defaultTpl.id) : ''
                 };
             }
 
@@ -3122,9 +3153,13 @@
                         </div>
                         <div>
                             <label class="ob-input-label">優惠券連結</label>
-                            <input class="ob-input" type="url" value="${escapeHtml(draft.couponUrl)}"
+                            <select class="ob-input" onchange="onCouponTemplateSelect(this.value)">
+                                ${buildCouponTemplateOptions(draft.couponUrl)}
+                            </select>
+                            <input class="ob-input" id="obCustomCouponUrl" type="url" value="${escapeHtml(draft.couponUrl)}"
                                 oninput="syncOnboardingDraftField('couponUrl', this.value.trim())"
-                                placeholder="https://lin.ee/...">
+                                placeholder="https://lin.ee/..."
+                                style="margin-top:0.35rem;display:${isCouponUrlCustom(draft.couponUrl) ? 'block' : 'none'};">
                         </div>
                     </div>
                     <div style="display:flex;gap:0.35rem;margin-top:0.75rem;flex-wrap:wrap;">
@@ -3690,13 +3725,18 @@
             }
 
             try {
-                await submitToBackendViaForm({
+                const promotePayload = {
                     action: 'promote_to_partner',
                     application_id: application.id,
                     partner_code: draft.partnerCode,
-                    coupon_code: draft.couponCode,
-                    coupon_url: draft.couponUrl || ''
-                });
+                    coupon_code: draft.couponCode
+                };
+                if (draft.couponTemplateId) {
+                    promotePayload.coupon_template_id = draft.couponTemplateId;
+                } else {
+                    promotePayload.coupon_url = draft.couponUrl || '';
+                }
+                await submitToBackendViaForm(promotePayload);
                 showSuccessMessage('✅ 已建立基本大使資料');
                 await refreshOnboardingWorkspace();
             } catch (error) {
@@ -3708,6 +3748,233 @@
             await loadRealData(forceRefresh);
             await loadOnboardingApplications();
             renderOnboardingInvitePanel();
+            renderCouponTemplateList();
+        }
+
+        // ========================================
+        // 優惠券模板管理
+        // ========================================
+
+        function getActiveCouponTemplates() {
+            return (allData.coupon_templates || [])
+                .filter(t => (t.data || t).is_active !== false && (t.data || t).is_active !== 'false')
+                .map(t => t.data ? { id: t.id, ...t.data } : t);
+        }
+
+        function getDefaultCouponTemplate() {
+            const templates = getActiveCouponTemplates();
+            return templates.find(t => t.is_default === true || t.is_default === 'true') || templates[0] || null;
+        }
+
+        function buildCouponTemplateOptions(currentUrl) {
+            const templates = getActiveCouponTemplates();
+            let html = '';
+            let matched = false;
+            for (const t of templates) {
+                const isSelected = currentUrl === t.coupon_url;
+                if (isSelected) matched = true;
+                const defaultLabel = (t.is_default === true || t.is_default === 'true') ? ' [預設]' : '';
+                html += `<option value="tpl:${t.id}" ${isSelected ? 'selected' : ''}>${escapeHtml(t.coupon_name)}${defaultLabel}</option>`;
+            }
+            html += `<option value="custom" ${!matched && currentUrl ? 'selected' : ''}>自訂 URL...</option>`;
+            return html;
+        }
+
+        function isCouponUrlCustom(url) {
+            if (!url) return false;
+            const templates = getActiveCouponTemplates();
+            return !templates.some(t => t.coupon_url === url);
+        }
+
+        function onCouponTemplateSelect(value) {
+            const customInput = document.getElementById('obCustomCouponUrl');
+            if (value === 'custom') {
+                if (customInput) customInput.style.display = 'block';
+                syncOnboardingDraftField('couponTemplateId', '');
+                syncOnboardingDraftField('couponUrl', '');
+            } else if (value.startsWith('tpl:')) {
+                if (customInput) customInput.style.display = 'none';
+                const tplId = value.replace('tpl:', '');
+                const tpl = getActiveCouponTemplates().find(t => String(t.id) === tplId);
+                syncOnboardingDraftField('couponTemplateId', tplId);
+                syncOnboardingDraftField('couponUrl', tpl ? tpl.coupon_url : '');
+            }
+        }
+
+        function renderCouponTemplateList() {
+            const container = document.getElementById('couponTemplateList');
+            if (!container) return;
+
+            const templates = getActiveCouponTemplates();
+            if (templates.length === 0) {
+                container.innerHTML = '<div style="font-size:0.8rem;color:#86868b;">尚無優惠券。</div>';
+                return;
+            }
+
+            const partners = allData.partners || [];
+            container.innerHTML = templates.map(t => {
+                const partnerCount = partners.filter(p => {
+                    const pData = p.data || p;
+                    return pData.line_coupon_url === t.coupon_url || pData.coupon_url === t.coupon_url;
+                }).length;
+                const isDefault = t.is_default === true || t.is_default === 'true';
+                const truncUrl = (t.coupon_url || '').replace('https://', '');
+
+                return `<div class="ob-packet-link" style="align-items:flex-start;">
+                    <div style="min-width:0;flex:1;">
+                        <div style="display:flex;align-items:center;gap:0.35rem;">
+                            <span style="font-weight:600;font-size:0.85rem;color:#1d1d1f;">${escapeHtml(t.coupon_name)}</span>
+                            ${isDefault ? '<span style="font-size:0.65rem;background:#2E4B36;color:#fff;padding:0.1rem 0.4rem;border-radius:0.25rem;">預設</span>' : ''}
+                        </div>
+                        <div style="font-size:0.72rem;color:#6e6e73;font-family:ui-monospace,monospace;margin-top:0.15rem;">${escapeHtml(truncUrl)}</div>
+                        ${t.coupon_description ? `<div style="font-size:0.72rem;color:#86868b;margin-top:0.15rem;">${escapeHtml(t.coupon_description)}</div>` : ''}
+                        <div style="font-size:0.68rem;color:#86868b;margin-top:0.25rem;">${partnerCount} 位大使使用中</div>
+                    </div>
+                    <div style="display:flex;gap:0.25rem;flex-shrink:0;">
+                        ${!isDefault ? `<button onclick="setCouponTemplateDefault('${t.id}')" class="ob-btn ob-btn-ghost ob-btn-sm" title="設為預設">預設</button>` : ''}
+                        <button onclick="editCouponTemplate('${t.id}')" class="ob-btn ob-btn-ghost ob-btn-sm">編輯</button>
+                        <button onclick="deleteCouponTemplate('${t.id}')" class="ob-btn ob-btn-ghost ob-btn-sm" style="color:#EF4444;">停用</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        let editingCouponTemplateId = null;
+
+        function showCouponTemplateForm(templateId) {
+            editingCouponTemplateId = templateId || null;
+            const form = document.getElementById('couponTemplateForm');
+            const addBtn = document.getElementById('ctAddBtn');
+            if (form) form.style.display = 'block';
+            if (addBtn) addBtn.style.display = 'none';
+
+            if (templateId) {
+                const tpl = getActiveCouponTemplates().find(t => String(t.id) === String(templateId));
+                if (tpl) {
+                    document.getElementById('ctFormName').value = tpl.coupon_name || '';
+                    document.getElementById('ctFormUrl').value = tpl.coupon_url || '';
+                    document.getElementById('ctFormDesc').value = tpl.coupon_description || '';
+                    document.getElementById('ctFormDefault').checked = tpl.is_default === true || tpl.is_default === 'true';
+                }
+            } else {
+                document.getElementById('ctFormName').value = '';
+                document.getElementById('ctFormUrl').value = '';
+                document.getElementById('ctFormDesc').value = '';
+                document.getElementById('ctFormDefault').checked = false;
+            }
+        }
+
+        function cancelCouponTemplateForm() {
+            editingCouponTemplateId = null;
+            const form = document.getElementById('couponTemplateForm');
+            const addBtn = document.getElementById('ctAddBtn');
+            if (form) form.style.display = 'none';
+            if (addBtn) addBtn.style.display = '';
+        }
+
+        function editCouponTemplate(id) {
+            showCouponTemplateForm(id);
+        }
+
+        async function saveCouponTemplate() {
+            const name = document.getElementById('ctFormName').value.trim();
+            const url = document.getElementById('ctFormUrl').value.trim();
+            const desc = document.getElementById('ctFormDesc').value.trim();
+            const isDefault = document.getElementById('ctFormDefault').checked;
+
+            if (!name || !url) {
+                showErrorMessage('券名稱和連結為必填');
+                return;
+            }
+
+            try {
+                if (editingCouponTemplateId) {
+                    await submitToBackendViaForm({
+                        action: 'update_coupon_template',
+                        template_id: editingCouponTemplateId,
+                        coupon_name: name,
+                        coupon_url: url,
+                        coupon_description: desc,
+                        is_default: isDefault
+                    });
+                } else {
+                    await submitToBackendViaForm({
+                        action: 'create_coupon_template',
+                        coupon_name: name,
+                        coupon_url: url,
+                        coupon_description: desc,
+                        is_default: isDefault
+                    });
+                }
+                cancelCouponTemplateForm();
+                showSuccessMessage(editingCouponTemplateId ? '優惠券已更新' : '優惠券已新增');
+                await loadRealData(true);
+                renderCouponTemplateList();
+            } catch (e) {
+                showErrorMessage('儲存失敗：' + e.message);
+            }
+        }
+
+        async function setCouponTemplateDefault(id) {
+            try {
+                await submitToBackendViaForm({
+                    action: 'update_coupon_template',
+                    template_id: id,
+                    is_default: true
+                });
+                showSuccessMessage('已設為預設券');
+                await loadRealData(true);
+                renderCouponTemplateList();
+            } catch (e) {
+                showErrorMessage('設定失敗：' + e.message);
+            }
+        }
+
+        function buildPartnerCouponOptions(currentUrl) {
+            const templates = getActiveCouponTemplates();
+            let html = '';
+            let matched = false;
+            for (const t of templates) {
+                const isSelected = currentUrl === t.coupon_url;
+                if (isSelected) matched = true;
+                const defaultLabel = (t.is_default === true || t.is_default === 'true') ? ' [預設]' : '';
+                html += `<option value="${escapeHtml(t.coupon_url)}" ${isSelected ? 'selected' : ''}>${escapeHtml(t.coupon_name)}${defaultLabel}</option>`;
+            }
+            if (!matched && currentUrl) {
+                html += `<option value="${escapeHtml(currentUrl)}" selected>目前: ${escapeHtml(currentUrl.replace('https://', ''))}</option>`;
+            }
+            return html;
+        }
+
+        async function changePartnerCouponUrl(partnerCode, newUrl) {
+            if (!newUrl || !partnerCode) return;
+            try {
+                await submitToBackendViaForm({
+                    action: 'update_partner',
+                    partner_code: partnerCode,
+                    coupon_url: newUrl,
+                    line_coupon_url: newUrl
+                });
+                showSuccessMessage('優惠券連結已更新');
+                await loadRealData(true);
+            } catch (e) {
+                showErrorMessage('更新失敗：' + e.message);
+            }
+        }
+
+        async function deleteCouponTemplate(id) {
+            if (!confirm('確定停用此優惠券？已使用此券的大使不受影響。')) return;
+            try {
+                await submitToBackendViaForm({
+                    action: 'delete_coupon_template',
+                    template_id: id
+                });
+                showSuccessMessage('優惠券已停用');
+                await loadRealData(true);
+                renderCouponTemplateList();
+            } catch (e) {
+                showErrorMessage('停用失敗：' + e.message);
+            }
         }
 
         function showLoadingSpinner(message) {
@@ -4141,12 +4408,13 @@
                                         <p class="text-xs break-all bg-gray-100 p-2 rounded">${partner.short_landing_link || partner.landing_link}</p>
                                     </div>
                                 ` : ''}
-                                ${partner.coupon_url ? `
-                                    <div>
-                                        <p class="text-sm text-gray-600">優惠券連結</p>
-                                        <p class="text-xs break-all bg-gray-100 p-2 rounded">${partner.coupon_url}</p>
-                                    </div>
-                                ` : ''}
+                                <div>
+                                    <p class="text-sm text-gray-600">優惠券連結</p>
+                                    <p class="text-xs break-all bg-gray-100 p-2 rounded">${partner.coupon_url || partner.line_coupon_url || '未設定'}</p>
+                                    <select class="w-full mt-1 px-2 py-1 text-xs border border-gray-300 rounded" onchange="changePartnerCouponUrl('${escapeHtml(partner.partner_code)}', this.value)">
+                                        ${buildPartnerCouponOptions(partner.coupon_url || partner.line_coupon_url)}
+                                    </select>
+                                </div>
                             </div>
                         </div>
 

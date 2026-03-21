@@ -377,6 +377,38 @@
         .ob-btn-secondary:hover {
             background: rgba(0,0,0,0.08);
         }
+        /* 資料庫 tab 按鈕 */
+        .db-tab-btn {
+            padding: 0.3rem 0.85rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(0,0,0,0.12);
+            background: rgba(255,255,255,0.7);
+            color: #3c3c43;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .db-tab-btn:hover { background: rgba(0,0,0,0.05); }
+        .db-tab-active { background: #1d1d1f !important; color: #fff !important; border-color: #1d1d1f !important; }
+        #db-table th {
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #86868b;
+            white-space: nowrap;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        #db-table td {
+            padding: 0.45rem 0.75rem;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            color: #1d1d1f;
+            white-space: nowrap;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #db-table tr:hover td { background: rgba(0,0,0,0.02); }
         .ob-btn-ghost {
             background: transparent;
             color: #2E4B36;
@@ -1099,28 +1131,41 @@
             </iframe>
         </div>
 
-        <!-- 資料庫標籤內容 — Apple-style -->
+        <!-- 資料庫標籤內容 -->
         <div id="content-database" class="tab-content hidden">
             <div class="ob-toolbar" style="padding:0;margin-bottom:1rem;">
                 <div class="ob-toolbar-left">
                     <h2 class="ob-toolbar-title">資料庫</h2>
-                    <span style="font-size:0.8rem;color:#86868b;">直接查看和編輯系統資料</span>
+                    <span id="db-last-updated" style="font-size:0.8rem;color:#86868b;">載入中…</span>
                 </div>
-                <a href="https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit"
-                   id="database-tab-link"
-                   target="_blank"
-                   class="ob-btn ob-btn-secondary">在新分頁開啟</a>
+                <button onclick="loadDatabaseTables()" class="ob-btn ob-btn-secondary">重新載入</button>
             </div>
-            <div id="supabase-placeholder" class="hidden" style="background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.15);border-radius:0.75rem;padding:2rem;text-align:center;color:#065F46;">
-                <div style="font-size:1rem;font-weight:600;margin-bottom:0.5rem;">目前資料來源為 Supabase</div>
-                <p style="font-size:0.82rem;color:#6e6e73;">正式環境不再嵌入 Google Sheets。請使用上方按鈕前往 Supabase Dashboard 檢視資料。</p>
+
+            <!-- 表格切換 tabs -->
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+                <button onclick="showDbTable('partners')" id="dbtab-partners" class="db-tab-btn db-tab-active">大使 Partners</button>
+                <button onclick="showDbTable('bookings')" id="dbtab-bookings" class="db-tab-btn">訂房 Bookings</button>
+                <button onclick="showDbTable('payouts')" id="dbtab-payouts" class="db-tab-btn">結算 Payouts</button>
+                <button onclick="showDbTable('applications')" id="dbtab-applications" class="db-tab-btn">申請 Applications</button>
+                <button onclick="showDbTable('clicks')" id="dbtab-clicks" class="db-tab-btn">點擊 Clicks</button>
             </div>
-            <div id="database-tab-iframe" class="hidden" style="background:rgba(255,255,255,0.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(0,0,0,0.06);border-radius:0.85rem;overflow:hidden;height:calc(100vh - 260px);">
-                <iframe data-src="https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit?rm=minimal"
-                        style="width:100%;height:100%;border:none;"
-                        title="資料庫">
-                </iframe>
+
+            <!-- 搜尋 -->
+            <div style="margin-bottom:0.75rem;">
+                <input id="db-search" type="text" placeholder="搜尋…" oninput="filterDbTable()"
+                    style="width:100%;max-width:320px;padding:0.4rem 0.75rem;border:1px solid rgba(0,0,0,0.12);border-radius:0.5rem;font-size:0.8rem;outline:none;background:rgba(255,255,255,0.8);">
             </div>
+
+            <!-- 表格容器 -->
+            <div id="db-table-container" style="background:rgba(255,255,255,0.72);backdrop-filter:blur(20px);border:1px solid rgba(0,0,0,0.06);border-radius:0.85rem;overflow:auto;max-height:calc(100vh - 320px);">
+                <div id="db-loading" style="padding:3rem;text-align:center;color:#86868b;font-size:0.85rem;">載入資料中…</div>
+                <div id="db-error" class="hidden" style="padding:3rem;text-align:center;color:#d32f2f;font-size:0.85rem;"></div>
+                <table id="db-table" class="hidden" style="width:100%;border-collapse:collapse;font-size:0.75rem;">
+                    <thead id="db-thead" style="position:sticky;top:0;background:#f5f5f7;z-index:1;"></thead>
+                    <tbody id="db-tbody"></tbody>
+                </table>
+            </div>
+            <div id="db-row-count" style="margin-top:0.5rem;font-size:0.75rem;color:#86868b;text-align:right;"></div>
         </div>
     </div>
 
@@ -1542,35 +1587,16 @@
                     console.log('- Payouts:', allData.payouts?.length || 0);
                     console.log('- Clicks:', allData.clicks?.length || 0);
 
-                    // 根據後端設定動態切換資料庫分頁的顯示內容
-                    if (data.backend) {
-                        const iframeContainer = document.getElementById('database-tab-iframe');
-                        const supabasePlaceholder = document.getElementById('supabase-placeholder');
-                        const databaseLink = document.getElementById('database-tab-link');
-                        
-                        if (data.backend === 'supabase') {
-                            if (iframeContainer) iframeContainer.classList.add('hidden');
-                            if (supabasePlaceholder) supabasePlaceholder.classList.remove('hidden');
-                            if (databaseLink) {
-                                databaseLink.href = 'https://supabase.com/dashboard';
-                                databaseLink.textContent = '在 Supabase 開啟';
-                                databaseLink.classList.remove('bg-green-600', 'hover:bg-green-700');
-                                databaseLink.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
-                            }
-                        } else {
-                            if (iframeContainer) iframeContainer.classList.remove('hidden');
-                            if (supabasePlaceholder) supabasePlaceholder.classList.add('hidden');
-                            const sheetFrame = iframeContainer ? iframeContainer.querySelector('iframe[data-src]') : null;
-                            if (sheetFrame && !sheetFrame.getAttribute('src')) {
-                                sheetFrame.setAttribute('src', sheetFrame.dataset.src);
-                            }
-                            if (databaseLink) {
-                                databaseLink.href = 'https://docs.google.com/spreadsheets/d/1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4/edit';
-                                databaseLink.textContent = '在 資料庫 開啟';
-                                databaseLink.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
-                                databaseLink.classList.add('bg-green-600', 'hover:bg-green-700');
-                            }
-                        }
+                    // 資料庫 tab：儲存資料供顯示
+                    window._dbData = {
+                        partners: allData.partners || [],
+                        bookings: allData.bookings || [],
+                        payouts: allData.payouts || [],
+                        applications: allData.applications || [],
+                        clicks: allData.clicks || []
+                    };
+                    if (document.getElementById('content-database') && !document.getElementById('content-database').classList.contains('hidden')) {
+                        renderDbTable(window._currentDbTable || 'partners');
                     }
                     
                     // 詳細診斷 Bookings 資料結構
@@ -8224,14 +8250,9 @@ ${impactLines.join('\n')}
                 case 'analytics':
                     loadAnalyticsData();
                     break;
-                case 'database': {
-                    const iframeContainer = document.getElementById('database-tab-iframe');
-                    const sheetFrame = iframeContainer ? iframeContainer.querySelector('iframe[data-src]') : null;
-                    if (iframeContainer && !iframeContainer.classList.contains('hidden') && sheetFrame && !sheetFrame.getAttribute('src')) {
-                        sheetFrame.setAttribute('src', sheetFrame.dataset.src);
-                    }
+                case 'database':
+                    loadDatabaseTables();
                     break;
-                }
             }
         }
         
@@ -8279,6 +8300,108 @@ ${impactLines.join('\n')}
                 }
             }
         });
+
+        // ===== 資料庫 Tab 功能 =====
+        window._currentDbTable = 'partners';
+        window._dbData = null;
+
+        const DB_LABELS = {
+            partners: '大使 Partners',
+            bookings: '訂房 Bookings',
+            payouts: '結算 Payouts',
+            applications: '申請 Applications',
+            clicks: '點擊 Clicks'
+        };
+
+        async function loadDatabaseTables() {
+            const loading = document.getElementById('db-loading');
+            const error = document.getElementById('db-error');
+            const table = document.getElementById('db-table');
+            if (loading) { loading.classList.remove('hidden'); loading.textContent = '載入資料中…'; }
+            if (error) error.classList.add('hidden');
+            if (table) table.classList.add('hidden');
+
+            try {
+                const res = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'get_all_data', admin_secret: adminSecret })
+                });
+                const data = await res.json();
+                if (!data.success) throw new Error(data.error || '載入失敗');
+                const all = data.data || data;
+                window._dbData = {
+                    partners: all.partners || [],
+                    bookings: all.bookings || [],
+                    payouts: all.payouts || [],
+                    applications: all.applications || [],
+                    clicks: all.clicks || []
+                };
+                const el = document.getElementById('db-last-updated');
+                if (el) el.textContent = `最後更新：${new Date().toLocaleTimeString('zh-TW')}`;
+                renderDbTable(window._currentDbTable);
+            } catch (e) {
+                if (loading) loading.classList.add('hidden');
+                if (error) { error.classList.remove('hidden'); error.textContent = '載入失敗：' + e.message; }
+            }
+        }
+
+        function showDbTable(name) {
+            window._currentDbTable = name;
+            document.querySelectorAll('.db-tab-btn').forEach(b => b.classList.remove('db-tab-active'));
+            const btn = document.getElementById('dbtab-' + name);
+            if (btn) btn.classList.add('db-tab-active');
+            const search = document.getElementById('db-search');
+            if (search) search.value = '';
+            renderDbTable(name);
+        }
+
+        function renderDbTable(name, rows) {
+            const loading = document.getElementById('db-loading');
+            const error = document.getElementById('db-error');
+            const table = document.getElementById('db-table');
+            const thead = document.getElementById('db-thead');
+            const tbody = document.getElementById('db-tbody');
+            const count = document.getElementById('db-row-count');
+
+            if (!window._dbData) { loadDatabaseTables(); return; }
+
+            const data = rows || window._dbData[name] || [];
+            if (loading) loading.classList.add('hidden');
+            if (error) error.classList.add('hidden');
+
+            if (data.length === 0) {
+                if (table) table.classList.add('hidden');
+                if (loading) { loading.classList.remove('hidden'); loading.textContent = '（無資料）'; }
+                if (count) count.textContent = '';
+                return;
+            }
+
+            const cols = Object.keys(data[0]);
+            thead.innerHTML = '<tr>' + cols.map(c => `<th title="${c}">${c}</th>`).join('') + '</tr>';
+            tbody.innerHTML = data.map(row =>
+                '<tr>' + cols.map(c => {
+                    const v = row[c];
+                    const text = v == null ? '' : String(v);
+                    return `<td title="${text.replace(/"/g, '&quot;')}">${text}</td>`;
+                }).join('') + '</tr>'
+            ).join('');
+
+            table.classList.remove('hidden');
+            if (count) count.textContent = `共 ${data.length} 筆 | ${DB_LABELS[name] || name}`;
+        }
+
+        function filterDbTable() {
+            const q = (document.getElementById('db-search')?.value || '').toLowerCase();
+            if (!window._dbData) return;
+            const all = window._dbData[window._currentDbTable] || [];
+            if (!q) { renderDbTable(window._currentDbTable); return; }
+            const filtered = all.filter(row =>
+                Object.values(row).some(v => v != null && String(v).toLowerCase().includes(q))
+            );
+            renderDbTable(window._currentDbTable, filtered);
+        }
+
     </script>
     <!-- 外部 JavaScript 文件，添加版本號防止快取 -->
     <script src="payout-functions.js?v=20240816"></script>

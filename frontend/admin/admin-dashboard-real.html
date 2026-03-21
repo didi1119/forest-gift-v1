@@ -2475,7 +2475,7 @@
                 responseText = await response.text();
             } catch (fetchError) {
                 console.error('submitToBackendViaForm fetch 失敗:', fetchError);
-                alert('❌ 後端請求失敗：' + fetchError.message);
+                showErrorMessage('後端請求失敗：' + fetchError.message);
                 throw fetchError;
             }
 
@@ -2487,7 +2487,7 @@
                 const syntaxError = new Error('後端回應格式錯誤，無法解析 JSON：' + parseError.message);
                 syntaxError.cause = parseError;
                 syntaxError.responseText = responseText;
-                alert('❌ ' + syntaxError.message);
+                showErrorMessage(syntaxError.message);
                 throw syntaxError;
             }
 
@@ -2682,7 +2682,7 @@
                 showSuccessMessage(formatLineClaimSyncMessage(result));
                 return result;
             } catch (error) {
-                alert(`❌ 同步 LINE 顯示名稱失敗：${error.message}`);
+                showErrorMessage('同步 LINE 顯示名稱失敗：' + error.message);
                 throw error;
             }
         }
@@ -3979,22 +3979,30 @@
 
         function showLoadingSpinner(message) {
             console.log('Loading:', message);
-            // 顯示載入提示
             let spinner = document.getElementById('global-loading-spinner');
             if (!spinner) {
                 spinner = document.createElement('div');
                 spinner.id = 'global-loading-spinner';
-                spinner.className = 'fixed top-4 right-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded shadow-lg z-50';
-                spinner.innerHTML = `
-                    <div class="flex items-center">
-                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-700 mr-3"></div>
-                        <span id="loading-message">${message}</span>
-                    </div>
-                `;
+                Object.assign(spinner.style, {
+                    position: 'fixed', top: '1.25rem', right: '1.25rem',
+                    display: 'flex', alignItems: 'center', gap: '0.6rem',
+                    padding: '0.65rem 1rem', borderRadius: '0.75rem',
+                    fontSize: '0.82rem', fontWeight: '500', color: '#1d1d1f',
+                    background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)', border: '1px solid rgba(0,0,0,0.06)',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.08)', zIndex: '9999'
+                });
+                spinner.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" fill="none" stroke="#86868b" stroke-width="2.5" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg><span id="loading-message">${message}</span>`;
                 document.body.appendChild(spinner);
+                if (!document.getElementById('apple-spin-keyframes')) {
+                    const style = document.createElement('style');
+                    style.id = 'apple-spin-keyframes';
+                    style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+                    document.head.appendChild(style);
+                }
             } else {
                 document.getElementById('loading-message').textContent = message;
-                spinner.style.display = 'block';
+                spinner.style.display = 'flex';
             }
         }
 
@@ -4007,38 +4015,64 @@
         }
         
         function showSuccessMessage(message) {
-            console.log('✅ Success:', message);
-            // 創建成功提示
-            const toast = createToast(message, 'success');
-            document.body.appendChild(toast);
+            console.log('Success:', message);
+            createAppleToast(message, 'success');
         }
-        
+
         function showErrorMessage(message) {
-            console.error('❌ Error:', message);
-            // 創建錯誤提示
-            const toast = createToast(message, 'error');
-            document.body.appendChild(toast);
+            console.error('Error:', message);
+            createAppleToast(message, 'error');
         }
-        
-        function createToast(message, type) {
+
+        function createAppleToast(message, type) {
+            // Remove existing toasts
+            document.querySelectorAll('.apple-toast').forEach(t => t.remove());
+
             const toast = document.createElement('div');
-            const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
-            
-            toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300`;
-            toast.textContent = message;
-            
-            // 初始顯示，稍後再淡出
-            toast.style.opacity = '1';
+            toast.className = 'apple-toast';
+            const isSuccess = type === 'success';
+            const icon = isSuccess ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+                                   : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+            const cleanMsg = String(message).replace(/^[✅❌⚠️\s]+/, '');
+
+            Object.assign(toast.style, {
+                position: 'fixed',
+                top: '1.25rem',
+                right: '1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                padding: '0.7rem 1.1rem',
+                borderRadius: '0.75rem',
+                fontSize: '0.82rem',
+                fontWeight: '500',
+                lineHeight: '1.3',
+                maxWidth: '380px',
+                zIndex: '9999',
+                color: isSuccess ? '#1a5c2a' : '#9a1b1b',
+                background: isSuccess ? 'rgba(220,245,225,0.92)' : 'rgba(255,230,230,0.92)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: isSuccess ? '1px solid rgba(46,75,54,0.15)' : '1px solid rgba(180,60,60,0.15)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+                opacity: '0',
+                transform: 'translateY(-8px)',
+                transition: 'opacity 0.3s ease, transform 0.3s ease'
+            });
+
+            toast.innerHTML = `<span style="flex-shrink:0;display:flex;">${icon}</span><span>${escapeHtml(cleanMsg)}</span>`;
+            document.body.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateY(0)';
+            });
+
             setTimeout(() => {
                 toast.style.opacity = '0';
-            }, 2600);
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    document.body.removeChild(toast);
-                }
-            }, 3000);
-            
-            return toast;
+                toast.style.transform = 'translateY(-8px)';
+            }, 3200);
+            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3600);
         }
 
         // 功能按鈕
@@ -4095,7 +4129,7 @@
         function viewPayoutDetails(payoutId) {
             const payout = allData.payouts.find(p => p.id == payoutId);
             if (!payout) {
-                alert('找不到結算記錄');
+                showErrorMessage('找不到結算記錄');
                 return;
             }
             
@@ -4827,12 +4861,12 @@
                 const data = JSON.parse(result);
                 
                 if (data.success) {
-                    alert('✅ 診斷完成！請到 Google Apps Script 控制台查看詳細日誌。');
+                    showSuccessMessage('診斷完成，請到控制台查看日誌');
                 } else {
-                    alert('❌ 診斷失敗：' + data.error);
+                    showErrorMessage('診斷失敗：' + data.error);
                 }
             } catch (error) {
-                alert('❌ 診斷錯誤：' + error.message);
+                showErrorMessage('診斷錯誤：' + error.message);
             }
         }
 
@@ -4933,7 +4967,7 @@
             
             try {
                 await navigator.clipboard.writeText(headers);
-                alert('✅ 標題已複製到剪貼板！您可以在 資料庫 中選擇 A1:U1 範圍後貼上。');
+                showSuccessMessage('標題已複製到剪貼板');
             } catch (error) {
                 // 備用方法
                 const textArea = document.createElement('textarea');
@@ -4942,7 +4976,7 @@
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                alert('✅ 標題已複製到剪貼板！您可以在 資料庫 中選擇 A1:U1 範圍後貼上。');
+                showSuccessMessage('標題已複製到剪貼板');
             }
         }
 
@@ -4983,7 +5017,7 @@
         window.confirmStayCompletion = async function(bookingIdentifier) {
             const booking = getBookingByIdentifier(bookingIdentifier);
             if (!booking) {
-                alert('找不到訂房記錄');
+                showErrorMessage('找不到訂房記錄');
                 return;
             }
             
@@ -5082,7 +5116,7 @@
         function viewBookingDetails(bookingIdentifier) {
             const booking = getBookingByIdentifier(bookingIdentifier);
             if (!booking) {
-                alert('找不到訂房記錄');
+                showErrorMessage('找不到訂房記錄');
                 return;
             }
 
@@ -5207,7 +5241,7 @@
         window.editBooking = function(bookingIdentifier) {
             const booking = getBookingByIdentifier(bookingIdentifier);
             if (!booking) {
-                alert('找不到訂房記錄');
+                showErrorMessage('找不到訂房記錄');
                 return;
             }
 
@@ -5620,7 +5654,7 @@
                 // 使用 BookingDataManager 驗證更新後的數據
                 const validation = BookingDataManager.validateBooking(updatedBooking);
                 if (!validation.valid) {
-                    alert('資料驗證失敗：\n' + validation.errors.join('\n'));
+                    showErrorMessage('資料驗證失敗：' + validation.errors.join('、'));
                     return;
                 }
 
@@ -5652,7 +5686,7 @@
                 closeModal('editBookingModal');
             } catch (error) {
                 console.error('更新訂單失敗:', error);
-                alert('❌ 更新失敗：' + error.message);
+                showErrorMessage('更新失敗：' + error.message);
             }
         }
 
@@ -5660,7 +5694,7 @@
         window.deleteBooking = async function(bookingIdentifier) {
             const booking = getBookingByIdentifier(bookingIdentifier);
             if (!booking) {
-                alert('找不到訂房記錄');
+                showErrorMessage('找不到訂房記錄');
                 return;
             }
 
@@ -5707,7 +5741,7 @@
                 
             } catch (error) {
                 console.error('刪除訂單失敗:', error);
-                alert('❌ 刪除失敗：' + error.message);
+                showErrorMessage('刪除失敗：' + error.message);
             }
         }
 
@@ -6065,7 +6099,7 @@
         async function submitManualBooking() {
             const submitButton = document.querySelector('#manualBookingForm button[type="submit"]');
             if (!submitButton) {
-                alert('❌ 找不到送出按鈕，請重新開啟手動訂房視窗後再試一次');
+                showErrorMessage('找不到送出按鈕，請重新開啟手動訂房視窗');
                 return;
             }
 
@@ -6100,13 +6134,13 @@
                 // 使用 BookingDataManager 驗證數據
                 const validation = BookingDataManager.validateBooking(bookingData);
                 if (!validation.valid) {
-                    alert('資料驗證失敗：\n' + validation.errors.join('\n'));
+                    showErrorMessage('資料驗證失敗：' + validation.errors.join('、'));
                     return;
                 }
 
                 // 驗證推薦大使代碼（如果有選擇）
                 if (bookingData.partner_code && !allData.partners.find(p => p.partner_code === bookingData.partner_code)) {
-                    alert('選擇的推薦大使代碼無效，請重新選擇！');
+                    showErrorMessage('選擇的推薦大使代碼無效，請重新選擇');
                     return;
                 }
 
@@ -6145,7 +6179,7 @@
                 }
             } catch (error) {
                 console.error('登記失敗:', error);
-                alert('❌ 登記失敗：' + error.message);
+                showErrorMessage('登記失敗：' + error.message);
             } finally {
                 submitButton.textContent = originalText;
                 submitButton.disabled = false;
@@ -7273,7 +7307,7 @@
                 range.selectNode(element);
                 window.getSelection().removeAllRanges();
                 window.getSelection().addRange(range);
-                alert('請按 Ctrl+C 複製');
+                showSuccessMessage('請按 Ctrl+C 複製');
             });
         }
 
@@ -8470,7 +8504,7 @@ ${impactLines.join('\n')}
                 '累計佣金': Math.round(s.totalEarned), '待付現金': Math.round(s.pendingCash),
                 '住宿金餘額': Math.round(s.points)
             }));
-            if (rows.length === 0) return alert('無數據可匯出');
+            if (rows.length === 0) return showErrorMessage('無數據可匯出');
             const headers = Object.keys(rows[0]);
             const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => headers.map(h => r[h]).join(','))].join('\n');
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

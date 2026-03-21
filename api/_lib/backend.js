@@ -3041,6 +3041,75 @@ async function handleReviewApplication(data) {
   return { success: true, message: `申請已${status === 'APPROVED' ? '核准' : '拒絕'}` };
 }
 
+// ===== Email 通知（Resend REST API）=====
+async function sendWelcomeEmail({ email, name, partnerCode, shortLandingLink, shortCouponLink, phone }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.NOTIFICATION_FROM_EMAIL || 'onboarding@resend.dev';
+  if (!apiKey) {
+    console.log('RESEND_API_KEY not set, skipping welcome email');
+    return;
+  }
+
+  const phoneLast4 = (phone || '').slice(-4);
+  const dashboardUrl = 'https://didi1119.github.io/forest-gift-v1/frontend/partner-login.html';
+
+  const html = `
+    <div style="font-family: 'Noto Sans TC', sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background: #FDFBF8; color: #5C544B;">
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="font-family: 'Noto Serif TC', serif; color: #2E4B36; font-size: 24px; margin-bottom: 8px;">歡迎加入知音計畫</h1>
+        <p style="color: #8B8178;">靜謐森林・知音大使</p>
+      </div>
+
+      <p>親愛的 ${name || '知音夥伴'}，</p>
+      <p>恭喜您通過審核，正式成為靜謐森林的知音大使！以下是您的專屬工具：</p>
+
+      <div style="background: #F0F5F0; border-left: 4px solid #2E4B36; padding: 16px; border-radius: 8px; margin: 24px 0;">
+        <p style="margin: 0 0 8px;"><strong>您的大使代碼：</strong>${partnerCode}</p>
+        <p style="margin: 0 0 8px;"><strong>推薦連結：</strong><a href="${shortLandingLink}" style="color: #2E4B36;">${shortLandingLink}</a></p>
+        <p style="margin: 0;"><strong>優惠券連結：</strong><a href="${shortCouponLink}" style="color: #2E4B36;">${shortCouponLink}</a></p>
+      </div>
+
+      <h3 style="color: #2E4B36; margin-top: 24px;">登入您的儀表板</h3>
+      <p>前往 <a href="${dashboardUrl}" style="color: #2E4B36; font-weight: bold;">${dashboardUrl}</a></p>
+      <p>登入方式：使用您的 <strong>Email 或大使代碼</strong> + <strong>手機末 4 碼（${phoneLast4}）</strong></p>
+
+      <div style="background: #FEF3C7; border: 1px solid #F59E0B; padding: 16px; border-radius: 8px; margin: 24px 0;">
+        <h3 style="color: #92400E; margin: 0 0 8px;">啟用 LINE 即時通知</h3>
+        <p style="color: #92400E; margin: 0;">
+          加入我們的 LINE 官方帳號 <strong>@478hisen</strong>，並發送：<br>
+          <code style="background: #FDE68A; padding: 2px 8px; border-radius: 4px; font-size: 16px;">#綁定 ${partnerCode}</code><br>
+          即可啟用 LINE 即時通知，日後結算與重要訊息將直接推送給您。
+        </p>
+      </div>
+
+      <p style="text-align: center; margin-top: 32px; color: #8B8178; font-size: 12px;">
+        靜謐森林 — 知音計畫<br>
+        如有任何疑問，請透過 LINE 官方帳號聯繫我們
+      </p>
+    </div>
+  `;
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: `靜謐森林知音計畫 <${fromEmail}>`,
+      to: [email],
+      subject: `歡迎加入知音計畫！您的大使代碼：${partnerCode}`,
+      html
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Resend API error: ${response.status} ${err}`);
+  }
+  console.log(`Welcome email sent to ${email}`);
+}
+
 async function handlePromoteToPartner(data) {
   await ensureApplicationsSheet();
 
@@ -3124,6 +3193,20 @@ async function handlePromoteToPartner(data) {
     partner_link_sent: true
   });
 
+  // 發送歡迎 Email（失敗不阻擋流程）
+  try {
+    await sendWelcomeEmail({
+      email: partnerData.email,
+      name: partnerData.name,
+      partnerCode,
+      shortLandingLink,
+      shortCouponLink,
+      phone: partnerData.phone
+    });
+  } catch (emailErr) {
+    console.error('Welcome email failed:', emailErr.message);
+  }
+
   return {
     success: true,
     message: '已成功轉為正式大使',
@@ -3175,6 +3258,42 @@ async function handleLineWebhook(req, res) {
 
   for (const event of events) {
     if (!event || event.type !== 'message' || !event.message || event.message.type !== 'text' || !event.replyToken) {
+      continue;
+    }
+
+    // ===== 大使 LINE 配對：#綁定 大使代碼 =====
+    const bindMatch = (event.message.text || '').match(/^#綁定\s+(.+)/);
+    if (bindMatch) {
+      const bindCode = bindMatch[1].trim();
+      const lineUserId = event.source && event.source.userId ? event.source.userId : '';
+      if (!lineUserId) {
+        await callLineApi('https://api.line.me/v2/bot/message/reply', {
+          replyToken: event.replyToken,
+          messages: [{ type: 'text', text: '無法取得您的 LINE 帳號資訊，請稍後再試。' }]
+        });
+        continue;
+      }
+      try {
+        const partner = await findPartnerByCode(bindCode);
+        if (!partner) {
+          await callLineApi('https://api.line.me/v2/bot/message/reply', {
+            replyToken: event.replyToken,
+            messages: [{ type: 'text', text: `查無大使代碼「${bindCode}」，請確認後重試。` }]
+          });
+          continue;
+        }
+        await updateRecord('Partners', partner.partner_code, { line_user_id: lineUserId });
+        await callLineApi('https://api.line.me/v2/bot/message/reply', {
+          replyToken: event.replyToken,
+          messages: [{ type: 'text', text: `配對成功！${partner.name || bindCode}，您的 LINE 帳號已綁定，日後將透過此帳號接收結算通知與重要訊息。` }]
+        });
+      } catch (bindErr) {
+        console.error('LINE bind error:', bindErr.message);
+        await callLineApi('https://api.line.me/v2/bot/message/reply', {
+          replyToken: event.replyToken,
+          messages: [{ type: 'text', text: '配對過程發生錯誤，請稍後再試或聯繫客服。' }]
+        });
+      }
       continue;
     }
 

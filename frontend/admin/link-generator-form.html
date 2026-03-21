@@ -14,320 +14,403 @@
         rel="stylesheet">
     <style>
         body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background-color: #FDFBF8;
-            color: #5C544B;
+            font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
         }
-
-        h1,
-        h2,
-        h3,
-        .font-serif {
+        h1, h2, h3, .font-serif {
             font-family: 'Noto Serif TC', serif;
         }
 
-        .brand-accent {
+        /* Apple-style components */
+        .lg-panel {
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 0.85rem;
+            padding: 1.5rem;
+        }
+        .lg-section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 1rem;
+        }
+        .lg-label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: #86868b;
+            margin-bottom: 0.3rem;
+        }
+        .lg-required::after {
+            content: ' *';
+            color: #DC2626;
+        }
+        .lg-input {
+            width: 100%;
+            padding: 0.55rem 0.8rem;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+            color: #1d1d1f;
+            background: rgba(255,255,255,0.8);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .lg-input:focus {
+            border-color: #2E4B36;
+            box-shadow: 0 0 0 3px rgba(46,75,54,0.1);
+        }
+        .lg-input::placeholder {
+            color: #c7c7cc;
+        }
+        .lg-hint {
+            font-size: 0.68rem;
+            color: #86868b;
+            margin-top: 0.25rem;
+        }
+        .lg-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 0.55rem 1.15rem;
+            border-radius: 0.5rem;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s cubic-bezier(0.25,0.46,0.45,0.94);
+        }
+        .lg-btn-primary {
+            background: #2E4B36;
+            color: #fff;
+        }
+        .lg-btn-primary:hover {
+            background: #243c2b;
+            transform: scale(1.02);
+        }
+        .lg-btn-primary:disabled {
+            background: #86868b;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .lg-btn-secondary {
+            background: rgba(0,0,0,0.05);
+            color: #1d1d1f;
+        }
+        .lg-btn-secondary:hover {
+            background: rgba(0,0,0,0.08);
+        }
+        .lg-btn-ghost {
+            background: transparent;
             color: #2E4B36;
         }
-
-        .forest-gradient {
-            background: linear-gradient(135deg, #2E4B36 0%, #3A5A40 100%);
+        .lg-btn-ghost:hover {
+            background: rgba(46,75,54,0.06);
+        }
+        .lg-btn-full {
+            width: 100%;
+            padding: 0.7rem;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+        .lg-btn-amber {
+            background: #D97706;
+            color: #fff;
+        }
+        .lg-btn-amber:hover {
+            background: #B45309;
+            transform: scale(1.02);
+        }
+        .lg-btn-amber:disabled {
+            background: #86868b;
+            cursor: not-allowed;
+            transform: none;
         }
 
-        .brand-card {
-            background-color: #FFFFFF;
-            border: 1px solid #EAE6E1;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+        /* Toggle */
+        .lg-toggle-track {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.25s ease;
+        }
+        .lg-toggle-track.active {
+            background: #2E4B36;
+        }
+        .lg-toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            transition: transform 0.25s ease;
+        }
+        .lg-toggle-track.active .lg-toggle-thumb {
+            transform: translateX(20px);
         }
 
-        .card-shadow {
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
-        }
-
-        .link-display {
+        /* Link display */
+        .lg-link-box {
+            font-family: 'SF Mono', SFMono-Regular, ui-monospace, monospace;
+            font-size: 0.78rem;
+            padding: 0.6rem 0.8rem;
+            background: rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 0.5rem;
             word-break: break-all;
-            background: #f0f9f0;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #d0e8d0;
-            font-family: monospace;
-            font-size: 14px;
+            color: #1d1d1f;
+            line-height: 1.5;
         }
 
-        .toast {
+        /* Status badge */
+        .lg-badge {
+            font-size: 0.68rem;
+            font-weight: 500;
+            padding: 0.15rem 0.5rem;
+            border-radius: 9999px;
+        }
+        .lg-badge-loading { background: rgba(37,99,235,0.08); color: #2563EB; }
+        .lg-badge-success { background: rgba(5,150,105,0.08); color: #059669; }
+        .lg-badge-warning { background: rgba(217,119,6,0.08); color: #D97706; }
+        .lg-badge-error { background: rgba(220,38,38,0.08); color: #DC2626; }
+
+        /* Info card */
+        .lg-info-card {
+            padding: 0.75rem 1rem;
+            border-radius: 0.6rem;
+            font-size: 0.78rem;
+            line-height: 1.5;
+        }
+
+        /* Toast */
+        .lg-toast {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #059669;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            bottom: 1.25rem;
+            right: 1.25rem;
+            background: rgba(30,30,30,0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #fff;
+            padding: 0.6rem 1rem;
+            border-radius: 0.6rem;
+            font-size: 0.82rem;
             display: none;
             z-index: 1000;
-            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            animation: lgToastIn 0.3s cubic-bezier(0.25,0.46,0.45,0.94);
+        }
+        @keyframes lgToastIn {
+            from { transform: translateY(10px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
         }
 
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+        /* Textarea */
+        .lg-textarea {
+            width: 100%;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 0.6rem;
+            background: rgba(248,248,248,0.6);
+            color: #1d1d1f;
+            font-size: 0.8rem;
+            line-height: 1.55;
+            padding: 0.75rem;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+        .lg-textarea:focus {
+            border-color: rgba(46,75,54,0.3);
         }
     </style>
 </head>
 
-<body class="min-h-screen">
-    <!-- Toast Notification -->
-    <div id="toast" class="toast"></div>
+<body>
+    <!-- Toast -->
+    <div id="toast" class="lg-toast"></div>
 
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
-        <!-- Header -->
-        <div class="forest-gradient text-white p-8 rounded-2xl mb-8 card-shadow">
-            <h1 class="font-serif text-3xl font-bold mb-2">🌲 知音大使專屬連結生成器</h1>
-            <p class="text-green-100">為每位大使生成專屬的推薦連結，開啟森林旅程</p>
+    <div style="max-width:640px;margin:0 auto;padding:1.5rem 1rem;">
+        <!-- Header — minimal -->
+        <div style="margin-bottom:1.5rem;">
+            <h1 style="font-size:1.5rem;font-weight:700;color:#1d1d1f;letter-spacing:-0.02em;">連結生成器</h1>
+            <p style="font-size:0.8rem;color:#86868b;margin-top:0.15rem;">為大使建立專屬推薦連結</p>
         </div>
-        <div id="prefillNotice" class="hidden mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-900">
-            <div class="font-medium mb-1">已從 onboarding 流程帶入申請資料</div>
-            <div id="prefillNoticeText" class="text-emerald-800">你可以直接確認資料、生成連結並儲存。</div>
-            <div id="prefillApplicationSummary" class="hidden mt-3 whitespace-pre-line rounded-xl bg-white/70 px-4 py-3 text-xs text-emerald-900"></div>
+
+        <!-- Prefill notice -->
+        <div id="prefillNotice" class="hidden" style="margin-bottom:1rem;">
+            <div class="lg-info-card" style="background:rgba(5,150,105,0.06);border:1px solid rgba(5,150,105,0.12);color:#065F46;">
+                <div style="font-weight:500;margin-bottom:0.15rem;" id="prefillNoticeText">已從 onboarding 流程帶入申請資料</div>
+                <div id="prefillApplicationSummary" class="hidden" style="margin-top:0.5rem;white-space:pre-line;font-size:0.72rem;color:#065F46;background:rgba(255,255,255,0.5);padding:0.5rem 0.65rem;border-radius:0.4rem;"></div>
+            </div>
         </div>
 
         <!-- Main Form -->
-        <div class="brand-card p-8 mb-6">
-            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">📝 大使資訊</h2>
+        <div class="lg-panel" style="margin-bottom:1rem;">
+            <div class="lg-section-title">大使資訊</div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Basic Info -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
                 <div>
-                    <div class="flex items-center justify-between gap-3 mb-2">
-                        <label class="block text-sm font-medium text-gray-700">
-                            夥伴代碼 <span class="text-red-500">*</span>
-                        </label>
-                        <button type="button" onclick="suggestCodes(true)" class="text-xs text-green-700 hover:text-green-800 font-medium">
-                            重新建議代碼
-                        </button>
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <label class="lg-label lg-required">夥伴代碼</label>
+                        <button type="button" onclick="suggestCodes(true)" class="lg-btn lg-btn-ghost" style="padding:0.15rem 0.4rem;font-size:0.68rem;">重新建議</button>
                     </div>
-                    <input type="text" id="partnerCode"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="例如：AMB2043" required>
-                    <p class="text-xs text-gray-500 mt-2">內部登入與追蹤識別使用，不建議直接對外公開。</p>
+                    <input type="text" id="partnerCode" class="lg-input" placeholder="AMB2043" required>
+                    <div class="lg-hint">內部識別用，不對外公開</div>
                 </div>
-
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        夥伴姓名 <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" id="partnerName"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="例如：林小森" required>
+                    <label class="lg-label lg-required">夥伴姓名</label>
+                    <input type="text" id="partnerName" class="lg-input" placeholder="林小森" required>
                 </div>
-
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Email
-                    </label>
-                    <input type="email" id="partnerEmail"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="例如：partner@example.com">
+                    <label class="lg-label">Email</label>
+                    <input type="email" id="partnerEmail" class="lg-input" placeholder="partner@example.com">
                 </div>
-
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        聯絡電話 <span class="text-red-500">*</span>
-                    </label>
-                    <input type="tel" id="partnerPhone"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        placeholder="例如：0912345678" required>
+                    <label class="lg-label lg-required">聯絡電話</label>
+                    <input type="tel" id="partnerPhone" class="lg-input" placeholder="0912345678" required>
                 </div>
             </div>
 
-            <!-- Link Mode Selector -->
-            <div class="mt-6 p-6 bg-blue-50 rounded-lg border-2 border-blue-200">
-                <div class="flex items-center justify-between mb-3">
+            <!-- Link Mode -->
+            <div style="margin-top:1.25rem;padding:0.85rem 1rem;background:rgba(0,0,0,0.02);border-radius:0.6rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
                     <div>
-                        <h3 class="font-serif text-lg font-semibold text-blue-800">🔗 連結模式選擇</h3>
-                        <p class="text-sm text-blue-600 mt-1">選擇連結生成方式</p>
+                        <div style="font-size:0.8rem;font-weight:600;color:#1d1d1f;">連結模式</div>
+                        <div id="modeLabel" style="font-size:0.7rem;color:#86868b;margin-top:0.1rem;">直接連結（推薦）</div>
                     </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="directLinkMode" class="sr-only peer" checked>
-                        <div
-                            class="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600">
-                        </div>
-                    </label>
+                    <div class="lg-toggle-track active" id="toggleTrack" onclick="toggleLinkMode()">
+                        <div class="lg-toggle-thumb"></div>
+                    </div>
+                    <input type="checkbox" id="directLinkMode" class="hidden" checked>
                 </div>
 
-                <div id="directModeInfo" class="text-sm space-y-2">
-                    <div class="flex items-start">
-                        <span class="text-blue-700 font-medium mr-2">✓</span>
-                        <div class="text-blue-700">
-                            <strong>直接連結模式（推薦）</strong>
-                            <ul class="mt-1 ml-4 space-y-1 text-xs">
-                                <li>• 用戶點擊後直接前往目標頁面（無跳轉橫幅）</li>
-                                <li>• 更快的載入速度</li>
-                                <li>• 使用 reurl.cc 後台追蹤點擊數據</li>
-                                <li>• Google Sheets 不記錄點擊</li>
-                            </ul>
-                        </div>
-                    </div>
+                <div id="directModeInfo" style="margin-top:0.6rem;font-size:0.72rem;color:#6e6e73;line-height:1.5;">
+                    無跳轉橫幅・更快載入・reurl.cc 追蹤
                 </div>
-
-                <div id="trackingModeInfo" class="text-sm space-y-2 hidden">
-                    <div class="flex items-start">
-                        <span class="text-gray-600 font-medium mr-2">○</span>
-                        <div class="text-gray-600">
-                            <strong>完整追蹤模式</strong>
-                            <ul class="mt-1 ml-4 space-y-1 text-xs">
-                                <li>• 透過 Google Apps Script 中繼服務</li>
-                                <li>• 在 Google Sheets 記錄所有點擊</li>
-                                <li>• 會顯示「即將離開 Google」橫幅</li>
-                                <li>• 速度較慢（多一層重定向）</li>
-                            </ul>
-                        </div>
-                    </div>
+                <div id="trackingModeInfo" class="hidden" style="margin-top:0.6rem;font-size:0.72rem;color:#6e6e73;line-height:1.5;">
+                    Google Sheets 記錄點擊・有跳轉橫幅・速度較慢
                 </div>
             </div>
 
-            <!-- Coupon Info -->
-            <div class="mt-6 p-6 bg-amber-50 rounded-lg border-2 border-amber-200">
-                <h3 class="font-serif text-lg font-semibold text-amber-800 mb-4">🎫 專屬優惠券設定</h3>
-                <p class="text-sm text-amber-700 mb-4">
-                    ⚠️ 重要：請先到 LINE 官方帳號後台建立專屬優惠券，然後將連結貼在下方
-                </p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Coupon -->
+            <div style="margin-top:1.25rem;">
+                <div class="lg-section-title" style="margin-bottom:0.5rem;">優惠券設定</div>
+                <div class="lg-info-card" style="background:rgba(217,119,6,0.05);border:1px solid rgba(217,119,6,0.1);color:#92400E;margin-bottom:0.75rem;font-size:0.72rem;">
+                    請先到 LINE 官方帳號後台建立專屬優惠券，再將連結貼入
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            優惠券代碼 <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" id="couponCode"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="例如：FOREST043">
-                        <p class="text-xs text-amber-700 mt-2">對外公開使用的優惠代碼，請與大使代碼分開設定。</p>
+                        <label class="lg-label lg-required">優惠券代碼</label>
+                        <input type="text" id="couponCode" class="lg-input" placeholder="FOREST043">
+                        <div class="lg-hint">對外公開，請與大使代碼分開</div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            LINE 優惠券連結 <span class="text-red-500">*</span>
-                        </label>
-                        <input type="url" id="couponUrl"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="https://lin.ee/xxxxx" required>
+                        <label class="lg-label lg-required">LINE 優惠券連結</label>
+                        <input type="url" id="couponUrl" class="lg-input" placeholder="https://lin.ee/xxxxx" required>
                     </div>
                 </div>
             </div>
 
             <!-- Bank Info -->
-            <div class="mt-6">
-                <h3 class="font-serif text-lg font-semibold text-gray-800 mb-4">🏦 銀行資訊（選填）</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div style="margin-top:1.25rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+                    <span class="lg-section-title" style="margin-bottom:0;">銀行資訊</span>
+                    <span style="font-size:0.65rem;color:#86868b;background:rgba(0,0,0,0.04);padding:0.1rem 0.4rem;border-radius:9999px;">選填</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">銀行名稱</label>
-                        <input type="text" id="bankName"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="例如：台灣銀行">
+                        <label class="lg-label">銀行名稱</label>
+                        <input type="text" id="bankName" class="lg-input" placeholder="台灣銀行">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">銀行代碼</label>
-                        <input type="text" id="bankCode"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="例如：004">
+                        <label class="lg-label">銀行代碼</label>
+                        <input type="text" id="bankCode" class="lg-input" placeholder="004">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">分行名稱</label>
-                        <input type="text" id="bankBranch"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="例如：信義分行">
+                        <label class="lg-label">分行名稱</label>
+                        <input type="text" id="bankBranch" class="lg-input" placeholder="信義分行">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">戶名</label>
-                        <input type="text" id="bankAccountName"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="例如：林小森">
+                        <label class="lg-label">戶名</label>
+                        <input type="text" id="bankAccountName" class="lg-input" placeholder="林小森">
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">帳號</label>
-                        <input type="text" id="bankAccountNumber"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            placeholder="例如：1234567890123">
+                    <div style="grid-column:1/-1;">
+                        <label class="lg-label">帳號</label>
+                        <input type="text" id="bankAccountNumber" class="lg-input" placeholder="1234567890123">
                     </div>
                 </div>
             </div>
 
             <!-- Generate Button -->
-            <button onclick="generateLinks()"
-                class="mt-8 w-full bg-gradient-to-r from-green-700 to-green-800 text-white font-bold py-3 px-6 rounded-lg hover:from-green-800 hover:to-green-900 transition duration-200 shadow-lg">
-                🔗 生成專屬連結
+            <button onclick="generateLinks()" class="lg-btn lg-btn-primary lg-btn-full" style="margin-top:1.5rem;">
+                生成專屬連結
             </button>
         </div>
 
         <!-- Result Section -->
-        <div id="resultSection" class="brand-card p-8 hidden">
-            <h2 class="font-serif text-2xl font-semibold brand-accent mb-6">✨ 生成結果</h2>
+        <div id="resultSection" class="lg-panel hidden" style="margin-bottom:1rem;">
+            <div class="lg-section-title">生成結果</div>
 
-            <!-- Links Display -->
-            <div class="space-y-4 mb-6">
+            <!-- Links -->
+            <div style="display:flex;flex-direction:column;gap:0.85rem;">
+                <!-- Landing link -->
                 <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-semibold text-gray-700">🏠 主頁連結</h3>
-                        <span id="landingStatus"
-                            class="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800">生成中...</span>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem;">
+                        <span style="font-size:0.78rem;font-weight:500;color:#1d1d1f;">主頁連結</span>
+                        <span id="landingStatus" class="lg-badge lg-badge-loading">生成中...</span>
                     </div>
-                    <div class="link-display" id="landingLink">生成短網址中...</div>
-                    <button onclick="copyLink('landingLink')"
-                        class="mt-2 text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition duration-200">
-                        📋 複製連結
-                    </button>
+                    <div class="lg-link-box" id="landingLink">生成短網址中...</div>
+                    <button onclick="copyLink('landingLink')" class="lg-btn lg-btn-ghost" style="margin-top:0.35rem;font-size:0.75rem;">複製連結</button>
                 </div>
+
+                <!-- Coupon link -->
                 <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-semibold text-gray-700">🎁 LINE 官方帳號連結</h3>
-                        <span id="couponStatus"
-                            class="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800">生成中...</span>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem;">
+                        <span style="font-size:0.78rem;font-weight:500;color:#1d1d1f;">LINE 優惠券連結</span>
+                        <span id="couponStatus" class="lg-badge lg-badge-loading">生成中...</span>
                     </div>
-                    <div class="link-display" id="couponLink">生成短網址中...</div>
-                    <button onclick="copyLink('couponLink')"
-                        class="mt-2 text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition duration-200">
-                        📋 複製連結
-                    </button>
+                    <div class="lg-link-box" id="couponLink">生成短網址中...</div>
+                    <button onclick="copyLink('couponLink')" class="lg-btn lg-btn-ghost" style="margin-top:0.35rem;font-size:0.75rem;">複製連結</button>
                 </div>
             </div>
 
-            <!-- Share Template -->
-            <div class="mb-6">
-                <h3 class="font-semibold text-gray-700 mb-2">📱 分享範本</h3>
-                <textarea id="shareTemplate" class="w-full h-48 p-4 border border-gray-300 rounded-lg"
-                    readonly>生成中...</textarea>
-                <button onclick="copyShareTemplate()"
-                    class="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
-                    📋 複製分享文案
-                </button>
+            <div style="height:1px;background:rgba(0,0,0,0.06);margin:1rem 0;"></div>
+
+            <!-- Share template -->
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem;">
+                    <span style="font-size:0.78rem;font-weight:500;color:#1d1d1f;">分享範本</span>
+                    <button onclick="copyShareTemplate()" class="lg-btn lg-btn-ghost" style="font-size:0.72rem;">複製文案</button>
+                </div>
+                <textarea id="shareTemplate" class="lg-textarea" style="height:10rem;" readonly>生成中...</textarea>
             </div>
 
-            <!-- Save Button -->
-            <button onclick="saveToSheets()"
-                class="w-full bg-gradient-to-r from-amber-600 to-amber-700 text-white font-bold py-3 px-6 rounded-lg hover:from-amber-700 hover:to-amber-800 transition duration-200 shadow-lg">
-                💾 儲存到資料庫
+            <div style="height:1px;background:rgba(0,0,0,0.06);margin:1rem 0;"></div>
+
+            <!-- Save button -->
+            <button onclick="saveToSheets()" class="lg-btn lg-btn-amber lg-btn-full">
+                儲存到資料庫
             </button>
-
-            <div id="saveStatus" class="mt-4 text-center text-sm text-gray-600 hidden">
+            <div id="saveStatus" class="hidden" style="text-align:center;font-size:0.78rem;color:#86868b;margin-top:0.5rem;">
                 正在儲存資料...
             </div>
 
             <!-- Tips -->
-            <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                <p><strong class="font-serif text-green-800">💡 使用提示：</strong></p>
-                <ul id="tipsContent" class="text-sm text-green-700 mt-2 space-y-1">
-                    <li>• <strong>連結模式</strong>：預設使用「直接連結模式」，無 Apps Script 跳轉橫幅</li>
-                    <li>• <strong>短網址服務</strong>：使用專業的 reurl.cc 服務（無廣告），備用 is.gd</li>
-                    <li>• <strong>狀態標籤</strong>：綠色「✓ 短網址」表示成功，橙色「⚠ 原始連結」表示服務異常</li>
-                    <li>• <strong>點擊追蹤</strong>：登入 reurl.cc 後台查看點擊統計（直接模式）或查看 Supabase Clicks 表（追蹤模式）</li>
-                    <li>• <strong>分享建議</strong>：短網址更美觀易記，適合在社群媒體和訊息中分享</li>
-                    <li>• <strong>儲存資料</strong>：記得點擊「儲存到資料庫」將大使資料存入系統</li>
+            <div style="margin-top:1rem;padding:0.75rem 0.85rem;background:rgba(0,0,0,0.02);border-radius:0.5rem;">
+                <div style="font-size:0.72rem;font-weight:600;color:#6e6e73;margin-bottom:0.35rem;">使用提示</div>
+                <ul id="tipsContent" style="font-size:0.7rem;color:#86868b;line-height:1.6;list-style:none;padding:0;margin:0;">
+                    <li>• 綠色標籤 = 短網址成功，橙色 = 使用原始連結</li>
+                    <li>• 直接模式無跳轉橫幅，追蹤模式記錄到 Google Sheets</li>
+                    <li>• 記得點「儲存到資料庫」將大使資料存入系統</li>
                 </ul>
             </div>
         </div>
@@ -424,7 +507,7 @@
             if ((applicationId || source === 'onboarding') && notice && noticeText) {
                 notice.classList.remove('hidden');
                 noticeText.textContent = applicationId
-                    ? `申請 #${applicationId} 的姓名、聯絡方式與建議代碼已預先帶入。`
+                    ? `申請 #${applicationId} 的資料已預先帶入`
                     : '你可以直接確認資料、生成連結並儲存。';
 
                 const summaryText = buildApplicationSummaryFromQuery(params);
@@ -440,27 +523,32 @@
             }
         }
 
-        // Initialize mode toggle
-        document.addEventListener('DOMContentLoaded', function () {
-            const modeToggle = document.getElementById('directLinkMode');
+        // Toggle link mode
+        function toggleLinkMode() {
+            const checkbox = document.getElementById('directLinkMode');
+            const track = document.getElementById('toggleTrack');
             const directInfo = document.getElementById('directModeInfo');
             const trackingInfo = document.getElementById('trackingModeInfo');
+            const label = document.getElementById('modeLabel');
 
+            checkbox.checked = !checkbox.checked;
+            if (checkbox.checked) {
+                track.classList.add('active');
+                directInfo.classList.remove('hidden');
+                trackingInfo.classList.add('hidden');
+                label.textContent = '直接連結（推薦）';
+            } else {
+                track.classList.remove('active');
+                directInfo.classList.add('hidden');
+                trackingInfo.classList.remove('hidden');
+                label.textContent = '完整追蹤模式';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
             applyPrefillFromQuery();
             suggestCodes(false);
-
-            // Toggle info display based on mode
-            modeToggle.addEventListener('change', function () {
-                if (this.checked) {
-                    // Direct mode
-                    directInfo.classList.remove('hidden');
-                    trackingInfo.classList.add('hidden');
-                } else {
-                    // Tracking mode
-                    directInfo.classList.add('hidden');
-                    trackingInfo.classList.remove('hidden');
-                }
-            });
         });
 
         // Toast notification
@@ -473,7 +561,7 @@
             }, 3000);
         }
 
-        // Create short URL via backend proxy (API Key 安全地存放在後端)
+        // Create short URL via backend proxy
         async function createShortUrl(originalUrl, utmParams = {}) {
             try {
                 const response = await fetch('/api', {
@@ -484,14 +572,12 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success && data.short_url) {
-                        console.log('✅ 短網址生成成功:', data.short_url);
                         return data.short_url;
                     }
                 }
             } catch (error) {
-                console.warn('⚠️ 短網址生成失敗:', error);
+                console.warn('短網址生成失敗:', error);
             }
-            console.error('❌ 短網址服務失敗，返回原始 URL');
             return originalUrl;
         }
 
@@ -504,31 +590,11 @@
             const couponCode = document.getElementById('couponCode').value.trim();
             const couponUrl = document.getElementById('couponUrl').value.trim();
 
-            // Validation
-            if (!partnerCode || !partnerName) {
-                alert('請填寫夥伴代碼和姓名');
-                return;
-            }
-
-            if (!partnerPhone) {
-                alert('請填寫聯絡電話');
-                return;
-            }
-
-            if (!couponUrl) {
-                alert('請提供專屬優惠券連結！\n\n請到 LINE 官方帳號後台建立專屬優惠券，然後將連結貼上。');
-                return;
-            }
-
-            if (!couponCode) {
-                alert('請填寫優惠券代碼');
-                return;
-            }
-
-            if (couponCode.toLowerCase() === partnerCode.toLowerCase()) {
-                alert('優惠券代碼不可與大使代碼相同，請分開設定。');
-                return;
-            }
+            if (!partnerCode || !partnerName) { alert('請填寫夥伴代碼和姓名'); return; }
+            if (!partnerPhone) { alert('請填寫聯絡電話'); return; }
+            if (!couponUrl) { alert('請提供專屬優惠券連結！\n\n請到 LINE 官方帳號後台建立專屬優惠券，然後將連結貼上。'); return; }
+            if (!couponCode) { alert('請填寫優惠券代碼'); return; }
+            if (couponCode.toLowerCase() === partnerCode.toLowerCase()) { alert('優惠券代碼不可與大使代碼相同，請分開設定。'); return; }
 
             // Show result section
             document.getElementById('resultSection').classList.remove('hidden');
@@ -538,77 +604,52 @@
             document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
 
             try {
-                // Check link mode
                 const isDirectMode = document.getElementById('directLinkMode').checked;
-
-                // Generate URLs based on mode
                 let landingUrl, trackedCouponUrl;
+
                 if (isDirectMode) {
-                    // Direct Link Mode - No Apps Script redirect
                     landingUrl = `${GITHUB_PAGES_URL}/frontend/index.html?subid=${encodeURIComponent(partnerCode)}&coupon_url=${encodeURIComponent(couponUrl)}&mode=direct`;
-                    trackedCouponUrl = couponUrl; // Direct LINE URL (no tracking)
-                    console.log('🔗 使用直接連結模式（無 Apps Script 中繼）');
+                    trackedCouponUrl = couponUrl;
                 } else {
-                    // Full Tracking Mode - Via Apps Script
                     landingUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=landing&coupon_url=${encodeURIComponent(couponUrl)}`;
                     trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(partnerCode)}&dest=coupon&target=${encodeURIComponent(couponUrl)}`;
-                    console.log('📊 使用完整追蹤模式（透過 Apps Script）');
                 }
 
-                // Update status - generating landing link
-                document.getElementById('landingStatus').textContent = '生成短網址中...';
-                document.getElementById('landingStatus').className = 'text-xs px-2 py-1 rounded bg-blue-100 text-blue-800';
-
-                // Generate short URL for landing page
+                // Landing link
+                document.getElementById('landingStatus').textContent = '生成中...';
+                document.getElementById('landingStatus').className = 'lg-badge lg-badge-loading';
                 const shortLandingUrl = await createShortUrl(landingUrl);
                 const isLandingShort = shortLandingUrl !== landingUrl;
-
-                // Update landing link status
                 document.getElementById('landingLink').textContent = shortLandingUrl;
-                if (isLandingShort) {
-                    document.getElementById('landingStatus').textContent = '✓ 短網址';
-                    document.getElementById('landingStatus').className = 'text-xs px-2 py-1 rounded bg-green-100 text-green-800';
-                } else {
-                    document.getElementById('landingStatus').textContent = '⚠ 原始連結';
-                    document.getElementById('landingStatus').className = 'text-xs px-2 py-1 rounded bg-orange-100 text-orange-800';
-                }
+                document.getElementById('landingStatus').textContent = isLandingShort ? '✓ 短網址' : '⚠ 原始連結';
+                document.getElementById('landingStatus').className = `lg-badge ${isLandingShort ? 'lg-badge-success' : 'lg-badge-warning'}`;
 
-                // Update status - generating coupon link
-                document.getElementById('couponStatus').textContent = '生成短網址中...';
-                document.getElementById('couponStatus').className = 'text-xs px-2 py-1 rounded bg-blue-100 text-blue-800';
-
-                // Generate short URL for coupon link
+                // Coupon link
+                document.getElementById('couponStatus').textContent = '生成中...';
+                document.getElementById('couponStatus').className = 'lg-badge lg-badge-loading';
                 const shortCouponUrl = await createShortUrl(trackedCouponUrl);
                 const isCouponShort = shortCouponUrl !== trackedCouponUrl;
-
-                // Update coupon link status
                 document.getElementById('couponLink').textContent = shortCouponUrl;
-                if (isCouponShort) {
-                    document.getElementById('couponStatus').textContent = '✓ 短網址';
-                    document.getElementById('couponStatus').className = 'text-xs px-2 py-1 rounded bg-green-100 text-green-800';
-                } else {
-                    document.getElementById('couponStatus').textContent = '⚠ 原始連結';
-                    document.getElementById('couponStatus').className = 'text-xs px-2 py-1 rounded bg-orange-100 text-orange-800';
-                }
+                document.getElementById('couponStatus').textContent = isCouponShort ? '✓ 短網址' : '⚠ 原始連結';
+                document.getElementById('couponStatus').className = `lg-badge ${isCouponShort ? 'lg-badge-success' : 'lg-badge-warning'}`;
 
-                // Generate share template
-                const shareText = `🌲 來自靜謐森林的特別邀請
+                // Share template
+                const shareText = `來自靜謐森林的特別邀請
 
-親愛的朋友，我想與你分享一個很特別的地方 —— 一片能讓心靈真正休息的森林。
+親愛的朋友，我想與你分享一個很特別的地方——一片能讓心靈真正休息的森林。
 
 這裡不只是住宿，更是一場回到內心家園的旅程。我為你準備了一份專屬的森林禮物，希望能為你的生活帶來一些不一樣的寧靜與感動。
 
-🎁 點擊連結，開始你的森林之旅：
+點擊連結，開始你的森林之旅：
 ${shortLandingUrl}
 
-🎫 專屬優惠券：
+專屬優惠券：
 ${shortCouponUrl}
 
 期待你也能在這裡，找到屬於自己的那份安靜。
 
-—— ${partnerName} 真誠推薦 ❤️`;
+—— ${partnerName} 真誠推薦`;
 
-                // Save generated data
                 generatedData = {
                     application_id: new URLSearchParams(window.location.search).get('application_id') || '',
                     notes: buildApplicationSummaryFromQuery(),
@@ -617,7 +658,7 @@ ${shortCouponUrl}
                     contact_email: partnerEmail,
                     contact_phone: partnerPhone,
                     coupon_code: couponCode,
-                    coupon_url: couponUrl, // User's custom coupon URL
+                    coupon_url: couponUrl,
                     landing_link: landingUrl,
                     coupon_link: trackedCouponUrl,
                     short_landing_link: shortLandingUrl,
@@ -629,78 +670,60 @@ ${shortCouponUrl}
                     bank_account_number: document.getElementById('bankAccountNumber').value.trim()
                 };
 
-                // Display share template
                 document.getElementById('shareTemplate').textContent = shareText;
 
-                // Show success message
                 if (isLandingShort && isCouponShort) {
-                    showToast('✅ 短網址生成成功！');
+                    showToast('✓ 短網址生成成功');
                 } else if (isLandingShort || isCouponShort) {
-                    showToast('⚠️ 部分短網址生成失敗，請檢查連結');
+                    showToast('⚠ 部分短網址生成失敗');
                 } else {
-                    showToast('⚠️ 短網址服務異常，已使用原始連結');
+                    showToast('⚠ 短網址服務異常，已使用原始連結');
                 }
-
             } catch (error) {
                 console.error('生成連結失敗:', error);
                 document.getElementById('landingStatus').textContent = '✗ 失敗';
-                document.getElementById('landingStatus').className = 'text-xs px-2 py-1 rounded bg-red-100 text-red-800';
+                document.getElementById('landingStatus').className = 'lg-badge lg-badge-error';
                 document.getElementById('couponStatus').textContent = '✗ 失敗';
-                document.getElementById('couponStatus').className = 'text-xs px-2 py-1 rounded bg-red-100 text-red-800';
-                showToast('❌ 生成失敗，請重試');
+                document.getElementById('couponStatus').className = 'lg-badge lg-badge-error';
+                showToast('生成失敗，請重試');
             }
         }
 
-        // Copy individual link
+        // Copy functions
         function copyLink(elementId) {
-            const linkElement = document.getElementById(elementId);
-            const linkText = linkElement.textContent;
-
-            // Create temporary textarea for copying
-            const textarea = document.createElement('textarea');
-            textarea.value = linkText;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-
-            try {
-                document.execCommand('copy');
+            const linkText = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(linkText).then(() => {
                 const linkType = elementId === 'landingLink' ? '主頁連結' : 'LINE 連結';
-                showToast(`✅ ${linkType}已複製到剪貼簿`);
-            } catch (error) {
-                console.error('複製失敗:', error);
-                showToast('❌ 複製失敗，請手動複製');
-            } finally {
+                showToast(`✓ ${linkType}已複製`);
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = linkText;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
                 document.body.removeChild(textarea);
-            }
+                showToast('✓ 已複製');
+            });
         }
 
-        // Copy share template
         function copyShareTemplate() {
-            const shareTemplate = document.getElementById('shareTemplate');
-            shareTemplate.select();
-            document.execCommand('copy');
-            showToast('✅ 分享文案已複製到剪貼簿');
+            const el = document.getElementById('shareTemplate');
+            navigator.clipboard.writeText(el.value).then(() => {
+                showToast('✓ 分享文案已複製');
+            }).catch(() => {
+                el.select();
+                document.execCommand('copy');
+                showToast('✓ 分享文案已複製');
+            });
         }
 
-        // Save to database (Supabase via Vercel API)
+        // Save to database
         async function saveToSheets() {
-            if (!generatedData) {
-                alert('請先生成連結');
-                return;
-            }
-
-            if (!generatedData.contact_phone) {
-                alert('請先填寫聯絡電話');
-                return;
-            }
-
-            if (!generatedData.coupon_code) {
-                alert('請先填寫優惠券代碼');
-                return;
-            }
-
+            if (!generatedData) { alert('請先生成連結'); return; }
+            if (!generatedData.contact_phone) { alert('請先填寫聯絡電話'); return; }
+            if (!generatedData.coupon_code) { alert('請先填寫優惠券代碼'); return; }
             if (generatedData.coupon_code.toLowerCase() === generatedData.partner_code.toLowerCase()) {
                 alert('優惠券代碼不可與大使代碼相同，請先調整後再儲存。');
                 return;
@@ -714,40 +737,28 @@ ${shortCouponUrl}
             document.getElementById('saveStatus').textContent = '正在儲存資料...';
 
             try {
-                // Prepare complete partner data
                 const partnerData = {
                     action: 'create_partner',
                     application_id: generatedData.application_id || '',
-                    // Basic info
                     partner_code: generatedData.partner_code,
                     partner_name: generatedData.partner_name,
                     contact_email: generatedData.contact_email || '',
                     contact_phone: generatedData.contact_phone || '',
-
-                    // Level info (initial values)
                     partner_level: 'LV1_INSIDER',
                     successful_referrals: 0,
                     yearly_referrals: 0,
-
-                    // Commission info (initial values)
                     commission_preference: 'ACCOMMODATION',
                     total_commission_earned: 0,
                     total_commission_paid: 0,
                     available_points: 0,
                     points_used: 0,
                     pending_commission: 0,
-
-                    // Coupon info (IMPORTANT: User's custom coupon)
                     coupon_code: generatedData.coupon_code || '',
                     coupon_url: generatedData.coupon_url || '',
-
-                    // Link info
                     landing_link: generatedData.landing_link || '',
                     coupon_link: generatedData.coupon_link || '',
                     short_landing_link: generatedData.short_landing_link || '',
                     short_coupon_link: generatedData.short_coupon_link || '',
-
-                    // Bank info
                     bank_account: generatedData.bank_account_number || '',
                     bank_name: generatedData.bank_name || '',
                     bank_code: generatedData.bank_code || '',
@@ -756,7 +767,6 @@ ${shortCouponUrl}
                     notes: generatedData.notes || ''
                 };
 
-                // Use fetch with JSON (form submit won't work with Vercel JSON body parser)
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -771,8 +781,9 @@ ${shortCouponUrl}
 
                 button.textContent = originalText;
                 button.disabled = false;
-                document.getElementById('saveStatus').textContent = '✅ 資料已成功儲存！';
-                showToast('✅ 大使資料已儲存成功！');
+                document.getElementById('saveStatus').textContent = '✓ 資料已成功儲存';
+                document.getElementById('saveStatus').style.color = '#059669';
+                showToast('✓ 大使資料已儲存');
 
                 if (window.parent && window.parent !== window) {
                     window.parent.postMessage({
@@ -782,7 +793,6 @@ ${shortCouponUrl}
                     }, '*');
                 }
 
-                // Clear form after success
                 setTimeout(() => {
                     if (confirm('資料已儲存成功！是否清空表單以建立新的大使？')) {
                         location.reload();
@@ -793,8 +803,9 @@ ${shortCouponUrl}
                 console.error('儲存失敗:', error);
                 button.textContent = originalText;
                 button.disabled = false;
-                document.getElementById('saveStatus').textContent = `❌ 儲存失敗：${error.message}`;
-                showToast('❌ 儲存失敗，請重試');
+                document.getElementById('saveStatus').textContent = `✗ 儲存失敗：${error.message}`;
+                document.getElementById('saveStatus').style.color = '#DC2626';
+                showToast('儲存失敗，請重試');
             }
         }
     </script>

@@ -81,7 +81,7 @@
 | **資料庫 A** | Google Sheets（主要） | 透過 googleapis JWT 存取，8 個工作表 |
 | **資料庫 B** | Supabase PostgreSQL（備用/遷移中） | 透過 @supabase/supabase-js |
 | **短網址** | reurl.cc（主）/ is.gd（備） | 大使連結縮短 |
-| **通訊** | LINE Official Account (@478hisen) | 優惠券發放 + Webhook 歸因 |
+| **通訊** | LINE Official Account (@forest.house) | 優惠券發放 + Webhook 歸因 |
 | **前端託管** | GitHub Pages | `didi1119.github.io/forest-gift-v1` |
 | **API 託管** | Vercel | `forest-ambassador.vercel.app` |
 | **分析** | Google Analytics 4 | 已預埋程式碼，待啟用 |
@@ -443,7 +443,7 @@ forest-gift-v1/                          ← GitHub repo root
 | **Vercel** | `forest-ambassador.vercel.app` | API Serverless Function |
 | **Google Sheets** | Sheet ID: `1buMGx7T...` | 主要資料庫 |
 | **Supabase** | `myenmffxcufqigypwcjt.supabase.co` | 備用/遷移中資料庫 |
-| **LINE OA** | @478hisen | 優惠券 + Webhook |
+| **LINE OA** | @forest.house | 優惠券 + Webhook |
 
 ### 10.2 雙分支問題（⚠️ 重要）
 
@@ -515,7 +515,7 @@ vercel --prod
 | Google Sheets | `1buMGx7T1SFnOIygylkqQURUDFsHGidXcQ-k3kx3Xmn4` |
 | Supabase 專案 | `myenmffxcufqigypwcjt.supabase.co` |
 | GCP 專案 | foresthouse-468510 |
-| LINE OA | @478hisen |
+| LINE OA | @forest.house |
 | reurl.cc | 需更換 API Key（已暴露） |
 
 ---

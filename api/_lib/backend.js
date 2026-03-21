@@ -3076,7 +3076,7 @@ async function sendWelcomeEmail({ email, name, partnerCode, shortLandingLink, sh
       <div style="background: #FEF3C7; border: 1px solid #F59E0B; padding: 16px; border-radius: 8px; margin: 24px 0;">
         <h3 style="color: #92400E; margin: 0 0 8px;">啟用 LINE 即時通知</h3>
         <p style="color: #92400E; margin: 0;">
-          加入我們的 LINE 官方帳號 <strong>@478hisen</strong>，並發送：<br>
+          加入我們的 LINE 官方帳號 <strong>@forest.house</strong>，並發送：<br>
           <code style="background: #FDE68A; padding: 2px 8px; border-radius: 4px; font-size: 16px;">#綁定 ${partnerCode}</code><br>
           即可啟用 LINE 即時通知，日後結算與重要訊息將直接推送給您。
         </p>

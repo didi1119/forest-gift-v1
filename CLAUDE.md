@@ -1,5 +1,22 @@
 # 知音計畫 — 森林住宿大使推薦系統
 
+## ⚠️ 資料庫環境規則（AI Agent 必讀）
+
+**嚴格區分正式與測試資料庫，禁止混用。**
+
+| 環境 | Supabase URL | 憑證來源 | 用途 |
+|------|-------------|---------|------|
+| **正式（Production）** | `https://myenmffxcufqigypwcjt.supabase.co` | `.env.local` | 真實大使資料，禁止測試寫入 |
+| **測試（Test）** | `https://actkgwfrpxyvunzicgmi.supabase.co` | `.env.test` | 開發/測試專用，可任意讀寫 |
+
+**規則：**
+- 進行任何測試、驗證 API、跑腳本時 → 一律使用 `.env.test` 的憑證
+- 只有在確認要操作正式資料時，才使用 `.env.local`
+- 若不確定，**預設用測試 DB**，不要預設用正式 DB
+- Vercel 已設定：Production 分支 → 正式 DB；Preview/Development → 測試 DB（自動）
+
+---
+
 ## 專案概述
 
 知音計畫是「靜謐森林」品牌的大使推薦系統，透過分級獎勵機制激勵大使推薦住宿體驗。系統包含完整的大使申請/審核、訂房追蹤、佣金計算、結算支付和 LINE 優惠券整合。
@@ -23,7 +40,7 @@
 - **切換機制：** `api/_lib/data-adapter.js` → adapters/sheets-adapter 或 supabase-adapter
 
 ### 外部整合
-- **LINE Official Account** (@478hisen) — Webhook 歸因 + 優惠券綁定
+- **LINE Official Account** (@forest.house) — Webhook 歸因 + 優惠券綁定
 - **reurl.cc** — 短網址生成（API Key 應放在後端）
 - **Google Analytics 4** — 事件追蹤（已預埋，待啟用）
 

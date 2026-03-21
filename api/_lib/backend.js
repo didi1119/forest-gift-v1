@@ -3147,15 +3147,20 @@ async function handlePromoteToPartner(data) {
   if (data.coupon_template_id) {
     try {
       const tpl = await findRecordById('Coupon_Templates', data.coupon_template_id);
-      if (tpl && tpl.data && tpl.data.coupon_url) couponUrl = tpl.data.coupon_url;
+      const tplData = tpl?.data || tpl;
+      if (tplData && tplData.coupon_url) couponUrl = tplData.coupon_url;
     } catch (e) { console.error('coupon template lookup failed:', e.message); }
   } else if (data.coupon_url) {
     couponUrl = data.coupon_url;
   } else {
     try {
       const allTemplates = await db.getAllRecords('Coupon_Templates');
-      const defaultTpl = allTemplates.find(t => t.data.is_default === true || t.data.is_default === 'true');
-      if (defaultTpl && defaultTpl.data.coupon_url) couponUrl = defaultTpl.data.coupon_url;
+      const defaultTpl = allTemplates.find(t => {
+        const d = t.data || t;
+        return d.is_default === true || d.is_default === 'true';
+      });
+      const dData = defaultTpl?.data || defaultTpl;
+      if (dData && dData.coupon_url) couponUrl = dData.coupon_url;
     } catch (e) { /* fallback to DEFAULT_LINE_COUPON_URL */ }
   }
   const [shortLandingLink, shortCouponLink] = await Promise.all([
@@ -3303,8 +3308,10 @@ async function clearDefaultCouponTemplates() {
   try {
     const all = await db.getAllRecords(COUPON_TEMPLATE_TABLE);
     for (const t of all) {
-      if (t.data.is_default === true || t.data.is_default === 'true') {
-        await updateRecord(COUPON_TEMPLATE_TABLE, t.id, { is_default: false });
+      const d = t.data || t;
+      const id = t.id || t.rowIndex;
+      if (d.is_default === true || d.is_default === 'true') {
+        await updateRecord(COUPON_TEMPLATE_TABLE, id, { is_default: false });
       }
     }
   } catch (e) {

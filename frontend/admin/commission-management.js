@@ -64,7 +64,7 @@ function createQuickCommissionEditModal(partner) {
             </div>
             
             <!-- 當前狀態 -->
-            <div class="bg-gray-50 p-4 rounded-lg mb-6">
+            <div class="border border-stone-200 rounded-xl p-4 mb-6">
                 <h4 class="font-bold mb-2">當前狀態</h4>
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
@@ -84,35 +84,35 @@ function createQuickCommissionEditModal(partner) {
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">累積佣金總額</label>
                         <input type="number" id="edit_total_earned" value="${currentEarned}" 
-                            class="w-full p-2 border rounded-md" min="0" step="1">
+                            class="ob-input" min="0" step="1">
                         <div class="text-xs text-gray-500 mt-1">大使歷史總收益</div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">待支付佣金</label>
                         <input type="number" id="edit_pending_commission" value="${currentPending}" 
-                            class="w-full p-2 border rounded-md" min="0" step="1">
+                            class="ob-input" min="0" step="1">
                         <div class="text-xs text-gray-500 mt-1">尚未結算的佣金</div>
                     </div>
                 </div>
                 
                 <!-- 快速操作 -->
-                <div class="bg-blue-50 p-4 rounded-lg">
+                <div class="border border-stone-200 rounded-xl p-4">
                     <h4 class="font-bold mb-2">快速操作</h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         <button type="button" onclick="adjustCommission(500)" 
-                            class="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             +$500
                         </button>
                         <button type="button" onclick="adjustCommission(1000)" 
-                            class="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             +$1000
                         </button>
                         <button type="button" onclick="adjustCommission(-500)" 
-                            class="px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             -$500
                         </button>
                         <button type="button" onclick="clearPendingCommission()" 
-                            class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded text-xs hover:bg-yellow-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             清空待付
                         </button>
                     </div>
@@ -120,17 +120,17 @@ function createQuickCommissionEditModal(partner) {
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">調整原因</label>
-                    <textarea id="edit_commission_reason" rows="2" class="w-full p-2 border rounded-md"
+                    <textarea id="edit_commission_reason" rows="2" class="ob-input"
                         placeholder="請說明調整佣金的原因..."></textarea>
                 </div>
                 
                 <div class="flex justify-end space-x-3 pt-4 border-t">
                     <button type="button" onclick="closeModal('quickCommissionEditModal')" 
-                        class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                        class="ob-btn ob-btn-secondary">
                         取消
                     </button>
                     <button type="button" onclick="saveCommissionChanges('${partner.partner_code}')" 
-                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        class="ob-btn ob-btn-primary">
                         儲存變更
                     </button>
                 </div>
@@ -243,7 +243,7 @@ function createMixedPayoutModal(partner) {
             </div>
             
             <!-- 待支付金額 -->
-            <div class="bg-amber-50 p-4 rounded-lg mb-6">
+            <div class="border border-stone-200 rounded-xl p-4 mb-6">
                 <h4 class="font-bold mb-2">待支付金額</h4>
                 <div class="text-2xl font-bold text-amber-600">$${pendingAmount.toLocaleString()}</div>
                 <div class="text-sm text-gray-600">大使偏好：${partner.commission_preference === 'CASH' ? '現金' : '住宿金'}</div>
@@ -255,13 +255,13 @@ function createMixedPayoutModal(partner) {
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">現金金額</label>
                         <input type="number" id="cash_amount" value="0" 
-                            class="w-full p-2 border rounded-md" min="0" max="${pendingAmount}" step="1"
+                            class="ob-input" min="0" max="${pendingAmount}" step="1"
                             onchange="updateAccommodationAmount()">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">住宿金金額</label>
                         <input type="number" id="accommodation_amount" value="${pendingAmount}" 
-                            class="w-full p-2 border rounded-md" min="0" max="${pendingAmount}" step="1"
+                            class="ob-input" min="0" max="${pendingAmount}" step="1"
                             onchange="updateCashAmount()">
                     </div>
                 </div>
@@ -271,23 +271,23 @@ function createMixedPayoutModal(partner) {
                 </div>
                 
                 <!-- 快速分配按鈕 -->
-                <div class="bg-blue-50 p-4 rounded-lg">
+                <div class="border border-stone-200 rounded-xl p-4">
                     <h4 class="font-bold mb-2">快速分配</h4>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                         <button type="button" onclick="setPayoutSplit(${pendingAmount}, 0)" 
-                            class="px-3 py-1 bg-green-100 text-green-700 rounded text-xs hover:bg-green-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             全部現金
                         </button>
                         <button type="button" onclick="setPayoutSplit(0, ${pendingAmount})" 
-                            class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             全部住宿金
                         </button>
                         <button type="button" onclick="setPayoutSplit(${Math.floor(pendingAmount/2)}, ${Math.ceil(pendingAmount/2)})" 
-                            class="px-3 py-1 bg-purple-100 text-purple-700 rounded text-xs hover:bg-purple-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             對半分
                         </button>
                         <button type="button" onclick="setPreferredSplit()" 
-                            class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded text-xs hover:bg-yellow-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             按偏好
                         </button>
                     </div>
@@ -295,17 +295,17 @@ function createMixedPayoutModal(partner) {
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">備註</label>
-                    <textarea id="payout_notes" rows="2" class="w-full p-2 border rounded-md"
+                    <textarea id="payout_notes" rows="2" class="ob-input"
                         placeholder="結算說明..."></textarea>
                 </div>
                 
                 <div class="flex justify-end space-x-3 pt-4 border-t">
                     <button type="button" onclick="closeModal('mixedPayoutModal')" 
-                        class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                        class="ob-btn ob-btn-secondary">
                         取消
                     </button>
                     <button type="button" onclick="submitMixedPayout('${partner.partner_code}')" 
-                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        class="ob-btn ob-btn-primary">
                         創建結算
                     </button>
                 </div>
@@ -478,60 +478,60 @@ function createAccommodationPointsModal(partner) {
             
             <!-- 點數概覽 -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="bg-blue-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-blue-600">${totalEarned.toLocaleString()}</div>
+                <div class="border border-stone-200 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-stone-700">${totalEarned.toLocaleString()}</div>
                     <div class="text-sm text-gray-600">歷史總收入</div>
                 </div>
-                <div class="bg-red-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-red-600">${usedPoints.toLocaleString()}</div>
+                <div class="border border-stone-200 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-stone-700">${usedPoints.toLocaleString()}</div>
                     <div class="text-sm text-gray-600">已使用點數</div>
                 </div>
-                <div class="bg-green-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-green-600">${availablePoints.toLocaleString()}</div>
+                <div class="border border-stone-200 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-stone-700">${availablePoints.toLocaleString()}</div>
                     <div class="text-sm text-gray-600">可用餘額</div>
                 </div>
             </div>
             
             <!-- 點數抵扣 -->
-            <div class="bg-gray-50 p-4 rounded-lg mb-6">
+            <div class="border border-stone-200 rounded-xl p-4 mb-6">
                 <h4 class="font-bold mb-3">點數抵扣</h4>
                 <form id="pointsDeductionForm" class="space-y-3">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">抵扣金額</label>
                             <input type="number" id="deduct_amount" 
-                                class="w-full p-2 border rounded-md" min="1" max="${availablePoints}" step="1"
+                                class="ob-input" min="1" max="${availablePoints}" step="1"
                                 placeholder="輸入要抵扣的點數">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">訂房記錄ID (選填)</label>
                             <input type="text" id="related_booking_id" 
-                                class="w-full p-2 border rounded-md" placeholder="相關訂房ID">
+                                class="ob-input" placeholder="相關訂房ID">
                         </div>
                     </div>
                     
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">抵扣說明</label>
-                        <textarea id="deduction_notes" rows="2" class="w-full p-2 border rounded-md"
+                        <textarea id="deduction_notes" rows="2" class="ob-input"
                             placeholder="說明此次抵扣的用途..."></textarea>
                     </div>
                     
                     <!-- 快速金額按鈕 -->
                     <div class="flex flex-wrap gap-2">
                         <button type="button" onclick="setDeductAmount(1000)" 
-                            class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             $1000
                         </button>
                         <button type="button" onclick="setDeductAmount(2000)" 
-                            class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             $2000
                         </button>
                         <button type="button" onclick="setDeductAmount(5000)" 
-                            class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             $5000
                         </button>
                         <button type="button" onclick="setDeductAmount(${availablePoints})" 
-                            class="px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">
+                            class="ob-btn ob-btn-ghost ob-btn-sm">
                             全部抵扣
                         </button>
                     </div>
@@ -550,11 +550,11 @@ function createAccommodationPointsModal(partner) {
             
             <div class="flex justify-end space-x-3 pt-4 border-t">
                 <button type="button" onclick="closeModal('accommodationPointsModal')" 
-                    class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                    class="ob-btn ob-btn-secondary">
                     關閉
                 </button>
                 <button type="button" onclick="processPointsDeduction('${partner.partner_code}')" 
-                    class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    class="ob-btn ob-btn-danger">
                     執行抵扣
                 </button>
             </div>

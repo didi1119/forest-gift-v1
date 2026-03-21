@@ -22,18 +22,18 @@
 
 ## 待辦事項（下次對話接手）
 
-### UI 風格統一（高優先）
-1. **概覽 tab** — 操作欄按鈕被截斷/溢出，「使用點數」平時看不到
-2. **編輯訂單 modal** — 改為 Apple 風格（ob-input、移除 emoji 標題、統一按鈕）
-3. **訂單詳情 modal** — 移除綠底色塊、emoji、改用 Apple 卡片風格
-4. **手動登記 modal** — input/select 統一為 ob-input
-5. **結算/住宿金 modal** — 統一標題、按鈕、表單風格
-6. **概覽 tab 大使操作按鈕** — 舊 Tailwind 按鈕改 ob-btn
-7. **剩餘 3 個 confirm()** — processPayout、revertCashToPoints、togglePartnerActive 改為 showConfirmModal
+### UI 風格統一（已完成 2026-03-21）
+- ~~概覽 tab 操作欄按鈕~~ ✅
+- ~~編輯訂單 modal Apple 風格~~ ✅
+- ~~訂單詳情 modal 移除色塊~~ ✅
+- ~~手動登記 modal ob-input~~ ✅
+- ~~結算/住宿金 modal 統一~~ ✅
+- ~~概覽 tab ob-btn~~ ✅
+- ~~confirm() → showConfirmModal~~ ✅（含 payout-functions.js cancelPayout）
 
 ### E2E 測試更新（中優先）
-8. **更新 13 個 E2E 腳本選擇器** — 配合 Apple-style UI 重構後的新 HTML 結構
-9. **新增測試場景** — 住宿金完整生命週期、跨等級升級、部分退款+刪除+結算組合、大使登入驗證
+1. **更新 13 個 E2E 腳本選擇器** — 配合 Apple-style UI 重構後的新 HTML 結構
+2. **新增測試場景** — 住宿金完整生命週期、跨等級升級、部分退款+刪除+結算組合、大使登入驗證
 
 ---
 

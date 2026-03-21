@@ -271,8 +271,8 @@
                     <input type="text" id="partnerName" class="lg-input" placeholder="林小森" required>
                 </div>
                 <div>
-                    <label class="lg-label">Email</label>
-                    <input type="email" id="partnerEmail" class="lg-input" placeholder="partner@example.com">
+                    <label class="lg-label lg-required">Email</label>
+                    <input type="email" id="partnerEmail" class="lg-input" placeholder="partner@example.com" required>
                 </div>
                 <div>
                     <label class="lg-label lg-required">聯絡電話</label>
@@ -316,6 +316,7 @@
                     <div>
                         <label class="lg-label lg-required">LINE 優惠券連結</label>
                         <input type="url" id="couponUrl" class="lg-input" placeholder="https://lin.ee/xxxxx" required>
+                        <button type="button" onclick="useDefaultCoupon()" class="lg-btn lg-btn-ghost" style="margin-top:0.25rem;font-size:0.7rem;padding:0.2rem 0.5rem;">使用預設連結</button>
                     </div>
                 </div>
             </div>
@@ -425,6 +426,8 @@
         const GITHUB_PAGES_URL = 'https://forest-ambassador.vercel.app';
 
         let generatedData = null;
+        const DRAFT_STORAGE_KEY = 'linkGeneratorDraft';
+        const DEFAULT_COUPON_URL = 'https://lin.ee/q38pqot';
 
         function getCodeSeed(params = new URLSearchParams(window.location.search)) {
             const applicationId = String(params.get('application_id') || '').replace(/\D/g, '');
@@ -549,7 +552,56 @@
         document.addEventListener('DOMContentLoaded', function () {
             applyPrefillFromQuery();
             suggestCodes(false);
+            restoreDraftIfExists();
         });
+
+        // Restore draft from sessionStorage
+        function restoreDraftIfExists() {
+            try {
+                const draft = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+                if (!draft) return;
+                const data = JSON.parse(draft);
+                if (!data || !data.partner_code) return;
+
+                // Only restore if form is empty (not pre-filled from query)
+                const codeField = document.getElementById('partnerCode');
+                if (codeField && codeField.value.trim()) return;
+
+                // Restore form fields
+                if (data.partner_code) document.getElementById('partnerCode').value = data.partner_code;
+                if (data.partner_name) document.getElementById('partnerName').value = data.partner_name;
+                if (data.contact_email) document.getElementById('partnerEmail').value = data.contact_email;
+                if (data.contact_phone) document.getElementById('partnerPhone').value = data.contact_phone;
+                if (data.coupon_code) document.getElementById('couponCode').value = data.coupon_code;
+                if (data.coupon_url) document.getElementById('couponUrl').value = data.coupon_url;
+                if (data.bank_name) document.getElementById('bankName').value = data.bank_name;
+                if (data.bank_code) document.getElementById('bankCode').value = data.bank_code;
+                if (data.bank_branch) document.getElementById('bankBranch').value = data.bank_branch;
+                if (data.bank_account_name) document.getElementById('bankAccountName').value = data.bank_account_name;
+                if (data.bank_account_number) document.getElementById('bankAccountNumber').value = data.bank_account_number;
+
+                generatedData = data;
+
+                // Show result section with restored data
+                if (data.short_landing_link) {
+                    const resultSection = document.getElementById('resultSection');
+                    resultSection.classList.remove('hidden');
+                    document.getElementById('landingLink').textContent = data.short_landing_link;
+                    document.getElementById('couponLink').textContent = data.short_coupon_link || data.coupon_link || '';
+                    document.getElementById('landingStatus').textContent = '草稿';
+                    document.getElementById('landingStatus').className = 'lg-badge lg-badge-warning';
+                    document.getElementById('couponStatus').textContent = '草稿';
+                    document.getElementById('couponStatus').className = 'lg-badge lg-badge-warning';
+                    showToast('已還原未儲存的草稿');
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        // Fill default coupon URL
+        function useDefaultCoupon() {
+            document.getElementById('couponUrl').value = DEFAULT_COUPON_URL;
+            showToast('已填入預設優惠券連結');
+        }
 
         // Toast notification
         function showToast(message) {
@@ -591,6 +643,7 @@
             const couponUrl = document.getElementById('couponUrl').value.trim();
 
             if (!partnerCode || !partnerName) { alert('請填寫夥伴代碼和姓名'); return; }
+            if (!partnerEmail) { alert('請填寫聯絡 Email（大使登入需要）'); return; }
             if (!partnerPhone) { alert('請填寫聯絡電話'); return; }
             if (!couponUrl) { alert('請提供專屬優惠券連結！\n\n請到 LINE 官方帳號後台建立專屬優惠券，然後將連結貼上。'); return; }
             if (!couponCode) { alert('請填寫優惠券代碼'); return; }
@@ -671,6 +724,11 @@ ${shortCouponUrl}
                 };
 
                 document.getElementById('shareTemplate').textContent = shareText;
+
+                // Auto-save draft to sessionStorage
+                try {
+                    sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(generatedData));
+                } catch (e) { /* ignore storage errors */ }
 
                 if (isLandingShort && isCouponShort) {
                     showToast('✓ 短網址生成成功');
@@ -784,6 +842,9 @@ ${shortCouponUrl}
                 document.getElementById('saveStatus').textContent = '✓ 資料已成功儲存';
                 document.getElementById('saveStatus').style.color = '#059669';
                 showToast('✓ 大使資料已儲存');
+
+                // Clear draft after successful save
+                try { sessionStorage.removeItem(DRAFT_STORAGE_KEY); } catch (e) { /* ignore */ }
 
                 if (window.parent && window.parent !== window) {
                     window.parent.postMessage({

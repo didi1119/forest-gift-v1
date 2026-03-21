@@ -263,12 +263,6 @@
         .ob-row-actions {
             display: flex;
             gap: 0.35rem;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        .ob-table tbody tr:hover .ob-row-actions,
-        .ob-table tbody tr.ob-row-active .ob-row-actions {
-            opacity: 1;
         }
 
         /* Slide panel overlay */
@@ -407,6 +401,11 @@
             max-width: 200px;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        #db-table td:last-child {
+            overflow: visible;
+            white-space: normal;
+            max-width: none;
         }
         #db-table tr:hover td { background: rgba(0,0,0,0.02); }
         .ob-btn-ghost {
@@ -2047,12 +2046,12 @@
             if (accommodationBalance > 0 && !isInactive) {
                 // **關鍵**：onclick 事件綁定原有的 `showPartnerActionsModal` 函式
                 usePointsButtonHTML = `
-                    <button onclick="showPartnerActionsModal('${partner.partner_code}', 'accommodation')" class="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all">
+                    <button onclick="showPartnerActionsModal('${partner.partner_code}', 'accommodation')" class="ob-btn ob-btn-primary ob-btn-sm">
                         使用點數
                     </button>`;
             } else {
                 usePointsButtonHTML = `
-                    <button class="w-full sm:w-auto bg-gray-300 text-gray-500 px-4 py-2 rounded-lg text-xs font-bold cursor-not-allowed" disabled>
+                    <button class="ob-btn ob-btn-secondary ob-btn-sm cursor-not-allowed opacity-50" disabled>
                         使用點數
                     </button>`;
             }
@@ -2117,13 +2116,13 @@
                     <tr>
                         <td colspan="8" class="text-center py-8">
                             <div class="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
-                                <div class="text-red-600 font-bold mb-2">❌ 數據格式錯誤</div>
+                                <div class="text-red-600 font-bold mb-2">數據格式錯誤</div>
                                 <div class="text-sm text-red-700 mb-3">
                                     ${dataIssues.issues.join('<br>')}
                                 </div>
-                                <button onclick="fixDataMapping()" 
-                                    class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm">
-                                    🔧 診斷並修復
+                                <button onclick="fixDataMapping()"
+                                    class="ob-btn ob-btn-danger ob-btn-sm">
+                                    診斷並修復
                                 </button>
                                 <div class="text-xs text-red-600 mt-2">
                                     請點擊診斷按鈕自動偵測正確的欄位對應
@@ -2258,14 +2257,14 @@
                         <td class="py-4 px-4 text-center">
                             <div class="flex flex-col space-y-1">
                                 ${canConfirmStay ? `
-                                    <button onclick="confirmStayCompletion('${bookingIdentifier}')" 
-                                        class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700">
-                                        ✅ 確認入住
+                                    <button onclick="confirmStayCompletion('${bookingIdentifier}')"
+                                        class="ob-btn ob-btn-primary ob-btn-sm text-xs">
+                                        確認入住
                                     </button>
                                 ` : ''}
-                                <button onclick="editBooking('${bookingIdentifier}')" 
-                                    class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">
-                                    ✏️ 編輯訂單
+                                <button onclick="editBooking('${bookingIdentifier}')"
+                                    class="ob-btn ob-btn-secondary ob-btn-sm text-xs">
+                                    編輯訂單
                                 </button>
                                 <button onclick="viewBookingDetails('${bookingIdentifier}')" 
                                     class="text-blue-600 hover:underline text-xs">
@@ -4223,7 +4222,7 @@
                     </div>
                     
                     <!-- 結算基本信息 -->
-                    <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                    <div class="border border-stone-200 p-4 rounded-lg mb-6">
                         <h4 class="font-bold mb-3">結算基本信息</h4>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
@@ -4310,16 +4309,16 @@
                     
                     <!-- 操作按鈕 -->
                     <div class="flex justify-end space-x-3 pt-4 border-t">
-                        <button type="button" onclick="cancelPayout('${payout.id || payout.ID}')" 
-                            class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                            🚫 取消此結算
+                        <button type="button" onclick="cancelPayout('${payout.id || payout.ID}')"
+                            class="ob-btn ob-btn-danger">
+                            取消此結算
                         </button>
-                        <button type="button" onclick="editPayout('${payout.id || payout.ID}')" 
-                            class="px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-                            ✏️ 修改結算
+                        <button type="button" onclick="editPayout('${payout.id || payout.ID}')"
+                            class="ob-btn ob-btn-secondary">
+                            修改結算
                         </button>
-                        <button type="button" onclick="closeModal('payoutDetailsModal')" 
-                            class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                        <button type="button" onclick="closeModal('payoutDetailsModal')"
+                            class="ob-btn ob-btn-ghost">
                             關閉
                         </button>
                     </div>
@@ -4416,9 +4415,9 @@
                         <div class="border-t pt-4">
                             <div class="flex justify-between items-center mb-2">
                                 <h4 class="font-semibold">佣金資訊</h4>
-                                <button onclick="enableCommissionEdit('${partner.partner_code}')" 
-                                        class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors">
-                                    📝 編輯
+                                <button onclick="enableCommissionEdit('${partner.partner_code}')"
+                                        class="ob-btn ob-btn-ghost ob-btn-sm">
+                                    編輯
                                 </button>
                             </div>
                             <div id="commission-view-${partner.partner_code}" class="grid grid-cols-3 gap-4">
@@ -4463,13 +4462,13 @@
                                            class="w-full px-2 py-1 border rounded text-sm">
                                 </div>
                                 <div class="flex gap-2">
-                                    <button onclick="saveCommissionEdit('${partner.partner_code}')" 
-                                            class="bg-green-500 text-white px-4 py-2 rounded text-sm hover:bg-green-600 transition-colors">
-                                        ✅ 儲存
+                                    <button onclick="saveCommissionEdit('${partner.partner_code}')"
+                                            class="ob-btn ob-btn-primary ob-btn-sm">
+                                        儲存
                                     </button>
-                                    <button onclick="cancelCommissionEdit('${partner.partner_code}')" 
-                                            class="bg-gray-500 text-white px-4 py-2 rounded text-sm hover:bg-gray-600 transition-colors">
-                                        ❌ 取消
+                                    <button onclick="cancelCommissionEdit('${partner.partner_code}')"
+                                            class="ob-btn ob-btn-secondary ob-btn-sm">
+                                        取消
                                     </button>
                                 </div>
                             </div>
@@ -4646,11 +4645,11 @@
                                     </table>
                                 </div>
                                 
-                                <div class="mt-3 p-3 bg-blue-50 rounded-lg">
+                                <div class="mt-3 p-3 border border-stone-200 rounded-lg">
                                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                         <div>
                                             <p class="text-gray-600">總訂單數</p>
-                                            <p class="font-semibold text-blue-600">${bookings.length}</p>
+                                            <p class="font-semibold text-stone-700">${bookings.length}</p>
                                         </div>
                                         <div>
                                             <p class="text-gray-600">已完成</p>
@@ -4675,12 +4674,12 @@
                         </div>
                         
                         <div class="flex justify-end space-x-2 pt-4">
-                            <button onclick="editPartner('${partner.partner_code}')" 
-                                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            <button onclick="editPartner('${partner.partner_code}')"
+                                class="ob-btn ob-btn-primary">
                                 編輯資料
                             </button>
-                            <button onclick="closeModal('partnerModal')" 
-                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                            <button onclick="closeModal('partnerModal')"
+                                class="ob-btn ob-btn-secondary">
                                 關閉
                             </button>
                         </div>
@@ -4728,30 +4727,30 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">夥伴代碼</label>
                             <input type="text" value="${partner.partner_code}" disabled 
-                                class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100">
+                                class="ob-input bg-gray-100">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700">姓名</label>
                             <input type="text" id="editName" value="${partner.name || ''}" 
-                                class="mt-1 block w-full rounded-md border-gray-300">
+                                class="ob-input">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Email</label>
                             <input type="email" id="editEmail" value="${partner.email || ''}" 
-                                class="mt-1 block w-full rounded-md border-gray-300">
+                                class="ob-input">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700">電話</label>
                             <input type="tel" id="editPhone" value="${partner.phone || ''}" 
-                                class="mt-1 block w-full rounded-md border-gray-300">
+                                class="ob-input">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700">佣金偏好</label>
-                            <select id="editCommissionPref" class="mt-1 block w-full rounded-md border-gray-300">
+                            <select id="editCommissionPref" class="ob-input">
                                 <option value="CASH" ${partner.commission_preference === 'CASH' ? 'selected' : ''}>現金</option>
                                 <option value="ACCOMMODATION" ${partner.commission_preference === 'ACCOMMODATION' ? 'selected' : ''}>住宿</option>
                             </select>
@@ -4764,40 +4763,40 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">銀行名稱</label>
                             <input type="text" id="editBankName" value="${partner.bank_name || ''}" 
-                                class="mt-1 block w-full rounded-md border-gray-300">
+                                class="ob-input">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700">銀行代碼</label>
                             <input type="text" id="editBankCode" value="${partner.bank_code || ''}" 
-                                class="mt-1 block w-full rounded-md border-gray-300">
+                                class="ob-input">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700">分行名稱</label>
                             <input type="text" id="editBankBranch" value="${partner.bank_branch || ''}" 
-                                class="mt-1 block w-full rounded-md border-gray-300">
+                                class="ob-input">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700">戶名</label>
                             <input type="text" id="editBankAccountName" value="${partner.bank_account_name || ''}" 
-                                class="mt-1 block w-full rounded-md border-gray-300">
+                                class="ob-input">
                         </div>
                         
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700">帳號</label>
                             <input type="text" id="editBankAccountNumber" value="${partner.bank_account_number || ''}" 
-                                class="mt-1 block w-full rounded-md border-gray-300">
+                                class="ob-input">
                         </div>
                         
                         <div class="flex justify-end space-x-2 pt-4 col-span-2">
-                            <button type="button" onclick="savePartnerEdit('${partner.partner_code}')" 
-                                class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                            <button type="button" onclick="savePartnerEdit('${partner.partner_code}')"
+                                class="ob-btn ob-btn-primary">
                                 儲存變更
                             </button>
-                            <button type="button" onclick="closeModal('editPartnerModal')" 
-                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                            <button type="button" onclick="closeModal('editPartnerModal')"
+                                class="ob-btn ob-btn-secondary">
                                 取消
                             </button>
                         </div>
@@ -4890,13 +4889,13 @@
                     <h4 class="font-bold">資料庫結構錯誤</h4>
                     <p class="text-sm mt-1">檢測到 資料庫 欄位順序不正確，這會導致佣金顯示錯誤。</p>
                     <div class="mt-3 space-x-2">
-                        <button onclick="diagnoseDatabase()" class="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700">
-                            🔍 診斷
+                        <button onclick="diagnoseDatabase()" class="ob-btn ob-btn-secondary ob-btn-sm">
+                            診斷
                         </button>
-                        <button onclick="fixDatabase()" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
-                            🔧 修復
+                        <button onclick="fixDatabase()" class="ob-btn ob-btn-danger ob-btn-sm">
+                            修復
                         </button>
-                        <button onclick="closeDatabaseAlert()" class="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700">
+                        <button onclick="closeDatabaseAlert()" class="ob-btn ob-btn-ghost ob-btn-sm">
                             關閉
                         </button>
                     </div>
@@ -4944,7 +4943,7 @@
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-4">
-                        <h3 class="text-xl font-bold text-red-600">🔧 手動修復 資料庫 結構</h3>
+                        <h3 class="text-xl font-bold text-red-600">手動修復資料庫結構</h3>
                         <button onclick="closeModal('manualFixModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -4970,7 +4969,7 @@
                         </div>
                         
                         <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                            <h4 class="font-bold mb-2">📝 正確的標題行（請依序複製到 A1:U1）：</h4>
+                            <h4 class="font-bold mb-2">正確的標題行（請依序複製到 A1:U1）</h4>
                             <div class="bg-white border rounded p-2 text-xs font-mono">
                                 <div class="grid grid-cols-3 gap-1">
                                     <div>A1: id</div>
@@ -5008,10 +5007,10 @@
                         </div>
                         
                         <div class="flex justify-end space-x-3 pt-4">
-                            <button onclick="copyHeadersToClipboard()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                            <button onclick="copyHeadersToClipboard()" class="ob-btn ob-btn-primary">
                                 複製標題到剪貼板
                             </button>
-                            <button onclick="closeModal('manualFixModal')" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                            <button onclick="closeModal('manualFixModal')" class="ob-btn ob-btn-secondary">
                                 關閉
                             </button>
                         </div>
@@ -5227,12 +5226,12 @@
                         </div>
 
                         ${partner ? `
-                            <div class="bg-green-50 p-4 rounded-lg">
+                            <div class="border border-stone-200 p-4 rounded-lg">
                                 <h4 class="font-semibold mb-2">推薦大使資訊</h4>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">大使代碼</label>
-                                        <p class="font-medium text-green-700">${partner.partner_code}</p>
+                                        <p class="font-medium text-stone-700">${partner.partner_code}</p>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">大使姓名</label>
@@ -5254,22 +5253,22 @@
                             </div>
                         `}
 
-                        <div class="bg-stone-50 p-4 rounded-lg">
+                        <div class="border border-stone-200 p-4 rounded-lg">
                             <h4 class="font-semibold mb-2">LINE 歸因資訊</h4>
                             ${getBookingAttributionSummaryHtml(booking)}
                         </div>
 
                         ${expectedCommission ? `
-                            <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="border border-stone-200 p-4 rounded-lg">
                                 <h4 class="font-semibold mb-2">佣金資訊</h4>
                                 ${booking.commission_amount ? `
-                                    <div class="text-green-600">
-                                        <p class="font-semibold">✅ 實際佣金：$${booking.commission_amount}</p>
+                                    <div class="text-stone-700">
+                                        <p class="font-semibold">實際佣金：$${booking.commission_amount}</p>
                                         <p class="text-sm">類型：${booking.commission_type === 'CASH' ? '現金' : '住宿金'}</p>
                                     </div>
                                 ` : `
                                     <div>
-                                        <p class="font-medium text-blue-600">預計佣金：</p>
+                                        <p class="font-medium text-stone-600">預計佣金：</p>
                                         <p class="text-sm">住宿金：$${expectedCommission.accommodation}</p>
                                         <p class="text-sm text-gray-600">（可轉換現金：$${expectedCommission.cash}）</p>
                                     </div>
@@ -5285,8 +5284,8 @@
                         ` : ''}
 
                         <div class="flex justify-end space-x-2 pt-4">
-                            <button onclick="closeModal('bookingDetailsModal')" 
-                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                            <button onclick="closeModal('bookingDetailsModal')"
+                                class="ob-btn ob-btn-secondary">
                                 關閉
                             </button>
                         </div>
@@ -5344,49 +5343,49 @@
                     
                     <form id="editBookingForm" class="space-y-6">
                         <!-- 房客基本資訊 -->
-                        <div class="bg-blue-50 p-4 rounded-lg">
-                            <h4 class="font-semibold mb-3 text-blue-800">👤 房客資訊</h4>
+                        <div class="border border-stone-200 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-3 text-stone-800">房客資訊</h4>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">房客姓名 *</label>
                                     <input type="text" id="edit_guest_name" value="${booking.guest_name || ''}" 
-                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                                        class="ob-input" required>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">聯絡電話 *</label>
                                     <input type="tel" id="edit_guest_phone" value="${booking.guest_phone || ''}" 
-                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500" required>
+                                        class="ob-input" required>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">電子郵件</label>
                                     <input type="email" id="edit_guest_email" value="${booking.guest_email || ''}" 
-                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500">
+                                        class="ob-input">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">匯款帳號末五碼</label>
                                     <input type="text" id="edit_bank_account_last5" value="${booking.bank_account_last5 || ''}" 
                                         maxlength="5" pattern="[0-9]{5}"
-                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                                        class="ob-input"
                                         placeholder="例：12345">
                                 </div>
                             </div>
                         </div>
 
                         <!-- 推薦大使資訊 -->
-                        <div class="bg-green-50 p-4 rounded-lg">
-                            <h4 class="font-semibold mb-3 text-green-800">🤝 推薦大使</h4>
+                        <div class="border border-stone-200 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-3 text-stone-800">推薦大使</h4>
                             <div class="space-y-4">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">LINE 使用者 ID</label>
                                         <input type="text" id="edit_line_user_id" value="${booking.line_user_id || ''}" 
-                                            class="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500"
+                                            class="ob-input"
                                             placeholder="若此客人曾在官方 LINE 輸入代碼，可貼上 userId">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">LINE 顯示名稱</label>
                                         <input type="text" id="edit_line_display_name" value="${booking.line_display_name || ''}" 
-                                            class="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500"
+                                            class="ob-input"
                                             placeholder="例如：王小森">
                                     </div>
                                 </div>
@@ -5397,7 +5396,7 @@
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">推薦大使</label>
                                         <input type="search" id="edit_partner_search" class="w-full mb-2 p-2 border rounded-md focus:ring-2 focus:ring-green-500" placeholder="輸入代碼、姓名、電話或 Email 搜尋大使">
-                                        <select id="edit_partner_code" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-green-500"
+                                        <select id="edit_partner_code" class="ob-input"
                                             onchange="updatePartnerInfo()">
                                             <option value="">無推薦大使</option>
                                             ${partnersOptions}
@@ -5414,23 +5413,23 @@
                         </div>
 
                         <!-- 住宿資訊 -->
-                        <div class="bg-amber-50 p-4 rounded-lg">
-                            <h4 class="font-semibold mb-3 text-amber-800">🏠 住宿資訊</h4>
+                        <div class="border border-stone-200 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-3 text-stone-800">住宿資訊</h4>
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">入住日期 *</label>
                                     <input type="date" id="edit_checkin_date" value="${formatDateForInput(booking.checkin_date)}" 
-                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-amber-500" required>
+                                        class="ob-input" required>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">退房日期 *</label>
                                     <input type="date" id="edit_checkout_date" value="${formatDateForInput(booking.checkout_date)}" 
-                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-amber-500" required>
+                                        class="ob-input" required>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">房價 *</label>
                                     <input type="number" id="edit_room_price" value="${booking.room_price || ''}" 
-                                        class="w-full p-2 border rounded-md focus:ring-2 focus:ring-amber-500" 
+                                        class="ob-input" 
                                         min="0" step="1" required onchange="updateCommissionPreview()">
                                 </div>
                                 <div id="commissionPreview" class="flex items-center">
@@ -5440,12 +5439,12 @@
                         </div>
 
                         <!-- 狀態設定 -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="font-semibold mb-3 text-gray-800">訂單狀態</h4>
+                        <div class="border border-stone-200 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-3 text-stone-800">訂單狀態</h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">入住狀態</label>
-                                    <select id="edit_stay_status" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-gray-500">
+                                    <select id="edit_stay_status" class="ob-input">
                                         <option value="PENDING" ${booking.stay_status === 'PENDING' ? 'selected' : ''}>待入住</option>
                                         <option value="CHECKED_IN" ${booking.stay_status === 'CHECKED_IN' ? 'selected' : ''}>已入住</option>
                                         <option value="COMPLETED" ${booking.stay_status === 'COMPLETED' ? 'selected' : ''}>已完成</option>
@@ -5454,7 +5453,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">付款狀態</label>
-                                    <select id="edit_payment_status" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-gray-500">
+                                    <select id="edit_payment_status" class="ob-input">
                                         <option value="PENDING" ${booking.payment_status === 'PENDING' ? 'selected' : ''}>待付款</option>
                                         <option value="PARTIAL" ${booking.payment_status === 'PARTIAL' ? 'selected' : ''}>部分付款</option>
                                         <option value="PAID" ${booking.payment_status === 'PAID' ? 'selected' : ''}>已付清</option>
@@ -5466,22 +5465,22 @@
                         <!-- 備註 -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">備註</label>
-                            <textarea id="edit_notes" rows="3" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                            <textarea id="edit_notes" rows="3" class="ob-input"
                                 placeholder="訂單相關備註...">${booking.notes || ''}</textarea>
                         </div>
 
                         <!-- 操作按鈕 -->
                         <div class="flex justify-end space-x-3 pt-4 border-t">
-                            <button type="button" onclick="closeModal('editBookingModal')" 
-                                class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                            <button type="button" onclick="closeModal('editBookingModal')"
+                                class="ob-btn ob-btn-secondary">
                                 取消
                             </button>
-                            <button type="button" onclick="deleteBooking('${booking.id || bookingIdentifier}')" 
-                                class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                            <button type="button" onclick="deleteBooking('${booking.id || bookingIdentifier}')"
+                                class="ob-btn ob-btn-danger">
                                 刪除訂單
                             </button>
-                            <button type="submit" 
-                                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <button type="submit"
+                                class="ob-btn ob-btn-primary">
                                 儲存變更
                             </button>
                         </div>
@@ -5911,7 +5910,7 @@
                 <div class="bg-white rounded-lg max-w-4xl w-full max-h-[95vh] overflow-y-auto">
                     <!-- 標題列 -->
                     <div class="sticky top-0 bg-white border-b px-8 py-6 flex justify-between items-center">
-                        <h2 class="text-2xl font-bold text-green-800">📝 手動訂房登記</h2>
+                        <h2 class="text-2xl font-bold text-stone-800">手動訂房登記</h2>
                         <button onclick="closeModal('manualBookingModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -5923,32 +5922,32 @@
                     <div class="p-8">
                         <form id="manualBookingForm" class="space-y-6">
                             <!-- 房客基本資訊 -->
-                            <div class="bg-blue-50 p-6 rounded-lg">
-                                <h3 class="text-lg font-semibold text-blue-800 mb-4">👤 房客基本資訊</h3>
+                            <div class="border border-stone-200 p-6 rounded-lg">
+                                <h3 class="text-lg font-semibold text-stone-800 mb-4">房客基本資訊</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">房客姓名 *</label>
-                                        <input type="text" id="modal_guest_name" required class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none" placeholder="例：張小明">
+                                        <input type="text" id="modal_guest_name" required class="ob-input" placeholder="例：張小明">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">房客電話 *</label>
-                                        <input type="tel" id="modal_guest_phone" required class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none" placeholder="例：0912345678">
+                                        <input type="tel" id="modal_guest_phone" required class="ob-input" placeholder="例：0912345678">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">房客Email</label>
-                                        <input type="email" id="modal_guest_email" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none" placeholder="guest@example.com">
+                                        <input type="email" id="modal_guest_email" class="ob-input" placeholder="guest@example.com">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">匯款帳號末五碼 <span class="text-xs text-gray-500">（選填）</span></label>
-                                        <input type="text" id="modal_bank_account_last5" maxlength="5" pattern="[0-9]{5}" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none" placeholder="例：12345" title="請輸入5位數字">
+                                        <input type="text" id="modal_bank_account_last5" maxlength="5" pattern="[0-9]{5}" class="ob-input" placeholder="例：12345" title="請輸入5位數字">
                                         <p class="text-xs text-gray-500 mt-1">用於對帳確認</p>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- 推薦大使資訊 -->
-                            <div class="bg-green-50 p-6 rounded-lg">
-                                <h3 class="text-lg font-semibold text-green-800 mb-4">👤 推薦大使資訊</h3>
+                            <div class="border border-stone-200 p-6 rounded-lg">
+                                <h3 class="text-lg font-semibold text-stone-800 mb-4">推薦大使資訊</h3>
                                 <div class="grid grid-cols-1 gap-4">
                                     <div class="rounded-lg border border-emerald-200 bg-white/80 p-4 space-y-3">
                                         <div>
@@ -5958,7 +5957,7 @@
                                                     同步 LINE 名稱
                                                 </button>
                                             </div>
-                                            <select id="modal_line_claim_selector" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none">
+                                            <select id="modal_line_claim_selector" class="ob-input">
                                                 <option value="">請選擇最近輸入過代碼的客人（選填）</option>
                                             </select>
                                             <p class="text-xs text-gray-500 mt-1">預設會採用這位客人的最新推薦者；若現場確認不同，你仍可在下方改成其他大使。</p>
@@ -5966,11 +5965,11 @@
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-2">LINE 使用者 ID <span class="text-xs text-gray-500">（選填）</span></label>
-                                                <input type="text" id="modal_line_user_id" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none" placeholder="可直接貼上 LINE userId">
+                                                <input type="text" id="modal_line_user_id" class="ob-input" placeholder="可直接貼上 LINE userId">
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-2">LINE 顯示名稱</label>
-                                                <input type="text" id="modal_line_display_name" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-emerald-500 focus:outline-none" placeholder="例如：王小森">
+                                                <input type="text" id="modal_line_display_name" class="ob-input" placeholder="例如：王小森">
                                             </div>
                                         </div>
                                         <div id="modal_line_claim_info" class="rounded-lg bg-stone-50 border border-stone-200 p-3"></div>
@@ -5978,7 +5977,7 @@
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">推薦大使代碼</label>
                                         <input type="search" id="modal_partner_search" class="w-full mb-2 p-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none" placeholder="輸入代碼、姓名、電話或 Email 搜尋大使">
-                                        <select id="modal_partner_code" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none">
+                                        <select id="modal_partner_code" class="ob-input">
                                             <option value="">請選擇推薦大使（無推薦請留空）</option>
                                         </select>
                                         <div class="flex items-center justify-between text-xs text-gray-500 mt-1">
@@ -5993,31 +5992,31 @@
                             </div>
 
                             <!-- 住宿資訊 -->
-                            <div class="bg-amber-50 p-6 rounded-lg">
-                                <h3 class="text-lg font-semibold text-amber-800 mb-4">🏠 住宿資訊</h3>
+                            <div class="border border-stone-200 p-6 rounded-lg">
+                                <h3 class="text-lg font-semibold text-stone-800 mb-4">住宿資訊</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">入住日期 *</label>
-                                        <input type="date" id="modal_checkin_date" required class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none">
+                                        <input type="date" id="modal_checkin_date" required class="ob-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">退房日期 *</label>
-                                        <input type="date" id="modal_checkout_date" required class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none">
+                                        <input type="date" id="modal_checkout_date" required class="ob-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">實際房價 *</label>
-                                        <input type="number" id="modal_room_price" required min="0" step="1" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none" placeholder="5000">
+                                        <input type="number" id="modal_room_price" required min="0" step="1" class="ob-input" placeholder="5000">
                                     </div>
                                 </div>
                             </div>
 
                             <!-- 狀態設定 -->
-                            <div class="bg-gray-50 p-6 rounded-lg">
-                                <h3 class="text-lg font-semibold text-gray-800 mb-4">初始狀態</h3>
+                            <div class="border border-stone-200 p-6 rounded-lg">
+                                <h3 class="text-lg font-semibold text-stone-800 mb-4">初始狀態</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">入住狀態</label>
-                                        <select id="modal_stay_status" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-gray-500 focus:outline-none">
+                                        <select id="modal_stay_status" class="ob-input">
                                             <option value="PENDING">待入住</option>
                                             <option value="CHECKED_IN">已入住</option>
                                             <option value="COMPLETED">已完成</option>
@@ -6025,7 +6024,7 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">付款狀態</label>
-                                        <select id="modal_payment_status" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-gray-500 focus:outline-none">
+                                        <select id="modal_payment_status" class="ob-input">
                                             <option value="PENDING">待付款</option>
                                             <option value="PARTIAL">部分付款</option>
                                             <option value="PAID">已付清</option>
@@ -6037,16 +6036,16 @@
                             <!-- 備註 -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">備註</label>
-                                <textarea id="modal_notes" rows="3" class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none" placeholder="例：客人特別要求、推薦來源詳情等..."></textarea>
+                                <textarea id="modal_notes" rows="3" class="ob-input" placeholder="例：客人特別要求、推薦來源詳情等..."></textarea>
                             </div>
 
                             <!-- 提交按鈕 -->
                             <div class="flex justify-end space-x-4 pt-4 border-t">
-                                <button type="button" onclick="closeModal('manualBookingModal')" class="px-6 py-3 border-2 border-gray-300 text-gray-600 rounded-lg font-semibold hover:bg-gray-50 transition duration-300">
+                                <button type="button" onclick="closeModal('manualBookingModal')" class="ob-btn ob-btn-secondary">
                                     取消
                                 </button>
-                                <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition duration-300">
-                                    💾 登記訂房
+                                <button type="submit" class="ob-btn ob-btn-primary">
+                                    登記訂房
                                 </button>
                             </div>
                         </form>
@@ -6389,12 +6388,12 @@
                     
                     <div class="p-6">
                         <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                            <h3 class="font-bold text-red-800 mb-2">🔍 問題診斷：</h3>
+                            <h3 class="font-bold text-red-800 mb-2">問題診斷</h3>
                             <p class="text-sm text-red-700">Google Apps Script 回傳 403 Forbidden 錯誤，表示權限設定有問題。</p>
                         </div>
                         
                         <div class="space-y-4 mb-6">
-                            <h3 class="font-bold text-lg">🔧 快速修復步驟：</h3>
+                            <h3 class="font-bold text-lg">快速修復步驟</h3>
                             
                             <div class="bg-blue-50 p-4 rounded-lg">
                                 <h4 class="font-semibold mb-2">1. 重新部署 Apps Script</h4>
@@ -6425,11 +6424,11 @@
                         
                         <div class="flex justify-end space-x-3">
                             <button onclick="retryConnection()"
-                                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                                🔄 重試連接
+                                class="ob-btn ob-btn-primary">
+                                重試連接
                             </button>
-                            <button onclick="closeModal('appsScriptFixModal')" 
-                                class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">
+                            <button onclick="closeModal('appsScriptFixModal')"
+                                class="ob-btn ob-btn-secondary">
                                 關閉
                             </button>
                         </div>
@@ -6466,7 +6465,7 @@
             const notesStr = String(notes || '');
             if (method === 'MANUAL_ADJUSTMENT' || notesStr.includes('手動調整') || notesStr.includes('管理者') || notesStr.includes('手動修改')) {
                 return {
-                    text: '👤 管理者手動調整',
+                    text: '管理者手動調整',
                     class: 'bg-purple-100 text-purple-800',
                     detail: notes || '管理者手動調整佣金'
                 };
@@ -6508,7 +6507,7 @@
             // 3. 系統自動計算的佣金
             if (method === 'AUTO_CALCULATION' || payout.payout_type === 'ACCOMMODATION') {
                 return {
-                    text: '⚙️ 系統自動計算',
+                    text: '系統自動計算',
                     class: 'bg-blue-100 text-blue-800',
                     detail: '基於訂房自動計算佣金'
                 };
@@ -6517,7 +6516,7 @@
             // 4. 結算撤銷或調整
             if (payout.payout_type === 'ADJUSTMENT_REVERSAL' || notes.includes('撤銷') || notes.includes('取消')) {
                 return {
-                    text: '🔄 結算調整',
+                    text: '結算調整',
                     class: 'bg-orange-100 text-orange-800',
                     detail: '結算撤銷或金額調整'
                 };
@@ -6540,7 +6539,7 @@
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-6">
-                        <h3 class="text-2xl font-bold text-red-600">🔧 資料庫 欄位結構診斷</h3>
+                        <h3 class="text-2xl font-bold text-red-600">資料庫欄位結構診斷</h3>
                         <button onclick="closeModal('sheetFieldsDiagnosticModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -6569,7 +6568,7 @@
                     </div>
                     
                     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                        <h4 class="font-bold text-yellow-800 mb-3">🔧 修復步驟</h4>
+                        <h4 class="font-bold text-yellow-800 mb-3">修復步驟</h4>
                         <ol class="list-decimal list-inside space-y-2 text-sm">
                             <li><strong>備份數據：</strong>先複製一份 資料庫 作為備份</li>
                             <li><strong>在第6欄插入新欄位：</strong>在 guest_email 和 checkin_date 之間插入一欄</li>
@@ -6581,7 +6580,7 @@
                     </div>
                     
                     <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                        <h4 class="font-bold text-green-800 mb-3">✅ 完整欄位說明</h4>
+                        <h4 class="font-bold text-green-800 mb-3">完整欄位說明</h4>
                         <div class="overflow-x-auto">
                             <table class="w-full text-xs border">
                                 <thead class="bg-gray-50">
@@ -6672,7 +6671,7 @@
             modal.innerHTML = `
                 <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                     <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-                        <h2 class="text-2xl font-bold text-yellow-800">🔧 結算系統診斷報告</h2>
+                        <h2 class="text-2xl font-bold text-yellow-800">結算系統診斷報告</h2>
                         <button onclick="closeModal('diagnosticModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -6699,10 +6698,10 @@
                         </div>
                         
                         <div class="flex justify-end space-x-3">
-                            <button onclick="location.reload()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                                🔄 重新載入頁面
+                            <button onclick="location.reload()" class="ob-btn ob-btn-primary">
+                                重新載入頁面
                             </button>
-                            <button onclick="closeModal('diagnosticModal')" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400">
+                            <button onclick="closeModal('diagnosticModal')" class="ob-btn ob-btn-secondary">
                                 關閉
                             </button>
                         </div>
@@ -6738,8 +6737,8 @@
                 
                 modalContent = `
                     <div class="bg-white rounded-lg max-w-md w-full">
-                        <div class="px-6 py-4 border-b flex justify-between items-center bg-blue-50">
-                            <h2 class="text-xl font-bold text-blue-800">💎 點數管理</h2>
+                        <div class="px-6 py-4 border-b flex justify-between items-center">
+                            <h2 class="text-xl font-bold text-stone-800">點數管理</h2>
                             <button onclick="closeModal('partnerActionsModal')" class="text-gray-500 hover:text-gray-700">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -6749,9 +6748,9 @@
                         
                         <div class="p-6 space-y-4">
                             <!-- 餘額顯示 -->
-                            <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                            <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
                                 <div class="text-sm text-gray-600">大使：${partner.name || partner.partner_code}</div>
-                                <div class="text-2xl font-bold text-blue-700">可用點數：$${accommodationBalance.toLocaleString()}</div>
+                                <div class="text-2xl font-bold text-stone-700">可用點數：$${accommodationBalance.toLocaleString()}</div>
                                 <div class="text-xs text-gray-500 mt-1">
                                     累積：$${(parseFloat(partner.total_commission_earned) || 0).toLocaleString()} | 已使用：$${(parseFloat(partner.points_used) || 0).toLocaleString()}
                                 </div>
@@ -6759,13 +6758,13 @@
                             
                             <!-- 操作選項 -->
                             <div class="grid grid-cols-2 gap-3">
-                                <button onclick="useAccommodationPoints('${partnerCode}')" 
-                                        class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all text-center">
-                                    🏠 折抵住宿
+                                <button onclick="useAccommodationPoints('${partnerCode}')"
+                                        class="ob-btn ob-btn-primary flex-1 text-center">
+                                    折抵住宿
                                 </button>
-                                <button onclick="convertPointsToCash('${partnerCode}')" 
-                                        class="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 transition-all text-center">
-                                    💸 轉換現金
+                                <button onclick="convertPointsToCash('${partnerCode}')"
+                                        class="ob-btn ob-btn-secondary flex-1 text-center">
+                                    轉換現金
                                 </button>
                             </div>
                         </div>
@@ -6779,8 +6778,8 @@
                 
                 modalContent = `
                     <div class="bg-white rounded-lg max-w-md w-full">
-                        <div class="px-6 py-4 border-b flex justify-between items-center bg-green-50">
-                            <h2 class="text-xl font-bold text-green-800">現金管理</h2>
+                        <div class="px-6 py-4 border-b flex justify-between items-center">
+                            <h2 class="text-xl font-bold text-stone-800">現金管理</h2>
                             <button onclick="closeModal('partnerActionsModal')" class="text-gray-500 hover:text-gray-700">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -6790,21 +6789,21 @@
                         
                         <div class="p-6 space-y-4">
                             <!-- 餘額顯示 -->
-                            <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                            <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
                                 <div class="text-sm text-gray-600">大使：${partner.name || partner.partner_code}</div>
-                                <div class="text-2xl font-bold text-green-700">待結算：$${pendingCash.toLocaleString()}</div>
+                                <div class="text-2xl font-bold text-stone-700">待結算：$${pendingCash.toLocaleString()}</div>
                                 <div class="text-xs text-gray-500 mt-1">銀行帳戶：${partner.bank_name || '未設定'}</div>
                             </div>
                             
                             <!-- 操作選項 -->
                             <div class="grid grid-cols-2 gap-3">
-                                <button onclick="processPayout('${partnerCode}')" 
-                                        class="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-green-700 transition-all text-center">
+                                <button onclick="processPayout('${partnerCode}')"
+                                        class="ob-btn ob-btn-primary flex-1 text-center">
                                     執行結算
                                 </button>
-                                <button onclick="revertToCash('${partnerCode}')" 
-                                        class="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all text-center">
-                                    🔄 改回住宿金
+                                <button onclick="revertToCash('${partnerCode}')"
+                                        class="ob-btn ob-btn-secondary flex-1 text-center">
+                                    改回住宿金
                                 </button>
                             </div>
                         </div>
@@ -6853,7 +6852,7 @@
             modal.innerHTML = `
                 <div class="bg-white rounded-lg max-w-md w-full my-8 max-h-[90vh] flex flex-col">
                     <div class="px-6 py-4 border-b flex justify-between items-center flex-shrink-0">
-                        <h2 class="text-xl font-bold text-blue-800">使用住宿金折抵</h2>
+                        <h2 class="text-xl font-bold text-stone-800">使用住宿金折抵</h2>
                         <button onclick="closeModal('usePointsModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -6863,16 +6862,16 @@
                     
                     <form id="usePointsForm" onsubmit="submitUsePoints(event, '${partnerCode}')" class="p-6 space-y-4 overflow-y-auto flex-grow">
                         <!-- 點數概覽 -->
-                        <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200">
                             <div class="text-sm text-gray-600">大使：${partner.name || partner.partner_code}</div>
-                            <div class="text-lg font-bold text-blue-700">可用點數：$${availablePoints.toLocaleString()}</div>
+                            <div class="text-lg font-bold text-stone-700">可用點數：$${availablePoints.toLocaleString()}</div>
                         </div>
                         
                         <!-- 房客姓名 -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">房客姓名 *</label>
                             <input type="text" id="use_guest_name" required 
-                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
+                                class="ob-input"
                                 value="${partner.name || ''}" placeholder="請輸入房客姓名">
                         </div>
                         
@@ -6880,7 +6879,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">房客電話 *</label>
                             <input type="tel" id="use_guest_phone" required 
-                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
+                                class="ob-input"
                                 value="${partner.phone || ''}" placeholder="請輸入房客電話">
                         </div>
                         
@@ -6889,12 +6888,12 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">入住日期 *</label>
                                 <input type="date" id="use_checkin_date" required 
-                                    class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none">
+                                    class="ob-input">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">退房日期 *</label>
                                 <input type="date" id="use_checkout_date" required 
-                                    class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none">
+                                    class="ob-input">
                             </div>
                         </div>
                         
@@ -6902,7 +6901,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">原始房價 *</label>
                             <input type="number" id="use_room_price" required min="0" step="1" 
-                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
+                                class="ob-input"
                                 placeholder="請輸入房間原價"
                                 oninput="updateNetPrice()">
                         </div>
@@ -6911,19 +6910,19 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">折抵金額 *</label>
                             <input type="number" id="use_amount" required min="1" max="${availablePoints}" step="1" 
-                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
+                                class="ob-input"
                                 placeholder="請輸入折抵金額"
                                 oninput="validateUseAmount(this, ${availablePoints}); updateNetPrice()">
                             <div class="text-xs text-gray-500 mt-1">最大可使用：$${availablePoints.toLocaleString()}</div>
                             <div class="mt-2 flex gap-2">
                                 <button type="button" onclick="setQuickAmount('use_amount', Math.min(1000, ${availablePoints}), ${availablePoints}); updateNetPrice()" 
-                                    class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$1,000</button>
+                                    class="ob-btn ob-btn-ghost ob-btn-sm">$1,000</button>
                                 <button type="button" onclick="setQuickAmount('use_amount', Math.min(2000, ${availablePoints}), ${availablePoints}); updateNetPrice()" 
-                                    class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$2,000</button>
+                                    class="ob-btn ob-btn-ghost ob-btn-sm">$2,000</button>
                                 <button type="button" onclick="setQuickAmount('use_amount', Math.min(3000, ${availablePoints}), ${availablePoints}); updateNetPrice()" 
-                                    class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">$3,000</button>
+                                    class="ob-btn ob-btn-ghost ob-btn-sm">$3,000</button>
                                 <button type="button" onclick="setQuickAmount('use_amount', ${availablePoints}, ${availablePoints}); updateNetPrice()" 
-                                    class="px-3 py-1 bg-gray-100 text-sm rounded hover:bg-gray-200">全部</button>
+                                    class="ob-btn ob-btn-ghost ob-btn-sm">全部</button>
                             </div>
                         </div>
                         
@@ -6988,18 +6987,18 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">備註</label>
                             <textarea id="use_notes" rows="2" 
-                                class="w-full p-2 border rounded-lg focus:border-blue-500 focus:outline-none"
+                                class="ob-input"
                                 placeholder="選填"></textarea>
                         </div>
                         
                         <!-- 按鈕 -->
                         <div class="flex justify-end space-x-3 pt-4 border-t mt-4 flex-shrink-0">
-                            <button type="button" onclick="closeModal('usePointsModal')" 
-                                class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                            <button type="button" onclick="closeModal('usePointsModal')"
+                                class="ob-btn ob-btn-secondary">
                                 取消
                             </button>
-                            <button type="submit" 
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <button type="submit"
+                                class="ob-btn ob-btn-primary">
                                 確認折抵
                             </button>
                         </div>
@@ -7184,9 +7183,9 @@
                     </div>
                     
                     <!-- 可用點數 -->
-                    <div class="bg-blue-50 p-4 rounded-lg mb-6">
-                        <h4 class="font-bold mb-2">💎 可用點數</h4>
-                        <div class="text-2xl font-bold text-blue-600">${availablePoints.toLocaleString()} 點</div>
+                    <div class="bg-stone-50 p-4 rounded-lg border border-stone-200 mb-6">
+                        <h4 class="font-bold mb-2">可用點數</h4>
+                        <div class="text-2xl font-bold text-stone-700">${availablePoints.toLocaleString()} 點</div>
                         <div class="text-sm text-gray-600 mt-1">轉換比例：1 點 = ${exchangeRate} 元新台幣 (50%)</div>
                     </div>
                     
@@ -7195,7 +7194,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">轉換點數</label>
                             <input type="number" id="points_to_convert" 
-                                class="w-full p-3 border rounded-md" min="1" max="${availablePoints}" step="1"
+                                class="ob-input" min="1" max="${availablePoints}" step="1"
                                 placeholder="輸入要轉換的點數" onchange="updateConvertedCashDisplay()" oninput="updateConvertedCashDisplay()">
                             <div class="text-xs text-gray-500 mt-1">最多可轉換 ${availablePoints.toLocaleString()} 點</div>
                         </div>
@@ -7208,23 +7207,23 @@
                         </div>
                         
                         <!-- 快速選擇 -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <h4 class="font-bold mb-2">⚡ 快速選擇</h4>
+                        <div class="border border-stone-200 p-4 rounded-lg">
+                            <h4 class="font-bold mb-2">快速選擇</h4>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                                 <button type="button" onclick="setConvertPoints(${Math.floor(availablePoints * 0.25)})" 
-                                    class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                                    class="ob-btn ob-btn-ghost ob-btn-sm text-xs">
                                     25% (${Math.floor(availablePoints * 0.25)} 點)
                                 </button>
                                 <button type="button" onclick="setConvertPoints(${Math.floor(availablePoints * 0.5)})" 
-                                    class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                                    class="ob-btn ob-btn-ghost ob-btn-sm text-xs">
                                     50% (${Math.floor(availablePoints * 0.5)} 點)
                                 </button>
                                 <button type="button" onclick="setConvertPoints(${Math.floor(availablePoints * 0.75)})" 
-                                    class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                                    class="ob-btn ob-btn-ghost ob-btn-sm text-xs">
                                     75% (${Math.floor(availablePoints * 0.75)} 點)
                                 </button>
                                 <button type="button" onclick="setConvertPoints(${availablePoints})" 
-                                    class="px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">
+                                    class="ob-btn ob-btn-ghost ob-btn-sm text-xs">
                                     全部 (${availablePoints} 點)
                                 </button>
                             </div>
@@ -7232,17 +7231,17 @@
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">轉換說明</label>
-                            <textarea id="conversion_notes" rows="2" class="w-full p-2 border rounded-md"
+                            <textarea id="conversion_notes" rows="2" class="ob-input"
                                 placeholder="說明此次轉換的原因或用途..."></textarea>
                         </div>
                         
                         <div class="flex justify-end space-x-3 pt-4 border-t">
-                            <button type="button" onclick="closeModal('pointsToCashModal')" 
-                                class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                            <button type="button" onclick="closeModal('pointsToCashModal')"
+                                class="ob-btn ob-btn-secondary">
                                 取消
                             </button>
-                            <button type="button" onclick="submitPointsToCash('${partner.partner_code}')" 
-                                class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            <button type="button" onclick="submitPointsToCash('${partner.partner_code}')"
+                                class="ob-btn ob-btn-primary">
                                 確認轉換
                             </button>
                         </div>
@@ -7433,7 +7432,7 @@
                     <tr>
                         <td colspan="8" class="text-center py-8">
                             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
-                                <div class="text-blue-600 font-bold mb-2">🔧 診斷中...</div>
+                                <div class="text-blue-600 font-bold mb-2">診斷中...</div>
                                 <div class="text-sm text-blue-700">
                                     正在分析 資料庫 數據結構，請稍候...
                                 </div>
@@ -7468,7 +7467,7 @@
                         <tr>
                             <td colspan="8" class="text-center py-8">
                                 <div class="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
-                                    <div class="text-red-600 font-bold mb-2">❌ 診斷失敗</div>
+                                    <div class="text-red-600 font-bold mb-2">診斷失敗</div>
                                     <div class="text-sm text-red-700">
                                         無法從 資料庫 獲取有效數據。請檢查 Apps Script 是否正常運作。
                                     </div>
@@ -7483,19 +7482,19 @@
                 showDataDiagnosisModal(rawData);
                 
             } catch (error) {
-                console.error('❌ 診斷失敗:', error);
+                console.error('診斷失敗:', error);
                 const table = document.getElementById('bookingsTable');
                 table.innerHTML = `
                     <tr>
                         <td colspan="8" class="text-center py-8">
                             <div class="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
-                                <div class="text-red-600 font-bold mb-2">❌ 診斷錯誤</div>
+                                <div class="text-red-600 font-bold mb-2">診斷錯誤</div>
                                 <div class="text-sm text-red-700 mb-3">
                                     ${error.message}
                                 </div>
-                                <button onclick="location.reload()" 
-                                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">
-                                    🔄 重新載入頁面
+                                <button onclick="location.reload()"
+                                    class="ob-btn ob-btn-primary ob-btn-sm">
+                                    重新載入頁面
                                 </button>
                             </div>
                         </td>
@@ -7560,7 +7559,7 @@
                         </div>
                     </div>
                     
-                    <h4 class="font-bold mt-4 mb-3">🔍 發現的具體問題：</h4>
+                    <h4 class="font-bold mt-4 mb-3">發現的具體問題</h4>
                     <div class="text-sm space-y-2">
                         ${mappingAnalysis.filter(item => !item.isCorrect).length > 0 ? `
                             <div class="text-red-600">❌ 有 ${mappingAnalysis.filter(item => !item.isCorrect).length} 個欄位映射錯誤</div>
@@ -7592,7 +7591,7 @@
             modal.innerHTML = `
                 <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-start mb-6">
-                        <h3 class="text-xl font-bold text-red-800">🔧 資料庫 數據診斷</h3>
+                        <h3 class="text-xl font-bold text-red-800">資料庫數據診斷</h3>
                         <button onclick="closeModal('dataDiagnosisModal')" class="text-gray-500 hover:text-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -7603,7 +7602,7 @@
                     ${diagnosisContent}
                     
                     <div class="mt-6 p-4 bg-yellow-50 rounded-lg">
-                        <h4 class="font-bold text-yellow-800 mb-2">🛠️ 具體修復步驟：</h4>
+                        <h4 class="font-bold text-yellow-800 mb-2">具體修復步驟</h4>
                         <ol class="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
                             <li><strong>立即修復：</strong>在 資料庫 的數據行第一列（A列）添加 ID 值</li>
                             <li><strong>檢查 Apps Script：</strong>確認數據處理時是否正確處理了所有22個欄位</li>
@@ -7819,47 +7818,48 @@
                 return;
             }
 
-            if (!batchMode) {
-                const confirmed = confirm(`確認結算 - ${partner.name || partner.partner_code}
+            const doProcess = async () => {
+                try {
+                    console.log('🎯 創建結算記錄:', { partnerCode, pendingAmount });
 
-待支付金額：NT$ ${pendingAmount.toLocaleString()}
+                    const submitData = {
+                        action: 'process_payout',
+                        partner_code: partnerCode,
+                        amount: pendingAmount,
+                        notes: `現金結算 - ${new Date().toLocaleString()}`
+                    };
 
-確定已轉帳完成，要標記為「已結算」嗎？`);
-                
-                if (!confirmed) return;
-            }
+                    console.log('🚀 準備創建結算記錄:', submitData);
 
-            try {
-                // 創建新的結算記錄
-                console.log('🎯 創建結算記錄:', { partnerCode, pendingAmount });
-                
-                const submitData = {
-                    action: 'process_payout',
-                    partner_code: partnerCode,
-                    amount: pendingAmount,
-                    notes: `現金結算 - ${new Date().toLocaleString()}`
-                };
+                    const responseData = await submitToBackendViaForm(submitData);
+                    console.log('💳 結算處理 - 後端已回應:', responseData);
 
-                console.log('🚀 準備創建結算記錄:', submitData);
+                    await forceReloadCurrentData();
+                    updatePartnerInMemory(partnerCode, {
+                        pending_commission: Math.max(0, pendingAmount - pendingAmount),
+                        total_commission_paid: (parseFloat(partner.total_commission_paid) || 0) + pendingAmount
+                    });
+                    displayPartners(allData.partners);
 
-                const responseData = await submitToBackendViaForm(submitData);
-                console.log('💳 結算處理 - 後端已回應:', responseData);
+                    if (!batchMode) {
+                        showSuccessMessage(`結算完成！已轉帳 NT$ ${pendingAmount.toLocaleString()}`);
+                        closeModal('partnerActionsModal');
+                    }
 
-                await forceReloadCurrentData();
-                updatePartnerInMemory(partnerCode, {
-                    pending_commission: Math.max(0, pendingAmount - pendingAmount),
-                    total_commission_paid: (parseFloat(partner.total_commission_paid) || 0) + pendingAmount
-                });
-                displayPartners(allData.partners);
-
-                if (!batchMode) {
-                    showSuccessMessage(`✅ 結算完成！已轉帳 NT$ ${pendingAmount.toLocaleString()}`);
-                    closeModal('partnerActionsModal');
+                } catch (error) {
+                    console.error('❌ 結算失敗:', error);
+                    if (!batchMode) showErrorMessage('結算失敗：' + error.message);
                 }
+            };
 
-            } catch (error) {
-                console.error('❌ 結算失敗:', error);
-                if (!batchMode) showErrorMessage('❌ 結算失敗：' + error.message);
+            if (batchMode) {
+                await doProcess();
+            } else {
+                showConfirmModal(
+                    '確認結算',
+                    `${partner.name || partner.partner_code}\n\n待支付金額：NT$ ${pendingAmount.toLocaleString()}\n\n確定已轉帳完成，要標記為「已結算」嗎？`,
+                    doProcess
+                );
             }
         }
 
@@ -7958,41 +7958,37 @@
 
             const accommodationPoints = pendingCash * 2; // 50% 反向計算
 
-            const confirmed = confirm(`轉回住宿金 - ${partner.name || partner.partner_code}
+            showConfirmModal(
+                '轉回住宿金',
+                `${partner.name || partner.partner_code}\n\n待支付現金：NT$ ${pendingCash.toLocaleString()}\n    ↓\n住宿金：${accommodationPoints.toLocaleString()} 點\n\n確定要轉回住宿金嗎？`,
+                async () => {
+                    try {
+                        const submitData = {
+                            action: 'revert_cash_to_points',
+                            partner_code: partnerCode,
+                            amount: pendingCash,
+                            notes: `現金轉回住宿金：NT$ ${pendingCash} → ${accommodationPoints} 點`
+                        };
 
-待支付現金：NT$ ${pendingCash.toLocaleString()}
-    ↓
-住宿金：${accommodationPoints.toLocaleString()} 點
+                        const responseData = await submitToBackendViaForm(submitData);
+                        console.log('🔄 現金轉回住宿金 - 後端已回應:', responseData);
 
-確定要轉回住宿金嗎？`);
-            
-            if (!confirmed) return;
+                        await forceReloadCurrentData();
+                        updatePartnerInMemory(partnerCode, {
+                            available_points: (parseFloat(partner.available_points) || 0) + accommodationPoints,
+                            pending_commission: 0
+                        });
+                        displayPartners(allData.partners);
 
-            try {
-                const submitData = {
-                    action: 'revert_cash_to_points',
-                    partner_code: partnerCode,
-                    amount: pendingCash,
-                    notes: `🔄 現金轉回住宿金：NT$ ${pendingCash} → ${accommodationPoints} 點`
-                };
+                        showSuccessMessage(`轉換完成！NT$ ${pendingCash.toLocaleString()} → ${accommodationPoints.toLocaleString()} 住宿金點數`);
+                        closeModal('partnerActionsModal');
 
-                const responseData = await submitToBackendViaForm(submitData);
-                console.log('🔄 現金轉回住宿金 - 後端已回應:', responseData);
-
-                await forceReloadCurrentData();
-                updatePartnerInMemory(partnerCode, {
-                    available_points: (parseFloat(partner.available_points) || 0) + accommodationPoints,
-                    pending_commission: 0
-                });
-                displayPartners(allData.partners);
-
-                showSuccessMessage(`✅ 轉換完成！NT$ ${pendingCash.toLocaleString()} → ${accommodationPoints.toLocaleString()} 住宿金點數`);
-                closeModal('partnerActionsModal');
-
-            } catch (error) {
-                console.error('轉換失敗:', error);
-                showErrorMessage('❌ 轉換失敗：' + error.message);
-            }
+                    } catch (error) {
+                        console.error('轉換失敗:', error);
+                        showErrorMessage('轉換失敗：' + error.message);
+                    }
+                }
+            );
         }
 
         async function togglePartnerActive(partnerCode, nextIsActive) {
@@ -8016,34 +8012,32 @@
                     '• LINE 優惠券與關鍵字回應會同步停用'
                 ];
 
-            const confirmed = confirm(`${actionLabel}帳戶 - ${partner.name || partner.partner_code}
-
-${actionLabel}後該夥伴將：
-${impactLines.join('\n')}
-
-此操作可復原。確定要繼續嗎？`);
-            
-            if (!confirmed) return;
-
-            try {
-                const responseData = await submitToBackendViaForm({
-                    action: 'update_partner',
-                    partner_code: partnerCode,
-                    is_active: nextIsActive
-                });
-                console.log(`${actionLabel}夥伴 - 後端已回應:`, responseData);
+            showConfirmModal(
+                `${actionLabel}帳戶`,
+                `${partner.name || partner.partner_code}\n\n${actionLabel}後該夥伴將：\n${impactLines.join('\n')}\n\n此操作可復原。確定要繼續嗎？`,
+                async () => {
+                    try {
+                        const responseData = await submitToBackendViaForm({
+                            action: 'update_partner',
+                            partner_code: partnerCode,
+                            is_active: nextIsActive
+                        });
+                        console.log(`${actionLabel}夥伴 - 後端已回應:`, responseData);
 
                 await forceReloadCurrentData();
                 displayPartners(allData.partners);
                 if (document.getElementById('partnerModal')) {
                     closeModal('partnerModal');
                 }
-                showSuccessMessage(`✅ 已${actionLabel}夥伴：${partner.name || partner.partner_code}`);
+                showSuccessMessage(`已${actionLabel}夥伴：${partner.name || partner.partner_code}`);
 
-            } catch (error) {
-                console.error(`${actionLabel}失敗:`, error);
-                showErrorMessage(`❌ ${actionLabel}失敗：` + error.message);
-            }
+                    } catch (error) {
+                        console.error(`${actionLabel}失敗:`, error);
+                        showErrorMessage(`${actionLabel}失敗：` + error.message);
+                    }
+                },
+                { danger: !nextIsActive }
+            );
         }
 
         // 停用夥伴
@@ -8135,19 +8129,19 @@ ${impactLines.join('\n')}
                                 <!-- 快速金額按鈕 -->
                                 <div class="flex flex-wrap gap-2">
                                     <button type="button" onclick="setDeductAmount(1000)" 
-                                        class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                                        class="ob-btn ob-btn-ghost ob-btn-sm text-xs">
                                         $1000
                                     </button>
                                     <button type="button" onclick="setDeductAmount(2000)" 
-                                        class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                                        class="ob-btn ob-btn-ghost ob-btn-sm text-xs">
                                         $2000
                                     </button>
                                     <button type="button" onclick="setDeductAmount(5000)" 
-                                        class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">
+                                        class="ob-btn ob-btn-ghost ob-btn-sm text-xs">
                                         $5000
                                     </button>
                                     <button type="button" onclick="setDeductAmount(${availablePoints})" 
-                                        class="px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200">
+                                        class="ob-btn ob-btn-ghost ob-btn-sm text-xs">
                                         全部抵扣
                                     </button>
                                 </div>
@@ -8259,18 +8253,30 @@ ${impactLines.join('\n')}
          * @param {Event} event - 點擊事件，用來阻止事件冒泡
          */
         function toggleActionsDropdown(dropdownId, event) {
-            event.stopPropagation(); // 阻止點擊事件向上冒泡，以免立刻被下一步的 document click 關閉
+            event.stopPropagation();
             const dropdown = document.getElementById(dropdownId);
-            
-            // 先關閉頁面上所有其他的下拉選單
+
+            // 先關閉所有其他下拉選單
             document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => {
-                if (d.id !== dropdownId) {
-                    d.classList.add('hidden');
-                }
+                if (d.id !== dropdownId) d.classList.add('hidden');
             });
-            
-            // 切換當前點擊的選單
+
+            // 切換顯示
+            const willShow = dropdown.classList.contains('hidden');
             dropdown.classList.toggle('hidden');
+
+            if (willShow) {
+                // 用 position:fixed 定位，避免被 overflow:auto 裁切
+                const btn = event.currentTarget || event.target.closest('button');
+                const rect = btn.getBoundingClientRect();
+                Object.assign(dropdown.style, {
+                    position: 'fixed',
+                    top: (rect.bottom + 4) + 'px',
+                    left: 'auto',
+                    right: (window.innerWidth - rect.right) + 'px',
+                    zIndex: '9999'
+                });
+            }
         }
 
         /**

@@ -160,17 +160,17 @@ function createPayoutDetailsModal(payout) {
             <!-- 操作按鈕 -->
             <div class="flex justify-end space-x-3 pt-4 border-t">
                 ${payout.payout_status !== 'COMPLETED' ? `
-                    <button type="button" onclick="editPayout('${payout.id}')" 
-                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <button type="button" onclick="editPayout('${payout.id}')"
+                        class="ob-btn ob-btn-secondary">
                         修改
                     </button>
-                    <button type="button" onclick="cancelPayout('${payout.id}')" 
-                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    <button type="button" onclick="cancelPayout('${payout.id}')"
+                        class="ob-btn ob-btn-danger">
                         取消結算
                     </button>
                 ` : ''}
-                <button type="button" onclick="closeModal('payoutDetailsModal')" 
-                    class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                <button type="button" onclick="closeModal('payoutDetailsModal')"
+                    class="ob-btn ob-btn-ghost">
                     關閉
                 </button>
             </div>
@@ -222,32 +222,29 @@ async function cancelPayout(payoutId) {
         return;
     }
 
-    const confirmMessage = `確定要取消以下結算嗎？\n\n大使：${payout.partner_code}\n金額：$${(payout.amount || 0).toLocaleString()}\n類型：${getPayoutTypeLabel(payout.payout_type)}\n\n取消後該筆佣金將重新計算`;
+    const confirmMessage = `大使：${payout.partner_code}\n金額：$${(payout.amount || 0).toLocaleString()}\n類型：${getPayoutTypeLabel(payout.payout_type)}\n\n取消後該筆佣金將重新計算`;
 
-    if (!confirm(confirmMessage)) {
-        return;
-    }
+    showConfirmModal('取消結算', confirmMessage, async () => {
+        try {
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'cancel_payout', payout_id: payoutId })
+            });
 
-    try {
-        // 使用 fetch + JSON 送到後端
-        const response = await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'cancel_payout', payout_id: payoutId })
-        });
+            const result = await parsePayoutJsonResponse(response, '取消結算');
+            console.log('取消結算回應:', result);
+            await refreshPayoutDataView();
 
-        const result = await parsePayoutJsonResponse(response, '取消結算');
-        console.log('取消結算回應:', result);
-        await refreshPayoutDataView();
+            showSuccessMessage('結算已取消！相關訂單狀態已重置');
+            closeModal('payoutDetailsModal');
+            console.log('結算取消完成，已重新載入最新數據');
 
-        showSuccessMessage('結算已取消！相關訂單狀態已重置');
-        closeModal('payoutDetailsModal');
-        console.log('結算取消完成，已重新載入最新數據');
-
-    } catch (error) {
-        console.error('取消結算失敗:', error);
-        alert('取消結算失敗：' + error.message);
-    }
+        } catch (error) {
+            console.error('取消結算失敗:', error);
+            showErrorMessage('取消結算失敗：' + error.message);
+        }
+    }, { danger: true });
 }
 
 // 修改結算
@@ -302,7 +299,7 @@ function createEditPayoutModal(payout) {
             </div>
             
             <!-- 不可修改的提示 -->
-            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+            <div class="border border-stone-200 rounded-xl p-4 mb-4">
                 <div class="flex">
                     <div class="flex-shrink-0">
                         <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -310,7 +307,7 @@ function createEditPayoutModal(payout) {
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <p class="text-sm text-yellow-700">
+                        <p class="text-sm text-stone-600">
                             基於財務安全，<strong>金額、類型、大使代碼</strong>不可修改。<br>
                             如需變更這些欄位，請先取消此結算，然後創建新的結算記錄。
                         </p>
@@ -324,17 +321,17 @@ function createEditPayoutModal(payout) {
                     <div>
                         <label class="block text-sm font-medium text-gray-500 mb-1">大使代碼（不可改）</label>
                         <input type="text" value="${payout.partner_code}" 
-                            class="w-full p-2 border rounded-md bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled>
+                            class="ob-input bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-500 mb-1">結算類型（不可改）</label>
                         <input type="text" value="${getPayoutTypeLabel(payout.payout_type)}" 
-                            class="w-full p-2 border rounded-md bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled>
+                            class="ob-input bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-500 mb-1">結算金額（不可改）</label>
                         <input type="text" value="$${(payout.amount || 0).toLocaleString()}" 
-                            class="w-full p-2 border rounded-md bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled>
+                            class="ob-input bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled>
                     </div>
                 </div>
                 
@@ -342,7 +339,7 @@ function createEditPayoutModal(payout) {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">付款狀態</label>
-                        <select id="edit_payout_status" class="w-full p-2 border rounded-md">
+                        <select id="edit_payout_status" class="ob-input">
                             <option value="PENDING" ${payout.payout_status === 'PENDING' ? 'selected' : ''}>待付款</option>
                             <option value="COMPLETED" ${payout.payout_status === 'COMPLETED' ? 'selected' : ''}>已付款</option>
                             <option value="CANCELLED" ${payout.payout_status === 'CANCELLED' ? 'selected' : ''}>已取消</option>
@@ -351,33 +348,33 @@ function createEditPayoutModal(payout) {
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">銀行轉帳日期</label>
                         <input type="date" id="edit_bank_transfer_date" value="${payout.bank_transfer_date || ''}" 
-                            class="w-full p-2 border rounded-md">
+                            class="ob-input">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">銀行轉帳參考號</label>
                         <input type="text" id="edit_bank_transfer_reference" value="${payout.bank_transfer_reference || ''}" 
-                            class="w-full p-2 border rounded-md" placeholder="轉帳交易序號...">
+                            class="ob-input" placeholder="轉帳交易序號...">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">住宿券代碼</label>
                         <input type="text" id="edit_accommodation_voucher_code" value="${payout.accommodation_voucher_code || ''}" 
-                            class="w-full p-2 border rounded-md" placeholder="僅適用於住宿金結算...">
+                            class="ob-input" placeholder="僅適用於住宿金結算...">
                     </div>
                 </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">備註</label>
-                    <textarea id="edit_payout_notes" rows="3" class="w-full p-2 border rounded-md"
+                    <textarea id="edit_payout_notes" rows="3" class="ob-input"
                         placeholder="修改原因或其他說明...">${payout.notes || ''}</textarea>
                 </div>
                 
                 <div class="flex justify-end space-x-3 pt-4 border-t">
-                    <button type="button" onclick="closeModal('editPayoutModal')" 
-                        class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                    <button type="button" onclick="closeModal('editPayoutModal')"
+                        class="ob-btn ob-btn-secondary">
                         取消
                     </button>
-                    <button type="button" onclick="savePayoutChanges('${payout.id}')" 
-                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <button type="button" onclick="savePayoutChanges('${payout.id}')"
+                        class="ob-btn ob-btn-primary">
                         儲存變更
                     </button>
                 </div>
@@ -480,26 +477,26 @@ function createPayoutReportModal() {
             
             <!-- 總覽統計 -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-blue-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-blue-600">${totalPayouts}</div>
+                <div class="border border-stone-200 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-stone-700">${totalPayouts}</div>
                     <div class="text-sm text-gray-600">總結算筆數</div>
                 </div>
-                <div class="bg-green-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-green-600">${completedPayouts}</div>
+                <div class="border border-stone-200 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-stone-700">${completedPayouts}</div>
                     <div class="text-sm text-gray-600">已完成</div>
                 </div>
-                <div class="bg-yellow-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-yellow-600">${pendingPayouts}</div>
+                <div class="border border-stone-200 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-stone-700">${pendingPayouts}</div>
                     <div class="text-sm text-gray-600">待付款</div>
                 </div>
-                <div class="bg-purple-50 p-4 rounded-lg text-center">
-                    <div class="text-2xl font-bold text-purple-600">$${totalAmount.toLocaleString()}</div>
+                <div class="border border-stone-200 rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-stone-700">$${totalAmount.toLocaleString()}</div>
                     <div class="text-sm text-gray-600">總金額</div>
                 </div>
             </div>
             
             <!-- 金額統計 -->
-            <div class="bg-gray-50 p-4 rounded-lg mb-6">
+            <div class="border border-stone-200 rounded-xl p-4 mb-6">
                 <h4 class="font-bold mb-2">金額統計</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
@@ -544,12 +541,12 @@ function createPayoutReportModal() {
             
             <!-- 操作按鈕 -->
             <div class="flex justify-end space-x-3 pt-4 border-t">
-                <button type="button" onclick="exportPayoutReport()" 
-                    class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                <button type="button" onclick="exportPayoutReport()"
+                    class="ob-btn ob-btn-primary">
                     匯出報表
                 </button>
-                <button type="button" onclick="closeModal('payoutReportModal')" 
-                    class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                <button type="button" onclick="closeModal('payoutReportModal')"
+                    class="ob-btn ob-btn-secondary">
                     關閉
                 </button>
             </div>

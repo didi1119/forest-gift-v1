@@ -2070,12 +2070,12 @@
                         </button>
                         
                         <!-- 簡化的下拉選單：只保留必要功能 -->
-                        <div id="${dropdownId}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
-                            <a href="#" onclick="viewPartnerDetails('${partner.partner_code}'); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">查看詳情</a>
-                            ${pendingCash > 0 && !isInactive ? `<a href="#" onclick="showPartnerActionsModal('${partner.partner_code}', 'cash'); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">處理結算</a>` : ''}
+                        <div id="${dropdownId}" class="hidden" style="position:absolute;right:0;top:100%;margin-top:0.25rem;width:10rem;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:0.5rem;box-shadow:0 4px 16px rgba(0,0,0,0.1);z-index:20;overflow:hidden;">
+                            <a href="#" onclick="viewPartnerDetails('${partner.partner_code}'); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#1d1d1f;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">查看詳情</a>
+                            ${pendingCash > 0 && !isInactive ? `<a href="#" onclick="showPartnerActionsModal('${partner.partner_code}', 'cash'); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#1d1d1f;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">處理結算</a>` : ''}
                             ${isInactive
-                                ? `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', true); return false;" class="block px-4 py-2 text-sm text-emerald-700 hover:bg-emerald-50">恢復夥伴</a>`
-                                : `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', false); return false;" class="block px-4 py-2 text-sm text-rose-700 hover:bg-rose-50">停用夥伴</a>`}
+                                ? `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', true); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#059669;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">恢復夥伴</a>`
+                                : `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', false); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#DC2626;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">停用夥伴</a>`}
                         </div>
                     </div>
                 </div>
@@ -4440,26 +4440,26 @@
                                         <label class="text-sm text-gray-600">可用點數</label>
                                         <input type="number" id="edit-available-points-${partner.partner_code}" 
                                                value="${parseFloat(partner.available_points) || 0}"
-                                               class="w-full px-2 py-1 border rounded text-sm">
+                                               class="ob-input">
                                     </div>
                                     <div>
                                         <label class="text-sm text-gray-600">已使用點數</label>
-                                        <input type="number" id="edit-points-used-${partner.partner_code}" 
+                                        <input type="number" id="edit-points-used-${partner.partner_code}"
                                                value="${parseFloat(partner.points_used) || 0}"
-                                               class="w-full px-2 py-1 border rounded text-sm">
+                                               class="ob-input">
                                     </div>
                                     <div>
                                         <label class="text-sm text-gray-600">待支付現金</label>
-                                        <input type="number" id="edit-pending-cash-${partner.partner_code}" 
+                                        <input type="number" id="edit-pending-cash-${partner.partner_code}"
                                                value="${parseFloat(partner.pending_cash || partner.pending_commission) || 0}"
-                                               class="w-full px-2 py-1 border rounded text-sm">
+                                               class="ob-input">
                                     </div>
                                 </div>
                                 <div>
                                     <label class="text-sm text-gray-600">調整備註</label>
-                                    <input type="text" id="edit-notes-${partner.partner_code}" 
+                                    <input type="text" id="edit-notes-${partner.partner_code}"
                                            placeholder="請說明調整原因..."
-                                           class="w-full px-2 py-1 border rounded text-sm">
+                                           class="ob-input">
                                 </div>
                                 <div class="flex gap-2">
                                     <button onclick="saveCommissionEdit('${partner.partner_code}')"
@@ -4498,13 +4498,13 @@
                                 ${partner.landing_link ? `
                                     <div>
                                         <p class="text-sm text-gray-600">推廣連結</p>
-                                        <p class="text-xs break-all bg-gray-100 p-2 rounded">${partner.short_landing_link || partner.landing_link}</p>
+                                        <p class="ob-input" style="font-size:0.75rem;word-break:break-all;pointer-events:none;background:rgba(0,0,0,0.03);">${partner.short_landing_link || partner.landing_link}</p>
                                     </div>
                                 ` : ''}
                                 <div>
                                     <p class="text-sm text-gray-600">優惠券連結</p>
-                                    <p class="text-xs break-all bg-gray-100 p-2 rounded">${partner.coupon_url || partner.line_coupon_url || '未設定'}</p>
-                                    <select class="w-full mt-1 px-2 py-1 text-xs border border-gray-300 rounded" onchange="changePartnerCouponUrl('${escapeHtml(partner.partner_code)}', this.value)">
+                                    <p class="ob-input" style="font-size:0.75rem;word-break:break-all;pointer-events:none;background:rgba(0,0,0,0.03);">${partner.coupon_url || partner.line_coupon_url || '未設定'}</p>
+                                    <select class="ob-input" style="font-size:0.75rem;margin-top:0.25rem;" onchange="changePartnerCouponUrl('${escapeHtml(partner.partner_code)}', this.value)">
                                         ${buildPartnerCouponOptions(partner.coupon_url || partner.line_coupon_url)}
                                     </select>
                                 </div>

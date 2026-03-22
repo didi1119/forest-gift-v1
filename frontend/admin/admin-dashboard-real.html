@@ -8285,15 +8285,14 @@
             dropdown.classList.toggle('hidden');
 
             if (willShow) {
-                // 用 position:fixed 定位，避免被 overflow:auto 裁切
                 const btn = event.currentTarget || event.target.closest('button');
                 const rect = btn.getBoundingClientRect();
-                // 先暫時顯示以取得選單高度
+                // 把 dropdown 搬到 body 底部，徹底脫離 table overflow 裁切
+                document.body.appendChild(dropdown);
                 dropdown.style.visibility = 'hidden';
                 dropdown.style.display = 'block';
                 const ddHeight = dropdown.offsetHeight || 120;
                 dropdown.style.visibility = '';
-                // 判斷：如果選單往下會超出視窗，就往上展開
                 const spaceBelow = window.innerHeight - rect.bottom;
                 const showAbove = spaceBelow < ddHeight + 8;
                 Object.assign(dropdown.style, {

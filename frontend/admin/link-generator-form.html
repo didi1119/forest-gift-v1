@@ -642,12 +642,12 @@
             const couponCode = document.getElementById('couponCode').value.trim();
             const couponUrl = document.getElementById('couponUrl').value.trim();
 
-            if (!partnerCode || !partnerName) { alert('請填寫夥伴代碼和姓名'); return; }
-            if (!partnerEmail) { alert('請填寫聯絡 Email（大使登入需要）'); return; }
-            if (!partnerPhone) { alert('請填寫聯絡電話'); return; }
-            if (!couponUrl) { alert('請提供專屬優惠券連結！\n\n請到 LINE 官方帳號後台建立專屬優惠券，然後將連結貼上。'); return; }
-            if (!couponCode) { alert('請填寫優惠券代碼'); return; }
-            if (couponCode.toLowerCase() === partnerCode.toLowerCase()) { alert('優惠券代碼不可與大使代碼相同，請分開設定。'); return; }
+            if (!partnerCode || !partnerName) { showToast('請填寫夥伴代碼和姓名'); return; }
+            if (!partnerEmail) { showToast('請填寫聯絡 Email（大使登入需要）'); return; }
+            if (!partnerPhone) { showToast('請填寫聯絡電話'); return; }
+            if (!couponUrl) { showToast('請提供專屬優惠券連結'); return; }
+            if (!couponCode) { showToast('請填寫優惠券代碼'); return; }
+            if (couponCode.toLowerCase() === partnerCode.toLowerCase()) { showToast('優惠券代碼不可與大使代碼相同，請分開設定。'); return; }
 
             // Show result section
             document.getElementById('resultSection').classList.remove('hidden');
@@ -779,11 +779,11 @@ ${shortCouponUrl}
 
         // Save to database
         async function saveToSheets() {
-            if (!generatedData) { alert('請先生成連結'); return; }
-            if (!generatedData.contact_phone) { alert('請先填寫聯絡電話'); return; }
-            if (!generatedData.coupon_code) { alert('請先填寫優惠券代碼'); return; }
+            if (!generatedData) { showToast('請先生成連結'); return; }
+            if (!generatedData.contact_phone) { showToast('請先填寫聯絡電話'); return; }
+            if (!generatedData.coupon_code) { showToast('請先填寫優惠券代碼'); return; }
             if (generatedData.coupon_code.toLowerCase() === generatedData.partner_code.toLowerCase()) {
-                alert('優惠券代碼不可與大使代碼相同，請先調整後再儲存。');
+                showToast('優惠券代碼不可與大使代碼相同，請先調整後再儲存。');
                 return;
             }
 

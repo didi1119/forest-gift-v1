@@ -218,7 +218,7 @@ async function cancelPayout(payoutId) {
 
     if (!payout) {
         console.error('找不到結算記錄，ID:', payoutId);
-        alert('找不到結算記錄。請重新載入數據後再試。');
+        showErrorMessage('找不到結算記錄。請重新載入數據後再試。');
         return;
     }
 
@@ -274,7 +274,7 @@ function editPayout(payoutId) {
 
     if (!payout) {
         console.error('找不到結算記錄，ID:', payoutId);
-        alert('找不到結算記錄。請重新載入數據後再試。');
+        showErrorMessage('找不到結算記錄。請重新載入數據後再試。');
         return;
     }
 
@@ -422,7 +422,7 @@ async function savePayoutChanges(payoutId) {
 
     } catch (error) {
         console.error('修改結算失敗:', error);
-        alert('修改結算失敗：' + error.message);
+        showErrorMessage('修改結算失敗：' + error.message);
     }
 }
 

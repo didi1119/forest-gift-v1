@@ -182,12 +182,10 @@ async function countPayouts() {
     partner = await getPartner();
     log('  After revert:', JSON.stringify(partner));
     ensure(Number(partner.available_points) === 2500, `available_points should be 2500, got ${partner.available_points}`);
-    // NOTE: revert_cash_to_points does NOT reset points_used — it only adds back to available_points
-    // This is the actual backend behavior (backend.js line 2117-2119)
-    ensure(Number(partner.points_used) === 2000, `points_used should stay at 2000 (revert does not reset it), got ${partner.points_used}`);
+    ensure(Number(partner.points_used) === 0, `points_used should be 0 after revert, got ${partner.points_used}`);
     ensure(Number(partner.pending_commission) === 0, `pending_commission should be 0, got ${partner.pending_commission}`);
     let payoutCountAfterRevert = await countPayouts();
-    result.steps.after_revert = { available_points: 2500, points_used: 2000, pending_commission: 0, payouts: payoutCountAfterRevert };
+    result.steps.after_revert = { available_points: 2500, points_used: 0, pending_commission: 0, payouts: payoutCountAfterRevert };
 
     // Step 9: Count payouts records — should have grown at each step
     log('STEP 9: Verify payout audit trail');

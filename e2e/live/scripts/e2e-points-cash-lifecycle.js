@@ -142,8 +142,7 @@ async function cleanup() {
     ensure(Number(afterRevert.available_points) === 6000, `After revert: available_points should be 6000, got ${afterRevert.available_points}`);
     // revert subtracts cashAmount from pending_commission: 1000-1000 = 0
     ensure(Number(afterRevert.pending_commission) === 0, `After revert: pending_commission should be 0, got ${afterRevert.pending_commission}`);
-    // Note: revert does NOT modify points_used, it stays at 2000
-    ensure(Number(afterRevert.points_used) === 2000, `After revert: points_used should be 2000, got ${afterRevert.points_used}`);
+    ensure(Number(afterRevert.points_used) === 0, `After revert: points_used should be 0, got ${afterRevert.points_used}`);
     log('Scenario 3 OK: revert verified');
 
     // --- Scenario 4: Verify reversal payout record ---

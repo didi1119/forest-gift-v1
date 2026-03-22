@@ -2116,6 +2116,7 @@ async function handleRevertCashToPoints(data) {
   const pointsAmount = Math.floor(cashAmount * 2);
   const partnerUpdates = {
     available_points: (parseFloat(partner.available_points) || 0) + pointsAmount,
+    points_used: Math.max(0, (parseFloat(partner.points_used) || 0) - pointsAmount),
     pending_commission: Math.max(0, currentPending - cashAmount)
   };
   await updateRecord('Partners', partner.partner_code, partnerUpdates);

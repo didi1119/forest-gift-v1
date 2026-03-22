@@ -42,10 +42,10 @@
 - ~~住宿金完整生命週期~~ ✅ `e2e-points-full-lifecycle.js`
 - **更新 13 個 E2E 腳本選擇器** — 配合 Apple-style UI 重構後的新 HTML 結構（待做）
 
-### 已知 Backend 行為偏差（待評估是否修正）
-1. **`total_commission_earned` 在 `delete_booking` 時會減少** — 與文件規則「只增不減」不一致
-2. **`revert_cash_to_points` 不會重置 `points_used`** — 轉換→撤回後 `points_used` 累積不歸零
-3. **等級降級使用升級門檻重新模擬** — 非 retention 門檻。刪 1 筆從 LV3(10筆) 掉到 9 筆就降 LV2
+### 已確認的設計決策（2026-03-22）
+- `total_commission_earned` 在 `delete_booking` 時減少 → **正確**（刪除 = 從未發生）
+- 等級降級用升級門檻重新模擬 → **正確**（維持門檻僅適用於升級正確的前提下）
+- ~~`revert_cash_to_points` 不重置 `points_used`~~ → **已修復**（bug）
 
 ---
 

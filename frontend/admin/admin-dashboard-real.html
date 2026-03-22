@@ -3945,6 +3945,24 @@
             return html;
         }
 
+        function copyShareTemplate(partnerCode) {
+            const el = document.getElementById(`share-template-${partnerCode}`);
+            if (!el) return;
+            navigator.clipboard.writeText(el.textContent).then(() => {
+                showSuccessMessage('分享範本已複製到剪貼簿');
+            }).catch(() => {
+                // fallback
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+                document.execCommand('copy');
+                sel.removeAllRanges();
+                showSuccessMessage('分享範本已複製到剪貼簿');
+            });
+        }
+
         async function changePartnerCouponUrl(partnerCode, newUrl) {
             if (!newUrl || !partnerCode) return;
             try {
@@ -4387,6 +4405,18 @@
                                 <p class="font-semibold">${partner.phone || '未設定'}</p>
                             </div>
                             <div>
+                                <p class="text-sm text-gray-600">佣金偏好</p>
+                                <p class="font-semibold">${(partner.commission_preference || 'ACCOMMODATION') === 'CASH' ? '現金' : '住宿金'}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">建立日期</p>
+                                <p class="font-semibold">${partner.created_at ? new Date(partner.created_at).toLocaleDateString('zh-TW') : '未知'}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">狀態</p>
+                                <p class="font-semibold" style="color:${partner.is_active === false ? '#DC2626' : '#059669'}">${partner.is_active === false ? '已停用' : '啟用中'}</p>
+                            </div>
+                            <div>
                                 <p class="text-sm text-gray-600">等級</p>
                                 <p class="font-semibold">${getLevelText(levelSummary.currentLevel)}</p>
                             </div>
@@ -4498,17 +4528,39 @@
                                 ${partner.landing_link ? `
                                     <div>
                                         <p class="text-sm text-gray-600">推廣連結</p>
-                                        <p class="ob-input" style="font-size:0.75rem;word-break:break-all;pointer-events:none;background:rgba(0,0,0,0.03);">${partner.short_landing_link || partner.landing_link}</p>
+                                        <div style="display:flex;gap:0.25rem;align-items:stretch;">
+                                            <p class="ob-input" style="flex:1;font-size:0.75rem;word-break:break-all;pointer-events:none;background:rgba(0,0,0,0.03);margin:0;">${partner.short_landing_link || partner.landing_link}</p>
+                                            <button onclick="navigator.clipboard.writeText('${escapeHtml(partner.short_landing_link || partner.landing_link)}');showSuccessMessage('已複製')" class="ob-btn ob-btn-ghost ob-btn-sm" style="flex-shrink:0;">複製</button>
+                                        </div>
                                     </div>
                                 ` : ''}
                                 <div>
                                     <p class="text-sm text-gray-600">優惠券連結</p>
-                                    <p class="ob-input" style="font-size:0.75rem;word-break:break-all;pointer-events:none;background:rgba(0,0,0,0.03);">${partner.coupon_url || partner.line_coupon_url || '未設定'}</p>
+                                    <div style="display:flex;gap:0.25rem;align-items:stretch;">
+                                        <p class="ob-input" style="flex:1;font-size:0.75rem;word-break:break-all;pointer-events:none;background:rgba(0,0,0,0.03);margin:0;">${partner.coupon_url || partner.line_coupon_url || '未設定'}</p>
+                                        ${(partner.coupon_url || partner.line_coupon_url) ? `<button onclick="navigator.clipboard.writeText('${escapeHtml(partner.coupon_url || partner.line_coupon_url)}');showSuccessMessage('已複製')" class="ob-btn ob-btn-ghost ob-btn-sm" style="flex-shrink:0;">複製</button>` : ''}
+                                    </div>
                                     <select class="ob-input" style="font-size:0.75rem;margin-top:0.25rem;" onchange="changePartnerCouponUrl('${escapeHtml(partner.partner_code)}', this.value)">
                                         ${buildPartnerCouponOptions(partner.coupon_url || partner.line_coupon_url)}
                                     </select>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="border-t pt-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-semibold">交付資源包</h4>
+                                <button onclick="copyShareTemplate('${escapeHtml(partner.partner_code)}')" class="ob-btn ob-btn-ghost ob-btn-sm">複製分享範本</button>
+                            </div>
+                            <div id="share-template-${partner.partner_code}" class="rounded-lg bg-stone-50 border border-stone-200 p-3 text-sm text-stone-700" style="white-space:pre-wrap;line-height:1.6;">你好！我想邀請你體驗靜謐森林的住宿～
+
+透過我的專屬連結預訂，可以享有優惠：
+${partner.short_landing_link || partner.landing_link || '（尚未生成連結）'}
+
+也可以用這個優惠券連結：
+${partner.short_coupon_link || partner.coupon_url || partner.line_coupon_url || '（尚未設定）'}
+
+期待你的體驗！</div>
                         </div>
 
                         <div class="border-t pt-4">

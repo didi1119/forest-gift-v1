@@ -861,6 +861,18 @@
         });
 
         function checkAuth() {
+            // 支援管理員從後台直接跳轉預覽（?code=XXX&phone=YYYY）
+            const urlParams = new URLSearchParams(window.location.search);
+            const codeParam = urlParams.get('code');
+            const phoneParam = urlParams.get('phone');
+            if (codeParam && phoneParam) {
+                sessionStorage.setItem('partnerCode', codeParam);
+                sessionStorage.setItem('loginTime', String(Date.now()));
+                sessionStorage.removeItem('partnerData');
+                // 清除 URL 參數避免重複觸發
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+
             const partnerCode = sessionStorage.getItem('partnerCode');
             const loginTime = parseInt(sessionStorage.getItem('loginTime') || '0');
 

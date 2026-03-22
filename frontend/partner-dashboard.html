@@ -1383,6 +1383,23 @@
             }, 2500);
         }
 
+        function confirmDialog(message) {
+            return new Promise(resolve => {
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9999;display:flex;align-items:center;justify-content:center;';
+                overlay.innerHTML = `<div style="background:#fff;border-radius:1rem;padding:1.5rem;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.15);text-align:center;">
+                    <p style="font-size:0.95rem;color:#1d1d1f;margin-bottom:1.25rem;line-height:1.5;white-space:pre-line;">${message}</p>
+                    <div style="display:flex;gap:0.5rem;justify-content:center;">
+                        <button id="confirm-cancel" style="padding:0.5rem 1.5rem;border-radius:0.5rem;border:1px solid #d1d5db;background:#fff;cursor:pointer;font-size:0.9rem;">取消</button>
+                        <button id="confirm-ok" style="padding:0.5rem 1.5rem;border-radius:0.5rem;border:none;background:var(--forest-dark,#2E4B36);color:#fff;cursor:pointer;font-size:0.9rem;">確認</button>
+                    </div></div>`;
+                document.body.appendChild(overlay);
+                overlay.querySelector('#confirm-ok').onclick = () => { overlay.remove(); resolve(true); };
+                overlay.querySelector('#confirm-cancel').onclick = () => { overlay.remove(); resolve(false); };
+                overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(false); } });
+            });
+        }
+
         // ========================================
         // 住宿金轉現金
         // ========================================
@@ -1444,7 +1461,8 @@
 
             // Second confirmation
             const cash = Math.floor(amount * 0.5);
-            if (!confirm(`確認將 ${amount.toLocaleString()} 點轉換為 NT$${cash.toLocaleString()}？\n\n此操作不可逆。\n提交後 3 日內可取消。`)) return;
+            const confirmed = await confirmDialog(`確認將 ${amount.toLocaleString()} 點轉換為 NT$${cash.toLocaleString()}？\n\n此操作不可逆。\n提交後 3 日內可取消。`);
+            if (!confirmed) return;
 
             const btn = document.getElementById('confirmConvertBtn');
             btn.disabled = true;
@@ -1527,7 +1545,8 @@
 
         async function cancelPendingConversion() {
             const payoutId = document.getElementById('cancelConversionBtn').dataset.payoutId;
-            if (!confirm('確定要取消此轉現金申請？點數將退回。')) return;
+            const confirmed = await confirmDialog('確定要取消此轉現金申請？點數將退回。');
+            if (!confirmed) return;
 
             showLoading();
             try {

@@ -489,7 +489,7 @@
                     loadApplications(); // 重新載入數據
                     
                     // 顯示生成的連結資訊
-                    alert(`大使連結已生成：\n\n著陸頁連結：${result.landing_link}\n${result.coupon_link ? `優惠券連結：${result.coupon_link}` : ''}`);
+                    showToast(`大使連結已生成 — 著陸頁：${result.landing_link}${result.coupon_link ? ` ／優惠券：${result.coupon_link}` : ''}`, 'success', 6000);
                 } else {
                     throw new Error(result.error || '操作失敗');
                 }
@@ -585,12 +585,21 @@
             return div.innerHTML;
         }
 
+        function showToast(message, type = 'success', duration = 3000) {
+            const toast = document.createElement('div');
+            const bg = type === 'success' ? '#065f46' : '#991b1b';
+            toast.style.cssText = `position:fixed;top:1rem;right:1rem;padding:0.75rem 1.25rem;background:${bg};color:#fff;border-radius:0.5rem;z-index:99999;font-size:0.9rem;max-width:480px;word-break:break-all;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:opacity 0.3s;`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, duration);
+        }
+
         function showSuccess(message) {
-            alert('✅ ' + message);
+            showToast(message, 'success');
         }
 
         function showError(message) {
-            alert('❌ ' + message);
+            showToast(message, 'error');
         }
     </script>
 </body>

@@ -376,20 +376,21 @@
                         <h2 class="text-sm font-medium mb-4" style="color: var(--forest-light);">推薦分享</h2>
 
                         <!-- Partner Code -->
-                        <div class="mb-3 p-3 rounded-lg" style="background: rgba(197, 160, 101, 0.08); border: 1px solid rgba(197, 160, 101, 0.2);">
-                            <p class="text-[0.65rem] mb-1" style="color: var(--forest-light);">你的專屬代碼（訂房 / LINE@ 皆可使用）</p>
+                        <!-- Coupon Code (primary — for sharing with customers) -->
+                        <div id="overviewCouponSection" class="hidden mb-3 p-3 rounded-lg" style="background: rgba(197, 160, 101, 0.08); border: 1px solid rgba(197, 160, 101, 0.2);">
+                            <p class="text-[0.65rem] mb-1" style="color: var(--forest-light);">你的專屬優惠碼（分享給朋友在 LINE@ 輸入領券）</p>
                             <div class="flex items-center justify-between">
-                                <span class="font-mono text-lg font-bold gold-text" id="overviewPartnerCode">-</span>
-                                <button onclick="copyPartnerCode()" class="px-2.5 py-1 rounded-md text-[0.65rem] font-medium text-white" style="background: var(--gold);">複製</button>
+                                <span class="font-mono text-lg font-bold gold-text" id="overviewCouponCode">-</span>
+                                <button onclick="copyDashboardCoupon()" class="px-2.5 py-1 rounded-md text-[0.65rem] font-medium text-white" style="background: var(--gold);">複製</button>
                             </div>
                         </div>
 
-                        <!-- Coupon Code (if exists) -->
-                        <div id="overviewCouponSection" class="hidden mb-3 p-3 rounded-lg" style="background: rgba(45,74,62,0.05); border: 1px solid rgba(45,74,62,0.12);">
-                            <p class="text-[0.65rem] mb-1" style="color: var(--forest-light);">優惠碼</p>
+                        <!-- Partner Code (for login only) -->
+                        <div class="mb-3 p-3 rounded-lg" style="background: rgba(45,74,62,0.05); border: 1px solid rgba(45,74,62,0.12);">
+                            <p class="text-[0.65rem] mb-1" style="color: var(--forest-light);">大使代碼（登入用，請自行保管）</p>
                             <div class="flex items-center justify-between">
-                                <span class="font-mono text-base font-semibold" style="color: var(--forest-medium);" id="overviewCouponCode">-</span>
-                                <button onclick="copyDashboardCoupon()" class="px-2.5 py-1 rounded-md text-[0.65rem] font-medium text-white" style="background: var(--forest-medium);">複製</button>
+                                <span class="font-mono text-base font-semibold" style="color: var(--forest-medium);" id="overviewPartnerCode">-</span>
+                                <button onclick="copyPartnerCode()" class="px-2.5 py-1 rounded-md text-[0.65rem] font-medium text-white" style="background: var(--forest-medium);">複製</button>
                             </div>
                         </div>
 

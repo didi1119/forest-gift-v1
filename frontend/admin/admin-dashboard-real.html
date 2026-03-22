@@ -4352,12 +4352,13 @@
 
         // 查看夥伴詳情
         window.viewPartnerDetails = async function(partnerCode) {
+            closeAllDropdowns();
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到夥伴資料');
                 return;
             }
-            
+
             // 創建模態框顯示詳細資訊
             const modal = createPartnerModal(partner);
             document.body.appendChild(modal);
@@ -4925,17 +4926,29 @@ ${partner.short_coupon_link || partner.coupon_url || partner.line_coupon_url || 
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.remove();
+                document.body.style.overflow = '';
             }
         }
 
-        // ESC 鍵關閉最上層 modal
+        // 所有 modal 點擊背景遮罩關閉 + ESC 關閉
+        document.addEventListener('click', function(e) {
+            // 如果點擊的是 modal 的背景遮罩（最外層 div），關閉它
+            if (e.target.classList.contains('bg-opacity-50') && e.target.id && (e.target.id.endsWith('Modal') || e.target.id.endsWith('modal'))) {
+                e.target.remove();
+                document.body.style.overflow = '';
+            }
+        });
+
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                const modals = document.querySelectorAll('[id$="Modal"]:not(.hidden), [id$="modal"]:not(.hidden)');
-                if (modals.length > 0) {
-                    const topModal = modals[modals.length - 1];
-                    topModal.classList.add('hidden');
+                closeAllDropdowns();
+                const modals = document.querySelectorAll('[id$="Modal"], [id$="modal"]');
+                // 找最後一個可見的 modal
+                let topModal = null;
+                modals.forEach(m => { if (m.offsetParent !== null || m.style.display !== 'none') topModal = m; });
+                if (topModal) {
                     topModal.remove();
+                    document.body.style.overflow = '';
                     document.body.style.overflow = '';
                 }
                 // Also close appleConfirmModal if visible
@@ -6788,6 +6801,7 @@ ${partner.short_coupon_link || partner.coupon_url || partner.line_coupon_url || 
         // 使用住宿金折抵
         // 🎯 統一的夥伴操作彈出視窗
         async function showPartnerActionsModal(partnerCode, type) {
+            closeAllDropdowns();
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到該大使資料');
@@ -8063,6 +8077,7 @@ ${partner.short_coupon_link || partner.coupon_url || partner.line_coupon_url || 
         }
 
         async function togglePartnerActive(partnerCode, nextIsActive) {
+            closeAllDropdowns();
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {
                 showErrorMessage('找不到夥伴資料');
@@ -8323,55 +8338,48 @@ ${partner.short_coupon_link || partner.coupon_url || partner.line_coupon_url || 
          * @param {string} dropdownId - 要操作的下拉選單的 ID
          * @param {Event} event - 點擊事件，用來阻止事件冒泡
          */
+        // 全域：關閉所有下拉選單
+        function closeAllDropdowns() {
+            document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => {
+                d.style.display = 'none';
+            });
+        }
+
         function toggleActionsDropdown(dropdownId, event) {
             event.stopPropagation();
             const dropdown = document.getElementById(dropdownId);
 
             // 先關閉所有其他下拉選單
-            document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => {
-                if (d.id !== dropdownId) { d.classList.add('hidden'); d.style.display = ''; }
-            });
+            closeAllDropdowns();
 
-            // 切換顯示
-            const willShow = dropdown.classList.contains('hidden') || dropdown.style.display === 'none' || dropdown.offsetParent === null;
-            if (willShow) {
-                dropdown.classList.remove('hidden');
-            } else {
-                dropdown.classList.add('hidden');
-                dropdown.style.display = '';
+            // 切換：如果已經可見就關，否則開
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
                 return;
             }
 
-            if (willShow) {
-                const btn = event.currentTarget || event.target.closest('button');
-                const rect = btn.getBoundingClientRect();
-                // 把 dropdown 搬到 body 底部，徹底脫離 table overflow 裁切
-                document.body.appendChild(dropdown);
-                dropdown.style.visibility = 'hidden';
-                dropdown.style.display = 'block';
-                const ddHeight = dropdown.offsetHeight || 120;
-                dropdown.style.visibility = '';
-                const spaceBelow = window.innerHeight - rect.bottom;
-                const showAbove = spaceBelow < ddHeight + 8;
-                Object.assign(dropdown.style, {
-                    position: 'fixed',
-                    top: showAbove ? 'auto' : (rect.bottom + 4) + 'px',
-                    bottom: showAbove ? (window.innerHeight - rect.top + 4) + 'px' : 'auto',
-                    left: 'auto',
-                    right: (window.innerWidth - rect.right) + 'px',
-                    zIndex: '9999'
-                });
-            }
+            const btn = event.currentTarget || event.target.closest('button');
+            const rect = btn.getBoundingClientRect();
+            // 搬到 body 脫離 table overflow 裁切
+            if (dropdown.parentElement !== document.body) document.body.appendChild(dropdown);
+            dropdown.style.display = 'block';
+            const ddHeight = dropdown.offsetHeight || 120;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const showAbove = spaceBelow < ddHeight + 8;
+            Object.assign(dropdown.style, {
+                position: 'fixed',
+                top: showAbove ? 'auto' : (rect.bottom + 4) + 'px',
+                bottom: showAbove ? (window.innerHeight - rect.top + 4) + 'px' : 'auto',
+                left: 'auto',
+                right: (window.innerWidth - rect.right) + 'px',
+                zIndex: '9999'
+            });
         }
 
-        /**
-         * 輔助函式二：監聽整個頁面的點擊事件
-         * 說明：當使用者點擊頁面任何非選單區域時，自動關閉所有已開啟的下拉選單。
-         */
+        // 點擊頁面任何地方，關閉下拉選單
         document.addEventListener('click', function(event) {
-            // 如果點擊的目標不是下拉選單按鈕，就關閉所有選單
-            if (!event.target.closest('button[onclick*="toggleActionsDropdown"]') && !event.target.closest('[id^="actions-dropdown-"]')) {
-                 document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => { d.classList.add('hidden'); d.style.display = ''; });
+            if (!event.target.closest('button[onclick*="toggleActionsDropdown"]')) {
+                closeAllDropdowns();
             }
         });
 

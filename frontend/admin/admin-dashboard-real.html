@@ -4552,19 +4552,22 @@
                         </div>
 
                         <div class="border-t pt-4">
-                            <div class="flex justify-between items-center mb-2">
+                            <div class="flex justify-between items-center mb-3">
                                 <h4 class="font-semibold">交付資源包</h4>
-                                <button onclick="copyShareTemplate('${escapeHtml(partner.partner_code)}')" class="ob-btn ob-btn-ghost ob-btn-sm">複製分享範本</button>
+                                <button onclick="copyShareTemplate('${escapeHtml(partner.partner_code)}')" class="ob-btn ob-btn-ghost ob-btn-sm">複製交付訊息</button>
                             </div>
-                            <div id="share-template-${partner.partner_code}" class="rounded-lg bg-stone-50 border border-stone-200 p-3 text-sm text-stone-700" style="white-space:pre-wrap;line-height:1.6;">你好！我想邀請你體驗靜謐森林的住宿～
+                            <div id="share-template-${partner.partner_code}" class="rounded-lg bg-stone-50 border border-stone-200 p-3 text-xs text-stone-700" style="white-space:pre-wrap;line-height:1.7;">${escapeHtml(partner.name || '你好')}，歡迎加入靜謐森林的知音大使計畫。以下是你的登入資訊與常用入口：
 
-透過我的專屬連結預訂，可以享有優惠：
-${partner.short_landing_link || partner.landing_link || '（尚未生成連結）'}
+登入 Email：${escapeHtml(partner.email || '（你建立資料時提供的 Email）')}
+${partner.partner_code ? '大使代碼：' + escapeHtml(partner.partner_code) : ''}
+${partner.coupon_code ? '對外優惠代碼：' + escapeHtml(partner.coupon_code) : ''}
+登入驗證：搭配手機後 4 碼（${escapeHtml(String(partner.phone || '').slice(-4) || '****')}）
 
-也可以用這個優惠券連結：
-${partner.short_coupon_link || partner.coupon_url || partner.line_coupon_url || '（尚未設定）'}
-
-期待你的體驗！</div>
+1. 大使登入頁：${escapeHtml(getAbsoluteFrontendUrl('../partner-login.html'))}
+2. 專屬分享工具包：${escapeHtml(partner.short_landing_link || partner.landing_link || '（尚未生成）')}
+${(partner.short_coupon_link || partner.coupon_url || partner.line_coupon_url) ? '3. 優惠券連結：' + escapeHtml(partner.short_coupon_link || partner.coupon_url || partner.line_coupon_url) : ''}
+${partner.coupon_code ? '朋友在官方 LINE 輸入優惠代碼「' + escapeHtml(partner.coupon_code) + '」也可領券。' : ''}
+對外分享時直接使用分享工具包；查看推薦紀錄與佣金請從大使登入頁進入。</div>
                         </div>
 
                         <div class="border-t pt-4">

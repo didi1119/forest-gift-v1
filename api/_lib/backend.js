@@ -3264,6 +3264,7 @@ async function handleCreateCouponTemplate(data) {
     coupon_name: data.coupon_name,
     coupon_url: data.coupon_url,
     coupon_description: data.coupon_description || '',
+    line_coupon_id: data.line_coupon_id || '',
     is_default: data.is_default === true || data.is_default === 'true',
     is_active: true
   });
@@ -3287,6 +3288,7 @@ async function handleUpdateCouponTemplate(data) {
   if (data.coupon_name !== undefined) updates.coupon_name = data.coupon_name;
   if (data.coupon_url !== undefined) updates.coupon_url = data.coupon_url;
   if (data.coupon_description !== undefined) updates.coupon_description = data.coupon_description;
+  if (data.line_coupon_id !== undefined) updates.line_coupon_id = data.line_coupon_id;
   if (data.is_default !== undefined) updates.is_default = data.is_default === true || data.is_default === 'true';
   if (data.is_active !== undefined) updates.is_active = data.is_active === true || data.is_active === 'true';
 
@@ -3326,6 +3328,25 @@ function getRawBodyFromRequest(req) {
   if (typeof req.body === 'string') return req.body;
   if (Buffer.isBuffer(req.body)) return req.body.toString('utf8');
   if (req.body && typeof req.body === 'object') return JSON.stringify(req.body);
+  return '';
+}
+
+async function resolveLineCouponIdForPartner(partner) {
+  // 查大使的 coupon_url 對應的優惠券範本，取其 line_coupon_id
+  const partnerCouponUrl = partner.coupon_url || partner.line_coupon_url || '';
+  if (!partnerCouponUrl) return '';
+  try {
+    const allTemplates = await db.getAllRecords(COUPON_TEMPLATE_TABLE);
+    for (const t of allTemplates) {
+      const d = t.data || t;
+      if (d.is_active === false || d.is_active === 'false') continue;
+      if (d.coupon_url === partnerCouponUrl && d.line_coupon_id) {
+        return d.line_coupon_id;
+      }
+    }
+  } catch (e) {
+    console.error('resolveLineCouponIdForPartner error:', e.message);
+  }
   return '';
 }
 
@@ -3441,7 +3462,10 @@ async function handleLineWebhook(req, res) {
       last_error: ''
     });
 
-    if (!hasSharedLineCouponConfigured()) {
+    // 查詢大使對應的優惠券範本 → 取 line_coupon_id；無則 fallback 到全域 LINE_SHARED_COUPON_ID
+    const resolvedCouponId = await resolveLineCouponIdForPartner(matchedPartner) || LINE_SHARED_COUPON_ID;
+
+    if (!resolvedCouponId) {
       await upsertLineReferralClaim({
         ...(claimResult.data || {}),
         claim_key: claimKey,
@@ -3458,13 +3482,13 @@ async function handleLineWebhook(req, res) {
         first_claimed_at: claimResult.data && claimResult.data.first_claimed_at ? claimResult.data.first_claimed_at : claimTimestamp,
         last_claimed_at: claimTimestamp,
         last_reply_status: 'NO_SHARED_COUPON',
-        last_error: 'LINE_SHARED_COUPON_ID 未設定'
+        last_error: 'LINE coupon ID 未設定（範本無 line_coupon_id 且 LINE_SHARED_COUPON_ID 為空）'
       }).catch(err => console.error('Failed to persist missing shared coupon state:', err.message || err));
       continue;
     }
 
     try {
-      await replyLineCoupon(event.replyToken, LINE_SHARED_COUPON_ID);
+      await replyLineCoupon(event.replyToken, resolvedCouponId);
       await upsertLineReferralClaim({
         ...(claimResult.data || {}),
         claim_key: claimKey,
@@ -3474,7 +3498,7 @@ async function handleLineWebhook(req, res) {
         line_message_id: event.message.id || '',
         entered_code: matchedCode,
         partner_code: matchedPartner.partner_code,
-        shared_coupon_id: LINE_SHARED_COUPON_ID,
+        shared_coupon_id: resolvedCouponId,
         claim_status: DEFAULT_LINE_SHARED_CLAIM_STATUS,
         claim_count: toInt(claimResult.data && claimResult.data.claim_count, 1),
         coupon_reply_count: toInt(claimResult.data && claimResult.data.coupon_reply_count, 0) + 1,

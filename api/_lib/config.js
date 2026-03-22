@@ -103,7 +103,7 @@ const DataModels = {
   CouponTemplate: {
     tableName: 'Coupon_Templates',
     fields: ['id', 'coupon_name', 'coupon_url', 'coupon_description',
-      'is_default', 'is_active', 'created_at', 'updated_at']
+      'line_coupon_id', 'is_default', 'is_active', 'created_at', 'updated_at']
   }
 };
 

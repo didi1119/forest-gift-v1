@@ -794,6 +794,7 @@
                                 <input id="ctFormName" class="ob-input" type="text" placeholder="券名稱，例如：土地的厚愛">
                                 <input id="ctFormUrl" class="ob-input" type="url" placeholder="LINE 優惠券連結，例如：https://lin.ee/...">
                                 <input id="ctFormDesc" class="ob-input" type="text" placeholder="券內容描述，例如：山城地瓜包 + 延時退房">
+                                <input id="ctFormLineCouponId" class="ob-input" type="text" placeholder="LINE 券 ID（選填，用於 LINE@ 自動回覆）">
                                 <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:#1d1d1f;">
                                     <input id="ctFormDefault" type="checkbox"> 設為預設券
                                 </label>
@@ -3827,7 +3828,7 @@
                         </div>
                         <div style="font-size:0.72rem;color:#6e6e73;font-family:ui-monospace,monospace;margin-top:0.15rem;">${escapeHtml(truncUrl)}</div>
                         ${t.coupon_description ? `<div style="font-size:0.72rem;color:#86868b;margin-top:0.15rem;">${escapeHtml(t.coupon_description)}</div>` : ''}
-                        <div style="font-size:0.68rem;color:#86868b;margin-top:0.25rem;">${partnerCount} 位大使使用中</div>
+                        <div style="font-size:0.68rem;color:#86868b;margin-top:0.25rem;">${partnerCount} 位大使使用中${t.line_coupon_id ? ' · LINE 券已綁定' : ''}</div>
                     </div>
                     <div style="display:flex;gap:0.25rem;flex-shrink:0;">
                         ${!isDefault ? `<button onclick="setCouponTemplateDefault('${t.id}')" class="ob-btn ob-btn-ghost ob-btn-sm" title="設為預設">預設</button>` : ''}
@@ -3853,6 +3854,7 @@
                     document.getElementById('ctFormName').value = tpl.coupon_name || '';
                     document.getElementById('ctFormUrl').value = tpl.coupon_url || '';
                     document.getElementById('ctFormDesc').value = tpl.coupon_description || '';
+                    document.getElementById('ctFormLineCouponId').value = tpl.line_coupon_id || '';
                     document.getElementById('ctFormDefault').checked = tpl.is_default === true || tpl.is_default === 'true';
                 }
             } else {
@@ -3869,6 +3871,11 @@
             const addBtn = document.getElementById('ctAddBtn');
             if (form) form.style.display = 'none';
             if (addBtn) addBtn.style.display = '';
+            document.getElementById('ctFormName').value = '';
+            document.getElementById('ctFormUrl').value = '';
+            document.getElementById('ctFormDesc').value = '';
+            document.getElementById('ctFormLineCouponId').value = '';
+            document.getElementById('ctFormDefault').checked = false;
         }
 
         function editCouponTemplate(id) {
@@ -3879,6 +3886,7 @@
             const name = document.getElementById('ctFormName').value.trim();
             const url = document.getElementById('ctFormUrl').value.trim();
             const desc = document.getElementById('ctFormDesc').value.trim();
+            const lineCouponId = document.getElementById('ctFormLineCouponId').value.trim();
             const isDefault = document.getElementById('ctFormDefault').checked;
 
             if (!name || !url) {
@@ -3894,6 +3902,7 @@
                         coupon_name: name,
                         coupon_url: url,
                         coupon_description: desc,
+                        line_coupon_id: lineCouponId,
                         is_default: isDefault
                     });
                 } else {
@@ -3902,6 +3911,7 @@
                         coupon_name: name,
                         coupon_url: url,
                         coupon_description: desc,
+                        line_coupon_id: lineCouponId,
                         is_default: isDefault
                     });
                 }

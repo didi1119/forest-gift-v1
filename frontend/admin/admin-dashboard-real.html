@@ -8277,12 +8277,18 @@
 
             // 先關閉所有其他下拉選單
             document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => {
-                if (d.id !== dropdownId) d.classList.add('hidden');
+                if (d.id !== dropdownId) { d.classList.add('hidden'); d.style.display = ''; }
             });
 
             // 切換顯示
-            const willShow = dropdown.classList.contains('hidden');
-            dropdown.classList.toggle('hidden');
+            const willShow = dropdown.classList.contains('hidden') || dropdown.style.display === 'none' || dropdown.offsetParent === null;
+            if (willShow) {
+                dropdown.classList.remove('hidden');
+            } else {
+                dropdown.classList.add('hidden');
+                dropdown.style.display = '';
+                return;
+            }
 
             if (willShow) {
                 const btn = event.currentTarget || event.target.closest('button');
@@ -8312,8 +8318,8 @@
          */
         document.addEventListener('click', function(event) {
             // 如果點擊的目標不是下拉選單按鈕，就關閉所有選單
-            if (!event.target.closest('button[onclick*="toggleActionsDropdown"]')) {
-                 document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => d.classList.add('hidden'));
+            if (!event.target.closest('button[onclick*="toggleActionsDropdown"]') && !event.target.closest('[id^="actions-dropdown-"]')) {
+                 document.querySelectorAll('[id^="actions-dropdown-"]').forEach(d => { d.classList.add('hidden'); d.style.display = ''; });
             }
         });
 

@@ -166,7 +166,7 @@ async function deleteSingleVisibleBooking(page) {
     log('DIALOG', dialog.type(), dialog.message());
     await dialog.accept();
   });
-  await page.getByRole('button', { name: /刪除訂單|🗑️ 刪除訂單/ }).click().catch(async () => {
+  await page.getByRole('button', { name: /刪除訂單/ }).click().catch(async () => {
     await page.evaluate(() => {
       const button = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.includes('刪除訂單'));
       if (!button) throw new Error('Delete button not found');

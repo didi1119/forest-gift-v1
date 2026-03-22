@@ -252,7 +252,7 @@ async function cleanupBooking(id) {
     await page.waitForTimeout(1000);
     const tableTextAfterDelete = await page.locator('#bookingsTable').innerText();
     log('TABLE_AFTER_DELETE', tableTextAfterDelete);
-    if (tableTextAfterDelete.includes('✅ 確認入住') || tableTextAfterDelete.includes('⏰ 可確認入住')) {
+    if (tableTextAfterDelete.includes('確認入住') || tableTextAfterDelete.includes('可確認入住')) {
       throw new Error(`Cancelled booking still shows confirm UI: ${tableTextAfterDelete}`);
     }
 

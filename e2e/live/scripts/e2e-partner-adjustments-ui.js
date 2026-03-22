@@ -175,10 +175,10 @@ function expectIncludes(text, needle, label) {
     log('PARTNER_MODAL', partnerModalText);
     expectIncludes(partnerModalText, '可用點數', 'partner modal');
     expectIncludes(partnerModalText, '待支付現金', 'partner modal');
-    expectIncludes(partnerModalText, '📝 編輯', 'partner modal');
+    expectIncludes(partnerModalText, '編輯', 'partner modal');
     await shot(page, '04_partner_modal');
 
-    await page.getByRole('button', { name: /📝 編輯/ }).click();
+    await page.getByRole('button', { name: /編輯/ }).click();
     await page.locator(`#commission-edit-${partnerCode}`).waitFor({ timeout: 10000 });
     await page.locator(`#edit-available-points-${partnerCode}`).fill('4300');
     await page.locator(`#edit-points-used-${partnerCode}`).fill('400');
@@ -189,7 +189,7 @@ function expectIncludes(text, needle, label) {
     expectIncludes(editSectionText, '調整備註', 'commission edit');
     await shot(page, '05_commission_edit');
 
-    await page.getByRole('button', { name: /✅ 儲存/ }).click();
+    await page.getByRole('button', { name: /儲存/ }).click();
     await page.waitForFunction((code) => {
       const card = document.querySelector(`[data-partner-code="${code}"]`);
       return card && card.innerText.includes('4,300') && card.innerText.includes('NT$ 300');

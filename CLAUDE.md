@@ -22,30 +22,11 @@
 
 ## 待辦事項（下次對話接手）
 
-### UI 風格統一（已完成 2026-03-22）
-- ~~概覽 tab 操作欄按鈕~~ ✅
-- ~~編輯訂單 modal Apple 風格~~ ✅
-- ~~訂單詳情 modal 移除色塊~~ ✅
-- ~~手動登記 modal ob-input~~ ✅
-- ~~結算/住宿金 modal 統一~~ ✅
-- ~~概覽 tab ob-btn~~ ✅
-- ~~confirm() → showConfirmModal~~ ✅（含 link-generator-form lgConfirmModal）
-- ~~大使詳情 modal inline 編輯欄位 ob-input~~ ✅
-- ~~generateSmartActions 下拉選單 z-index~~ ✅
-
-### E2E 測試（已完成 2026-03-22）
-- ~~住宿金轉現金→撤回~~ ✅ `e2e-points-cash-lifecycle.js`
-- ~~大使登入→儀表板數據驗證~~ ✅ `e2e-partner-login-verify.js`
-- ~~多筆訂房跨等級升級佣金~~ ✅ `e2e-cross-level-commission.js`
-- ~~部分退款+刪除+結算組合~~ ✅ `e2e-refund-delete-settle.js`
-- ~~等級連降 LV3→LV2→LV1~~ ✅ `e2e-level-demotion.js`
-- ~~住宿金完整生命週期~~ ✅ `e2e-points-full-lifecycle.js`
-- **更新 13 個 E2E 腳本選擇器** — 配合 Apple-style UI 重構後的新 HTML 結構（待做）
+（目前無待辦）
 
 ### 已確認的設計決策（2026-03-22）
 - `total_commission_earned` 在 `delete_booking` 時減少 → **正確**（刪除 = 從未發生）
 - 等級降級用升級門檻重新模擬 → **正確**（維持門檻僅適用於升級正確的前提下）
-- ~~`revert_cash_to_points` 不重置 `points_used`~~ → **已修復**（bug）
 
 ---
 

@@ -96,6 +96,8 @@ forest-gift-v1/
 │   ├── invitation.html                 # 大使招募 + 申請表單
 │   ├── partner-login.html              # 大使登入
 │   ├── partner-dashboard.html          # 大使績效儀表板
+│   ├── liff-bind.html                  # LINE LIFF 綁定/自動登入頁
+│   ├── terms.html                      # 知音夥伴合作條款
 │   ├── policy.html                     # 隱私政策
 │   └── admin/
 │       ├── admin-dashboard-real.html   # 主控台（大使/訂房/結算/分析）
@@ -132,6 +134,9 @@ forest-gift-v1/
 | `get_partner_dashboard_data` | 大使儀表板資料 |
 | `submit_application` | 提交大使申請 |
 | `shorten_url` | 短網址代理（reurl.cc / is.gd） |
+| `verify_line_login` | LINE 簽名免登入（HMAC 驗證 line_user_id） |
+| `bind_line_account` | LIFF 一鍵綁定（用 access token 驗證 LINE 身份） |
+| `line_auto_login` | LINE 自動登入（用 access token 查詢已綁定 partner） |
 
 ### 管理員操作（需 admin_secret）
 
@@ -245,6 +250,7 @@ points_used = 住宿金折抵 + 轉換現金的歷史總和
 | `LINE_CHANNEL_SECRET` | LINE 時 | LINE 簽名驗證 |
 | `LINE_SHARED_COUPON_ID` | — | LINE 共用優惠券 ID（fallback，優先用範本） |
 | `LINE_COUPON_IMAGE_URL` | — | LINE 券封面圖片 URL |
+| `LIFF_ID` | LIFF 時 | LINE Login Channel 的 LIFF App ID（一鍵綁定 + 自動登入） |
 
 ## 部署
 
@@ -358,4 +364,4 @@ points_used = 住宿金折抵 + 轉換現金的歷史總和
 
 ---
 
-*最後更新：2026-03-20*
+*最後更新：2026-03-23*

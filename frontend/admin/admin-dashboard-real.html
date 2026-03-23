@@ -4822,12 +4822,11 @@
         window.unbindLineAccount = async function(partnerCode) {
             if (!confirm(`確定要解除 ${partnerCode} 的 LINE 綁定嗎？解除後大使需要重新綁定才能使用 LINE 免登入。`)) return;
             try {
-                const response = await fetch(API_URL, {
+                const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
                         action: 'update_partner',
-                        admin_secret: adminSecret,
                         partner_code: partnerCode,
                         line_user_id: '',
                         line_display_name: ''

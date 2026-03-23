@@ -3882,6 +3882,17 @@ async function handleBindLineAccount(data) {
   if (!partner) return { success: false, error: '找不到大使帳號' };
   if (partner.is_active === false) return { success: false, error: '此大使帳號已停用' };
 
+  // 檢查此 LINE 帳號是否已綁定其他大使
+  const allPartners = await db.getAllRecords('Partners');
+  const existingBind = allPartners.find(p =>
+    p.line_user_id === lineUserId &&
+    p.partner_code !== partner.partner_code &&
+    p.is_active !== false
+  );
+  if (existingBind) {
+    return { success: false, error: `此 LINE 帳號已綁定到其他大使（${existingBind.partner_code}），請先解除綁定` };
+  }
+
   // 更新 line_user_id
   await db.update('Partners', partner.partner_code, {
     line_user_id: lineUserId,

@@ -3529,64 +3529,69 @@ async function handleLineWebhook(req, res) {
         }
         const sourceProfile = await fetchLineProfileForEventSource(event.source || {});
         const displayName = String(sourceProfile && sourceProfile.displayName || '').trim();
-        await updateRecord('Partners', partner.partner_code, {
-          line_user_id: lineUserId,
-          line_display_name: displayName || undefined
-        });
+        const bindUpdates = { line_user_id: lineUserId };
+        if (displayName) bindUpdates.line_display_name = displayName;
+        await updateRecord('Partners', partner.partner_code, bindUpdates);
 
         const dashboardUrl = `${GITHUB_PAGES_URL || 'https://didi1119.github.io/forest-gift-v1'}/frontend/partner-dashboard.html`;
-        const shareLink = partner.short_landing_link || partner.landing_link || '';
 
-        await callLineApi('POST', '/v2/bot/message/reply', {
-          replyToken: event.replyToken,
-          messages: [{
-            type: 'flex',
-            altText: `綁定成功！${partner.name || bindCode}，歡迎加入知音大使。`,
-            contents: {
-              type: 'bubble',
-              size: 'kilo',
-              header: {
-                type: 'box', layout: 'vertical', paddingAll: '16px',
-                backgroundColor: '#2E4B36',
-                contents: [
-                  { type: 'text', text: '靜謐森林 ・ 知音大使', size: 'xs', color: '#C5A065', weight: 'bold' },
-                  { type: 'text', text: '帳號綁定成功', size: 'lg', color: '#FFFFFF', weight: 'bold', margin: 'sm' }
-                ]
-              },
-              body: {
-                type: 'box', layout: 'vertical', paddingAll: '16px', spacing: 'md',
-                contents: [
-                  { type: 'text', text: `${partner.name || bindCode}，你好！`, size: 'sm', color: '#1d1d1f', weight: 'bold' },
-                  { type: 'text', text: '你的 LINE 帳號已與大使身分綁定。日後可直接透過下方按鈕查看推薦成果與佣金紀錄。', size: 'sm', color: '#555555', wrap: true },
-                  { type: 'separator', margin: 'md' },
-                  { type: 'box', layout: 'vertical', spacing: 'xs', margin: 'md', contents: [
-                    { type: 'box', layout: 'horizontal', contents: [
-                      { type: 'text', text: '大使代碼', size: 'xs', color: '#86868b', flex: 3 },
-                      { type: 'text', text: partner.partner_code, size: 'xs', color: '#1d1d1f', weight: 'bold', flex: 5, align: 'end' }
-                    ]},
-                    { type: 'box', layout: 'horizontal', contents: [
-                      { type: 'text', text: '優惠碼', size: 'xs', color: '#86868b', flex: 3 },
-                      { type: 'text', text: partner.coupon_code || '—', size: 'xs', color: '#1d1d1f', weight: 'bold', flex: 5, align: 'end' }
-                    ]}
-                  ]}
-                ]
-              },
-              footer: {
-                type: 'box', layout: 'vertical', paddingAll: '12px', spacing: 'sm',
-                contents: [
-                  { type: 'button', style: 'primary', color: '#2E4B36', action: { type: 'uri', label: '查看我的儀表板', uri: dashboardUrl } },
-                  ...(shareLink ? [{ type: 'button', style: 'link', color: '#2E4B36', action: { type: 'uri', label: '我的推薦連結', uri: shareLink } }] : [])
-                ]
+        // 先嘗試 Flex Message，失敗則降級為純文字
+        try {
+          const footerButtons = [
+            { type: 'button', style: 'primary', color: '#2E4B36', action: { type: 'uri', label: '查看我的儀表板', uri: dashboardUrl } }
+          ];
+          const shareLink = partner.short_landing_link || partner.landing_link || '';
+          if (shareLink && shareLink.startsWith('http')) {
+            footerButtons.push({ type: 'button', style: 'link', color: '#2E4B36', action: { type: 'uri', label: '我的推薦連結', uri: shareLink } });
+          }
+
+          await callLineApi('POST', '/v2/bot/message/reply', {
+            replyToken: event.replyToken,
+            messages: [{
+              type: 'flex',
+              altText: `綁定成功！${partner.name || bindCode}，歡迎加入知音大使。`,
+              contents: {
+                type: 'bubble',
+                size: 'kilo',
+                header: {
+                  type: 'box', layout: 'vertical', paddingAll: '16px',
+                  backgroundColor: '#2E4B36',
+                  contents: [
+                    { type: 'text', text: '靜謐森林', size: 'xs', color: '#C5A065', weight: 'bold' },
+                    { type: 'text', text: '帳號綁定成功', size: 'lg', color: '#FFFFFF', weight: 'bold', margin: 'sm' }
+                  ]
+                },
+                body: {
+                  type: 'box', layout: 'vertical', paddingAll: '16px', spacing: 'md',
+                  contents: [
+                    { type: 'text', text: `${partner.name || bindCode}，你好！`, size: 'sm', color: '#1d1d1f', weight: 'bold' },
+                    { type: 'text', text: '你的 LINE 帳號已與大使身分綁定，日後可直接從這裡查看推薦成果。', size: 'sm', color: '#555555', wrap: true }
+                  ]
+                },
+                footer: {
+                  type: 'box', layout: 'vertical', paddingAll: '12px', spacing: 'sm',
+                  contents: footerButtons
+                }
               }
-            }
-          }]
-        });
+            }]
+          });
+        } catch (flexErr) {
+          console.error('LINE bind flex reply failed, falling back to text:', flexErr.message);
+          try {
+            await callLineApi('POST', '/v2/bot/message/reply', {
+              replyToken: event.replyToken,
+              messages: [{ type: 'text', text: `綁定成功！${partner.name || bindCode}，你的 LINE 帳號已綁定。\n\n查看儀表板：${dashboardUrl}` }]
+            });
+          } catch (_) { /* replyToken already used */ }
+        }
       } catch (bindErr) {
-        console.error('LINE bind error:', bindErr.message);
-        await callLineApi('POST', '/v2/bot/message/reply', {
-          replyToken: event.replyToken,
-          messages: [{ type: 'text', text: '配對過程發生錯誤，請稍後再試或聯繫客服。' }]
-        });
+        console.error('LINE bind error:', bindErr.message, bindErr.stack);
+        try {
+          await callLineApi('POST', '/v2/bot/message/reply', {
+            replyToken: event.replyToken,
+            messages: [{ type: 'text', text: '配對過程發生錯誤，請稍後再試或聯繫客服。' }]
+          });
+        } catch (_) { /* replyToken may already be used */ }
       }
       continue;
     }

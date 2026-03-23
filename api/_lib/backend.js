@@ -3851,7 +3851,7 @@ async function handleBindLineAccount(data) {
   if (partner.is_active === false) return { success: false, error: '此大使帳號已停用' };
 
   // 更新 line_user_id
-  await db.updateRecord('Partners', partner.id, {
+  await db.update('Partners', partner.id, {
     line_user_id: lineUserId,
     line_display_name: lineDisplayName
   });

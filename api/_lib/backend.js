@@ -4009,7 +4009,7 @@ async function logAudit(action, data, result) {
       details: sanitized
     };
 
-    await db.createRecord('Audit_Logs', record);
+    await createRecord('Audit_Logs', record);
   } catch (err) {
     console.error('Audit log failed (non-blocking):', err.message);
   }

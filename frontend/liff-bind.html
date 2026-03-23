@@ -92,9 +92,9 @@
                 // 初始化 LIFF
                 await liff.init({ liffId: window.__LIFF_ID__ });
 
-                // 確保已登入 LINE
-                if (!liff.isLoggedIn()) {
-                    liff.login({ redirectUri: window.location.href });
+                // 強制只允許在 LINE App 內開啟
+                if (!liff.isInClient()) {
+                    showError('請在手機上透過 LINE 開啟此連結進行綁定');
                     return;
                 }
 

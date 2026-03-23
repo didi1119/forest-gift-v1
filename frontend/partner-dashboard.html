@@ -1393,7 +1393,14 @@
                 const resp = await fetch(APPS_SCRIPT_URL + '?get_liff_id=1');
                 const data = await resp.json();
                 if (data.liff_id) {
-                    window.location.href = `https://liff.line.me/${data.liff_id}?code=${code}`;
+                    const liffUrl = `https://liff.line.me/${data.liff_id}?code=${code}`;
+                    // 手機上會自動開啟 LINE App；電腦上提示用手機操作
+                    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                    if (isMobile) {
+                        window.location.href = liffUrl;
+                    } else {
+                        showToast('請在手機上點擊此按鈕進行 LINE 綁定', 'info');
+                    }
                     return;
                 }
             } catch (_) {}

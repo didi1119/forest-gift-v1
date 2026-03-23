@@ -3587,7 +3587,8 @@
             const couponUrl = partner?.short_coupon_link || partner?.coupon_link || partner?.coupon_url || draft.couponUrl || '';
             const loginUrl = getAbsoluteFrontendUrl('../partner-login.html');
             const toolkitHomeUrl = toolkitUrl || getAbsoluteFrontendUrl('../index.html');
-            const recipientName = application?.name || partner?.partner_name || partner?.name || '你好';
+            const fullName = application?.name || partner?.partner_name || partner?.name || '';
+            const recipientName = fullName.length >= 2 ? fullName.slice(1) : fullName || '你好';
             const loginEmail = application?.email || partner?.contact_email || partner?.email || '';
             const partnerCode = partner?.partner_code || application?.partner_code_assigned || draft.partnerCode || '';
             const phoneHint = application?.phone || partner?.contact_phone || partner?.phone || '';

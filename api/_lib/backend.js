@@ -3101,8 +3101,8 @@ async function sendWelcomeEmail({ email, name, partnerCode, shortLandingLink, sh
   const dashboardUrl = 'https://forest-ambassador.vercel.app/frontend/partner-login.html';
   const couponCodeDisplay = couponCode || '';
   // 稱呼：取姓氏後加上柔和稱呼，避免直呼全名
-  const displayName = name ? name.charAt(0) + (name.length > 1 ? name.slice(1) : '') : '';
-  const greeting = displayName || '你好';
+  // 稱呼：去掉姓氏，只用名字
+  const greeting = (name && name.length >= 2) ? name.slice(1) : (name || '你好');
 
   const html = `
     <div style="font-family: 'Noto Sans TC', 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 32px; background: #FDFBF8; color: #5C544B; line-height: 1.8;">

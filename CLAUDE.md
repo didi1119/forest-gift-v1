@@ -22,11 +22,22 @@
 
 ## 待辦事項（下次對話接手）
 
-（目前無待辦）
+- UI E2E 測試腳本有 9 個因 Apple-style 重構需要更新選擇器（本地有改但未 push）
+- 連結生成器的優惠券範本下拉選單需在你的 Chrome 驗證是否正常載入
+- LINE@ 綁定和優惠碼回覆功能需實際測試確認
 
 ### 已確認的設計決策（2026-03-22）
 - `total_commission_earned` 在 `delete_booking` 時減少 → **正確**（刪除 = 從未發生）
 - 等級降級用升級門檻重新模擬 → **正確**（維持門檻僅適用於升級正確的前提下）
+- `revert_cash_to_points` 必須重置 `points_used`（已修復）
+
+### 已確認的設計決策（2026-03-23）
+- 「知音大使贈禮工具包」名稱**永久棄用**，統一使用「森林禮物包」
+- 優惠券系統改為範本制：大使綁範本 → 連動網頁 coupon_url + LINE@ 回覆券
+- LINE 優惠券回覆用 Flex Message（相容 LINE 後台手動建的券）
+- 大使永久刪除需先停用再刪除（防誤操作）
+- 已停用大使預設不顯示在列表中
+- 無推薦人時「走進真實的森林」按鈕連到官網（`lx-foresthouse.com`）
 
 ---
 
@@ -78,7 +89,7 @@ forest-gift-v1/
 │           └── supabase-adapter.js     # Supabase 實作
 │
 ├── frontend/
-│   ├── index.html                      # 主頁：禮物包 + 神諭卡占卜
+│   ├── index.html                      # 主頁：森林禮物包 + 神諭卡占卜
 │   ├── music.html                      # 音樂播放清單
 │   ├── inner_map.html                  # 七日內心地圖手冊
 │   ├── story.html                      # 品牌創辦故事
@@ -104,7 +115,7 @@ forest-gift-v1/
 │   └── 2026-03-*.sql                   # Migration 檔案
 │
 ├── test/                               # API 測試（8 套件 30+ 案例）
-├── e2e/                                # E2E 自動化（16 腳本，Playwright）
+├── e2e/                                # E2E 自動化（28 腳本：16 UI + 12 API）
 ├── cards/                              # 60 張 SVG 神諭卡
 └── docs/                               # 補充文件
 ```
@@ -150,8 +161,12 @@ forest-gift-v1/
 | `get_click_stats` | 取得點擊統計 |
 | `get_applications` | 取得所有大使申請 |
 | `review_application` | 審核大使申請（核准/駁回） |
+| `delete_partner` | 永久刪除大使及所有關聯資料 |
 | `promote_to_partner` | 將申請人轉為正式大使 |
 | `sync_line_claim_profiles` | 同步 LINE 用戶歸因資料 |
+| `create_coupon_template` | 建立優惠券範本（可同步建 LINE 券） |
+| `update_coupon_template` | 更新優惠券範本 |
+| `delete_coupon_template` | 刪除優惠券範本 |
 
 ### 點擊追蹤（GET）
 
@@ -209,6 +224,7 @@ points_used = 住宿金折抵 + 轉換現金的歷史總和
 - **Accommodation_Usage** — 住宿金使用記錄
 - **Clicks** — 點擊追蹤（含 UTM）
 - **Applications** — 大使申請（PENDING → APPROVED/REJECTED）
+- **Coupon_Templates** — 優惠券範本（`coupon_name`, `coupon_url`, `line_coupon_id`, `is_default`）
 - **Line_Coupon_Bindings** — 大使 ↔ LINE 優惠券對應
 - **Line_Referral_Claims** — LINE 用戶歸因追蹤
 
@@ -225,9 +241,10 @@ points_used = 住宿金折抵 + 轉換現金的歷史總和
 | `DATA_BACKEND` | — | `sheets`(預設) 或 `supabase` |
 | `SUPABASE_URL` | Supabase 時 | Supabase 連線 URL |
 | `SUPABASE_SERVICE_KEY` | Supabase 時 | Supabase Service Key |
-| `LINE_CHANNEL_ACCESS_TOKEN` | LINE 時 | LINE Webhook |
+| `LINE_CHANNEL_ACCESS_TOKEN` | LINE 時 | LINE Messaging API Token |
 | `LINE_CHANNEL_SECRET` | LINE 時 | LINE 簽名驗證 |
-| `DEFAULT_LINE_COUPON_URL` | — | 預設 `https://lin.ee/q38pqot` |
+| `LINE_SHARED_COUPON_ID` | — | LINE 共用優惠券 ID（fallback，優先用範本） |
+| `LINE_COUPON_IMAGE_URL` | — | LINE 券封面圖片 URL |
 
 ## 部署
 
@@ -243,7 +260,7 @@ points_used = 住宿金折抵 + 轉換現金的歷史總和
 ## 測試
 
 - **API 測試：** `test/` 目錄，8 個套件 30+ 案例
-- **E2E 測試：** `e2e/live/scripts/`，16 個 Playwright 腳本
+- **E2E 測試：** `e2e/live/scripts/`，28 個腳本（16 UI + 12 API-only）
 - **手動測試：** `frontend/admin/comprehensive-test-suite.html`
 
 ## 關鍵文件

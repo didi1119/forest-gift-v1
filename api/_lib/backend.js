@@ -4010,10 +4010,7 @@ async function logAudit(action, data, result) {
       created_at: new Date().toISOString()
     };
 
-    // 直接用 adapter，避免 createRecord wrapper 加 updated_at
-    const { createClient } = require('@supabase/supabase-js');
-    const client = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-    await client.from('audit_logs').insert(record);
+    await createRecord('Audit_Logs', record);
   } catch (err) {
     console.error('Audit log failed (non-blocking):', err.message);
   }

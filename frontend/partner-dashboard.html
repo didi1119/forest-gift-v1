@@ -1369,7 +1369,7 @@
             const status = document.getElementById('lineBindStatus');
             if (!section) return;
             section.classList.remove('hidden');
-            if (currentPartner?.line_user_id) {
+            if (partnerData?.line_user_id) {
                 status.textContent = '已綁定 LINE 帳號';
                 status.style.color = '#059669';
                 section.querySelector('button').style.display = 'none';

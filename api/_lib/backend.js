@@ -3985,6 +3985,9 @@ const AUDIT_ACTION_META = {
   'create_coupon_template': { targetType: 'coupon', summary: d => `建立優惠券範本 ${d.coupon_name || ''}` },
   'update_coupon_template': { targetType: 'coupon', targetId: d => d.template_id, summary: d => `更新優惠券範本 #${d.template_id}` },
   'delete_coupon_template': { targetType: 'coupon', targetId: d => d.template_id, summary: d => `刪除優惠券範本 #${d.template_id}` },
+  'batch_settlement_execute': { targetType: 'payout', summary: d => `批次結算 ${(d.partner_codes || []).length} 位大使` },
+  'annual_level_review_execute': { targetType: 'partner', summary: d => `年度等級審核 ${(d.partner_codes || []).length} 位大使` },
+  'batch_notify': { targetType: 'notification', summary: d => `批次通知 ${(d.partner_codes || []).length} 位大使（${d.channel || 'line'}）` },
 };
 
 async function logAudit(action, data, result) {
@@ -4031,6 +4034,238 @@ async function handleGetAuditLogs(data) {
   const paged = logs.slice(offset, offset + limit);
 
   return { success: true, logs: paged, total: logs.length };
+}
+
+// ===== 季度結算批次處理 =====
+async function handleBatchSettlementPreview(data) {
+  const minAmount = parseFloat(data.min_amount) || 500;
+  const allPartners = await db.getAllRecords('Partners');
+  const eligible = allPartners
+    .map(p => p.data || p)
+    .filter(p => p.is_active !== false && (p.pending_commission || 0) >= minAmount)
+    .map(p => ({
+      partner_code: p.partner_code,
+      name: p.name || p.partner_name || '',
+      pending_commission: p.pending_commission || 0,
+      bank_name: p.bank_name || '',
+      bank_code: p.bank_code || '',
+      bank_branch: p.bank_branch || '',
+      bank_account_name: p.bank_account_name || '',
+      bank_account: p.bank_account || '',
+      email: p.email || p.contact_email || ''
+    }))
+    .sort((a, b) => b.pending_commission - a.pending_commission);
+
+  return {
+    success: true,
+    min_amount: minAmount,
+    total_partners: eligible.length,
+    total_amount: eligible.reduce((sum, p) => sum + p.pending_commission, 0),
+    partners: eligible
+  };
+}
+
+async function handleBatchSettlementExecute(data) {
+  const partnerCodes = data.partner_codes;
+  if (!Array.isArray(partnerCodes) || partnerCodes.length === 0) {
+    throw new Error('請選擇至少一位大使');
+  }
+
+  const results = { success: [], failed: [] };
+  const transferDate = data.bank_transfer_date || new Date().toISOString().split('T')[0];
+  const transferRef = data.bank_transfer_reference || `BATCH-${Date.now()}`;
+
+  for (const code of partnerCodes) {
+    try {
+      const result = await handleProcessPayout({
+        partner_code: code,
+        bank_transfer_date: transferDate,
+        bank_transfer_reference: transferRef,
+        notes: data.notes || `季度批次結算 ${transferDate}`,
+        created_by: data.created_by || 'admin',
+        _internal_call: true
+      });
+      results.success.push({ partner_code: code, amount: result.data?.payout?.amount || 0 });
+    } catch (err) {
+      results.failed.push({ partner_code: code, error: err.message });
+    }
+  }
+
+  return {
+    success: true,
+    message: `結算完成：${results.success.length} 成功，${results.failed.length} 失敗`,
+    data: results
+  };
+}
+
+// ===== 年度等級審核 =====
+async function handleAnnualLevelReviewPreview(data) {
+  const year = parseInt(data.year) || getBusinessYear();
+  const allPartners = await db.getAllRecords('Partners');
+  const allBookings = await db.getAllRecords('Bookings');
+  const bookings = allBookings.map(b => b.data || b);
+
+  const reviews = [];
+  for (const raw of allPartners) {
+    const p = raw.data || raw;
+    if (p.is_active === false) continue;
+    const currentLevel = normalizeLevel(p.level || p.partner_level || 'LV1_INSIDER');
+    if (currentLevel === 'LV1_INSIDER') continue; // LV1 不需審核
+
+    const partnerBookings = bookings.filter(b =>
+      b.partner_code === p.partner_code &&
+      b.stay_status === 'COMPLETED' &&
+      b.booking_source === 'REFERRAL'
+    );
+
+    const yearlyCount = partnerBookings.filter(b => {
+      const bookingYear = getBookingLevelYear(b);
+      return bookingYear === year;
+    }).length;
+
+    const retention = LEVEL_RETENTION_REQUIREMENTS || {};
+    const required = retention[currentLevel] || 0;
+    const willDowngrade = yearlyCount < required;
+    const newLevel = willDowngrade
+      ? (currentLevel === 'LV3_GUARDIAN' ? 'LV2_GUIDE' : 'LV1_INSIDER')
+      : currentLevel;
+
+    reviews.push({
+      partner_code: p.partner_code,
+      name: p.name || p.partner_name || '',
+      current_level: currentLevel,
+      yearly_referrals: yearlyCount,
+      required_referrals: required,
+      new_level: newLevel,
+      will_change: willDowngrade
+    });
+  }
+
+  return {
+    success: true,
+    year,
+    total_reviewed: reviews.length,
+    total_changes: reviews.filter(r => r.will_change).length,
+    reviews: reviews.sort((a, b) => (b.will_change ? 1 : 0) - (a.will_change ? 1 : 0))
+  };
+}
+
+async function handleAnnualLevelReviewExecute(data) {
+  const partnerCodes = data.partner_codes;
+  if (!Array.isArray(partnerCodes) || partnerCodes.length === 0) {
+    throw new Error('請選擇至少一位大使');
+  }
+
+  const results = { success: [], failed: [] };
+
+  for (const code of partnerCodes) {
+    try {
+      const partner = await findPartnerByCode(code);
+      if (!partner) throw new Error('找不到大使');
+
+      const currentLevel = normalizeLevel(partner.level || partner.partner_level);
+      const newLevel = currentLevel === 'LV3_GUARDIAN' ? 'LV2_GUIDE' : 'LV1_INSIDER';
+
+      await updateRecord('Partners', code, {
+        level: newLevel,
+        partner_level: newLevel,
+        base_level_for_year: newLevel,
+        yearly_referrals_year: getBusinessYear()
+      });
+
+      await createRecord('Payouts', {
+        partner_code: code,
+        payout_type: 'LEVEL_ADJUSTMENT',
+        amount: 0,
+        payout_method: 'OTHER',
+        payout_status: 'COMPLETED',
+        notes: `年度等級審核：${currentLevel} → ${newLevel}`,
+        created_by: data.created_by || 'admin'
+      });
+
+      results.success.push({ partner_code: code, from: currentLevel, to: newLevel });
+    } catch (err) {
+      results.failed.push({ partner_code: code, error: err.message });
+    }
+  }
+
+  return {
+    success: true,
+    message: `等級審核完成：${results.success.length} 位降級，${results.failed.length} 失敗`,
+    data: results
+  };
+}
+
+// ===== 批次通知 =====
+async function handleBatchNotify(data) {
+  const partnerCodes = data.partner_codes;
+  const channel = data.channel || 'line'; // line, email, both
+  const message = data.message;
+  const subject = data.subject || '靜謐森林 知音計畫通知';
+
+  if (!Array.isArray(partnerCodes) || partnerCodes.length === 0) {
+    throw new Error('請選擇至少一位大使');
+  }
+  if (!message) throw new Error('請輸入訊息內容');
+
+  const results = { line_success: 0, line_failed: 0, line_skipped: 0, email_success: 0, email_failed: 0, email_skipped: 0 };
+  const lineToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  const resendKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.NOTIFICATION_FROM_EMAIL || 'onboarding@resend.dev';
+
+  for (const code of partnerCodes) {
+    const partner = await findPartnerByCode(code);
+    if (!partner) continue;
+
+    // LINE push
+    if ((channel === 'line' || channel === 'both') && lineToken) {
+      const lineUserId = partner.line_user_id;
+      if (!lineUserId) {
+        results.line_skipped++;
+      } else {
+        try {
+          await callLineApi('POST', '/v2/bot/message/push', {
+            to: lineUserId,
+            messages: [{ type: 'text', text: message }]
+          });
+          results.line_success++;
+        } catch (e) {
+          results.line_failed++;
+        }
+      }
+    }
+
+    // Email
+    if ((channel === 'email' || channel === 'both') && resendKey) {
+      const email = partner.email || partner.contact_email;
+      if (!email) {
+        results.email_skipped++;
+      } else {
+        try {
+          const resp = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: `靜謐森林知音計畫 <${fromEmail}>`,
+              to: [email],
+              subject,
+              text: message
+            })
+          });
+          if (resp.ok) results.email_success++;
+          else results.email_failed++;
+        } catch (e) {
+          results.email_failed++;
+        }
+      }
+    }
+  }
+
+  return {
+    success: true,
+    message: `通知發送完成`,
+    data: results
+  };
 }
 
 async function route(action, data) {
@@ -4094,6 +4329,11 @@ async function route(action, data) {
     'update_coupon_template': handleUpdateCouponTemplate,
     'delete_coupon_template': handleDeleteCouponTemplate,
     'get_audit_logs': handleGetAuditLogs,
+    'batch_settlement_preview': handleBatchSettlementPreview,
+    'batch_settlement_execute': handleBatchSettlementExecute,
+    'annual_level_review_preview': handleAnnualLevelReviewPreview,
+    'annual_level_review_execute': handleAnnualLevelReviewExecute,
+    'batch_notify': handleBatchNotify,
   };
 
   const handler = handlers[action];

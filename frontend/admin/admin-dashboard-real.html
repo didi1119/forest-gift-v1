@@ -856,7 +856,8 @@
                     <h2 class="ob-toolbar-title">聯盟夥伴</h2>
                 </div>
                 <div class="ob-toolbar-actions">
-                    <button onclick="refreshData()" class="ob-btn ob-btn-secondary">↻ 重新載入</button>
+                    <button onclick="openAnnualLevelReviewModal()" class="ob-btn ob-btn-secondary">年度等級審核</button>
+                    <button onclick="refreshData()" class="ob-btn ob-btn-ghost">↻ 重新載入</button>
                     <button onclick="exportPartnersList()" class="ob-btn ob-btn-ghost">匯出 CSV</button>
                 </div>
             </div>
@@ -878,6 +879,7 @@
                         <option value="convert_all">全部轉為現金</option>
                         <option value="payout_pending">結算待付現金</option>
                         <option value="export_selected">匯出選中資料</option>
+                        <option value="batch_notify">發送通知</option>
                     </select>
                     <button onclick="executeBatchAction()" class="ob-btn ob-btn-primary ob-btn-sm">執行</button>
                     <button onclick="clearSelection()" class="ob-btn ob-btn-ghost ob-btn-sm">取消</button>
@@ -969,8 +971,8 @@
                     <h2 class="ob-toolbar-title">結算管理</h2>
                 </div>
                 <div class="ob-toolbar-actions">
-                    <button onclick="generatePayoutReport()" class="ob-btn ob-btn-primary">生成報表</button>
-                    <button onclick="diagnosePayout()" class="ob-btn ob-btn-secondary">診斷結算</button>
+                    <button onclick="openBatchSettlementModal()" class="ob-btn ob-btn-primary">季度結算</button>
+                    <button onclick="generatePayoutReport()" class="ob-btn ob-btn-secondary">生成報表</button>
                     <button onclick="exportPayoutsData()" class="ob-btn ob-btn-ghost">匯出 CSV</button>
                 </div>
             </div>
@@ -7957,8 +7959,11 @@
                             await processPayout(partnerCode, true);
                             break;
                         case 'export_selected':
-                            // 批量匯出處理
+                            // handled below
                             break;
+                        case 'batch_notify':
+                            openBatchNotifyModal(partnerCodes);
+                            return; // don't loop, modal handles it
                     }
                 }
                 
@@ -8851,6 +8856,242 @@
         }
 
         // ---- 匯出 CSV ----
+        // ===== 季度結算批次 Modal =====
+        async function openBatchSettlementModal() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.id = 'batchSettlementModal';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] overflow-auto mx-4 p-6">
+                    <h3 class="text-xl font-serif text-stone-800 mb-4">季度結算</h3>
+                    <p class="text-sm text-stone-500 mb-4">篩選待結算金額 >= $500 的大使，確認後執行批次匯款。</p>
+                    <div id="settlementPreview" class="text-sm text-stone-500">載入中...</div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button onclick="document.getElementById('batchSettlementModal').remove()" class="ob-btn ob-btn-ghost">取消</button>
+                        <button id="settlementExecuteBtn" onclick="executeBatchSettlement()" class="ob-btn ob-btn-primary" disabled>確認結算</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+
+            try {
+                const res = await submitToBackendViaForm({ action: 'batch_settlement_preview' });
+                const partners = res.partners || [];
+                if (partners.length === 0) {
+                    document.getElementById('settlementPreview').innerHTML = '<p class="text-stone-400">目前沒有達到起付額的大使。</p>';
+                    return;
+                }
+                document.getElementById('settlementPreview').innerHTML = `
+                    <div class="mb-3 flex justify-between items-center">
+                        <label class="text-sm"><input type="checkbox" id="settlementSelectAll" onchange="toggleSettlementAll(this.checked)" checked> 全選 (${partners.length} 位，共 $${Math.round(res.total_amount).toLocaleString()})</label>
+                    </div>
+                    <table class="w-full text-sm border-collapse">
+                        <thead><tr class="border-b text-left text-stone-500">
+                            <th class="py-2 w-8"></th><th class="py-2">大使</th><th class="py-2 text-right">待結算</th><th class="py-2">銀行</th><th class="py-2">帳號</th>
+                        </tr></thead>
+                        <tbody>${partners.map(p => `
+                            <tr class="border-b border-stone-100">
+                                <td class="py-2"><input type="checkbox" class="settlement-check" value="${p.partner_code}" checked></td>
+                                <td class="py-2"><strong>${escapeHtml(p.partner_code)}</strong> ${escapeHtml(p.name)}</td>
+                                <td class="py-2 text-right font-medium">$${Math.round(p.pending_commission).toLocaleString()}</td>
+                                <td class="py-2 text-stone-500">${escapeHtml(p.bank_name || '-')}</td>
+                                <td class="py-2 text-stone-500">${p.bank_account ? '****' + p.bank_account.slice(-4) : '-'}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>`;
+                document.getElementById('settlementExecuteBtn').disabled = false;
+                window._settlementPartners = partners;
+            } catch (e) {
+                document.getElementById('settlementPreview').innerHTML = `<p class="text-red-500">載入失敗：${e.message}</p>`;
+            }
+        }
+
+        function toggleSettlementAll(checked) {
+            document.querySelectorAll('.settlement-check').forEach(cb => cb.checked = checked);
+        }
+
+        async function executeBatchSettlement() {
+            const checks = document.querySelectorAll('.settlement-check:checked');
+            const codes = Array.from(checks).map(cb => cb.value);
+            if (codes.length === 0) { showErrorMessage('請至少選擇一位大使'); return; }
+
+            const btn = document.getElementById('settlementExecuteBtn');
+            btn.disabled = true;
+            btn.textContent = '結算中...';
+
+            try {
+                const res = await submitToBackendViaForm({
+                    action: 'batch_settlement_execute',
+                    partner_codes: codes
+                });
+                document.getElementById('batchSettlementModal').remove();
+                await forceReloadCurrentData();
+                showSuccessMessage(`${res.message || '結算完成'}`);
+            } catch (e) {
+                showErrorMessage('結算失敗：' + e.message);
+                btn.disabled = false;
+                btn.textContent = '確認結算';
+            }
+        }
+
+        // ===== 年度等級審核 Modal =====
+        async function openAnnualLevelReviewModal() {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.id = 'annualLevelReviewModal';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] overflow-auto mx-4 p-6">
+                    <h3 class="text-xl font-serif text-stone-800 mb-4">年度等級審核</h3>
+                    <p class="text-sm text-stone-500 mb-4">檢查 LV2/LV3 大使是否達到等級維持條件，未達標者降級。</p>
+                    <div id="levelReviewPreview" class="text-sm text-stone-500">載入中...</div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button onclick="document.getElementById('annualLevelReviewModal').remove()" class="ob-btn ob-btn-ghost">取消</button>
+                        <button id="levelReviewExecuteBtn" onclick="executeAnnualLevelReview()" class="ob-btn ob-btn-primary" disabled>確認降級</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+
+            try {
+                const res = await submitToBackendViaForm({ action: 'annual_level_review_preview' });
+                const reviews = res.reviews || [];
+                const changes = reviews.filter(r => r.will_change);
+
+                if (reviews.length === 0) {
+                    document.getElementById('levelReviewPreview').innerHTML = '<p class="text-stone-400">目前沒有 LV2/LV3 大使需要審核。</p>';
+                    return;
+                }
+
+                document.getElementById('levelReviewPreview').innerHTML = `
+                    <p class="mb-3 text-stone-600">審核年度：${res.year} | 共 ${reviews.length} 位 LV2/LV3 大使，其中 <strong class="text-red-600">${changes.length} 位需降級</strong></p>
+                    ${changes.length === 0 ? '<p class="text-green-600">所有大使均達標，無需降級。</p>' : `
+                    <table class="w-full text-sm border-collapse">
+                        <thead><tr class="border-b text-left text-stone-500">
+                            <th class="py-2 w-8"></th><th class="py-2">大使</th><th class="py-2">現等級</th><th class="py-2 text-center">年度推薦</th><th class="py-2 text-center">需要</th><th class="py-2">降級至</th>
+                        </tr></thead>
+                        <tbody>${changes.map(r => `
+                            <tr class="border-b border-stone-100">
+                                <td class="py-2"><input type="checkbox" class="level-review-check" value="${r.partner_code}" checked></td>
+                                <td class="py-2"><strong>${escapeHtml(r.partner_code)}</strong> ${escapeHtml(r.name)}</td>
+                                <td class="py-2">${r.current_level}</td>
+                                <td class="py-2 text-center text-red-600 font-medium">${r.yearly_referrals}</td>
+                                <td class="py-2 text-center">${r.required_referrals}</td>
+                                <td class="py-2 text-orange-600 font-medium">${r.new_level}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>`}`;
+                if (changes.length > 0) document.getElementById('levelReviewExecuteBtn').disabled = false;
+            } catch (e) {
+                document.getElementById('levelReviewPreview').innerHTML = `<p class="text-red-500">載入失敗：${e.message}</p>`;
+            }
+        }
+
+        async function executeAnnualLevelReview() {
+            const checks = document.querySelectorAll('.level-review-check:checked');
+            const codes = Array.from(checks).map(cb => cb.value);
+            if (codes.length === 0) { showErrorMessage('請至少選擇一位大使'); return; }
+
+            const btn = document.getElementById('levelReviewExecuteBtn');
+            btn.disabled = true;
+            btn.textContent = '處理中...';
+
+            try {
+                const res = await submitToBackendViaForm({
+                    action: 'annual_level_review_execute',
+                    partner_codes: codes
+                });
+                document.getElementById('annualLevelReviewModal').remove();
+                await forceReloadCurrentData();
+                showSuccessMessage(`${res.message || '等級審核完成'}`);
+            } catch (e) {
+                showErrorMessage('審核失敗：' + e.message);
+                btn.disabled = false;
+                btn.textContent = '確認降級';
+            }
+        }
+
+        // ===== 批次通知 Modal =====
+        function openBatchNotifyModal(partnerCodes) {
+            if (!partnerCodes) {
+                partnerCodes = Array.from(selectedPartners || []);
+            }
+            if (partnerCodes.length === 0) { showErrorMessage('請先選擇大使'); return; }
+
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.id = 'batchNotifyModal';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-auto mx-4 p-6">
+                    <h3 class="text-xl font-serif text-stone-800 mb-4">發送通知</h3>
+                    <p class="text-sm text-stone-500 mb-4">向 ${partnerCodes.length} 位大使發送訊息</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">發送管道</label>
+                            <select id="notifyChannel" class="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm">
+                                <option value="line">LINE</option>
+                                <option value="email">Email</option>
+                                <option value="both">LINE + Email</option>
+                            </select>
+                        </div>
+                        <div id="notifySubjectRow">
+                            <label class="block text-sm font-medium text-stone-700 mb-1">Email 主旨</label>
+                            <input type="text" id="notifySubject" value="靜謐森林 知音計畫通知" class="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700 mb-1">訊息內容</label>
+                            <textarea id="notifyMessage" rows="6" class="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm" placeholder="輸入要發送的訊息..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button onclick="document.getElementById('batchNotifyModal').remove()" class="ob-btn ob-btn-ghost">取消</button>
+                        <button id="notifyExecuteBtn" onclick="executeBatchNotify()" class="ob-btn ob-btn-primary">發送</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+            window._notifyPartnerCodes = partnerCodes;
+
+            // 管道切換時顯示/隱藏 Email 主旨
+            document.getElementById('notifyChannel').addEventListener('change', function() {
+                document.getElementById('notifySubjectRow').style.display =
+                    (this.value === 'line') ? 'none' : 'block';
+            });
+            // 預設 LINE 模式隱藏主旨
+            document.getElementById('notifySubjectRow').style.display = 'none';
+        }
+
+        async function executeBatchNotify() {
+            const message = document.getElementById('notifyMessage').value.trim();
+            if (!message) { showErrorMessage('請輸入訊息內容'); return; }
+
+            const channel = document.getElementById('notifyChannel').value;
+            const subject = document.getElementById('notifySubject')?.value || '';
+            const btn = document.getElementById('notifyExecuteBtn');
+            btn.disabled = true;
+            btn.textContent = '發送中...';
+
+            try {
+                const res = await submitToBackendViaForm({
+                    action: 'batch_notify',
+                    partner_codes: window._notifyPartnerCodes,
+                    channel,
+                    message,
+                    subject
+                });
+                document.getElementById('batchNotifyModal').remove();
+                const d = res.data || {};
+                const parts = [];
+                if (d.line_success) parts.push(`LINE ${d.line_success} 成功`);
+                if (d.line_failed) parts.push(`LINE ${d.line_failed} 失敗`);
+                if (d.line_skipped) parts.push(`LINE ${d.line_skipped} 跳過（未綁定）`);
+                if (d.email_success) parts.push(`Email ${d.email_success} 成功`);
+                if (d.email_failed) parts.push(`Email ${d.email_failed} 失敗`);
+                if (d.email_skipped) parts.push(`Email ${d.email_skipped} 跳過（無 Email）`);
+                showSuccessMessage(`通知發送完成：${parts.join('、') || '已處理'}`);
+            } catch (e) {
+                showErrorMessage('發送失敗：' + e.message);
+                btn.disabled = false;
+                btn.textContent = '發送';
+            }
+        }
+
         function downloadCSV(rows, filename) {
             if (!rows || rows.length === 0) return showErrorMessage('無數據可匯出');
             const headers = Object.keys(rows[0]);

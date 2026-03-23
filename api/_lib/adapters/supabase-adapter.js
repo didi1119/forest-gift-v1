@@ -241,7 +241,7 @@ async function getFields(tableName) {
 }
 
 async function deleteByField(tableName, field, value) {
-  const table = resolveTable(tableName);
+  const table = getTableName(tableName);
   const { error, count } = await client
     .from(table)
     .delete({ count: 'exact' })

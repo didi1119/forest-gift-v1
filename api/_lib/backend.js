@@ -3542,7 +3542,7 @@ async function handleLineWebhook(req, res) {
           }
         }
 
-        const dashboardUrl = `${GITHUB_PAGES_URL || 'https://didi1119.github.io/forest-gift-v1'}/frontend/partner-dashboard.html`;
+        const dashboardUrl = 'https://forest-ambassador.vercel.app/frontend/partner-dashboard.html';
 
         // 先嘗試 Flex Message，失敗則降級為純文字
         try {
@@ -3624,7 +3624,7 @@ async function handleLineWebhook(req, res) {
 
     // 偵測大使本人輸入自己的優惠碼
     if (lineUserId && matchedPartner.line_user_id && lineUserId === matchedPartner.line_user_id) {
-      const dashboardUrl = `${GITHUB_PAGES_URL || 'https://didi1119.github.io/forest-gift-v1'}/frontend/partner-dashboard.html`;
+      const dashboardUrl = 'https://forest-ambassador.vercel.app/frontend/partner-dashboard.html';
       const shareLink = matchedPartner.short_landing_link || matchedPartner.landing_link || '';
       await callLineApi('POST', '/v2/bot/message/reply', {
         replyToken: event.replyToken,

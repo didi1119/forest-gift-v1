@@ -4006,10 +4006,14 @@ async function logAudit(action, data, result) {
       target_type: meta.targetType || '',
       target_id: String((meta.targetId ? meta.targetId(data) : data.partner_code || data.booking_id || '') || ''),
       summary: meta.summary(data) || action,
-      details: sanitized
+      details: sanitized,
+      created_at: new Date().toISOString()
     };
 
-    await createRecord('Audit_Logs', record);
+    // 直接用 adapter，避免 createRecord wrapper 加 updated_at
+    const { createClient } = require('@supabase/supabase-js');
+    const client = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    await client.from('audit_logs').insert(record);
   } catch (err) {
     console.error('Audit log failed (non-blocking):', err.message);
   }

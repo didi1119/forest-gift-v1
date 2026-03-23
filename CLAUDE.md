@@ -24,8 +24,9 @@
 
 - Dashboard display 函數重構為參數傳遞，消除全域變數 `partnerData` 依賴（等大改版時做）
 - 重複 LINE 綁定防護（目前 update_partner 不阻擋同一 line_user_id 綁到多個大使）
+- 欄位名統一（bank_account vs bank_account_number、name vs partner_name 等，等大重構時做）
 - 連結生成器的優惠券範本下拉選單需在 Chrome 驗證是否正常載入
-- 合作條款頁面（terms.html）已重新排序，需確認業務方內容無誤
+- Resend 寄件域名需從 `onboarding@resend.dev` 改為自有域名（避免進垃圾郵件）
 
 ### 已確認的設計決策（2026-03-22）
 - `total_commission_earned` 在 `delete_booking` 時減少 → **正確**（刪除 = 從未發生）
@@ -181,6 +182,12 @@ forest-gift-v1/
 | `create_coupon_template` | 建立優惠券範本（可同步建 LINE 券） |
 | `update_coupon_template` | 更新優惠券範本 |
 | `delete_coupon_template` | 刪除優惠券範本 |
+| `batch_settlement_preview` | 預覽季度結算清單（達起付額大使） |
+| `batch_settlement_execute` | 執行季度批次結算 |
+| `annual_level_review_preview` | 預覽年度等級審核結果 |
+| `annual_level_review_execute` | 執行年度等級降級 |
+| `batch_notify` | 批次發送 LINE/Email 通知 |
+| `get_audit_logs` | 查詢操作日誌（支援篩選和分頁） |
 
 ### 點擊追蹤（GET）
 

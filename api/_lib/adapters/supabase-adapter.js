@@ -240,6 +240,17 @@ async function getFields(tableName) {
   return Object.keys(data[0]);
 }
 
+async function deleteByField(tableName, field, value) {
+  const table = resolveTable(tableName);
+  const { error, count } = await client
+    .from(table)
+    .delete({ count: 'exact' })
+    .eq(field, value);
+
+  if (error) throw new Error(`deleteByField(${tableName}, ${field}=${value}): ${error.message}`);
+  return count || 0;
+}
+
 module.exports = {
   getAllRecords,
   findByField,
@@ -248,5 +259,6 @@ module.exports = {
   upsert,
   update,
   ensureTable,
-  getFields
+  getFields,
+  deleteByField
 };

@@ -2038,6 +2038,7 @@
                                     ${isInactive
                                         ? `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', true); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#059669;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">恢復夥伴</a>`
                                         : `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', false); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#DC2626;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">停用夥伴</a>`}
+                                    ${isInactive ? `<a href="#" onclick="permanentlyDeletePartner('${partner.partner_code}', '${escapeHtml(f.name)}'); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#DC2626;text-decoration:none;border-top:1px solid rgba(0,0,0,0.06);transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">永久刪除</a>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -2094,6 +2095,7 @@
                             ${isInactive
                                 ? `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', true); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#059669;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">恢復夥伴</a>`
                                 : `<a href="#" onclick="togglePartnerActive('${partner.partner_code}', false); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#DC2626;text-decoration:none;transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">停用夥伴</a>`}
+                            ${isInactive ? `<a href="#" onclick="permanentlyDeletePartner('${partner.partner_code}', '${escapeHtml(partner.name || partner.partner_name || partner.partner_code)}'); return false;" style="display:block;padding:0.45rem 0.75rem;font-size:0.8rem;color:#DC2626;text-decoration:none;border-top:1px solid rgba(0,0,0,0.06);transition:background 0.15s;" onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background=''">永久刪除</a>` : ''}
                         </div>
                     </div>
                 </div>
@@ -8156,6 +8158,33 @@ ${partner.coupon_code ? '朋友在官方 LINE 輸入優惠代碼「' + escapeHtm
                     }
                 },
                 { danger: !nextIsActive }
+            );
+        }
+
+        async function permanentlyDeletePartner(partnerCode, partnerName) {
+            closeAllDropdowns();
+            showConfirmModal(
+                '永久刪除',
+                `確定要永久刪除「${partnerName || partnerCode}」嗎？\n\n此操作會刪除該大使的所有資料，包括：\n• 訂房記錄\n• 佣金與結算記錄\n• 點擊追蹤\n• 住宿金使用記錄\n• LINE 綁定資料\n\n此操作無法復原。`,
+                async () => {
+                    try {
+                        const responseData = await submitToBackendViaForm({
+                            action: 'delete_partner',
+                            partner_code: partnerCode
+                        });
+                        console.log('永久刪除夥伴 - 後端已回應:', responseData);
+                        await forceReloadCurrentData();
+                        displayPartners(allData.partners);
+                        if (document.getElementById('partnerModal')) {
+                            closeModal('partnerModal');
+                        }
+                        showSuccessMessage(`已永久刪除：${partnerName || partnerCode}`);
+                    } catch (error) {
+                        console.error('永久刪除失敗:', error);
+                        showErrorMessage('永久刪除失敗：' + error.message);
+                    }
+                },
+                { danger: true, confirmLabel: '永久刪除' }
             );
         }
 

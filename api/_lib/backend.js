@@ -2406,6 +2406,37 @@ async function handleCreatePayout(data) {
   return { success: true, message: 'Payout created successfully', payout_id: payout.id, data: payout };
 }
 
+async function handleDeletePartner(data) {
+  const partnerCode = data.partner_code;
+  if (!partnerCode) throw new Error('Partner code is required');
+
+  const partner = await findPartnerByCode(partnerCode);
+  if (!partner) throw new Error('Partner not found');
+
+  const delFn = db.deleteByField;
+  if (!delFn) throw new Error('deleteByField not available in current adapter');
+
+  // Delete all related records in order
+  const tables = ['Accommodation_Usage', 'Clicks', 'Line_Coupon_Bindings', 'Line_Referral_Claims', 'Payouts', 'Bookings'];
+  const deleted = {};
+  for (const table of tables) {
+    try {
+      deleted[table] = await delFn(table, 'partner_code', partnerCode);
+    } catch (e) {
+      deleted[table] = 'skip: ' + e.message;
+    }
+  }
+
+  // Delete the partner record itself
+  deleted['Partners'] = await delFn('Partners', 'partner_code', partnerCode);
+
+  return {
+    success: true,
+    message: `已永久刪除大使 ${partner.name || partnerCode} 及所有關聯資料`,
+    data: { partner_code: partnerCode, deleted }
+  };
+}
+
 async function handleCreatePartner(data) {
   const applicationId = data.application_id;
   const partnerData = {
@@ -3576,6 +3607,7 @@ async function route(action, data) {
     'get_all_data': handleGetAllData,
     'get_dashboard_data': handleGetAllData,
     'create_partner': handleCreatePartner,
+    'delete_partner': handleDeletePartner,
     'get_click_stats': handleGetClickStats,
     'cancel_accommodation_usage': handleCancelAccommodationUsage,
     'restore_booking': handleRestoreBooking,

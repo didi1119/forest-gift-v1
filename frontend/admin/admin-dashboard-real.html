@@ -1186,6 +1186,7 @@
                 <button onclick="showDbTable('payouts')" id="dbtab-payouts" class="db-tab-btn">結算 Payouts</button>
                 <button onclick="showDbTable('applications')" id="dbtab-applications" class="db-tab-btn">申請 Applications</button>
                 <button onclick="showDbTable('clicks')" id="dbtab-clicks" class="db-tab-btn">點擊 Clicks</button>
+                <button onclick="showDbTable('audit_logs')" id="dbtab-audit_logs" class="db-tab-btn">操作日誌</button>
             </div>
 
             <!-- 搜尋 -->
@@ -2424,22 +2425,50 @@
             document.getElementById('totalPayouts').textContent = `$${totalPayouts.toLocaleString()}`;
         }
 
-        // 顯示最近活動
-        function displayRecentActivity() {
+        // 顯示最近活動（從操作日誌載入）
+        async function displayRecentActivity() {
             const container = document.getElementById('recentActivity');
+            if (!container) return;
 
-            const activities = [
-                { text: '系統已載入真實數據', time: '剛剛' },
-                { text: '等待更多活動記錄', time: '1 分鐘前' }
-            ];
+            try {
+                const response = await submitToBackendViaForm({ action: 'get_audit_logs', limit: 10 });
+                const logs = response.logs || [];
 
-            container.innerHTML = activities.map(activity => `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.75rem;background:rgba(0,0,0,0.02);border-radius:0.4rem;transition:background 0.15s;"
-                     onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background='rgba(0,0,0,0.02)'">
-                    <span style="font-size:0.82rem;color:#1d1d1f;">${activity.text}</span>
-                    <span style="font-size:0.7rem;color:#86868b;">${activity.time}</span>
-                </div>
-            `).join('');
+                if (logs.length === 0) {
+                    container.innerHTML = `
+                        <div style="padding:0.5rem 0.75rem;background:rgba(0,0,0,0.02);border-radius:0.4rem;">
+                            <span style="font-size:0.82rem;color:#86868b;">尚無操作記錄</span>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = logs.map(log => {
+                    const timeAgo = getTimeAgo(log.created_at);
+                    return `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.75rem;background:rgba(0,0,0,0.02);border-radius:0.4rem;transition:background 0.15s;"
+                             onmouseenter="this.style.background='rgba(0,0,0,0.04)'" onmouseleave="this.style.background='rgba(0,0,0,0.02)'">
+                            <span style="font-size:0.82rem;color:#1d1d1f;">${escapeHtml(log.summary || log.action)}</span>
+                            <span style="font-size:0.7rem;color:#86868b;white-space:nowrap;margin-left:0.5rem;">${timeAgo}</span>
+                        </div>`;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = `
+                    <div style="padding:0.5rem 0.75rem;background:rgba(0,0,0,0.02);border-radius:0.4rem;">
+                        <span style="font-size:0.82rem;color:#86868b;">載入活動記錄失敗</span>
+                    </div>`;
+            }
+        }
+
+        function getTimeAgo(dateStr) {
+            if (!dateStr) return '';
+            const now = new Date();
+            const date = new Date(dateStr);
+            const diff = Math.floor((now - date) / 1000);
+            if (diff < 60) return '剛剛';
+            if (diff < 3600) return Math.floor(diff / 60) + ' 分鐘前';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' 小時前';
+            if (diff < 604800) return Math.floor(diff / 86400) + ' 天前';
+            return date.toLocaleDateString('zh-TW');
         }
 
         // 即時更新當前標籤頁的顯示（不重新載入數據）
@@ -9100,13 +9129,34 @@
             }
         }
 
-        function showDbTable(name) {
+        async function showDbTable(name) {
             window._currentDbTable = name;
             document.querySelectorAll('.db-tab-btn').forEach(b => b.classList.remove('db-tab-active'));
             const btn = document.getElementById('dbtab-' + name);
             if (btn) btn.classList.add('db-tab-active');
             const search = document.getElementById('db-search');
             if (search) search.value = '';
+
+            // 操作日誌需要單獨載入
+            if (name === 'audit_logs' && (!window._dbData || !window._dbData.audit_logs)) {
+                try {
+                    const res = await submitToBackendViaForm({ action: 'get_audit_logs', limit: 200 });
+                    if (!window._dbData) window._dbData = {};
+                    window._dbData.audit_logs = (res.logs || []).map(l => ({
+                        時間: l.created_at ? new Date(l.created_at).toLocaleString('zh-TW') : '',
+                        操作: l.action || '',
+                        摘要: l.summary || '',
+                        對象類型: l.target_type || '',
+                        對象ID: l.target_id || '',
+                        操作者: l.actor || '',
+                    }));
+                } catch (e) {
+                    console.error('Failed to load audit logs:', e);
+                    if (!window._dbData) window._dbData = {};
+                    window._dbData.audit_logs = [];
+                }
+            }
+
             renderDbTable(name);
         }
 

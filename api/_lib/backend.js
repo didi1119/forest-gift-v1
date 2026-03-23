@@ -3959,6 +3959,80 @@ async function handleBindLineAccount(data) {
   };
 }
 
+// ===== 操作日誌 =====
+const AUDIT_ACTION_META = {
+  'create_booking': { targetType: 'booking', summary: d => `建立訂房${d.guest_name ? '：' + d.guest_name : ''}` },
+  'update_booking': { targetType: 'booking', targetId: d => d.booking_id, summary: d => `更新訂房 #${d.booking_id}` },
+  'delete_booking': { targetType: 'booking', targetId: d => d.booking_id, summary: d => `取消訂房 #${d.booking_id}` },
+  'restore_booking': { targetType: 'booking', targetId: d => d.booking_id, summary: d => `恢復訂房 #${d.booking_id}` },
+  'confirm_checkin_completion': { targetType: 'booking', targetId: d => d.booking_id, summary: d => `確認入住 #${d.booking_id}` },
+  'partial_refund': { targetType: 'booking', targetId: d => d.booking_id, summary: d => `部分退款 #${d.booking_id}` },
+  'batch_cancel': { targetType: 'booking', summary: d => `批次取消 ${(d.booking_ids || []).length} 筆訂房` },
+  'create_partner': { targetType: 'partner', targetId: d => d.partner_code, summary: d => `建立大使 ${d.partner_code}` },
+  'update_partner': { targetType: 'partner', targetId: d => d.partner_code, summary: d => `更新大使 ${d.partner_code}` },
+  'delete_partner': { targetType: 'partner', targetId: d => d.partner_code, summary: d => `刪除大使 ${d.partner_code}` },
+  'update_partner_commission': { targetType: 'partner', targetId: d => d.partner_code, summary: d => `調整佣金 ${d.partner_code}` },
+  'create_payout': { targetType: 'payout', targetId: d => d.partner_code, summary: d => `建立結算 ${d.partner_code} $${d.amount}` },
+  'cancel_payout': { targetType: 'payout', targetId: d => d.payout_id, summary: d => `取消結算 #${d.payout_id}` },
+  'process_payout': { targetType: 'payout', targetId: d => d.partner_code, summary: d => `處理匯款 ${d.partner_code}` },
+  'use_accommodation_points': { targetType: 'partner', targetId: d => d.partner_code, summary: d => `使用住宿金 ${d.partner_code} $${d.deduct_amount}` },
+  'deduct_accommodation_points': { targetType: 'partner', targetId: d => d.partner_code, summary: d => `使用住宿金 ${d.partner_code}` },
+  'cancel_accommodation_usage': { targetType: 'partner', targetId: d => d.partner_code, summary: d => `取消住宿金使用 ${d.partner_code}` },
+  'convert_points_to_cash': { targetType: 'partner', targetId: d => d.partner_code, summary: d => `轉換點數 ${d.partner_code} $${d.amount}` },
+  'revert_cash_to_points': { targetType: 'partner', targetId: d => d.partner_code, summary: d => `撤回轉換 ${d.partner_code}` },
+  'review_application': { targetType: 'application', targetId: d => d.application_id, summary: d => `審核申請 #${d.application_id} → ${d.status}` },
+  'promote_to_partner': { targetType: 'application', targetId: d => d.application_id, summary: d => `轉為大使 ${d.partner_code}` },
+  'create_coupon_template': { targetType: 'coupon', summary: d => `建立優惠券範本 ${d.coupon_name || ''}` },
+  'update_coupon_template': { targetType: 'coupon', targetId: d => d.template_id, summary: d => `更新優惠券範本 #${d.template_id}` },
+  'delete_coupon_template': { targetType: 'coupon', targetId: d => d.template_id, summary: d => `刪除優惠券範本 #${d.template_id}` },
+};
+
+async function logAudit(action, data, result) {
+  try {
+    const meta = AUDIT_ACTION_META[action];
+    if (!meta) return;
+
+    // 脫敏：移除敏感欄位
+    const sanitized = { ...data };
+    delete sanitized.admin_secret;
+    delete sanitized._internal_call;
+
+    const record = {
+      action,
+      actor: data.created_by || data.updated_by || 'admin',
+      target_type: meta.targetType || '',
+      target_id: String((meta.targetId ? meta.targetId(data) : data.partner_code || data.booking_id || '') || ''),
+      summary: meta.summary(data) || action,
+      details: sanitized
+    };
+
+    await db.createRecord('Audit_Logs', record);
+  } catch (err) {
+    console.error('Audit log failed (non-blocking):', err.message);
+  }
+}
+
+async function handleGetAuditLogs(data) {
+  const allLogs = await db.getAllRecords('Audit_Logs');
+  let logs = allLogs.map(l => l.data || l);
+
+  if (data.target_type) {
+    logs = logs.filter(l => l.target_type === data.target_type);
+  }
+  if (data.target_id) {
+    logs = logs.filter(l => l.target_id === String(data.target_id));
+  }
+
+  // 按時間倒序
+  logs.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+  const offset = parseInt(data.offset) || 0;
+  const limit = Math.min(parseInt(data.limit) || 50, 200);
+  const paged = logs.slice(offset, offset + limit);
+
+  return { success: true, logs: paged, total: logs.length };
+}
+
 async function route(action, data) {
   // 公開 action（不需要 admin_secret）
   const PUBLIC_ACTIONS = new Set([
@@ -4019,11 +4093,19 @@ async function route(action, data) {
     'create_coupon_template': handleCreateCouponTemplate,
     'update_coupon_template': handleUpdateCouponTemplate,
     'delete_coupon_template': handleDeleteCouponTemplate,
+    'get_audit_logs': handleGetAuditLogs,
   };
 
   const handler = handlers[action];
   if (!handler) throw new Error('未知的動作: ' + action);
-  return await handler(data);
+  const result = await handler(data);
+
+  // 自動記錄操作日誌（非阻塞，僅 admin 寫入型 action）
+  if (!PUBLIC_ACTIONS.has(action) && AUDIT_ACTION_META[action] && result?.success !== false) {
+    logAudit(action, data, result).catch(() => {});
+  }
+
+  return result;
 }
 
 module.exports = {

@@ -29,7 +29,8 @@ const TABLE_MAP = {
   'Payouts': 'payouts',
   'Accommodation_Usage': 'accommodation_usage',
   'Clicks': 'clicks',
-  'Applications': 'applications'
+  'Applications': 'applications',
+  'Audit_Logs': 'audit_logs'
 };
 
 function getTableName(sheetName) {

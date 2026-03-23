@@ -3530,8 +3530,17 @@ async function handleLineWebhook(req, res) {
         const sourceProfile = await fetchLineProfileForEventSource(event.source || {});
         const displayName = String(sourceProfile && sourceProfile.displayName || '').trim();
         const bindUpdates = { line_user_id: lineUserId };
-        if (displayName) bindUpdates.line_display_name = displayName;
-        await updateRecord('Partners', partner.partner_code, bindUpdates);
+        try {
+          if (displayName) bindUpdates.line_display_name = displayName;
+          await updateRecord('Partners', partner.partner_code, bindUpdates);
+        } catch (updateErr) {
+          // line_display_name 欄位可能不存在，退回只更新 line_user_id
+          if (String(updateErr.message).includes('line_display_name')) {
+            await updateRecord('Partners', partner.partner_code, { line_user_id: lineUserId });
+          } else {
+            throw updateErr;
+          }
+        }
 
         const dashboardUrl = `${GITHUB_PAGES_URL || 'https://didi1119.github.io/forest-gift-v1'}/frontend/partner-dashboard.html`;
 

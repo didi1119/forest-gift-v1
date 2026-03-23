@@ -4622,6 +4622,25 @@
 
                         <div class="border-t pt-4">
                             <div class="flex items-center justify-between gap-3 mb-3">
+                                <h4 class="font-semibold">LINE 帳號綁定</h4>
+                                ${partner.line_user_id ? `
+                                    <button onclick="unbindLineAccount('${escapeHtml(partner.partner_code)}')" class="ob-btn ob-btn-ghost ob-btn-sm" style="color:#DC2626;">解除綁定</button>
+                                ` : ''}
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <p class="text-sm text-gray-600">綁定狀態</p>
+                                    <p class="font-semibold" style="color:${partner.line_user_id ? '#059669' : '#9CA3AF'}">${partner.line_user_id ? '已綁定' : '未綁定'}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600">LINE 名稱</p>
+                                    <p class="font-semibold">${escapeHtml(partner.line_display_name || '-')}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-4">
+                            <div class="flex items-center justify-between gap-3 mb-3">
                                 <h4 class="font-semibold">LINE 歸因摘要</h4>
                                 <span class="px-3 py-1 rounded-full text-xs font-medium ${lineClaimMeta.className}">${lineClaimMeta.label}</span>
                             </div>
@@ -4800,6 +4819,33 @@
         }
         
         // 編輯夥伴資料
+        window.unbindLineAccount = async function(partnerCode) {
+            if (!confirm(`確定要解除 ${partnerCode} 的 LINE 綁定嗎？解除後大使需要重新綁定才能使用 LINE 免登入。`)) return;
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'update_partner',
+                        admin_secret: adminSecret,
+                        partner_code: partnerCode,
+                        line_user_id: '',
+                        line_display_name: ''
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showSuccessMessage('LINE 綁定已解除');
+                    closeModal('partnerModal');
+                    loadDashboardData();
+                } else {
+                    alert('解除綁定失敗：' + (result.error || '未知錯誤'));
+                }
+            } catch (e) {
+                alert('網路錯誤，請稍後重試');
+            }
+        };
+
         window.editPartner = function(partnerCode) {
             const partner = allData.partners.find(p => p.partner_code === partnerCode);
             if (!partner) {

@@ -554,7 +554,7 @@
 
         async function loadCouponTemplates() {
             try {
-                const adminSecret = sessionStorage.getItem('adminSecret') || localStorage.getItem('adminSecret') || '';
+                const adminSecret = sessionStorage.getItem('admin_secret') || sessionStorage.getItem('adminSecret') || window.__adminSecret || '';
                 const res = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -587,6 +587,7 @@
 
             if (couponTemplates.length === 0) {
                 html = '<option value="custom">無可用範本，請手動輸入</option>';
+                document.getElementById('couponUrl').style.display = 'block';
             }
 
             select.innerHTML = html;

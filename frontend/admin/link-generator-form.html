@@ -304,8 +304,8 @@
             <!-- Coupon -->
             <div style="margin-top:1.25rem;">
                 <div class="lg-section-title" style="margin-bottom:0.5rem;">優惠券設定</div>
-                <div class="lg-info-card" style="background:rgba(217,119,6,0.05);border:1px solid rgba(217,119,6,0.1);color:#92400E;margin-bottom:0.75rem;font-size:0.72rem;">
-                    請先到 LINE 官方帳號後台建立專屬優惠券，再將連結貼入
+                <div class="lg-info-card" style="background:rgba(46,75,54,0.04);border:1px solid rgba(46,75,54,0.1);color:#2E4B36;margin-bottom:0.75rem;font-size:0.72rem;">
+                    從已建立的優惠券範本中選擇，或選「自訂 URL」手動輸入
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
                     <div>
@@ -314,9 +314,11 @@
                         <div class="lg-hint">對外公開，請與大使代碼分開</div>
                     </div>
                     <div>
-                        <label class="lg-label lg-required">LINE 優惠券連結</label>
-                        <input type="url" id="couponUrl" class="lg-input" placeholder="https://lin.ee/xxxxx" required>
-                        <button type="button" onclick="useDefaultCoupon()" class="lg-btn lg-btn-ghost" style="margin-top:0.25rem;font-size:0.7rem;padding:0.2rem 0.5rem;">使用預設連結</button>
+                        <label class="lg-label lg-required">優惠券範本</label>
+                        <select id="couponTemplateSelect" class="lg-input" onchange="onLgCouponTemplateSelect(this.value)">
+                            <option value="">載入中...</option>
+                        </select>
+                        <input type="url" id="couponUrl" class="lg-input" placeholder="https://lin.ee/xxxxx" style="margin-top:0.35rem;display:none;">
                     </div>
                 </div>
             </div>
@@ -548,8 +550,9 @@
             }
         }
 
-        // Fetch default coupon URL from API
-        async function loadDefaultCouponUrl() {
+        let couponTemplates = [];
+
+        async function loadCouponTemplates() {
             try {
                 const adminSecret = sessionStorage.getItem('adminSecret') || localStorage.getItem('adminSecret') || '';
                 const res = await fetch(APPS_SCRIPT_URL, {
@@ -559,19 +562,60 @@
                 });
                 const json = await res.json();
                 if (json.success && json.data && json.data.coupon_templates) {
-                    const templates = json.data.coupon_templates.map(t => t.data || t);
-                    const defaultTpl = templates.find(t => t.is_default === true || t.is_default === 'true');
-                    if (defaultTpl && defaultTpl.coupon_url) {
-                        DEFAULT_COUPON_URL = defaultTpl.coupon_url;
-                        // Pre-fill if coupon URL field is empty
-                        const urlField = document.getElementById('couponUrl');
-                        if (urlField && !urlField.value.trim()) {
-                            urlField.value = DEFAULT_COUPON_URL;
-                        }
-                    }
+                    couponTemplates = json.data.coupon_templates
+                        .map(t => t.data || t)
+                        .filter(t => t.is_active !== false && t.is_active !== 'false');
                 }
             } catch (e) {
-                console.warn('Failed to load default coupon URL:', e.message);
+                console.warn('Failed to load coupon templates:', e.message);
+            }
+
+            const select = document.getElementById('couponTemplateSelect');
+            if (!select) return;
+
+            let html = '';
+            const currentUrl = document.getElementById('couponUrl').value.trim();
+            let matched = false;
+
+            for (const t of couponTemplates) {
+                const isDefault = t.is_default === true || t.is_default === 'true';
+                const isSelected = currentUrl === t.coupon_url;
+                if (isSelected) matched = true;
+                html += `<option value="tpl:${t.id}" ${isSelected ? 'selected' : ''}>${t.coupon_name}${isDefault ? ' [預設]' : ''}</option>`;
+            }
+            html += `<option value="custom" ${!matched && currentUrl ? 'selected' : ''}>自訂 URL...</option>`;
+
+            if (couponTemplates.length === 0) {
+                html = '<option value="custom">無可用範本，請手動輸入</option>';
+            }
+
+            select.innerHTML = html;
+
+            // Auto-select default template if URL field is empty
+            if (!currentUrl && couponTemplates.length > 0) {
+                const defaultTpl = couponTemplates.find(t => t.is_default === true || t.is_default === 'true') || couponTemplates[0];
+                DEFAULT_COUPON_URL = defaultTpl.coupon_url;
+                document.getElementById('couponUrl').value = defaultTpl.coupon_url;
+                select.value = `tpl:${defaultTpl.id}`;
+            }
+
+            // Show custom input if current URL doesn't match any template
+            if (!matched && currentUrl) {
+                document.getElementById('couponUrl').style.display = 'block';
+            }
+        }
+
+        function onLgCouponTemplateSelect(value) {
+            const urlInput = document.getElementById('couponUrl');
+            if (value === 'custom') {
+                urlInput.style.display = 'block';
+                urlInput.value = '';
+                urlInput.focus();
+            } else if (value.startsWith('tpl:')) {
+                urlInput.style.display = 'none';
+                const tplId = value.replace('tpl:', '');
+                const tpl = couponTemplates.find(t => String(t.id) === tplId);
+                if (tpl) urlInput.value = tpl.coupon_url;
             }
         }
 
@@ -580,7 +624,7 @@
             applyPrefillFromQuery();
             suggestCodes(false);
             restoreDraftIfExists();
-            loadDefaultCouponUrl();
+            loadCouponTemplates();
         });
 
         // Restore draft from sessionStorage
@@ -625,11 +669,7 @@
             } catch (e) { /* ignore */ }
         }
 
-        // Fill default coupon URL
-        function useDefaultCoupon() {
-            document.getElementById('couponUrl').value = DEFAULT_COUPON_URL;
-            showToast('已填入預設優惠券連結');
-        }
+        // (useDefaultCoupon removed — replaced by template dropdown)
 
         // Toast notification
         function showToast(message) {

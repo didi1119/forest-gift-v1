@@ -274,12 +274,20 @@
             </h2>
 
             <!-- Hero CTA -->
-            <button onclick="goToLineCoupon()"
-                class="inline-flex items-center gap-2.5 px-6 py-2.5 sm:px-9 sm:py-4 rounded-full font-serif text-xs sm:text-base tracking-[0.15em] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(197,160,101,0.25)]"
-                style="background: rgba(197,160,101,0.15); border: 1px solid rgba(197,160,101,0.5); color: #F5F2EB; backdrop-filter: blur(4px);">
-                走進真實的森林
-                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-            </button>
+            <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+                <a href="https://www.lx-foresthouse.com/" target="_blank" rel="noopener"
+                    class="inline-flex items-center gap-2.5 px-6 py-2.5 sm:px-9 sm:py-4 rounded-full font-serif text-xs sm:text-base tracking-[0.15em] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(197,160,101,0.25)]"
+                    style="background: rgba(197,160,101,0.15); border: 1px solid rgba(197,160,101,0.5); color: #F5F2EB; backdrop-filter: blur(4px);">
+                    走進真實的森林
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </a>
+                <button id="heroCouponBtn" onclick="goToLineCoupon()"
+                    class="inline-flex items-center gap-2.5 px-6 py-2.5 sm:px-9 sm:py-4 rounded-full font-serif text-xs sm:text-base tracking-[0.15em] transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(197,160,101,0.15)]"
+                    style="display:none; border: 1px solid rgba(245,242,235,0.35); color: #F5F2EB; background: transparent; backdrop-filter: blur(4px);">
+                    領取專屬優惠
+                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </div>
 
             <!-- 推薦來源（僅後台追蹤用，前台不顯示） -->
             <div id="referral-note" class="hidden"><span id="referrer-name"></span></div>
@@ -718,21 +726,25 @@
                 has_coupon_url: !!couponUrl
             });
 
-            // 優先使用連結生成器傳入的 couponUrl（已包含追蹤邏輯）
             if (couponUrl) {
-                // 有專屬優惠券連結（來自連結生成器），直接跳轉
-                console.log('🎁 跳轉到專屬優惠券連結:', couponUrl);
-                console.log('   來源: 連結生成器生成的短網址');
+                console.log('跳轉到專屬優惠券連結:', couponUrl);
                 window.open(couponUrl, '_blank');
             } else if (subid && subid !== 'demo' && subid !== 'no-subid') {
-                // 有 subid 但沒有 couponUrl，透過 Apps Script 查找（舊邏輯）
                 const trackedCouponUrl = `${APPS_SCRIPT_URL}?pid=${encodeURIComponent(subid)}&dest=coupon`;
-                console.log('🎁 透過 Apps Script 查找優惠券連結:', trackedCouponUrl);
+                console.log('透過 API 查找優惠券連結:', trackedCouponUrl);
                 window.open(trackedCouponUrl, '_blank');
             } else {
-                // 沒有 couponUrl 也沒有有效的 subid，跳轉到預設 LINE 官方帳號
-                console.log('🎁 跳轉到 LINE 官方帳號（無追蹤）');
                 window.open(LINE_OFFICIAL_URL, '_blank');
+            }
+        }
+
+        // 有推薦人時顯示優惠券按鈕
+        function initHeroCouponButton() {
+            const subid = getSubid();
+            const couponUrl = getCouponUrl();
+            const btn = document.getElementById('heroCouponBtn');
+            if (btn && (couponUrl || (subid && subid !== 'demo' && subid !== 'no-subid'))) {
+                btn.style.display = 'inline-flex';
             }
         }
 
@@ -1077,6 +1089,7 @@
 
             // 初始化個人化內容和追蹤
             personalizeContent();
+            initHeroCouponButton();
             trackEvent('page_view', { page: 'index_old' });
 
             // 淡入動畫觀察器

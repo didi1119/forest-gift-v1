@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>靜謐森林｜LINE 帳號綁定</title>
+    <title>靜謐森林｜LINE 自動登入</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -32,7 +32,7 @@
         <!-- 載入中 -->
         <div id="loadingState">
             <div class="spinner mx-auto mb-6"></div>
-            <p class="text-[#C5A065] font-serif text-lg mb-2">正在綁定 LINE 帳號</p>
+            <p id="loadingMsg" class="text-[#C5A065] font-serif text-lg mb-2">正在驗證身份</p>
             <p class="text-[#F5F2EB]/60 text-sm">請稍候...</p>
         </div>
 
@@ -41,7 +41,7 @@
             <div class="w-16 h-16 rounded-full bg-[#06C755]/20 flex items-center justify-center mx-auto mb-5">
                 <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><path stroke="#06C755" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
             </div>
-            <p class="text-[#F5F2EB] font-serif text-xl mb-2">綁定成功</p>
+            <p id="successTitle" class="text-[#F5F2EB] font-serif text-xl mb-2"></p>
             <p id="successMsg" class="text-[#F5F2EB]/70 text-sm mb-6"></p>
             <p class="text-[#F5F2EB]/40 text-xs">正在跳轉至儀表板...</p>
         </div>
@@ -51,14 +51,15 @@
             <div class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-5">
                 <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><path stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </div>
-            <p class="text-[#F5F2EB] font-serif text-xl mb-2">綁定失敗</p>
+            <p class="text-[#F5F2EB] font-serif text-xl mb-2">操作失敗</p>
             <p id="errorMsg" class="text-[#F5F2EB]/70 text-sm mb-6"></p>
-            <a href="partner-dashboard.html" class="inline-block text-[#C5A065] text-sm underline underline-offset-4">返回儀表板</a>
+            <a href="partner-login.html" class="inline-block text-[#C5A065] text-sm underline underline-offset-4">使用帳號密碼登入</a>
         </div>
     </div>
 
     <script>
         const API_URL = '/api';
+        const DASHBOARD_URL = 'partner-dashboard.html';
 
         function showState(state) {
             document.getElementById('loadingState').classList.toggle('hidden', state !== 'loading');
@@ -71,86 +72,23 @@
             showState('error');
         }
 
-        async function initLiffAndBind() {
-            // 從 URL 取得 partner_code
+        function getPartnerCode() {
             const urlParams = new URLSearchParams(window.location.search);
-            let partnerCode = urlParams.get('code') || '';
-
-            // LIFF 會把參數放在 liff.state 或 hash 中
-            if (!partnerCode) {
+            let code = urlParams.get('code') || '';
+            if (!code) {
                 const state = urlParams.get('liff.state') || '';
                 const stateParams = new URLSearchParams(state.replace('?', ''));
-                partnerCode = stateParams.get('code') || '';
+                code = stateParams.get('code') || '';
             }
-
-            if (!partnerCode) {
-                showError('缺少大使代碼，請從儀表板重新操作');
-                return;
-            }
-
-            try {
-                // 初始化 LIFF
-                await liff.init({ liffId: window.__LIFF_ID__ });
-
-                // 強制只允許在 LINE App 內開啟
-                if (!liff.isInClient()) {
-                    showError('請在手機上透過 LINE 開啟此連結進行綁定');
-                    return;
-                }
-
-                // 取得 access token
-                const accessToken = liff.getAccessToken();
-                if (!accessToken) {
-                    showError('無法取得 LINE 授權，請重試');
-                    return;
-                }
-
-                // 呼叫後端綁定 API
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'bind_line_account',
-                        partner_code: partnerCode,
-                        access_token: accessToken
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    const name = result.line_display_name || '';
-                    document.getElementById('successMsg').textContent =
-                        name ? `${name}，你的 LINE 帳號已綁定成功` : '你的 LINE 帳號已綁定成功';
-                    showState('success');
-
-                    // 跳轉到儀表板（帶簽名 URL 免登入）
-                    setTimeout(() => {
-                        if (result.dashboard_url) {
-                            window.location.href = result.dashboard_url;
-                        } else {
-                            window.location.href = 'partner-dashboard.html';
-                        }
-                    }, 1500);
-                } else {
-                    showError(result.error || '綁定失敗，請稍後重試');
-                }
-            } catch (e) {
-                console.error('LIFF bind error:', e);
-                showError('系統錯誤，請稍後重試');
-            }
+            return code;
         }
 
-        // 從 meta 或全域變數取得 LIFF ID（由 Vercel 環境變數注入）
-        // 因為是靜態 HTML，LIFF ID 需要硬編碼或從 API 取得
-        // 先嘗試從 API 取得 LIFF ID
         async function start() {
+            // 取得 LIFF ID
             try {
                 const resp = await fetch(API_URL + '?get_liff_id=1');
                 const data = await resp.json();
-                if (data.liff_id) {
-                    window.__LIFF_ID__ = data.liff_id;
-                }
+                if (data.liff_id) window.__LIFF_ID__ = data.liff_id;
             } catch (_) {}
 
             if (!window.__LIFF_ID__) {
@@ -158,7 +96,88 @@
                 return;
             }
 
-            initLiffAndBind();
+            try {
+                await liff.init({ liffId: window.__LIFF_ID__ });
+
+                // 非 LINE App 內開啟 → 提示
+                if (!liff.isInClient()) {
+                    showError('請在手機上透過 LINE 開啟此連結');
+                    return;
+                }
+
+                const accessToken = liff.getAccessToken();
+                if (!accessToken) {
+                    showError('無法取得 LINE 授權，請重試');
+                    return;
+                }
+
+                const partnerCode = getPartnerCode();
+
+                if (partnerCode) {
+                    // 模式一：綁定（從儀表板點「綁定 LINE」進來，帶 code 參數）
+                    document.getElementById('loadingMsg').textContent = '正在綁定 LINE 帳號';
+                    await doBind(accessToken, partnerCode);
+                } else {
+                    // 模式二：自動登入（從 LINE 點一般連結進來，不帶 code）
+                    document.getElementById('loadingMsg').textContent = '正在自動登入';
+                    await doAutoLogin(accessToken);
+                }
+
+            } catch (e) {
+                console.error('LIFF error:', e);
+                showError('系統錯誤，請稍後重試');
+            }
+        }
+
+        // 自動登入：用 access token 查詢已綁定的 partner
+        async function doAutoLogin(accessToken) {
+            const resp = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'line_auto_login',
+                    access_token: accessToken
+                })
+            });
+            const result = await resp.json();
+
+            if (result.success && result.dashboard_url) {
+                document.getElementById('successTitle').textContent = '登入成功';
+                document.getElementById('successMsg').textContent =
+                    result.partner_name ? `${result.partner_name}，歡迎回來` : '歡迎回來';
+                showState('success');
+                setTimeout(() => { window.location.href = result.dashboard_url; }, 800);
+            } else {
+                showError(result.error || '此 LINE 帳號尚未綁定大使身份，請先使用帳號密碼登入後進行綁定');
+            }
+        }
+
+        // 綁定：用 access token + partner_code 綁定
+        async function doBind(accessToken, partnerCode) {
+            const resp = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'bind_line_account',
+                    partner_code: partnerCode,
+                    access_token: accessToken
+                })
+            });
+            const result = await resp.json();
+
+            if (result.success) {
+                document.getElementById('successTitle').textContent = '綁定成功';
+                document.getElementById('successMsg').textContent =
+                    result.line_display_name
+                        ? `${result.line_display_name}，你的 LINE 帳號已綁定成功`
+                        : '你的 LINE 帳號已綁定成功';
+                showState('success');
+                setTimeout(() => {
+                    window.location.href = result.dashboard_url || DASHBOARD_URL;
+                }, 1500);
+            } else {
+                showError(result.error || '綁定失敗，請稍後重試');
+            }
         }
 
         start();

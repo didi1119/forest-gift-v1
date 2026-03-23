@@ -3824,6 +3824,38 @@ async function handleVerifyLineLogin(data) {
   };
 }
 
+async function handleLineAutoLogin(data) {
+  const accessToken = (data.access_token || '').trim();
+  if (!accessToken) return { success: false, error: '缺少必要參數' };
+
+  // 用 access token 向 LINE API 取得 user profile
+  let lineProfile;
+  try {
+    const resp = await fetch('https://api.line.me/v2/profile', {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    if (!resp.ok) throw new Error(`LINE API ${resp.status}`);
+    lineProfile = await resp.json();
+  } catch (e) {
+    return { success: false, error: 'LINE 身份驗證失敗' };
+  }
+
+  const lineUserId = lineProfile.userId;
+  if (!lineUserId) return { success: false, error: 'LINE 身份驗證失敗' };
+
+  // 查找已綁定此 LINE 帳號的 partner
+  const allPartners = await db.getAllRecords('Partners');
+  const partner = allPartners.find(p => p.line_user_id === lineUserId && p.is_active !== false);
+  if (!partner) return { success: false, error: '此 LINE 帳號尚未綁定大使身份' };
+
+  const dashboardUrl = generateLineDashboardUrl(lineUserId);
+  return {
+    success: true,
+    dashboard_url: dashboardUrl,
+    partner_name: partner.name || partner.partner_name || ''
+  };
+}
+
 async function handleBindLineAccount(data) {
   const partnerCode = (data.partner_code || '').trim();
   const accessToken = (data.access_token || '').trim();
@@ -3913,7 +3945,8 @@ async function route(action, data) {
     'get_partner_dashboard_data',
     'shorten_url',
     'verify_line_login',
-    'bind_line_account'
+    'bind_line_account',
+    'line_auto_login'
   ]);
 
   // 管理類 action 需要 admin_secret 驗證
@@ -3959,6 +3992,7 @@ async function route(action, data) {
     'shorten_url': handleShortenUrl,
     'verify_line_login': handleVerifyLineLogin,
     'bind_line_account': handleBindLineAccount,
+    'line_auto_login': handleLineAutoLogin,
 
     'create_coupon_template': handleCreateCouponTemplate,
     'update_coupon_template': handleUpdateCouponTemplate,

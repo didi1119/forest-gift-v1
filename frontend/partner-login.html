@@ -288,9 +288,22 @@
             e.target.value = e.target.value.replace(/\D/g, '');
         });
 
-        window.addEventListener('load', function() {
+        window.addEventListener('load', async function() {
             if (sessionStorage.getItem('partnerCode')) {
                 window.location.href = 'partner-dashboard.html';
+                return;
+            }
+
+            // LINE 內建瀏覽器 → 跳轉 LIFF 自動登入
+            if (/Line/i.test(navigator.userAgent)) {
+                try {
+                    const resp = await fetch(APPS_SCRIPT_URL + '?get_liff_id=1');
+                    const data = await resp.json();
+                    if (data.liff_id) {
+                        window.location.href = 'https://liff.line.me/' + data.liff_id;
+                        return;
+                    }
+                } catch (_) {}
             }
         });
     </script>

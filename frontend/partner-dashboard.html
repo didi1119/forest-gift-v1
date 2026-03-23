@@ -868,6 +868,20 @@
         // Init
         // ========================================
         window.addEventListener('load', async function() {
+            // LINE 內建瀏覽器且尚未登入 → 跳轉 LIFF 自動登入
+            if (/Line/i.test(navigator.userAgent) && !sessionStorage.getItem('partnerCode')) {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (!urlParams.get('lu') && !urlParams.get('code')) {
+                    try {
+                        const resp = await fetch(APPS_SCRIPT_URL + '?get_liff_id=1');
+                        const data = await resp.json();
+                        if (data.liff_id) {
+                            window.location.href = 'https://liff.line.me/' + data.liff_id;
+                            return;
+                        }
+                    } catch (_) {}
+                }
+            }
             await checkAuth();
             loadPartnerData();
         });

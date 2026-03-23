@@ -1358,7 +1358,7 @@
         }
 
         function bindLineAccount() {
-            const code = currentPartner?.partner_code;
+            const code = partnerData?.partner_code;
             if (!code) { showToast('無法取得大使代碼', 'error'); return; }
             const msg = encodeURIComponent('#綁定 ' + code);
             window.open('https://line.me/R/oaMessage/@forest.house/?' + msg, '_blank');

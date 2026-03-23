@@ -796,6 +796,9 @@
                                 <input id="ctFormDesc" class="ob-input" type="text" placeholder="券內容描述，例如：山城地瓜包 + 延時退房">
                                 <input id="ctFormLineCouponId" class="ob-input" type="text" placeholder="LINE 券 ID（選填，用於 LINE@ 自動回覆）">
                                 <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:#1d1d1f;">
+                                    <input id="ctFormCreateOnLine" type="checkbox" onchange="toggleLineAutoCreate(this.checked)"> 同步建立 LINE 券（自動取得連結和 ID）
+                                </label>
+                                <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:#1d1d1f;">
                                     <input id="ctFormDefault" type="checkbox"> 設為預設券
                                 </label>
                             </div>
@@ -3895,10 +3898,26 @@
             document.getElementById('ctFormDesc').value = '';
             document.getElementById('ctFormLineCouponId').value = '';
             document.getElementById('ctFormDefault').checked = false;
+            const createOnLineEl = document.getElementById('ctFormCreateOnLine');
+            if (createOnLineEl) { createOnLineEl.checked = false; toggleLineAutoCreate(false); }
         }
 
         function editCouponTemplate(id) {
             showCouponTemplateForm(id);
+        }
+
+        function toggleLineAutoCreate(checked) {
+            const urlInput = document.getElementById('ctFormUrl');
+            const idInput = document.getElementById('ctFormLineCouponId');
+            if (checked) {
+                urlInput.placeholder = '可留空，LINE 建券後自動帶入';
+                urlInput.required = false;
+                idInput.placeholder = '可留空，LINE 建券後自動帶入';
+            } else {
+                urlInput.placeholder = 'LINE 優惠券連結，例如：https://lin.ee/...';
+                urlInput.required = true;
+                idInput.placeholder = 'LINE 券 ID（選填，用於 LINE@ 自動回覆）';
+            }
         }
 
         async function saveCouponTemplate() {
@@ -3907,9 +3926,14 @@
             const desc = document.getElementById('ctFormDesc').value.trim();
             const lineCouponId = document.getElementById('ctFormLineCouponId').value.trim();
             const isDefault = document.getElementById('ctFormDefault').checked;
+            const createOnLine = document.getElementById('ctFormCreateOnLine')?.checked || false;
 
-            if (!name || !url) {
-                showErrorMessage('券名稱和連結為必填');
+            if (!name) {
+                showErrorMessage('券名稱為必填');
+                return;
+            }
+            if (!url && !createOnLine) {
+                showErrorMessage('請填入優惠券連結，或勾選「同步建立 LINE 券」');
                 return;
             }
 
@@ -3925,14 +3949,16 @@
                         is_default: isDefault
                     });
                 } else {
-                    await submitToBackendViaForm({
+                    const payload = {
                         action: 'create_coupon_template',
                         coupon_name: name,
-                        coupon_url: url,
                         coupon_description: desc,
-                        line_coupon_id: lineCouponId,
                         is_default: isDefault
-                    });
+                    };
+                    if (url) payload.coupon_url = url;
+                    if (lineCouponId) payload.line_coupon_id = lineCouponId;
+                    if (createOnLine) payload.create_on_line = 'true';
+                    await submitToBackendViaForm(payload);
                 }
                 cancelCouponTemplateForm();
                 showSuccessMessage(editingCouponTemplateId ? '優惠券已更新' : '優惠券已新增');

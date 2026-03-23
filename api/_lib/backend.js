@@ -3284,7 +3284,43 @@ const COUPON_TEMPLATE_TABLE = 'Coupon_Templates';
 
 async function handleCreateCouponTemplate(data) {
   if (!data.coupon_name) throw new Error('coupon_name 為必填');
-  if (!data.coupon_url) throw new Error('coupon_url 為必填');
+
+  const createOnLine = data.create_on_line === true || data.create_on_line === 'true';
+  let lineCouponId = data.line_coupon_id || '';
+  let couponUrl = data.coupon_url || '';
+  let lineResult = null;
+
+  // 同步建立 LINE 券
+  if (createOnLine) {
+    if (!hasLineCouponApiConfigured()) throw new Error('LINE API 未設定（缺少 LINE_CHANNEL_ACCESS_TOKEN）');
+
+    const { startTimestamp, endTimestamp } = buildLineCouponTimestamps();
+    const linePayload = {
+      title: data.coupon_name,
+      description: data.coupon_description || data.coupon_name,
+      acquisitionCondition: { type: 'normal' },
+      maxUseCountPerTicket: 1,
+      startTimestamp,
+      endTimestamp,
+      timezone: LINE_COUPON_TIMEZONE,
+      reward: { type: 'gift' },
+      visibility: LINE_COUPON_VISIBILITY,
+      usageCondition: data.usage_condition || DEFAULT_LINE_COUPON_USAGE_CONDITION
+    };
+    if (data.image_url || LINE_COUPON_IMAGE_URL) {
+      linePayload.imageUrl = data.image_url || LINE_COUPON_IMAGE_URL;
+    }
+
+    lineResult = await callLineApi('POST', '/v2/bot/coupon', linePayload);
+    if (lineResult && lineResult.couponId) {
+      lineCouponId = lineResult.couponId;
+    }
+    if (lineResult && lineResult.couponUrl) {
+      couponUrl = couponUrl || lineResult.couponUrl;
+    }
+  }
+
+  if (!couponUrl && !createOnLine) throw new Error('coupon_url 為必填（或勾選「同步建立 LINE 券」）');
 
   // 若設為預設，先清除其他預設
   if (data.is_default === true || data.is_default === 'true') {
@@ -3293,14 +3329,19 @@ async function handleCreateCouponTemplate(data) {
 
   const record = await createRecord(COUPON_TEMPLATE_TABLE, {
     coupon_name: data.coupon_name,
-    coupon_url: data.coupon_url,
+    coupon_url: couponUrl,
     coupon_description: data.coupon_description || '',
-    line_coupon_id: data.line_coupon_id || '',
+    line_coupon_id: lineCouponId,
     is_default: data.is_default === true || data.is_default === 'true',
     is_active: true
   });
 
-  return { success: true, message: '優惠券模板已建立', data: record };
+  return {
+    success: true,
+    message: createOnLine ? '優惠券模板已建立，LINE 券已同步建立' : '優惠券模板已建立',
+    data: record,
+    line_coupon: lineResult || null
+  };
 }
 
 async function handleUpdateCouponTemplate(data) {

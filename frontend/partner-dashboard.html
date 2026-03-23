@@ -1559,7 +1559,7 @@
                 errorEl.classList.remove('hidden');
                 return;
             }
-            if (!partnerData.bank_account_number) {
+            if (!(partnerData.bank_account || partnerData.bank_account_number)) {
                 errorEl.textContent = '請先至「我的」頁面設定匯款帳戶';
                 errorEl.classList.remove('hidden');
                 return;
@@ -1684,19 +1684,19 @@
         // 銀行帳戶管理
         // ========================================
         function getBankDisplayText() {
-            if (!partnerData?.bank_account_number) return '尚未設定';
-            const num = partnerData.bank_account_number;
+            const num = partnerData?.bank_account || partnerData?.bank_account_number;
+            if (!num) return '尚未設定';
             const masked = '****' + num.slice(-4);
             return `${partnerData.bank_name || ''} ${masked}`;
         }
 
         function displayBankInfo() {
-            const hasBank = !!partnerData?.bank_account_number;
+            const hasBank = !!(partnerData?.bank_account || partnerData?.bank_account_number);
             document.getElementById('bankInfoDisplay').classList.toggle('hidden', !hasBank);
             document.getElementById('bankInfoEdit').classList.toggle('hidden', hasBank);
 
             if (hasBank) {
-                const num = partnerData.bank_account_number;
+                const num = partnerData.bank_account || partnerData.bank_account_number;
                 document.getElementById('displayBankName').textContent = partnerData.bank_name || '-';
                 document.getElementById('displayBankBranch').textContent = partnerData.bank_branch || '-';
                 document.getElementById('displayBankCode').textContent = partnerData.bank_code || '-';
@@ -1711,7 +1711,7 @@
                 document.getElementById('inputBankBranch').value = partnerData.bank_branch || '';
                 document.getElementById('inputBankCode').value = partnerData.bank_code || '';
                 document.getElementById('inputAccountName').value = partnerData.bank_account_name || '';
-                document.getElementById('inputAccountNumber').value = partnerData.bank_account_number || '';
+                document.getElementById('inputAccountNumber').value = partnerData.bank_account || partnerData.bank_account_number || '';
             }
             document.getElementById('bankInfoDisplay').classList.toggle('hidden', show);
             document.getElementById('bankInfoEdit').classList.toggle('hidden', !show);
@@ -1742,7 +1742,7 @@
                         bank_branch: bankBranch,
                         bank_code: bankCode,
                         bank_account_name: accountName,
-                        bank_account_number: accountNumber
+                        bank_account: accountNumber
                     })
                 });
                 const result = await response.json();
@@ -1752,7 +1752,7 @@
                     partnerData.bank_branch = bankBranch;
                     partnerData.bank_code = bankCode;
                     partnerData.bank_account_name = accountName;
-                    partnerData.bank_account_number = accountNumber;
+                    partnerData.bank_account = accountNumber;
                     displayBankInfo();
                     showToast('帳戶資訊已儲存', 'success');
                 } else {

@@ -4959,7 +4959,7 @@
                         
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700">帳號</label>
-                            <input type="text" id="editBankAccountNumber" value="${partner.bank_account_number || ''}" 
+                            <input type="text" id="editBankAccountNumber" value="${partner.bank_account || partner.bank_account_number || ''}"
                                 class="ob-input">
                         </div>
                         
@@ -4997,7 +4997,7 @@
                     bank_code: document.getElementById('editBankCode').value,
                     bank_branch: document.getElementById('editBankBranch').value,
                     bank_account_name: document.getElementById('editBankAccountName').value,
-                    bank_account_number: document.getElementById('editBankAccountNumber').value
+                    bank_account: document.getElementById('editBankAccountNumber').value
                 };
                 
                 // 重新顯示列表

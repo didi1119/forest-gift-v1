@@ -651,7 +651,7 @@
                 if (data.bank_code) document.getElementById('bankCode').value = data.bank_code;
                 if (data.bank_branch) document.getElementById('bankBranch').value = data.bank_branch;
                 if (data.bank_account_name) document.getElementById('bankAccountName').value = data.bank_account_name;
-                if (data.bank_account_number) document.getElementById('bankAccountNumber').value = data.bank_account_number;
+                if (data.bank_account || data.bank_account_number) document.getElementById('bankAccountNumber').value = data.bank_account || data.bank_account_number;
 
                 generatedData = data;
 
@@ -789,7 +789,7 @@ ${shortCouponUrl}
                     bank_code: document.getElementById('bankCode').value.trim(),
                     bank_branch: document.getElementById('bankBranch').value.trim(),
                     bank_account_name: document.getElementById('bankAccountName').value.trim(),
-                    bank_account_number: document.getElementById('bankAccountNumber').value.trim()
+                    bank_account: document.getElementById('bankAccountNumber').value.trim()
                 };
 
                 document.getElementById('shareTemplate').textContent = shareText;
@@ -886,7 +886,7 @@ ${shortCouponUrl}
                     coupon_link: generatedData.coupon_link || '',
                     short_landing_link: generatedData.short_landing_link || '',
                     short_coupon_link: generatedData.short_coupon_link || '',
-                    bank_account: generatedData.bank_account_number || '',
+                    bank_account: generatedData.bank_account || generatedData.bank_account_number || '',
                     bank_name: generatedData.bank_name || '',
                     bank_code: generatedData.bank_code || '',
                     bank_branch: generatedData.bank_branch || '',

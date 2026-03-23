@@ -3593,37 +3593,45 @@
             const phoneHint = application?.phone || partner?.contact_phone || partner?.phone || '';
             const shareLabel = toolkitUrl ? '你的專屬森林禮物包' : '森林禮物包';
 
-            const lineBindUrl = partnerCode ? `https://line.me/R/oaMessage/@forest.house/?${encodeURIComponent('#綁定 ' + partnerCode)}` : '';
-
             return {
                 links: [
-                    { label: '大使登入頁', description: '查看推薦紀錄、點數與佣金時，從這裡登入', url: loginUrl },
-                    { label: shareLabel, description: '對外分享時最常用的入口，已整理好你的專屬內容', url: toolkitHomeUrl },
-                    ...(couponUrl ? [{ label: '專屬優惠券連結', description: '可直接分享給對品牌感興趣的朋友使用', url: couponUrl }] : []),
-                    ...(lineBindUrl ? [{ label: '綁定 LINE 帳號', description: '點擊後在 LINE 送出訊息即可完成綁定', url: lineBindUrl }] : [])
+                    { label: '大使登入頁', description: '查看推薦紀錄、點數與佣金', url: loginUrl },
+                    { label: shareLabel, description: '對外分享的主要入口', url: toolkitHomeUrl },
+                    ...(couponUrl ? [{ label: '專屬優惠券連結', description: '分享給朋友使用的優惠入口', url: couponUrl }] : [])
                 ],
                 message: [
-                    `${recipientName}，歡迎加入靜謐森林的知音大使計畫。很高興接下來能與你一起，把森林裡的寧靜與美好分享給更多人。`,
+                    `${recipientName}，`,
                     '',
-                    '以下是你的登入資訊與常用入口，之後合作時可直接從這裡開始：',
-                    loginEmail ? `登入 Email：${loginEmail}` : '登入 Email：你建立資料時提供的 Email',
-                    partnerCode ? `你的大使代碼：${partnerCode}（登入用，請自行保管）` : null,
-                    partner?.coupon_code ? `你的對外優惠碼：${partner.coupon_code}（分享給朋友在 LINE@ 輸入領券）` : null,
-                    phoneHint ? `登入驗證：請搭配你留存手機的後 4 碼（${String(phoneHint).slice(-4)}）` : '登入驗證：請搭配你留存手機的後 4 碼',
-                    '登入時可使用 Email 或大使代碼擇一輸入。',
+                    '歡迎加入靜謐森林的知音計畫，很高興接下來能與你一起，把森林裡的寧靜與美好分享給更多人。',
                     '',
-                    `1. 大使登入頁：${loginUrl}`,
-                    `2. ${shareLabel}：${toolkitHomeUrl}`,
-                    couponUrl ? `3. 專屬優惠券連結：${couponUrl}` : null,
                     '',
-                    '【綁定 LINE 帳號】',
-                    '點擊下方連結，在靜謐森林的 LINE 官方帳號中送出綁定訊息，即可將你的 LINE 與大使身分連結。',
-                    '綁定後可直接在 LINE 查看儀表板，也能享有結算通知等功能。',
-                    lineBindUrl ? `綁定連結：${lineBindUrl}` : '',
+                    '— 你的專屬資訊 —',
                     '',
-                    '對外分享時，直接使用你的森林禮物包；若有指定活動，也可以搭配專屬優惠券連結。',
-                    partner?.coupon_code ? `朋友在我們的 LINE@ 輸入你的優惠碼「${partner.coupon_code}」就能領取優惠券，推薦也會自動記錄到你的帳戶。` : null,
-                    '之後若想調整分享方式、素材方向或合作安排，也都歡迎隨時與我們聯繫。'
+                    partnerCode ? `大使代碼：${partnerCode}` : null,
+                    partner?.coupon_code ? `對外優惠碼：${partner.coupon_code}` : null,
+                    loginEmail ? `登入 Email：${loginEmail}` : null,
+                    phoneHint ? `登入驗證：手機末 4 碼（${String(phoneHint).slice(-4)}）` : null,
+                    '',
+                    '',
+                    '— 常用連結 —',
+                    '',
+                    `大使登入頁：${loginUrl}`,
+                    `${shareLabel}：${toolkitHomeUrl}`,
+                    couponUrl ? `專屬優惠券：${couponUrl}` : null,
+                    '',
+                    '',
+                    '— 綁定 LINE —',
+                    '',
+                    '登入儀表板後，點擊「綁定 LINE 帳號」即可一鍵完成。',
+                    '綁定後從 LINE 開啟儀表板免輸入帳密，也能收到結算通知。',
+                    '',
+                    '',
+                    '— 開始推薦 —',
+                    '',
+                    '對外分享時，直接使用你的森林禮物包連結。',
+                    partner?.coupon_code ? `朋友在我們的 LINE@ 輸入優惠碼「${partner.coupon_code}」即可領取優惠券，推薦會自動記錄到你的帳戶。` : null,
+                    '',
+                    '若有任何疑問或想法，歡迎隨時透過 LINE 官方帳號 @forest.house 與我們聊聊。'
                 ].filter(Boolean).join('\n')
             };
         }

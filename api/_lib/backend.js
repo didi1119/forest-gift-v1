@@ -3089,7 +3089,7 @@ async function handleReviewApplication(data) {
 }
 
 // ===== Email 通知（Resend REST API）=====
-async function sendWelcomeEmail({ email, name, partnerCode, shortLandingLink, shortCouponLink, phone }) {
+async function sendWelcomeEmail({ email, name, partnerCode, shortLandingLink, shortCouponLink, phone, couponCode }) {
   const apiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.NOTIFICATION_FROM_EMAIL || 'onboarding@resend.dev';
   if (!apiKey) {
@@ -3098,41 +3098,51 @@ async function sendWelcomeEmail({ email, name, partnerCode, shortLandingLink, sh
   }
 
   const phoneLast4 = (phone || '').slice(-4);
-  const dashboardUrl = 'https://didi1119.github.io/forest-gift-v1/frontend/partner-login.html';
+  const dashboardUrl = 'https://forest-ambassador.vercel.app/frontend/partner-login.html';
+  const couponCodeDisplay = couponCode || '';
+  // 稱呼：取姓氏後加上柔和稱呼，避免直呼全名
+  const displayName = name ? name.charAt(0) + (name.length > 1 ? name.slice(1) : '') : '';
+  const greeting = displayName || '你好';
 
   const html = `
-    <div style="font-family: 'Noto Sans TC', sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background: #FDFBF8; color: #5C544B;">
-      <div style="text-align: center; margin-bottom: 32px;">
-        <h1 style="font-family: 'Noto Serif TC', serif; color: #2E4B36; font-size: 24px; margin-bottom: 8px;">歡迎加入知音計畫</h1>
-        <p style="color: #8B8178;">靜謐森林・知音大使</p>
+    <div style="font-family: 'Noto Sans TC', 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 32px; background: #FDFBF8; color: #5C544B; line-height: 1.8;">
+      <div style="text-align: center; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid #E8E4DF;">
+        <h1 style="font-family: 'Noto Serif TC', Georgia, serif; color: #2E4B36; font-size: 22px; margin: 0 0 6px; font-weight: 500; letter-spacing: 0.05em;">歡迎加入知音計畫</h1>
+        <p style="color: #A09890; font-size: 13px; margin: 0;">靜謐森林 · 知音大使</p>
       </div>
 
-      <p>親愛的 ${name || '知音夥伴'}，</p>
-      <p>恭喜您通過審核，正式成為靜謐森林的知音大使！以下是您的專屬工具：</p>
+      <p style="margin: 0 0 16px;">${greeting}，</p>
+      <p style="margin: 0 0 24px;">很高興你加入了靜謐森林的知音計畫。接下來，讓我們一起把森林裡的寧靜與美好，分享給更多人。</p>
 
-      <div style="background: #F0F5F0; border-left: 4px solid #2E4B36; padding: 16px; border-radius: 8px; margin: 24px 0;">
-        <p style="margin: 0 0 8px;"><strong>您的大使代碼：</strong>${partnerCode}</p>
-        <p style="margin: 0 0 8px;"><strong>推薦連結：</strong><a href="${shortLandingLink}" style="color: #2E4B36;">${shortLandingLink}</a></p>
-        <p style="margin: 0;"><strong>優惠券連結：</strong><a href="${shortCouponLink}" style="color: #2E4B36;">${shortCouponLink}</a></p>
+      <div style="background: #F5F0EB; padding: 20px 24px; border-radius: 12px; margin: 0 0 28px;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: #8B8178; margin: 0 0 12px; font-weight: 600;">你的專屬資訊</p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr><td style="padding: 6px 0; color: #8B8178; width: 110px;">大使代碼</td><td style="padding: 6px 0; color: #2E4B36; font-weight: 500;">${partnerCode}</td></tr>
+          ${couponCodeDisplay ? `<tr><td style="padding: 6px 0; color: #8B8178;">對外優惠碼</td><td style="padding: 6px 0; color: #2E4B36; font-weight: 500;">${couponCodeDisplay}</td></tr>` : ''}
+          <tr><td style="padding: 6px 0; color: #8B8178;">推薦連結</td><td style="padding: 6px 0;"><a href="${shortLandingLink}" style="color: #2E4B36; text-decoration: underline;">${shortLandingLink}</a></td></tr>
+          <tr><td style="padding: 6px 0; color: #8B8178;">優惠券連結</td><td style="padding: 6px 0;"><a href="${shortCouponLink}" style="color: #2E4B36; text-decoration: underline;">${shortCouponLink}</a></td></tr>
+        </table>
       </div>
 
-      <h3 style="color: #2E4B36; margin-top: 24px;">登入您的儀表板</h3>
-      <p>前往 <a href="${dashboardUrl}" style="color: #2E4B36; font-weight: bold;">${dashboardUrl}</a></p>
-      <p>登入方式：使用您的 <strong>Email 或大使代碼</strong> + <strong>手機末 4 碼（${phoneLast4}）</strong></p>
+      <div style="background: #F0F5F0; padding: 20px 24px; border-radius: 12px; margin: 0 0 28px;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: #2E4B36; margin: 0 0 12px; font-weight: 600;">登入你的儀表板</p>
+        <p style="margin: 0 0 8px; font-size: 14px;">前往 <a href="${dashboardUrl}" style="color: #2E4B36; font-weight: 500;">${dashboardUrl}</a></p>
+        <p style="margin: 0; font-size: 14px; color: #6B6560;">使用 Email 或大使代碼，搭配手機末 4 碼（${phoneLast4}）即可登入。</p>
+      </div>
 
-      <div style="background: #FEF3C7; border: 1px solid #F59E0B; padding: 16px; border-radius: 8px; margin: 24px 0;">
-        <h3 style="color: #92400E; margin: 0 0 8px;">啟用 LINE 即時通知</h3>
-        <p style="color: #92400E; margin: 0;">
-          加入我們的 LINE 官方帳號 <strong>@forest.house</strong>，並發送：<br>
-          <code style="background: #FDE68A; padding: 2px 8px; border-radius: 4px; font-size: 16px;">#綁定 ${partnerCode}</code><br>
-          即可啟用 LINE 即時通知，日後結算與重要訊息將直接推送給您。
+      <div style="background: #FAF6F0; padding: 20px 24px; border-radius: 12px; margin: 0 0 28px; border: 1px solid #E8DFD4;">
+        <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: #92400E; margin: 0 0 10px; font-weight: 600;">綁定 LINE 帳號</p>
+        <p style="margin: 0; font-size: 14px; color: #6B6560;">
+          登入儀表板後，點擊「綁定 LINE 帳號」按鈕即可一鍵完成綁定。<br>
+          綁定後可直接從 LINE 開啟儀表板，免輸入帳密，也能收到結算通知。
         </p>
       </div>
 
-      <p style="text-align: center; margin-top: 32px; color: #8B8178; font-size: 12px;">
-        靜謐森林 — 知音計畫<br>
-        如有任何疑問，請透過 LINE 官方帳號聯繫我們
-      </p>
+      <p style="font-size: 14px; color: #6B6560; margin: 0 0 8px;">如有任何疑問，歡迎透過 LINE 官方帳號 <strong style="color:#2E4B36;">@forest.house</strong> 與我們聯繫。</p>
+
+      <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid #E8E4DF;">
+        <p style="color: #A09890; font-size: 12px; margin: 0; letter-spacing: 0.05em;">靜謐森林 — 知音計畫</p>
+      </div>
     </div>
   `;
 
@@ -3268,7 +3278,8 @@ async function handlePromoteToPartner(data) {
       partnerCode,
       shortLandingLink,
       shortCouponLink,
-      phone: partnerData.phone
+      phone: partnerData.phone,
+      couponCode
     });
   } catch (emailErr) {
     console.error('Welcome email failed:', emailErr.message);

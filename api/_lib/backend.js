@@ -3859,6 +3859,44 @@ async function handleBindLineAccount(data) {
   // 回傳簽名 URL 供前端跳轉
   const dashboardUrl = generateLineDashboardUrl(lineUserId);
 
+  // 透過 LINE Bot 發送綁定成功訊息（含簽名儀表板連結）
+  if (LINE_CHANNEL_ACCESS_TOKEN) {
+    try {
+      await callLineApi('POST', '/v2/bot/message/push', {
+        to: lineUserId,
+        messages: [{
+          type: 'flex',
+          altText: `綁定成功！${partner.name || partnerCode}，點擊下方按鈕查看儀表板。`,
+          contents: {
+            type: 'bubble', size: 'kilo',
+            header: {
+              type: 'box', layout: 'vertical', paddingAll: '16px', backgroundColor: '#2E4B36',
+              contents: [
+                { type: 'text', text: '靜謐森林', size: 'xs', color: '#C5A065', weight: 'bold' },
+                { type: 'text', text: '帳號綁定成功', size: 'lg', color: '#FFFFFF', weight: 'bold', margin: 'sm' }
+              ]
+            },
+            body: {
+              type: 'box', layout: 'vertical', paddingAll: '16px', spacing: 'md',
+              contents: [
+                { type: 'text', text: `${lineDisplayName || partner.name || partnerCode}，你好！`, size: 'sm', color: '#1d1d1f', weight: 'bold' },
+                { type: 'text', text: '你的 LINE 帳號已綁定成功。日後點擊下方按鈕即可直接查看儀表板，無需再輸入帳號密碼。', size: 'sm', color: '#555555', wrap: true }
+              ]
+            },
+            footer: {
+              type: 'box', layout: 'vertical', paddingAll: '12px', spacing: 'sm',
+              contents: [
+                { type: 'button', style: 'primary', color: '#2E4B36', action: { type: 'uri', label: '查看我的儀表板', uri: dashboardUrl } }
+              ]
+            }
+          }
+        }]
+      });
+    } catch (e) {
+      console.error('LIFF bind push message failed:', e.message);
+    }
+  }
+
   return {
     success: true,
     message: '綁定成功',

@@ -3381,17 +3381,73 @@ async function resolveLineCouponIdForPartner(partner) {
   return '';
 }
 
-async function replyLineCoupon(replyToken, couponId) {
-  if (!replyToken || !couponId) return;
-  await callLineApi('POST', '/v2/bot/message/reply', {
-    replyToken,
-    messages: [
-      {
-        type: 'coupon',
-        couponId
-      }
-    ]
-  });
+async function resolveCouponTemplateForPartner(partner) {
+  const partnerCouponUrl = partner.coupon_url || partner.line_coupon_url || '';
+  if (!partnerCouponUrl) return null;
+  try {
+    const allTemplates = await db.getAllRecords(COUPON_TEMPLATE_TABLE);
+    for (const t of allTemplates) {
+      const d = t.data || t;
+      if (d.is_active === false || d.is_active === 'false') continue;
+      if (d.coupon_url === partnerCouponUrl) return d;
+    }
+  } catch (e) {
+    console.error('resolveCouponTemplateForPartner error:', e.message);
+  }
+  return null;
+}
+
+async function replyLineCoupon(replyToken, couponIdOrUrl, template) {
+  if (!replyToken) return;
+
+  // 優先用 Flex Message 發送優惠券連結（相容 LINE Official Account 後台建立的券）
+  const couponUrl = (template && template.coupon_url) || couponIdOrUrl || '';
+  const couponName = (template && template.coupon_name) || '森林專屬優惠';
+  const couponDesc = (template && template.coupon_description) || '點擊下方按鈕領取優惠券';
+
+  if (couponUrl && couponUrl.startsWith('http')) {
+    await callLineApi('POST', '/v2/bot/message/reply', {
+      replyToken,
+      messages: [{
+        type: 'flex',
+        altText: `${couponName} — 點擊領取`,
+        contents: {
+          type: 'bubble',
+          size: 'kilo',
+          header: {
+            type: 'box', layout: 'vertical', paddingAll: '16px',
+            backgroundColor: '#2E4B36',
+            contents: [
+              { type: 'text', text: '靜謐森林', size: 'xs', color: '#C5A065', weight: 'bold' },
+              { type: 'text', text: couponName, size: 'md', color: '#FFFFFF', weight: 'bold', margin: 'xs' }
+            ]
+          },
+          body: {
+            type: 'box', layout: 'vertical', paddingAll: '16px', spacing: 'sm',
+            contents: [
+              { type: 'text', text: couponDesc, size: 'sm', color: '#555555', wrap: true }
+            ]
+          },
+          footer: {
+            type: 'box', layout: 'vertical', paddingAll: '12px',
+            contents: [{
+              type: 'button', style: 'primary', color: '#2E4B36',
+              action: { type: 'uri', label: '領取優惠券', uri: couponUrl }
+            }]
+          }
+        }
+      }]
+    });
+    return;
+  }
+
+  // Fallback: 用 coupon message type（僅適用於 Messaging API 建立的券）
+  if (couponIdOrUrl) {
+    await callLineApi('POST', '/v2/bot/message/reply', {
+      replyToken,
+      messages: [{ type: 'coupon', couponId: couponIdOrUrl }]
+    });
+  }
 }
 
 async function handleLineWebhook(req, res) {
@@ -3493,8 +3549,9 @@ async function handleLineWebhook(req, res) {
       last_error: ''
     });
 
-    // 查詢大使對應的優惠券範本 → 取 line_coupon_id；無則 fallback 到全域 LINE_SHARED_COUPON_ID
-    const resolvedCouponId = await resolveLineCouponIdForPartner(matchedPartner) || LINE_SHARED_COUPON_ID;
+    // 查詢大使對應的優惠券範本
+    const couponTemplate = await resolveCouponTemplateForPartner(matchedPartner);
+    const resolvedCouponId = (couponTemplate && couponTemplate.line_coupon_id) || LINE_SHARED_COUPON_ID || (couponTemplate && couponTemplate.coupon_url);
 
     if (!resolvedCouponId) {
       await upsertLineReferralClaim({
@@ -3519,7 +3576,7 @@ async function handleLineWebhook(req, res) {
     }
 
     try {
-      await replyLineCoupon(event.replyToken, resolvedCouponId);
+      await replyLineCoupon(event.replyToken, resolvedCouponId, couponTemplate);
       await upsertLineReferralClaim({
         ...(claimResult.data || {}),
         claim_key: claimKey,

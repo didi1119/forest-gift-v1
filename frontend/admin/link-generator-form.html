@@ -554,18 +554,11 @@
 
         async function loadCouponTemplates() {
             try {
-                let adminSecret = sessionStorage.getItem('admin_secret') || sessionStorage.getItem('adminSecret') || window.__adminSecret || '';
-                // If in iframe, try getting from parent
-                if (!adminSecret) {
-                    try { adminSecret = window.parent.sessionStorage.getItem('admin_secret') || ''; } catch (_) {}
-                }
-                if (!adminSecret) {
-                    try { adminSecret = window.parent.__adminSecret || ''; } catch (_) {}
-                }
+                // admin-auth.js 會自動在 fetch 中注入 admin_secret
                 const res = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `action=get_all_data&admin_secret=${encodeURIComponent(adminSecret)}`
+                    body: 'action=get_all_data'
                 });
                 const json = await res.json();
                 if (json.success && json.data && json.data.coupon_templates) {

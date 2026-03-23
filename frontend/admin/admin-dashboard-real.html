@@ -3229,7 +3229,7 @@
                         <a href="${loginUrl}" target="_blank" style="font-size:0.8rem;color:#2E4B36;">開啟</a>
                     </div>
                     <div class="ob-packet-link">
-                        <div><div style="font-weight:500;font-size:0.82rem;">贈禮工具包</div></div>
+                        <div><div style="font-weight:500;font-size:0.82rem;">森林禮物包</div></div>
                         <a href="${toolkitUrl}" target="_blank" style="font-size:0.8rem;color:#2E4B36;">開啟</a>
                     </div>
                 `;
@@ -3581,7 +3581,7 @@
             const loginEmail = application?.email || partner?.contact_email || partner?.email || '';
             const partnerCode = partner?.partner_code || application?.partner_code_assigned || draft.partnerCode || '';
             const phoneHint = application?.phone || partner?.contact_phone || partner?.phone || '';
-            const shareLabel = toolkitUrl ? '你的專屬分享工具包' : '知音大使贈禮工具包';
+            const shareLabel = toolkitUrl ? '你的專屬森林禮物包' : '森林禮物包';
 
             const lineBindUrl = partnerCode ? `https://line.me/R/oaMessage/@forest.house/?${encodeURIComponent('#綁定 ' + partnerCode)}` : '';
 
@@ -3611,7 +3611,7 @@
                     '綁定後可直接在 LINE 查看儀表板，也能享有結算通知等功能。',
                     lineBindUrl ? `綁定連結：${lineBindUrl}` : '',
                     '',
-                    '對外分享時，直接使用你的分享工具包；若有指定活動，也可以搭配專屬優惠券連結。',
+                    '對外分享時，直接使用你的森林禮物包；若有指定活動，也可以搭配專屬優惠券連結。',
                     partner?.coupon_code ? `朋友在我們的 LINE@ 輸入你的優惠碼「${partner.coupon_code}」就能領取優惠券，推薦也會自動記錄到你的帳戶。` : null,
                     '之後若想調整分享方式、素材方向或合作安排，也都歡迎隨時與我們聯繫。'
                 ].filter(Boolean).join('\n')

@@ -427,7 +427,7 @@
 
         let generatedData = null;
         const DRAFT_STORAGE_KEY = 'linkGeneratorDraft';
-        const DEFAULT_COUPON_URL = 'https://lin.ee/q38pqot';
+        let DEFAULT_COUPON_URL = '';
 
         function getCodeSeed(params = new URLSearchParams(window.location.search)) {
             const applicationId = String(params.get('application_id') || '').replace(/\D/g, '');
@@ -548,11 +548,39 @@
             }
         }
 
+        // Fetch default coupon URL from API
+        async function loadDefaultCouponUrl() {
+            try {
+                const adminSecret = sessionStorage.getItem('adminSecret') || localStorage.getItem('adminSecret') || '';
+                const res = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=get_all_data&admin_secret=${encodeURIComponent(adminSecret)}`
+                });
+                const json = await res.json();
+                if (json.success && json.data && json.data.coupon_templates) {
+                    const templates = json.data.coupon_templates.map(t => t.data || t);
+                    const defaultTpl = templates.find(t => t.is_default === true || t.is_default === 'true');
+                    if (defaultTpl && defaultTpl.coupon_url) {
+                        DEFAULT_COUPON_URL = defaultTpl.coupon_url;
+                        // Pre-fill if coupon URL field is empty
+                        const urlField = document.getElementById('couponUrl');
+                        if (urlField && !urlField.value.trim()) {
+                            urlField.value = DEFAULT_COUPON_URL;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load default coupon URL:', e.message);
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function () {
             applyPrefillFromQuery();
             suggestCodes(false);
             restoreDraftIfExists();
+            loadDefaultCouponUrl();
         });
 
         // Restore draft from sessionStorage

@@ -3512,7 +3512,7 @@ async function handleLineWebhook(req, res) {
       const bindCode = bindMatch[1].trim();
       const lineUserId = event.source && event.source.userId ? event.source.userId : '';
       if (!lineUserId) {
-        await callLineApi('https://api.line.me/v2/bot/message/reply', {
+        await callLineApi('POST', '/v2/bot/message/reply', {
           replyToken: event.replyToken,
           messages: [{ type: 'text', text: '無法取得您的 LINE 帳號資訊，請稍後再試。' }]
         });
@@ -3521,20 +3521,69 @@ async function handleLineWebhook(req, res) {
       try {
         const partner = await findPartnerByCode(bindCode);
         if (!partner) {
-          await callLineApi('https://api.line.me/v2/bot/message/reply', {
+          await callLineApi('POST', '/v2/bot/message/reply', {
             replyToken: event.replyToken,
             messages: [{ type: 'text', text: `查無大使代碼「${bindCode}」，請確認後重試。` }]
           });
           continue;
         }
-        await updateRecord('Partners', partner.partner_code, { line_user_id: lineUserId });
-        await callLineApi('https://api.line.me/v2/bot/message/reply', {
+        const sourceProfile = await fetchLineProfileForEventSource(event.source || {});
+        const displayName = String(sourceProfile && sourceProfile.displayName || '').trim();
+        await updateRecord('Partners', partner.partner_code, {
+          line_user_id: lineUserId,
+          line_display_name: displayName || undefined
+        });
+
+        const dashboardUrl = `${GITHUB_PAGES_URL || 'https://didi1119.github.io/forest-gift-v1'}/frontend/partner-dashboard.html`;
+        const shareLink = partner.short_landing_link || partner.landing_link || '';
+
+        await callLineApi('POST', '/v2/bot/message/reply', {
           replyToken: event.replyToken,
-          messages: [{ type: 'text', text: `配對成功！${partner.name || bindCode}，您的 LINE 帳號已綁定，日後將透過此帳號接收結算通知與重要訊息。` }]
+          messages: [{
+            type: 'flex',
+            altText: `綁定成功！${partner.name || bindCode}，歡迎加入知音大使。`,
+            contents: {
+              type: 'bubble',
+              size: 'kilo',
+              header: {
+                type: 'box', layout: 'vertical', paddingAll: '16px',
+                backgroundColor: '#2E4B36',
+                contents: [
+                  { type: 'text', text: '靜謐森林 ・ 知音大使', size: 'xs', color: '#C5A065', weight: 'bold' },
+                  { type: 'text', text: '帳號綁定成功', size: 'lg', color: '#FFFFFF', weight: 'bold', margin: 'sm' }
+                ]
+              },
+              body: {
+                type: 'box', layout: 'vertical', paddingAll: '16px', spacing: 'md',
+                contents: [
+                  { type: 'text', text: `${partner.name || bindCode}，你好！`, size: 'sm', color: '#1d1d1f', weight: 'bold' },
+                  { type: 'text', text: '你的 LINE 帳號已與大使身分綁定。日後可直接透過下方按鈕查看推薦成果與佣金紀錄。', size: 'sm', color: '#555555', wrap: true },
+                  { type: 'separator', margin: 'md' },
+                  { type: 'box', layout: 'vertical', spacing: 'xs', margin: 'md', contents: [
+                    { type: 'box', layout: 'horizontal', contents: [
+                      { type: 'text', text: '大使代碼', size: 'xs', color: '#86868b', flex: 3 },
+                      { type: 'text', text: partner.partner_code, size: 'xs', color: '#1d1d1f', weight: 'bold', flex: 5, align: 'end' }
+                    ]},
+                    { type: 'box', layout: 'horizontal', contents: [
+                      { type: 'text', text: '優惠碼', size: 'xs', color: '#86868b', flex: 3 },
+                      { type: 'text', text: partner.coupon_code || '—', size: 'xs', color: '#1d1d1f', weight: 'bold', flex: 5, align: 'end' }
+                    ]}
+                  ]}
+                ]
+              },
+              footer: {
+                type: 'box', layout: 'vertical', paddingAll: '12px', spacing: 'sm',
+                contents: [
+                  { type: 'button', style: 'primary', color: '#2E4B36', action: { type: 'uri', label: '查看我的儀表板', uri: dashboardUrl } },
+                  ...(shareLink ? [{ type: 'button', style: 'link', color: '#2E4B36', action: { type: 'uri', label: '我的推薦連結', uri: shareLink } }] : [])
+                ]
+              }
+            }
+          }]
         });
       } catch (bindErr) {
         console.error('LINE bind error:', bindErr.message);
-        await callLineApi('https://api.line.me/v2/bot/message/reply', {
+        await callLineApi('POST', '/v2/bot/message/reply', {
           replyToken: event.replyToken,
           messages: [{ type: 'text', text: '配對過程發生錯誤，請稍後再試或聯繫客服。' }]
         });
@@ -3557,8 +3606,50 @@ async function handleLineWebhook(req, res) {
       continue;
     }
 
-    const claimTimestamp = new Date().toISOString();
     const lineUserId = event.source && event.source.userId ? event.source.userId : '';
+
+    // 偵測大使本人輸入自己的優惠碼
+    if (lineUserId && matchedPartner.line_user_id && lineUserId === matchedPartner.line_user_id) {
+      const dashboardUrl = `${GITHUB_PAGES_URL || 'https://didi1119.github.io/forest-gift-v1'}/frontend/partner-dashboard.html`;
+      const shareLink = matchedPartner.short_landing_link || matchedPartner.landing_link || '';
+      await callLineApi('POST', '/v2/bot/message/reply', {
+        replyToken: event.replyToken,
+        messages: [{
+          type: 'flex',
+          altText: `${matchedPartner.name || matchedCode}，這是你的專屬優惠碼`,
+          contents: {
+            type: 'bubble',
+            size: 'kilo',
+            header: {
+              type: 'box', layout: 'vertical', paddingAll: '16px',
+              backgroundColor: '#2E4B36',
+              contents: [
+                { type: 'text', text: '靜謐森林 ・ 知音大使', size: 'xs', color: '#C5A065', weight: 'bold' },
+                { type: 'text', text: '你的專屬優惠碼', size: 'md', color: '#FFFFFF', weight: 'bold', margin: 'xs' }
+              ]
+            },
+            body: {
+              type: 'box', layout: 'vertical', paddingAll: '16px', spacing: 'sm',
+              contents: [
+                { type: 'text', text: `${matchedPartner.name || ''}，這是你的對外優惠碼：`, size: 'sm', color: '#555555', wrap: true },
+                { type: 'text', text: matchedPartner.coupon_code || matchedCode, size: 'xl', color: '#2E4B36', weight: 'bold', align: 'center', margin: 'md' },
+                { type: 'text', text: '請將這組優惠碼分享給朋友，對方在此輸入即可領取優惠券，推薦也會自動記錄到你的帳戶。', size: 'xs', color: '#86868b', wrap: true, margin: 'md' }
+              ]
+            },
+            footer: {
+              type: 'box', layout: 'vertical', paddingAll: '12px', spacing: 'sm',
+              contents: [
+                { type: 'button', style: 'primary', color: '#2E4B36', action: { type: 'uri', label: '查看推薦成果', uri: dashboardUrl } },
+                ...(shareLink ? [{ type: 'button', style: 'link', color: '#2E4B36', action: { type: 'uri', label: '分享推薦連結', uri: shareLink } }] : [])
+              ]
+            }
+          }
+        }]
+      });
+      continue;
+    }
+
+    const claimTimestamp = new Date().toISOString();
     const sourceProfile = await fetchLineProfileForEventSource(event.source || {});
     const resolvedDisplayName = String(
       sourceProfile && sourceProfile.displayName ||

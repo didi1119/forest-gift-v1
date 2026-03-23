@@ -139,7 +139,7 @@ async function cleanupBooking(id) {
     }
     await shot(page, '01_bookings_loaded');
 
-    await page.getByRole('button', { name: /手動登記訂房/ }).click();
+    await page.getByRole('button', { name: /手動登記/ }).click();
     await page.waitForSelector('#manualBookingForm');
     await page.locator('#modal_guest_name').fill(guestName);
     await page.locator('#modal_guest_phone').fill(guestPhone);
@@ -216,6 +216,8 @@ async function cleanupBooking(id) {
 
     await focusBookingsTab(page);
     await rowAfterEdit.getByRole('button', { name: /確認入住/ }).click();
+    await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+    await page.locator('#acm-confirm').click();
     await page.waitForFunction((targetGuestName) => {
       const rows = Array.from(document.querySelectorAll('#bookingsTable tr'));
       const row = rows.find(item => item.innerText.includes(targetGuestName));
@@ -241,6 +243,8 @@ async function cleanupBooking(id) {
     await page.waitForSelector('#editBookingForm');
     await shot(page, '07_before_delete');
     await page.getByRole('button', { name: /刪除訂單/ }).click();
+    await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+    await page.locator('#acm-confirm').click();
     await page.waitForTimeout(2500);
     await shot(page, '08_after_delete');
 

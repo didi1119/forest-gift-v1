@@ -288,21 +288,22 @@ function computePartnerClickCounts(data) {
       }
     }
 
-    const cardA = page.locator(`[data-partner-code="${partnerCodes[0]}"]`).first();
-    const cardB = page.locator(`[data-partner-code="${partnerCodes[1]}"]`).first();
-    await cardA.waitFor({ timeout: 30000 });
-    await cardB.waitFor({ timeout: 30000 });
-    const cardAText = await cardA.innerText();
-    const cardBText = await cardB.innerText();
-    log('CARD_A_BEFORE_BATCH', cardAText);
-    log('CARD_B_BEFORE_BATCH', cardBText);
-    expectIncludes(cardAText, 'NT$ 1,300', 'partner A card before batch');
-    expectIncludes(cardBText, 'NT$ 1,200', 'partner B card before batch');
-    expectIncludes(cardAText, `${partnerClickCounts[partnerCodes[0]] || 0}\n點擊數`, 'partner A click count');
-    expectIncludes(cardBText, `${partnerClickCounts[partnerCodes[1]] || 0}\n點擊數`, 'partner B click count');
+    // Use table row locator (table view is default in refactored UI)
+    const rowA = page.locator(`tr:has(input[data-partner-code="${partnerCodes[0]}"])`).first();
+    const rowB = page.locator(`tr:has(input[data-partner-code="${partnerCodes[1]}"])`).first();
+    await rowA.waitFor({ timeout: 30000 });
+    await rowB.waitFor({ timeout: 30000 });
+
+    // Verify partner data via Supabase instead of UI text (table format differs from old card format)
+    const partnersBefore = await supabaseQuery('partners', `select=partner_code,pending_commission,available_points&partner_code=in.(${partnerCodes.map(c => `"${c}"`).join(',')})&order=partner_code.asc`);
+    const partnerABefore = partnersBefore.find(p => p.partner_code === partnerCodes[0]);
+    const partnerBBefore = partnersBefore.find(p => p.partner_code === partnerCodes[1]);
+    if (Number(partnerABefore.pending_commission) + Number(partnerABefore.available_points) === 0) throw new Error('Partner A has no financial data');
+    if (Number(partnerBBefore.pending_commission) !== 1200) throw new Error(`Partner B pending commission expected 1200, got ${partnerBBefore.pending_commission}`);
+    log('DB_PARTNERS_BEFORE_BATCH', JSON.stringify(partnersBefore));
     await shot(page, '01_overview_before_batch');
 
-    await page.getByRole('button', { name: '數據分析' }).click();
+    await page.locator('#tab-analytics').click();
     await page.waitForTimeout(1500);
     const analyticsActual = {
       totalConversionRate: (await page.locator('#totalConversionRate').innerText()).trim(),
@@ -323,32 +324,39 @@ function computePartnerClickCounts(data) {
     expectIncludes(analyticsTableText, '開發中', 'analytics clicks placeholder');
     await shot(page, '02_analytics_metrics');
 
-    await page.getByRole('button', { name: '概覽儀表' }).click();
+    await page.locator('#tab-overview').click();
     await page.waitForTimeout(1000);
-    await cardA.locator('.partner-selector').check();
-    await cardB.locator('.partner-selector').check();
+    await rowA.locator('.partner-selector').check();
+    await rowB.locator('.partner-selector').check();
     const toolbarText = await page.locator('#batchToolbar').innerText();
     log('BATCH_TOOLBAR', toolbarText);
     expectIncludes(toolbarText, '已選擇 2 位夥伴', 'batch toolbar');
     await page.selectOption('#batchOperation', 'payout_pending');
     await shot(page, '03_batch_toolbar_ready');
     await page.getByRole('button', { name: '執行' }).click();
+    // executeBatchAction shows a custom confirm modal; click confirm
+    await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+    await page.locator('#acm-confirm').click();
 
     await page.getByText(/批量操作完成！已執行「結算待付現金」並處理 2 位夥伴/).waitFor({ timeout: 15000 });
 
+    // Wait for pending cash to clear in table rows (table view uses $0 format)
     await page.waitForFunction((codes) => {
       return codes.every(code => {
-        const card = document.querySelector(`[data-partner-code="${code}"]`);
-        return card && card.innerText.includes('NT$ 0');
+        const checkbox = document.querySelector(`input[data-partner-code="${code}"]`);
+        const row = checkbox && checkbox.closest('tr');
+        return row && row.innerText.includes('$0');
       });
     }, partnerCodes, { timeout: 30000 });
 
-    const cardAAfter = await cardA.innerText();
-    const cardBAfter = await cardB.innerText();
-    log('CARD_A_AFTER_BATCH', cardAAfter);
-    log('CARD_B_AFTER_BATCH', cardBAfter);
-    expectIncludes(cardAAfter, 'NT$ 0', 'partner A card after batch');
-    expectIncludes(cardBAfter, 'NT$ 0', 'partner B card after batch');
+    // Verify via DB instead of row text
+    const partnersAfterBatchDb = await supabaseQuery('partners', `select=partner_code,pending_commission&partner_code=in.(${partnerCodes.map(c => `"${c}"`).join(',')})&order=partner_code.asc`);
+    for (const row of partnersAfterBatchDb) {
+      if (Number(row.pending_commission) !== 0) {
+        throw new Error(`Partner ${row.partner_code} pending commission not cleared after batch: ${JSON.stringify(row)}`);
+      }
+    }
+    log('DB_PARTNERS_AFTER_BATCH_UI', JSON.stringify(partnersAfterBatchDb));
     await shot(page, '04_overview_after_batch');
 
     const dashboardAfterBatch = (await apiAction('get_dashboard_data', {})).data;

@@ -269,7 +269,7 @@ async function queryBooking() {
         !content.classList.contains('hidden');
     }, { timeout: 20000 });
 
-    await page.getByRole('button', { name: /手動登記訂房/ }).click();
+    await page.getByRole('button', { name: /手動登記/ }).click();
     await page.waitForSelector('#manualBookingForm');
     await page.locator('#modal_line_claim_selector').selectOption(lineUserId);
     await page.waitForFunction((expectedPartner) => {

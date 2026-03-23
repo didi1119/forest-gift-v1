@@ -205,7 +205,11 @@ async function showBookingsFor(page, searchTerm) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
     const page = await context.newPage();
     let lastDialogMessage = '';
-
+    async function readAndConfirmModal() {
+      await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+      lastDialogMessage = await page.locator('#appleConfirmModal').innerText().catch(() => '');
+      await page.locator('#acm-confirm').click();
+    }
     page.on('dialog', async dialog => {
       lastDialogMessage = dialog.message();
       log('DIALOG', dialog.type(), dialog.message());
@@ -242,6 +246,7 @@ async function showBookingsFor(page, searchTerm) {
 
     lastDialogMessage = '';
     await page.getByRole('button', { name: /確認入住/ }).click();
+    await readAndConfirmModal();
     await waitForAsync(async () => {
       const rows = await supabaseQuery('bookings', `select=id,stay_status,commission_amount,is_first_referral_bonus,first_referral_bonus_amount&partner_code=eq.${encodeURIComponent(firstBonusPartner)}&id=eq.${bonusBooking1Id}`);
       return rows[0] && rows[0].stay_status === 'COMPLETED' ? rows[0] : null;
@@ -257,20 +262,35 @@ async function showBookingsFor(page, searchTerm) {
 
     lastDialogMessage = '';
     await page.getByRole('button', { name: /確認入住/ }).click();
+    await readAndConfirmModal();
     await waitForAsync(async () => {
       const rows = await supabaseQuery('bookings', `select=id,stay_status,commission_amount,is_first_referral_bonus,first_referral_bonus_amount&partner_code=eq.${encodeURIComponent(firstBonusPartner)}&id=eq.${bonusBooking2Id}`);
       return rows[0] && rows[0].stay_status === 'COMPLETED' ? rows[0] : null;
     });
     expectIncludes(lastDialogMessage, '$1000 住宿金', 'second booking confirm dialog');
 
-    lastDialogMessage = '';
     await page.evaluate((id) => window.deleteBooking(String(id)), String(bonusBooking1Id));
+    await readAndConfirmModal();
     await waitForAsync(async () => {
       const rows = await supabaseQuery('bookings', `select=id,stay_status&partner_code=eq.${encodeURIComponent(firstBonusPartner)}&id=eq.${bonusBooking1Id}`);
       return rows[0] && rows[0].stay_status === 'CANCELLED' ? rows[0] : null;
     });
     await refreshDashboard(page);
     await showBookingsFor(page, bonusBooking2Name);
+    // Wait for retroactive commission recalculation to be reflected in table
+    await page.waitForFunction((name) => {
+      const table = document.getElementById('bookingsTable');
+      return table && table.innerText.includes(name) && table.innerText.includes('$2500');
+    }, bonusBooking2Name, { timeout: 15000 }).catch(async () => {
+      // Retry with another refresh in case the data wasn't ready
+      await page.evaluate(() => loadRealData(true));
+      await page.waitForTimeout(2000);
+      await page.evaluate(({ searchTerm }) => {
+        document.getElementById('searchBooking').value = searchTerm;
+        filterBookings();
+      }, { searchTerm: bonusBooking2Name });
+      await page.waitForTimeout(800);
+    });
     const bonusTableAfterDelete = await page.locator('#bookingsTable').innerText();
     log('BONUS_TABLE_AFTER_DELETE', bonusTableAfterDelete);
     expectIncludes(bonusTableAfterDelete, '$2500', 'second booking actual commission after transfer');
@@ -300,6 +320,7 @@ async function showBookingsFor(page, searchTerm) {
 
     lastDialogMessage = '';
     await page.getByRole('button', { name: /確認入住/ }).click();
+    await readAndConfirmModal();
     await waitForAsync(async () => {
       const rows = await supabaseQuery('bookings', `select=id,stay_status,commission_amount,commission_type&partner_code=eq.${encodeURIComponent(cashPartner)}&id=eq.${cashBooking10Id}`);
       return rows[0] && rows[0].stay_status === 'COMPLETED' ? rows[0] : null;
@@ -315,6 +336,7 @@ async function showBookingsFor(page, searchTerm) {
 
     lastDialogMessage = '';
     await page.getByRole('button', { name: /確認入住/ }).click();
+    await readAndConfirmModal();
     await waitForAsync(async () => {
       const rows = await supabaseQuery('bookings', `select=id,stay_status,commission_amount,commission_type&partner_code=eq.${encodeURIComponent(cashPartner)}&id=eq.${cashBooking11Id}`);
       return rows[0] && rows[0].stay_status === 'COMPLETED' ? rows[0] : null;
@@ -322,8 +344,8 @@ async function showBookingsFor(page, searchTerm) {
     expectIncludes(lastDialogMessage, '$750 現金', 'cash booking 11 confirm dialog');
 
     // Cancel the earliest historical booking to trigger retroactive recomputation.
-    lastDialogMessage = '';
     await page.evaluate((id) => window.deleteBooking(String(id)), String(historicalCashBookingIds[0]));
+    await readAndConfirmModal();
     await waitForAsync(async () => {
       const rows = await supabaseQuery('bookings', `select=id,stay_status&partner_code=eq.${encodeURIComponent(cashPartner)}&id=eq.${historicalCashBookingIds[0]}`);
       return rows[0] && rows[0].stay_status === 'CANCELLED' ? rows[0] : null;
@@ -331,6 +353,19 @@ async function showBookingsFor(page, searchTerm) {
 
     await refreshDashboard(page);
     await showBookingsFor(page, cashBooking11Name);
+    // Wait for retroactive commission recalculation to be reflected
+    await page.waitForFunction((name) => {
+      const table = document.getElementById('bookingsTable');
+      return table && table.innerText.includes(name) && table.innerText.includes('$600');
+    }, cashBooking11Name, { timeout: 15000 }).catch(async () => {
+      await page.evaluate(() => loadRealData(true));
+      await page.waitForTimeout(2000);
+      await page.evaluate(({ searchTerm }) => {
+        document.getElementById('searchBooking').value = searchTerm;
+        filterBookings();
+      }, { searchTerm: cashBooking11Name });
+      await page.waitForTimeout(800);
+    });
     const cashTableAfterDelete = await page.locator('#bookingsTable').innerText();
     log('CASH_TABLE_AFTER_DELETE', cashTableAfterDelete);
     expectIncludes(cashTableAfterDelete, '$600', 'cash booking 11 actual commission after retroactive adjust');

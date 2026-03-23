@@ -130,9 +130,10 @@ async function waitForInitialData(page) {
     await waitForInitialData(page);
     await page.evaluate(() => window.showTab('overview'));
 
-    const partnerCard = page.locator(`[data-partner-code="${partnerCode}"]`).first();
-    await partnerCard.waitFor({ timeout: 10000 });
-    await partnerCard.getByRole('button', { name: /使用點數/ }).click();
+    // Table view: find row containing the partner checkbox
+    const partnerRow = page.locator(`tr:has(input[data-partner-code="${partnerCode}"])`).first();
+    await partnerRow.waitFor({ timeout: 10000 });
+    await partnerRow.getByRole('button', { name: /使用點數/ }).click();
     await page.locator('#partnerActionsModal').waitFor({ timeout: 10000 });
     await page.getByRole('button', { name: /轉換現金/ }).click();
     await page.locator('#pointsToCashModal').waitFor({ timeout: 10000 });
@@ -144,8 +145,9 @@ async function waitForInitialData(page) {
     await shot(page, '01_points_convert_modal');
     await page.getByRole('button', { name: /確認轉換/ }).click();
     await page.waitForFunction((code) => {
-      const card = document.querySelector(`[data-partner-code="${code}"]`);
-      return card && card.innerText.includes('NT$ 1,000');
+      const checkbox = document.querySelector(`input[data-partner-code="${code}"]`);
+      const row = checkbox && checkbox.closest('tr');
+      return row && row.innerText.includes('$1,000');
     }, partnerCode, { timeout: 30000 });
 
     const payouts = await supabaseQuery('payouts', `select=id,partner_code,payout_type,amount,payout_status,notes&partner_code=eq.${encodeURIComponent(partnerCode)}&order=id.asc`);
@@ -171,7 +173,7 @@ async function waitForInitialData(page) {
     expectIncludes(detailText, '$1,000', 'payout detail amount');
     await shot(page, '03_payout_detail');
 
-    await page.getByRole('button', { name: '修改' }).click();
+    await page.getByRole('button', { name: /修改結算/ }).click();
     await page.locator('#editPayoutModal').waitFor({ timeout: 10000 });
     const editValue = await page.locator('#editPayoutModal input[readonly]').nth(1).inputValue();
     const editText = await page.locator('#editPayoutModal').innerText();
@@ -183,9 +185,13 @@ async function waitForInitialData(page) {
     await page.locator('#editPayoutModal').getByRole('button', { name: '取消', exact: true }).click();
     await page.locator('#editPayoutModal').waitFor({ state: 'hidden', timeout: 10000 });
 
-    await page.getByRole('button', { name: '取消結算' }).click();
+    await page.getByRole('button', { name: /取消此結算|取消結算/ }).click();
+    // cancelPayout shows a custom confirm modal; click confirm
+    await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+    lastDialogMessage = await page.locator('#appleConfirmModal').innerText().catch(() => '');
+    log('CANCEL_CONFIRM_MODAL', lastDialogMessage);
+    await page.locator('#acm-confirm').click();
     await page.getByText('結算已取消！相關訂單狀態已重置').waitFor({ timeout: 15000 });
-    log('CANCEL_CONFIRM', lastDialogMessage);
     expectIncludes(lastDialogMessage, '點數轉現金', 'cancel confirm type');
     await shot(page, '05_after_cancel');
 

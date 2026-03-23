@@ -149,17 +149,12 @@ async function hardReload(page) {
   await page.waitForTimeout(1200);
 }
 async function confirmSingleVisibleBooking(page, expectedDialogText) {
-  let lastDialogMessage = '';
-  const listener = async dialog => {
-    lastDialogMessage = dialog.message();
-    log('DIALOG', dialog.type(), dialog.message());
-    if (dialog.type() === 'prompt') await dialog.accept(adminSecret);
-    else await dialog.accept();
-  };
-  page.once('dialog', listener);
   await page.getByRole('button', { name: /確認入住/ }).click();
+  await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+  const modalText = await page.locator('#appleConfirmModal').innerText().catch(() => '');
+  await page.locator('#acm-confirm').click();
   await page.waitForTimeout(500);
-  includes(lastDialogMessage, expectedDialogText, 'confirm dialog');
+  if (expectedDialogText) includes(modalText, expectedDialogText, 'confirm dialog');
 }
 async function deleteSingleVisibleBooking(page) {
   page.once('dialog', async dialog => {
@@ -173,6 +168,8 @@ async function deleteSingleVisibleBooking(page) {
       button.click();
     });
   });
+  await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+  await page.locator('#acm-confirm').click();
 }
 
 (async () => {
@@ -288,6 +285,8 @@ async function deleteSingleVisibleBooking(page) {
     includes(lv2Before, '$1000', 'LV2 upgrade booking4 preview');
     await shot(page, '01_lv1_to_lv2_before_confirm');
     await page.getByRole('button', { name: /確認入住/ }).click();
+    await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+    await page.locator('#acm-confirm').click();
     await waitFor(async () => {
       const rows = await supabaseQuery('partners', `select=partner_code,partner_level,yearly_referrals,successful_referrals&partner_code=eq.${encodeURIComponent(codes.upLv2)}`);
       return rows[0] && rows[0].partner_level === 'LV2_GUIDE' && Number(rows[0].yearly_referrals) === 4 ? rows[0] : null;
@@ -315,6 +314,8 @@ async function deleteSingleVisibleBooking(page) {
     includes(lv3Before, '$600', 'LV3 upgrade booking10 preview cash');
     await shot(page, '03_lv2_to_lv3_before_confirm');
     await page.getByRole('button', { name: /確認入住/ }).click();
+    await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+    await page.locator('#acm-confirm').click();
     await waitFor(async () => {
       const rows = await supabaseQuery('partners', `select=partner_code,partner_level,yearly_referrals,successful_referrals&partner_code=eq.${encodeURIComponent(codes.upLv3)}`);
       return rows[0] && rows[0].partner_level === 'LV3_GUARDIAN' && Number(rows[0].yearly_referrals) === 10 ? rows[0] : null;

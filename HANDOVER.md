@@ -553,6 +553,37 @@ vercel --prod
 **替代方案：** 直接刪除短網址功能（不可行，大使連結需要短網址）、改用免費不需 key 的服務（穩定性差）。
 **影響：** `partner-dashboard.html`、`link-generator-form.html`、`test-coupon-flow.html`、`test-shorturl.html`、`test-reurl-api.html` 全部改為呼叫 `/api` proxy。
 
+### 2026-03-24 — LINE LIFF 一鍵綁定 + 免登入系統
+
+**背景：** 大使透過 LINE 進入儀表板時，需要每次輸入帳密登入。同時 LINE 綁定需要手動在聊天室輸入「#綁定 AMBxxxx」，體驗不佳。
+**決策：**
+1. 新增 LINE Login Channel + LIFF App，實現「一鍵綁定」— 大使在儀表板點擊按鈕，LIFF 自動取得 LINE 身份並綁定
+2. 綁定後透過 HMAC-SHA256 簽名 URL 實現免登入（`?lu=xxx&sig=xxx`）
+3. partner-login.html 和 partner-dashboard.html 偵測 LINE 內建瀏覽器（User-Agent 含 "Line"），自動跳轉 LIFF 驗證
+4. LIFF 頁面使用 `liff.isInClient()` 確保手機端強制在 LINE App 內開啟
+5. 綁定成功後透過 LINE Bot 推送帶簽名的儀表板連結
+**替代方案：** 舊有 `#綁定` 文字指令保留作為 fallback
+**影響：** 新增 `verify_line_login`、`bind_line_account`、`line_auto_login` 三個 PUBLIC API action。新增環境變數 `LIFF_ID`。修改 `liff-bind.html`、`partner-dashboard.html`、`partner-login.html`、`backend.js`
+
+### 2026-03-24 — E2E 測試全面重寫
+
+**背景：** 舊版 E2E 測試（28 腳本）因 Apple-style 重構後選擇器過期無法執行。
+**決策：** 重寫為 6 個精簡腳本，覆蓋所有核心功能：
+1. `e2e-api-comprehensive.js` — 110 個 API 測試案例（16 個區段）
+2. `e2e-line-integration.js` — 30 個 LINE 整合測試
+3. `e2e-public-pages.js` — 公開頁面 UI 驗證
+4. `e2e-partner-dashboard.js` — 大使儀表板完整體驗
+5. `e2e-admin-navigation.js` — 後台 7 個 tab 導航
+6. `e2e-booking-lifecycle.js` — 訂房 16 步生命週期
+**測試環境：** dev 分支 Preview（`forest-ambassador-git-dev-kobees-projects.vercel.app`），使用 `.env.test` 測試 DB
+**結果：** 全部通過（2026-03-24 驗證）
+
+### 2026-03-24 — 後台新增 LINE 解除綁定 UI
+
+**背景：** 管理後台無法解除大使的 LINE 綁定，只能手動改 DB。
+**決策：** 在夥伴詳情 Modal 的 LINE 綁定區塊加入「解除綁定」按鈕，呼叫 `update_partner` 清除 `line_user_id` 和 `line_display_name`。
+**影響：** `admin-dashboard-real.html` 的 `renderPartnerDetailModal()` 新增解綁 UI 和 `unbindLineAccount()` 函數
+
 ### 2026-03-20 — 專案文件架構確立
 
 **背景：** 經過 300+ 次 commit，累積 14+ 份 markdown、多份過時 GAS 文件，新進開發者無法分辨哪些是最新的。

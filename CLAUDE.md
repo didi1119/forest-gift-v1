@@ -22,9 +22,10 @@
 
 ## 待辦事項（下次對話接手）
 
-- UI E2E 測試腳本有 9 個因 Apple-style 重構需要更新選擇器（本地有改但未 push）
-- 連結生成器的優惠券範本下拉選單需在你的 Chrome 驗證是否正常載入
-- LINE@ 綁定和優惠碼回覆功能需實際測試確認
+- Dashboard display 函數重構為參數傳遞，消除全域變數 `partnerData` 依賴（等大改版時做）
+- 重複 LINE 綁定防護（目前 update_partner 不阻擋同一 line_user_id 綁到多個大使）
+- 連結生成器的優惠券範本下拉選單需在 Chrome 驗證是否正常載入
+- 合作條款頁面（terms.html）已重新排序，需確認業務方內容無誤
 
 ### 已確認的設計決策（2026-03-22）
 - `total_commission_earned` 在 `delete_booking` 時減少 → **正確**（刪除 = 從未發生）
@@ -38,6 +39,14 @@
 - 大使永久刪除需先停用再刪除（防誤操作）
 - 已停用大使預設不顯示在列表中
 - 無推薦人時「走進真實的森林」按鈕連到官網（`lx-foresthouse.com`）
+
+### 已確認的設計決策（2026-03-24）
+- LINE 綁定改為 LIFF 一鍵綁定（需 LINE Login Channel + LIFF App）
+- 綁定後使用 HMAC-SHA256 簽名 URL 實現免登入
+- LINE 瀏覽器偵測 → 自動跳轉 LIFF 驗證（partner-login.html + partner-dashboard.html）
+- LIFF 使用 `liff.isInClient()` 強制手機端在 LINE App 內開啟
+- 後台新增 LINE 解除綁定 UI（夥伴詳情 Modal）
+- E2E 測試全面重寫為 6 個腳本（舊版 28 腳本已過期）
 
 ---
 
@@ -266,7 +275,7 @@ points_used = 住宿金折抵 + 轉換現金的歷史總和
 ## 測試
 
 - **API 測試：** `test/` 目錄，8 個套件 30+ 案例
-- **E2E 測試：** `e2e/live/scripts/`，28 個腳本（16 UI + 12 API-only）
+- **E2E 測試：** `e2e/live/scripts/`，6 個腳本（API 110 案例 + LINE 30 案例 + 4 個 UI 測試）
 - **手動測試：** `frontend/admin/comprehensive-test-suite.html`
 
 ## 關鍵文件
@@ -364,4 +373,4 @@ points_used = 住宿金折抵 + 轉換現金的歷史總和
 
 ---
 
-*最後更新：2026-03-23*
+*最後更新：2026-03-24*

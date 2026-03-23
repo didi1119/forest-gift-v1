@@ -275,8 +275,12 @@ async function cleanup() {
 
     await page.goto(adminUrl, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => !document.body.innerText.includes('載入數據中...'), { timeout: 30000 });
+    // The onboarding tab is active by default; click its "重新整理" button
     await waitFor(async () => {
-      await page.getByRole('button', { name: /重新整理工作台/ }).click();
+      const refreshBtn = page.locator('#content-onboarding').getByRole('button', { name: /重新整理/ });
+      if (await refreshBtn.isVisible().catch(() => false)) {
+        await refreshBtn.click().catch(() => {});
+      }
       const bodyText = await page.locator('body').innerText();
       return bodyText.includes(applicantEmail) ? true : null;
     }, 30000, 1500);
@@ -358,7 +362,7 @@ async function cleanup() {
     await waitFor(async () => {
       const cardCount = await page.locator('.onboarding-focus-card', { hasText: applicantEmail }).count();
       if (cardCount > 0) return true;
-      const refreshButton = page.getByRole('button', { name: /重新整理工作台/ }).first();
+      const refreshButton = page.locator('#content-onboarding').getByRole('button', { name: /重新整理/ });
       if (await refreshButton.isVisible().catch(() => false)) {
         await refreshButton.click().catch(() => {});
       }

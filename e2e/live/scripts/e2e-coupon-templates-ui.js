@@ -171,13 +171,22 @@ async function apiCall(action, data = {}) {
   });
   const promoTemplateId = promoTemplate.data?.id || promoTemplate.data?.data?.id;
 
-  // Create a test application first
-  const appResult = await apiCall('submit_application', {
+  // Create a test application first (submit_application is public, remove admin_secret)
+  const appPayload = {
+    action: 'submit_application',
     name: `E2E券測試_${ts}`,
     email: `e2e_coupon_${ts}@test.com`,
     phone: '0912345678',
-    message: 'E2E coupon test'
+    message: 'E2E coupon test',
+    referral_source: 'E2E_TEST',
+    line_name: 'e2e_test'
+  };
+  const appRes = await fetch(`${siteOrigin}/api`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(appPayload)
   });
+  const appResult = await appRes.json();
   assert(appResult.success === true, 'Test application created');
 
   // Approve the application
@@ -287,11 +296,12 @@ async function apiCall(action, data = {}) {
 
     // Save the template
     await page.locator('button:has-text("儲存")').first().click();
-    await page.waitForTimeout(3000);
+    // Wait for API call + data reload + re-render
+    await page.waitForTimeout(6000);
     await shot(page, '06-after-save');
 
-    // Verify new template appears in list
-    const updatedListHtml = await couponList.innerHTML();
+    // Verify new template appears in list (re-query DOM after save)
+    const updatedListHtml = await page.locator('#couponTemplateList').innerHTML();
     assert(updatedListHtml.includes('UI測試優惠券'), 'Newly created coupon appears in list');
     assert(updatedListHtml.includes('uitest123'), 'New coupon URL displayed');
 

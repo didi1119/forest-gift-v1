@@ -179,7 +179,7 @@ function expectIncludes(text, needle, label) {
     expectIncludes(detailText, '$100', 'payout detail amount');
     await shot(page, '02_payout_detail_edit');
 
-    await page.getByRole('button', { name: '修改' }).click();
+    await page.getByRole('button', { name: /修改結算/ }).click();
     await page.locator('#editPayoutModal').waitFor({ timeout: 10000 });
     const editModalText = await page.locator('#editPayoutModal').innerText();
     log('EDIT_MODAL', editModalText);
@@ -207,7 +207,10 @@ function expectIncludes(text, needle, label) {
     log('PAYOUT_DETAIL_CANCEL', cancelDetailText);
     expectIncludes(cancelDetailText, '$200', 'payout detail cancel amount');
     await shot(page, '04_payout_detail_cancel');
-    await page.getByRole('button', { name: '取消結算' }).click();
+    await page.getByRole('button', { name: /取消此結算|取消結算/ }).click();
+    // cancelPayout shows a custom confirm modal; click confirm
+    await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+    await page.locator('#acm-confirm').click();
     await page.getByText('結算已取消！相關訂單狀態已重置').waitFor({ timeout: 15000 });
 
     const payoutCancelRow = (await supabaseQuery('payouts', `select=id,payout_status,notes,partner_code,payout_type,amount&id=eq.${payoutCancelId}`))[0];

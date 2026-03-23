@@ -3137,10 +3137,20 @@
                     <div class="ob-section-label">申請資料</div>
                     <div class="ob-meta-grid">
                         <div class="ob-meta-item"><span class="ob-meta-label">來源</span><span class="ob-meta-value">${escapeHtml(application.referral_source || '未填寫')}</span></div>
-                        <div class="ob-meta-item"><span class="ob-meta-label">社群</span><span class="ob-meta-value">${escapeHtml(application.social_profile || '未填寫')}</span></div>
+                        <div class="ob-meta-item"><span class="ob-meta-label">社群</span><span class="ob-meta-value">${application.social_profile ? `<a href="${escapeHtml(application.social_profile)}" target="_blank" style="color:#2E4B36;text-decoration:underline;">${escapeHtml(application.social_profile)}</a>` : '未填寫'}</span></div>
                         <div class="ob-meta-item"><span class="ob-meta-label">LINE</span><span class="ob-meta-value">${escapeHtml(application.line_name || '未提供')}</span></div>
                         <div class="ob-meta-item"><span class="ob-meta-label">申請時間</span><span class="ob-meta-value">${application.created_at ? new Date(application.created_at).toLocaleString('zh-TW') : '-'}</span></div>
                     </div>
+                    ${(application.bank_name || application.bank_account_number) ? `
+                        <div style="margin-top:0.75rem;padding:0.65rem 0.85rem;background:rgba(0,0,0,0.02);border-radius:0.5rem;font-size:0.82rem;color:#1d1d1f;line-height:1.6;">
+                            <div style="font-size:0.65rem;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem;">銀行資訊</div>
+                            ${[
+                                application.bank_name ? `${escapeHtml(application.bank_name)}${application.bank_branch ? ' ' + escapeHtml(application.bank_branch) : ''}${application.bank_code ? '（' + escapeHtml(application.bank_code) + '）' : ''}` : null,
+                                application.bank_account_name ? `戶名：${escapeHtml(application.bank_account_name)}` : null,
+                                application.bank_account_number ? `帳號：${escapeHtml(application.bank_account_number)}` : null
+                            ].filter(Boolean).join('<br>')}
+                        </div>
+                    ` : ''}
                     ${application.message ? `
                         <div style="margin-top:0.75rem;padding:0.65rem 0.85rem;background:rgba(0,0,0,0.02);border-radius:0.5rem;font-size:0.82rem;color:#1d1d1f;line-height:1.5;">
                             <div style="font-size:0.65rem;font-weight:600;color:#86868b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem;">留言</div>
@@ -3185,11 +3195,11 @@
                         </div>
                     </div>
                     <div style="display:flex;gap:0.35rem;margin-top:0.75rem;flex-wrap:wrap;">
-                        <button onclick="openLinkGeneratorForSelectedApplication()" class="ob-btn ob-btn-primary">進入連結生成器</button>
-                        <button onclick="quickPromoteSelectedApplication()" class="ob-btn ob-btn-secondary">直接建立大使</button>
+                        <button onclick="quickPromoteSelectedApplication()" class="ob-btn ob-btn-primary">直接建立大使</button>
+                        <button onclick="openLinkGeneratorForSelectedApplication()" class="ob-btn ob-btn-secondary">進入連結生成器</button>
                     </div>
                     <p style="font-size:0.72rem;color:#86868b;margin-top:0.5rem;">
-                        ${hasPartner ? '已建立大使檔案，可直接複製交付訊息。' : '建議先進連結生成器完成短網址與資料儲存。'}
+                        ${hasPartner ? '已建立大使檔案，可直接複製交付訊息。' : '直接建立會自動產生短網址。需自訂連結可用連結生成器。'}
                     </p>
                 </div>
 
@@ -3454,12 +3464,12 @@
                             <input id="workflowCouponUrl" type="url" value="${escapeHtml(draft.couponUrl)}" oninput="syncOnboardingDraftField('couponUrl', this.value.trim())" class="w-full px-4 py-3 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-200" placeholder="https://lin.ee/...">
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <button onclick="openLinkGeneratorForSelectedApplication()" class="onboarding-action primary">帶著預填資料進連結生成器</button>
-                            <button onclick="quickPromoteSelectedApplication()" class="onboarding-action secondary">直接建立基本大使</button>
+                            <button onclick="quickPromoteSelectedApplication()" class="onboarding-action primary">直接建立大使</button>
+                            <button onclick="openLinkGeneratorForSelectedApplication()" class="onboarding-action secondary">進入連結生成器</button>
                             <button onclick="openStandaloneLinkGenerator()" class="onboarding-action secondary">手動新建另一位大使</button>
                         </div>
                         <p class="text-xs text-stone-500">
-                            ${hasPartner ? '這位申請者已建立大使檔案，可直接往下複製交付資源包。' : '建議先進連結生成器完成短網址與資料儲存，再交付給大使。'}
+                            ${hasPartner ? '已建立大使檔案，可直接往下複製交付資源包。' : '直接建立會自動產生短網址。需自訂連結可用連結生成器。'}
                         </p>
                     </div>
                 </div>

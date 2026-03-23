@@ -130,16 +130,19 @@ function expectIncludes(text, needle, label) {
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1500);
     await page.evaluate(() => window.showTab('overview'));
-    const partnerCard = page.locator(`[data-partner-code="${partnerCode}"]`).first();
-    await partnerCard.waitFor({ timeout: 30000 });
+    // Table view: find the row containing the partner checkbox
+    const partnerRow = page.locator(`tr:has(input[data-partner-code="${partnerCode}"])`).first();
+    await partnerRow.waitFor({ timeout: 30000 });
 
-    const initialCard = await partnerCard.innerText();
-    log('CARD_INITIAL', initialCard);
-    expectIncludes(initialCard, '2,000', 'initial card points');
-    expectIncludes(initialCard, 'NT$ 1,200', 'initial card pending cash');
+    // Verify initial data via Supabase
+    const initialPartner = (await supabaseQuery('partners', `select=partner_code,available_points,pending_commission&partner_code=eq.${encodeURIComponent(partnerCode)}`))[0];
+    if (Number(initialPartner.available_points) !== 2000) throw new Error(`initial points expected 2000, got ${initialPartner.available_points}`);
+    if (Number(initialPartner.pending_commission) !== 1200) throw new Error(`initial pending cash expected 1200, got ${initialPartner.pending_commission}`);
+    log('DB_INITIAL', JSON.stringify(initialPartner));
     await shot(page, '01_initial_card');
 
-    await partnerCard.locator('button').nth(1).click();
+    // Open the actions dropdown via the "..." button in the row
+    await partnerRow.locator('button:has-text("⋯")').click();
     await page.getByRole('link', { name: /處理結算/ }).click();
     await page.locator('#partnerActionsModal').waitFor({ timeout: 10000 });
     const cashModal = await page.locator('#partnerActionsModal').innerText();
@@ -149,14 +152,19 @@ function expectIncludes(text, needle, label) {
     await shot(page, '02_cash_modal');
 
     await page.getByRole('button', { name: /改回住宿金/ }).click();
+    // revertToCash shows a custom confirm modal; click confirm
+    await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+    await page.locator('#acm-confirm').click();
+    // Wait for the row to refresh with new values (table format uses $0)
     await page.waitForFunction((code) => {
-      const card = document.querySelector(`[data-partner-code="${code}"]`);
-      return card && card.innerText.includes('4,400') && card.innerText.includes('NT$ 0');
+      const checkbox = document.querySelector(`input[data-partner-code="${code}"]`);
+      const row = checkbox && checkbox.closest('tr');
+      return row && row.innerText.includes('4,400') && row.innerText.includes('$0');
     }, partnerCode, { timeout: 30000 });
-    const cardAfterRevert = await partnerCard.innerText();
-    log('CARD_AFTER_REVERT', cardAfterRevert);
-    expectIncludes(cardAfterRevert, '4,400', 'card after revert');
-    expectIncludes(cardAfterRevert, 'NT$ 0', 'card after revert');
+    const rowAfterRevert = await partnerRow.innerText();
+    log('ROW_AFTER_REVERT', rowAfterRevert);
+    expectIncludes(rowAfterRevert, '4,400', 'row after revert');
+    expectIncludes(rowAfterRevert, '$0', 'row after revert');
     await shot(page, '03_card_after_revert');
 
     const partnerAfterRevert = (await supabaseQuery('partners', `select=partner_code,available_points,points_used,pending_commission&partner_code=eq.${encodeURIComponent(partnerCode)}`))[0];
@@ -169,7 +177,8 @@ function expectIncludes(text, needle, label) {
     }
     log('DB_AFTER_REVERT', JSON.stringify({ partnerAfterRevert, revertPayout }));
 
-    await partnerCard.getByText(partnerName).click();
+    // Click partner name in the table row to open details modal
+    await partnerRow.getByText(partnerName).click();
     await page.locator('#partnerModal').waitFor({ timeout: 10000 });
     const partnerModalText = await page.locator('#partnerModal').innerText();
     log('PARTNER_MODAL', partnerModalText);
@@ -191,13 +200,14 @@ function expectIncludes(text, needle, label) {
 
     await page.getByRole('button', { name: /儲存/ }).click();
     await page.waitForFunction((code) => {
-      const card = document.querySelector(`[data-partner-code="${code}"]`);
-      return card && card.innerText.includes('4,300') && card.innerText.includes('NT$ 300');
+      const checkbox = document.querySelector(`input[data-partner-code="${code}"]`);
+      const row = checkbox && checkbox.closest('tr');
+      return row && row.innerText.includes('4,300') && row.innerText.includes('$300');
     }, partnerCode, { timeout: 30000 });
-    const cardAfterManual = await partnerCard.innerText();
-    log('CARD_AFTER_MANUAL_EDIT', cardAfterManual);
-    expectIncludes(cardAfterManual, '4,300', 'card after manual edit');
-    expectIncludes(cardAfterManual, 'NT$ 300', 'card after manual edit');
+    const rowAfterManual = await partnerRow.innerText();
+    log('ROW_AFTER_MANUAL_EDIT', rowAfterManual);
+    expectIncludes(rowAfterManual, '4,300', 'row after manual edit');
+    expectIncludes(rowAfterManual, '$300', 'row after manual edit');
     await shot(page, '06_card_after_manual_edit');
 
     const partnerAfterManual = (await supabaseQuery('partners', `select=partner_code,available_points,points_used,pending_commission&partner_code=eq.${encodeURIComponent(partnerCode)}`))[0];

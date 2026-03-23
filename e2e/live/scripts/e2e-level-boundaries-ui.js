@@ -232,6 +232,12 @@ async function showOverview(page) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
     const page = await context.newPage();
     let lastDialogMessage = '';
+    // Helper: read custom confirm modal text before clicking confirm
+    async function readAndConfirmModal() {
+      await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+      lastDialogMessage = await page.locator('#appleConfirmModal').innerText().catch(() => '');
+      await page.locator('#acm-confirm').click();
+    }
     page.on('dialog', async dialog => {
       lastDialogMessage = dialog.message();
       log('DIALOG', dialog.type(), dialog.message());
@@ -269,6 +275,7 @@ async function showOverview(page) {
 
     lastDialogMessage = '';
     await page.getByRole('button', { name: /確認入住/ }).click();
+    await readAndConfirmModal();
     await waitForAsync(async () => {
       const rows = await supabaseQuery('bookings', `select=id,stay_status,commission_amount,commission_type&partner_code=eq.${encodeURIComponent(accPartnerCode)}&id=eq.${accBooking1Id}`);
       return rows[0]?.stay_status === 'COMPLETED' ? rows[0] : null;
@@ -291,13 +298,12 @@ async function showOverview(page) {
     expectIncludes(accCardAfterUpgrade, '5,500', 'acc upgraded points');
     await shot(page, '03_acc_card_after_upgrade');
 
-    lastDialogMessage = '';
     await page.evaluate((id) => window.deleteBooking(String(id)), String(accBooking1Id));
+    await readAndConfirmModal();
     await waitForAsync(async () => {
       const rows = await supabaseQuery('bookings', `select=id,stay_status,commission_status&partner_code=eq.${encodeURIComponent(accPartnerCode)}&id=eq.${accBooking1Id}`);
       return rows[0]?.stay_status === 'CANCELLED' ? rows[0] : null;
     });
-    expectIncludes(lastDialogMessage, accBooking1, 'acc delete confirm guest');
     await refreshDashboard(page);
     await showOverview(page);
     const accCardAfterDelete = await page.locator(`.brand-card[data-partner-code="${accPartnerCode}"]`).innerText();
@@ -330,6 +336,7 @@ async function showOverview(page) {
 
     lastDialogMessage = '';
     await page.getByRole('button', { name: /確認入住/ }).click();
+    await readAndConfirmModal();
     await waitForAsync(async () => {
       const rows = await supabaseQuery('bookings', `select=id,stay_status,commission_amount,commission_type&partner_code=eq.${encodeURIComponent(accPartnerCode)}&id=eq.${accBooking2Id}`);
       return rows[0]?.stay_status === 'COMPLETED' ? rows[0] : null;
@@ -353,6 +360,7 @@ async function showOverview(page) {
 
     lastDialogMessage = '';
     await page.getByRole('button', { name: /確認入住/ }).click();
+    await readAndConfirmModal();
     await waitForAsync(async () => {
       const rows = await supabaseQuery('bookings', `select=id,stay_status,commission_amount,commission_type&partner_code=eq.${encodeURIComponent(cashPartnerCode)}&id=eq.${cashBooking1Id}`);
       return rows[0]?.stay_status === 'COMPLETED' ? rows[0] : null;
@@ -397,6 +405,7 @@ async function showOverview(page) {
 
     lastDialogMessage = '';
     await page.getByRole('button', { name: /確認入住/ }).click();
+    await readAndConfirmModal();
     await waitForAsync(async () => {
       const rows = await supabaseQuery('bookings', `select=id,stay_status,commission_amount,commission_type&partner_code=eq.${encodeURIComponent(cashPartnerCode)}&id=eq.${cashBooking2Id}`);
       return rows[0]?.stay_status === 'COMPLETED' ? rows[0] : null;

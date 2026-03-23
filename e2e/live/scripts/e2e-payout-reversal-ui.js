@@ -185,7 +185,10 @@ async function waitForInitialData(page) {
     log('CASH_PAYOUT_DETAIL', payoutDetailText);
     expectIncludes(payoutDetailText, '$300', 'cash payout detail');
     await shot(page, '02_cash_payout_detail');
-    await page.getByRole('button', { name: '取消結算' }).click();
+    await page.getByRole('button', { name: /取消此結算|取消結算/ }).click();
+    // cancelPayout shows a custom confirm modal; click confirm
+    await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+    await page.locator('#acm-confirm').click();
     await page.getByText('結算已取消！相關訂單狀態已重置').waitFor({ timeout: 15000 });
 
     const cashPartnerAfterCancel = (await supabaseQuery('partners', `select=partner_code,pending_commission,total_commission_paid&partner_code=eq.${encodeURIComponent(cashPartnerCode)}`))[0];
@@ -199,14 +202,15 @@ async function waitForInitialData(page) {
     }
 
     await page.evaluate(() => window.showTab('overview'));
-    const cashPartnerCard = page.locator(`[data-partner-code="${cashPartnerCode}"]`).first();
-    await cashPartnerCard.waitFor({ timeout: 10000 });
-    const cashCardAfterCancel = await cashPartnerCard.innerText();
-    log('CASH_CARD_AFTER_CANCEL', cashCardAfterCancel);
-    expectIncludes(cashCardAfterCancel, 'NT$ 300', 'cash card after cancel');
+    // Table view: find row by partner code
+    const cashPartnerRow = page.locator(`tr:has(input[data-partner-code="${cashPartnerCode}"])`).first();
+    await cashPartnerRow.waitFor({ timeout: 10000 });
+    const cashRowAfterCancel = await cashPartnerRow.innerText();
+    log('CASH_ROW_AFTER_CANCEL', cashRowAfterCancel);
+    expectIncludes(cashRowAfterCancel, '$300', 'cash row after cancel');
     await shot(page, '03_cash_card_after_cancel');
 
-    await cashPartnerCard.locator('button').nth(1).click();
+    await cashPartnerRow.locator('button:has-text("⋯")').click();
     await page.getByRole('link', { name: /處理結算/ }).click();
     await page.locator('#partnerActionsModal').waitFor({ timeout: 10000 });
     const cashModalText = await page.locator('#partnerActionsModal').innerText();
@@ -214,9 +218,13 @@ async function waitForInitialData(page) {
     expectIncludes(cashModalText, '待結算：$300', 'cash action modal after cancel');
     await shot(page, '04_cash_action_modal_after_cancel');
     await page.getByRole('button', { name: /執行結算/ }).click();
+    // processPayout shows a custom confirm modal; click confirm
+    await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+    await page.locator('#acm-confirm').click();
     await page.waitForFunction((code) => {
-      const card = document.querySelector(`[data-partner-code="${code}"]`);
-      return card && card.innerText.includes('NT$ 0');
+      const checkbox = document.querySelector(`input[data-partner-code="${code}"]`);
+      const row = checkbox && checkbox.closest('tr');
+      return row && row.innerText.includes('$0');
     }, cashPartnerCode, { timeout: 30000 });
 
     const cashPartnerAfterReprocess = (await supabaseQuery('partners', `select=partner_code,pending_commission,total_commission_paid&partner_code=eq.${encodeURIComponent(cashPartnerCode)}`))[0];
@@ -229,14 +237,14 @@ async function waitForInitialData(page) {
       throw new Error(`Missing reprocessed payment payout: ${JSON.stringify(cashPayoutsAfterReprocess)}`);
     }
 
-    const pointsPartnerCard = page.locator(`[data-partner-code="${pointsPartnerCode}"]`).first();
-    await pointsPartnerCard.waitFor({ timeout: 10000 });
-    const pointsCardInitial = await pointsPartnerCard.innerText();
-    log('POINTS_CARD_INITIAL', pointsCardInitial);
-    expectIncludes(pointsCardInitial, '2,000', 'points card initial');
+    const pointsPartnerRow = page.locator(`tr:has(input[data-partner-code="${pointsPartnerCode}"])`).first();
+    await pointsPartnerRow.waitFor({ timeout: 10000 });
+    const pointsRowInitial = await pointsPartnerRow.innerText();
+    log('POINTS_ROW_INITIAL', pointsRowInitial);
+    expectIncludes(pointsRowInitial, '2,000', 'points row initial');
     await shot(page, '05_points_card_initial');
 
-    await pointsPartnerCard.getByRole('button', { name: /使用點數/ }).click();
+    await pointsPartnerRow.getByRole('button', { name: /使用點數/ }).click();
     await page.locator('#partnerActionsModal').waitFor({ timeout: 10000 });
     await page.getByRole('button', { name: /轉換現金/ }).click();
     await page.locator('#pointsToCashModal').waitFor({ timeout: 10000 });
@@ -248,8 +256,9 @@ async function waitForInitialData(page) {
     await shot(page, '06_points_convert_modal');
     await page.getByRole('button', { name: /確認轉換/ }).click();
     await page.waitForFunction((code) => {
-      const card = document.querySelector(`[data-partner-code="${code}"]`);
-      return card && card.innerText.includes('NT$ 1,000') && card.innerText.includes('0');
+      const checkbox = document.querySelector(`input[data-partner-code="${code}"]`);
+      const row = checkbox && checkbox.closest('tr');
+      return row && row.innerText.includes('$1,000');
     }, pointsPartnerCode, { timeout: 30000 });
 
     const pointsPartnerAfterConvert = (await supabaseQuery('partners', `select=partner_code,available_points,points_used,pending_commission&partner_code=eq.${encodeURIComponent(pointsPartnerCode)}`))[0];
@@ -271,7 +280,10 @@ async function waitForInitialData(page) {
     log('POINTS_CONVERSION_DETAIL', conversionDetailText);
     expectIncludes(conversionDetailText, '$1,000', 'points conversion detail');
     await shot(page, '07_points_conversion_detail');
-    await page.getByRole('button', { name: '取消結算' }).click();
+    await page.getByRole('button', { name: /取消此結算|取消結算/ }).click();
+    // cancelPayout shows a custom confirm modal; click confirm
+    await page.waitForSelector('#acm-confirm', { state: 'visible', timeout: 5000 });
+    await page.locator('#acm-confirm').click();
     await page.getByText('結算已取消！相關訂單狀態已重置').waitFor({ timeout: 15000 });
 
     const pointsPartnerAfterCancel = (await supabaseQuery('partners', `select=partner_code,available_points,points_used,pending_commission&partner_code=eq.${encodeURIComponent(pointsPartnerCode)}`))[0];

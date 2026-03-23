@@ -659,35 +659,39 @@
         }
 
         function getSubid() {
-            let subid = getUrlParameter('subid') || getUrlParameter('pid');
-            if (!subid) {
-                subid = localStorage.getItem('forest_subid');
+            const urlSubid = getUrlParameter('subid') || getUrlParameter('pid');
+            const cachedSubid = localStorage.getItem('forest_subid');
+
+            if (urlSubid) {
+                // URL 帶了新的 pid，如果跟快取的不同，清除舊的 coupon_url
+                if (cachedSubid && urlSubid !== cachedSubid) {
+                    localStorage.removeItem('forest_coupon_url');
+                }
+                localStorage.setItem('forest_subid', urlSubid);
+                return urlSubid;
             }
-            if (subid) {
-                localStorage.setItem('forest_subid', subid);
-            }
-            return subid;
+            return cachedSubid || null;
         }
 
         // 從 URL 獲取專屬優惠券連結
         function getCouponUrl() {
-            // 嘗試從多個可能的參數名稱獲取優惠券連結
             let couponUrl = getUrlParameter('coupon_url') ||
                 getUrlParameter('couponUrl') ||
                 getUrlParameter('coupon') ||
                 getUrlParameter('target');
 
-            // 如果沒有從 URL 獲得，嘗試從 localStorage 獲取
-            if (!couponUrl) {
+            if (couponUrl) {
+                localStorage.setItem('forest_coupon_url', couponUrl);
+                return couponUrl;
+            }
+
+            // 只有在 URL 沒帶 coupon_url 但也沒帶新 pid 時，才讀快取
+            const urlPid = getUrlParameter('subid') || getUrlParameter('pid');
+            if (!urlPid) {
                 couponUrl = localStorage.getItem('forest_coupon_url');
             }
 
-            // 如果有優惠券連結，儲存到 localStorage
-            if (couponUrl) {
-                localStorage.setItem('forest_coupon_url', couponUrl);
-            }
-
-            return couponUrl;
+            return couponUrl || null;
         }
 
         function trackEvent(eventType, data = {}) {

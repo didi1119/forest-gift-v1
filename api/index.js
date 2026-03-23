@@ -34,6 +34,9 @@ module.exports = async function handler(req, res) {
     if (!action) {
       // GET 無 action：可能是測試或重導向
       if (req.method === 'GET') {
+        if (req.query.get_liff_id) {
+          return res.status(200).json({ liff_id: process.env.LIFF_ID || '' });
+        }
         if (req.query.test) {
           return res.status(200).json({ success: true, message: 'API is running' });
         }

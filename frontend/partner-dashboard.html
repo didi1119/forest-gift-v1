@@ -867,21 +867,48 @@
         // ========================================
         // Init
         // ========================================
-        window.addEventListener('load', function() {
-            checkAuth();
+        window.addEventListener('load', async function() {
+            await checkAuth();
             loadPartnerData();
         });
 
-        function checkAuth() {
-            // 支援管理員從後台直接跳轉預覽（?code=XXX&phone=YYYY）
+        async function checkAuth() {
             const urlParams = new URLSearchParams(window.location.search);
+
+            // LINE 簽名免登入（?lu=LINE_USER_ID&sig=HMAC）
+            const lu = urlParams.get('lu');
+            const sig = urlParams.get('sig');
+            if (lu && sig) {
+                try {
+                    const resp = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'verify_line_login', line_user_id: lu, sig: sig })
+                    });
+                    const result = await resp.json();
+                    if (result.success && result.partner) {
+                        sessionStorage.setItem('partnerCode', result.partner.partner_code);
+                        sessionStorage.setItem('partnerData', JSON.stringify(result.partner));
+                        sessionStorage.setItem('loginTime', String(Date.now()));
+                        window.history.replaceState({}, '', window.location.pathname);
+                        partnerData = result.partner;
+                        displayBasicInfo();
+                        return;
+                    }
+                } catch (e) {
+                    console.error('LINE auto-login failed:', e);
+                }
+                // 簽名驗證失敗，清除參數繼續正常流程
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+
+            // 支援管理員從後台直接跳轉預覽（?code=XXX&phone=YYYY）
             const codeParam = urlParams.get('code');
             const phoneParam = urlParams.get('phone');
             if (codeParam && phoneParam) {
                 sessionStorage.setItem('partnerCode', codeParam);
                 sessionStorage.setItem('loginTime', String(Date.now()));
                 sessionStorage.removeItem('partnerData');
-                // 清除 URL 參數避免重複觸發
                 window.history.replaceState({}, '', window.location.pathname);
             }
 
@@ -1357,9 +1384,21 @@
             window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`, '_blank');
         }
 
-        function bindLineAccount() {
+        async function bindLineAccount() {
             const code = partnerData?.partner_code;
             if (!code) { showToast('無法取得大使代碼', 'error'); return; }
+
+            // 嘗試用 LIFF 一鍵綁定
+            try {
+                const resp = await fetch(APPS_SCRIPT_URL + '?get_liff_id=1');
+                const data = await resp.json();
+                if (data.liff_id) {
+                    window.location.href = `https://liff.line.me/${data.liff_id}?code=${code}`;
+                    return;
+                }
+            } catch (_) {}
+
+            // Fallback: 深層連結（預填訊息）
             const msg = encodeURIComponent('#綁定 ' + code);
             window.open('https://line.me/R/oaMessage/@forest.house/?' + msg, '_blank');
         }

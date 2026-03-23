@@ -28,6 +28,21 @@ const LINE_SHARED_COUPON_ID = process.env.LINE_SHARED_COUPON_ID || '';
 const LINE_COUPON_VISIBILITY = 'UNLISTED';
 const LINE_COUPON_TIMEZONE = 'ASIA_TAIPEI';
 const LINE_COUPON_IMAGE_URL = process.env.LINE_COUPON_IMAGE_URL || '';
+const LIFF_ID = process.env.LIFF_ID || '';
+const DASHBOARD_BASE_URL = 'https://forest-ambassador.vercel.app/frontend/partner-dashboard.html';
+
+// ========================================
+// LINE 免登入簽名 helpers
+// ========================================
+function generateLineLoginSig(lineUserId) {
+  const secret = process.env.ADMIN_SECRET || '';
+  return crypto.createHmac('sha256', secret).update(lineUserId).digest('hex');
+}
+
+function generateLineDashboardUrl(lineUserId) {
+  const sig = generateLineLoginSig(lineUserId);
+  return `${DASHBOARD_BASE_URL}?lu=${encodeURIComponent(lineUserId)}&sig=${sig}`;
+}
 
 // ========================================
 // 通用數據訪問函數（adapter 薄包裝）
@@ -3542,7 +3557,7 @@ async function handleLineWebhook(req, res) {
           }
         }
 
-        const dashboardUrl = 'https://forest-ambassador.vercel.app/frontend/partner-dashboard.html';
+        const dashboardUrl = lineUserId ? generateLineDashboardUrl(lineUserId) : DASHBOARD_BASE_URL;
 
         // 先嘗試 Flex Message，失敗則降級為純文字
         try {
@@ -3624,7 +3639,7 @@ async function handleLineWebhook(req, res) {
 
     // 偵測大使本人輸入自己的優惠碼
     if (lineUserId && matchedPartner.line_user_id && lineUserId === matchedPartner.line_user_id) {
-      const dashboardUrl = 'https://forest-ambassador.vercel.app/frontend/partner-dashboard.html';
+      const dashboardUrl = generateLineDashboardUrl(lineUserId);
       const shareLink = matchedPartner.short_landing_link || matchedPartner.landing_link || '';
       await callLineApi('POST', '/v2/bot/message/reply', {
         replyToken: event.replyToken,
@@ -3775,13 +3790,92 @@ async function handleShortenUrl(data) {
   return { success: true, short_url: shortUrl };
 }
 
+// ========================================
+// LINE 免登入 / LIFF 綁定
+// ========================================
+async function handleVerifyLineLogin(data) {
+  const lineUserId = (data.line_user_id || '').trim();
+  const sig = (data.sig || '').trim();
+  if (!lineUserId || !sig) return { success: false, error: '缺少必要參數' };
+
+  const expectedSig = generateLineLoginSig(lineUserId);
+  if (sig !== expectedSig) return { success: false, error: '簽名驗證失敗' };
+
+  const allPartners = await db.getAllRecords('Partners');
+  const partner = allPartners.find(p => p.line_user_id === lineUserId && p.is_active !== false);
+  if (!partner) return { success: false, error: '找不到對應的大使帳號' };
+
+  return {
+    success: true,
+    partner: {
+      partner_code: partner.partner_code,
+      name: partner.name || partner.partner_name || '',
+      level: partner.level || 'LV1_INSIDER',
+      total_commission_earned: parseFloat(partner.total_commission_earned) || 0,
+      pending_commission: parseFloat(partner.pending_commission) || 0,
+      available_points: parseFloat(partner.available_points) || 0,
+      points_used: parseFloat(partner.points_used) || 0,
+      commission_preference: partner.commission_preference || 'ACCOMMODATION',
+      total_successful_referrals: parseInt(partner.total_successful_referrals) || 0,
+      yearly_referrals: parseInt(partner.yearly_referrals) || 0,
+      line_user_id: partner.line_user_id,
+      line_display_name: partner.line_display_name || ''
+    }
+  };
+}
+
+async function handleBindLineAccount(data) {
+  const partnerCode = (data.partner_code || '').trim();
+  const accessToken = (data.access_token || '').trim();
+  if (!partnerCode || !accessToken) return { success: false, error: '缺少必要參數' };
+
+  // 用 LIFF access token 向 LINE API 驗證取得真實 user profile
+  let lineProfile;
+  try {
+    const resp = await fetch('https://api.line.me/v2/profile', {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    if (!resp.ok) throw new Error(`LINE API ${resp.status}`);
+    lineProfile = await resp.json();
+  } catch (e) {
+    return { success: false, error: 'LINE 身份驗證失敗：' + e.message };
+  }
+
+  const lineUserId = lineProfile.userId;
+  const lineDisplayName = lineProfile.displayName || '';
+  if (!lineUserId) return { success: false, error: 'LINE 身份驗證失敗' };
+
+  // 查找 partner
+  const partner = await findPartnerByCodeCaseInsensitive(partnerCode);
+  if (!partner) return { success: false, error: '找不到大使帳號' };
+  if (partner.is_active === false) return { success: false, error: '此大使帳號已停用' };
+
+  // 更新 line_user_id
+  await db.updateRecord('Partners', partner.id, {
+    line_user_id: lineUserId,
+    line_display_name: lineDisplayName
+  });
+
+  // 回傳簽名 URL 供前端跳轉
+  const dashboardUrl = generateLineDashboardUrl(lineUserId);
+
+  return {
+    success: true,
+    message: '綁定成功',
+    dashboard_url: dashboardUrl,
+    line_display_name: lineDisplayName
+  };
+}
+
 async function route(action, data) {
   // 公開 action（不需要 admin_secret）
   const PUBLIC_ACTIONS = new Set([
     'submit_application',
     'verify_partner_login',
     'get_partner_dashboard_data',
-    'shorten_url'
+    'shorten_url',
+    'verify_line_login',
+    'bind_line_account'
   ]);
 
   // 管理類 action 需要 admin_secret 驗證
@@ -3825,6 +3919,8 @@ async function route(action, data) {
     'promote_to_partner': handlePromoteToPartner,
     'sync_line_claim_profiles': syncLineClaimProfiles,
     'shorten_url': handleShortenUrl,
+    'verify_line_login': handleVerifyLineLogin,
+    'bind_line_account': handleBindLineAccount,
 
     'create_coupon_template': handleCreateCouponTemplate,
     'update_coupon_template': handleUpdateCouponTemplate,

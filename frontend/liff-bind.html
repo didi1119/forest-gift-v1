@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>靜謐森林｜LINE 帳號綁定</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #1A2F23;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        h1, h2, .font-serif { font-family: 'Noto Serif TC', serif; }
+        .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid rgba(197,160,101,0.2);
+            border-top-color: #C5A065;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="text-center px-6 max-w-sm mx-auto">
+        <!-- 載入中 -->
+        <div id="loadingState">
+            <div class="spinner mx-auto mb-6"></div>
+            <p class="text-[#C5A065] font-serif text-lg mb-2">正在綁定 LINE 帳號</p>
+            <p class="text-[#F5F2EB]/60 text-sm">請稍候...</p>
+        </div>
+
+        <!-- 成功 -->
+        <div id="successState" class="hidden">
+            <div class="w-16 h-16 rounded-full bg-[#06C755]/20 flex items-center justify-center mx-auto mb-5">
+                <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><path stroke="#06C755" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <p class="text-[#F5F2EB] font-serif text-xl mb-2">綁定成功</p>
+            <p id="successMsg" class="text-[#F5F2EB]/70 text-sm mb-6"></p>
+            <p class="text-[#F5F2EB]/40 text-xs">正在跳轉至儀表板...</p>
+        </div>
+
+        <!-- 錯誤 -->
+        <div id="errorState" class="hidden">
+            <div class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-5">
+                <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><path stroke="#EF4444" stroke-width="2.5" stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </div>
+            <p class="text-[#F5F2EB] font-serif text-xl mb-2">綁定失敗</p>
+            <p id="errorMsg" class="text-[#F5F2EB]/70 text-sm mb-6"></p>
+            <a href="partner-dashboard.html" class="inline-block text-[#C5A065] text-sm underline underline-offset-4">返回儀表板</a>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+
+        function showState(state) {
+            document.getElementById('loadingState').classList.toggle('hidden', state !== 'loading');
+            document.getElementById('successState').classList.toggle('hidden', state !== 'success');
+            document.getElementById('errorState').classList.toggle('hidden', state !== 'error');
+        }
+
+        function showError(msg) {
+            document.getElementById('errorMsg').textContent = msg;
+            showState('error');
+        }
+
+        async function initLiffAndBind() {
+            // 從 URL 取得 partner_code
+            const urlParams = new URLSearchParams(window.location.search);
+            let partnerCode = urlParams.get('code') || '';
+
+            // LIFF 會把參數放在 liff.state 或 hash 中
+            if (!partnerCode) {
+                const state = urlParams.get('liff.state') || '';
+                const stateParams = new URLSearchParams(state.replace('?', ''));
+                partnerCode = stateParams.get('code') || '';
+            }
+
+            if (!partnerCode) {
+                showError('缺少大使代碼，請從儀表板重新操作');
+                return;
+            }
+
+            try {
+                // 初始化 LIFF
+                await liff.init({ liffId: window.__LIFF_ID__ });
+
+                // 確保已登入 LINE
+                if (!liff.isLoggedIn()) {
+                    liff.login({ redirectUri: window.location.href });
+                    return;
+                }
+
+                // 取得 access token
+                const accessToken = liff.getAccessToken();
+                if (!accessToken) {
+                    showError('無法取得 LINE 授權，請重試');
+                    return;
+                }
+
+                // 呼叫後端綁定 API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'bind_line_account',
+                        partner_code: partnerCode,
+                        access_token: accessToken
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const name = result.line_display_name || '';
+                    document.getElementById('successMsg').textContent =
+                        name ? `${name}，你的 LINE 帳號已綁定成功` : '你的 LINE 帳號已綁定成功';
+                    showState('success');
+
+                    // 跳轉到儀表板（帶簽名 URL 免登入）
+                    setTimeout(() => {
+                        if (result.dashboard_url) {
+                            window.location.href = result.dashboard_url;
+                        } else {
+                            window.location.href = 'partner-dashboard.html';
+                        }
+                    }, 1500);
+                } else {
+                    showError(result.error || '綁定失敗，請稍後重試');
+                }
+            } catch (e) {
+                console.error('LIFF bind error:', e);
+                showError('系統錯誤，請稍後重試');
+            }
+        }
+
+        // 從 meta 或全域變數取得 LIFF ID（由 Vercel 環境變數注入）
+        // 因為是靜態 HTML，LIFF ID 需要硬編碼或從 API 取得
+        // 先嘗試從 API 取得 LIFF ID
+        async function start() {
+            try {
+                const resp = await fetch(API_URL + '?get_liff_id=1');
+                const data = await resp.json();
+                if (data.liff_id) {
+                    window.__LIFF_ID__ = data.liff_id;
+                }
+            } catch (_) {}
+
+            if (!window.__LIFF_ID__) {
+                showError('LIFF 尚未設定，請聯繫管理員');
+                return;
+            }
+
+            initLiffAndBind();
+        }
+
+        start();
+    </script>
+</body>
+</html>

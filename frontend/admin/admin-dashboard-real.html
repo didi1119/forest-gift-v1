@@ -1798,22 +1798,39 @@
             allData.clicks = [];
         }
 
+        function refreshPartnerList() {
+            if (allData && allData.partners) displayPartners(allData.partners);
+        }
+
         // 顯示夥伴列表 (Apple table style)
         function displayPartners(partners) {
             const container = document.getElementById('partnersContainer');
 
-            if (!partners || partners.length === 0) {
+            // Filter inactive partners unless toggle is on
+            const showInactive = window._showInactivePartners || false;
+            const activePartners = showInactive ? partners : partners.filter(p => p.is_active !== false && p.is_active !== 'false');
+            const inactiveCount = partners.length - activePartners.length;
+
+            if (!activePartners || activePartners.length === 0) {
                 container.innerHTML = `
                     <div class="ob-empty">
-                        <div class="ob-empty-icon">🏕️</div>
                         <p style="font-size:0.9rem;color:#1d1d1f;font-weight:500;">尚未有任何聯盟夥伴</p>
                         <p style="font-size:0.8rem;margin-top:0.25rem;">開始推廣您的森林住宿體驗吧！</p>
+                        ${inactiveCount > 0 ? `<button onclick="window._showInactivePartners=true;refreshPartnerList();" class="ob-btn ob-btn-ghost ob-btn-sm" style="margin-top:0.5rem;">顯示 ${inactiveCount} 位已停用夥伴</button>` : ''}
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = `
+            const inactiveToggle = inactiveCount > 0 ? `
+                <div style="text-align:right;margin-bottom:0.5rem;">
+                    <button onclick="window._showInactivePartners=!window._showInactivePartners;refreshPartnerList();" class="ob-btn ob-btn-ghost ob-btn-sm" style="font-size:0.75rem;">
+                        ${showInactive ? '隱藏已停用' : `顯示 ${inactiveCount} 位已停用`}
+                    </button>
+                </div>
+            ` : '';
+
+            container.innerHTML = inactiveToggle + `
                 <table class="ob-table">
                     <thead><tr>
                         <th style="width:2rem;"></th>
@@ -1827,7 +1844,7 @@
                         <th style="text-align:right;">操作</th>
                     </tr></thead>
                     <tbody>
-                        ${partners.map(partner => generatePartnerRow(partner)).join('')}
+                        ${activePartners.map(partner => generatePartnerRow(partner)).join('')}
                     </tbody>
                 </table>
             `;

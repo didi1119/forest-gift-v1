@@ -857,8 +857,16 @@
                 </div>
                 <div class="ob-toolbar-actions">
                     <button onclick="refreshData()" class="ob-btn ob-btn-secondary">↻ 重新載入</button>
-                    <button onclick="exportPartnersData()" class="ob-btn ob-btn-ghost">匯出數據</button>
+                    <button onclick="exportPartnersList()" class="ob-btn ob-btn-ghost">匯出 CSV</button>
                 </div>
+            </div>
+
+            <!-- Partner search -->
+            <div style="margin-bottom:0.75rem;">
+                <input type="text" id="partnerSearch" placeholder="搜尋大使（代碼、姓名、Email、電話、優惠碼）"
+                    oninput="filterPartners(this.value)"
+                    class="w-full px-4 py-2.5 border border-stone-200 rounded-lg text-sm focus:outline-none focus:border-[#2E4B36] focus:ring-1 focus:ring-[#2E4B36]/20"
+                    style="background:#fff;">
             </div>
 
             <!-- Batch toolbar (hidden by default) -->
@@ -907,6 +915,7 @@
                 <div class="ob-toolbar-actions">
                     <button onclick="openManualBookingModal()" class="ob-btn ob-btn-primary">＋ 手動登記</button>
                     <a href="manual-checkin-confirm.html" target="_blank" class="ob-btn ob-btn-secondary">確認入住</a>
+                    <button onclick="exportBookingsData()" class="ob-btn ob-btn-ghost">匯出 CSV</button>
                 </div>
             </div>
 
@@ -962,7 +971,7 @@
                 <div class="ob-toolbar-actions">
                     <button onclick="generatePayoutReport()" class="ob-btn ob-btn-primary">生成報表</button>
                     <button onclick="diagnosePayout()" class="ob-btn ob-btn-secondary">診斷結算</button>
-                    <button onclick="diagnoseSheetFields()" class="ob-btn ob-btn-ghost">診斷欄位</button>
+                    <button onclick="exportPayoutsData()" class="ob-btn ob-btn-ghost">匯出 CSV</button>
                 </div>
             </div>
 
@@ -1799,6 +1808,24 @@
 
             allData.payouts = [];
             allData.clicks = [];
+        }
+
+        function filterPartners(query) {
+            if (!allData || !allData.partners) return;
+            if (!query || !query.trim()) {
+                displayPartners(allData.partners);
+                return;
+            }
+            const q = query.trim().toLowerCase();
+            const filtered = allData.partners.filter(p => {
+                return [
+                    p.partner_code, p.name, p.partner_name,
+                    p.email, p.contact_email,
+                    p.phone, p.contact_phone,
+                    p.coupon_code
+                ].some(field => field && String(field).toLowerCase().includes(q));
+            });
+            displayPartners(filtered);
         }
 
         function refreshPartnerList() {
@@ -8795,6 +8822,92 @@
         }
 
         // ---- 匯出 CSV ----
+        function downloadCSV(rows, filename) {
+            if (!rows || rows.length === 0) return showErrorMessage('無數據可匯出');
+            const headers = Object.keys(rows[0]);
+            const csvContent = headers.map(h => `"${h}"`).join(',');
+            const csvRows = rows.map(r => headers.map(h => {
+                const v = r[h] ?? '';
+                return `"${String(v).replace(/"/g, '""')}"`;
+            }).join(','));
+            const csv = '\uFEFF' + [csvContent, ...csvRows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+
+        function exportPartnersList() {
+            if (!allData?.partners) return showErrorMessage('無大使資料');
+            const rows = allData.partners.filter(p => p.is_active !== false).map(p => ({
+                '大使代碼': p.partner_code,
+                '姓名': p.name || p.partner_name || '',
+                '等級': p.level || p.partner_level || '',
+                'Email': p.email || p.contact_email || '',
+                '電話': p.phone || p.contact_phone || '',
+                '優惠碼': p.coupon_code || '',
+                '累積佣金': p.total_commission_earned || 0,
+                '待結算現金': p.pending_commission || 0,
+                '可用住宿金': p.available_points || 0,
+                '已用點數': p.points_used || 0,
+                '年度推薦數': p.yearly_referrals || 0,
+                '銀行': p.bank_name || '',
+                '銀行代碼': p.bank_code || '',
+                '分行': p.bank_branch || '',
+                '戶名': p.bank_account_name || '',
+                '帳號': p.bank_account || p.bank_account_number || ''
+            }));
+            downloadCSV(rows, `知音大使清單_${new Date().toISOString().slice(0, 10)}.csv`);
+        }
+
+        function exportPayoutsData() {
+            if (!allData?.payouts) return showErrorMessage('無結算資料');
+            const partnerMap = {};
+            (allData.partners || []).forEach(p => { partnerMap[p.partner_code] = p.name || p.partner_name || ''; });
+            const rows = allData.payouts.map(p => ({
+                '日期': p.created_at ? new Date(p.created_at).toLocaleString('zh-TW') : '',
+                '大使代碼': p.partner_code || '',
+                '姓名': partnerMap[p.partner_code] || '',
+                '類型': p.payout_type || '',
+                '金額': p.amount || 0,
+                '狀態': p.payout_status || '',
+                '方式': p.payout_method || '',
+                '匯款日期': p.bank_transfer_date || '',
+                '匯款編號': p.bank_transfer_reference || '',
+                '關聯訂房': p.related_booking_ids || '',
+                '備註': p.notes || '',
+                '建立者': p.created_by || ''
+            }));
+            downloadCSV(rows, `知音結算明細_${new Date().toISOString().slice(0, 10)}.csv`);
+        }
+
+        function exportBookingsData() {
+            if (!allData?.bookings) return showErrorMessage('無訂房資料');
+            const partnerMap = {};
+            (allData.partners || []).forEach(p => { partnerMap[p.partner_code] = p.name || p.partner_name || ''; });
+            const rows = allData.bookings.map(b => ({
+                '訂房ID': b.id || '',
+                '大使代碼': b.partner_code || '',
+                '大使姓名': partnerMap[b.partner_code] || '',
+                '客人姓名': b.guest_name || '',
+                '客人電話': b.guest_phone || '',
+                '入住日': b.checkin_date || '',
+                '退房日': b.checkout_date || '',
+                '房價': b.room_price || 0,
+                '來源': b.booking_source || '',
+                '住宿狀態': b.stay_status || '',
+                '付款狀態': b.payment_status || '',
+                '佣金狀態': b.commission_status || '',
+                '佣金金額': b.commission_amount || 0,
+                '佣金類型': b.commission_type || '',
+                '首推獎勵': b.first_referral_bonus_amount || 0,
+                '備註': b.notes || '',
+                '建立時間': b.created_at ? new Date(b.created_at).toLocaleString('zh-TW') : ''
+            }));
+            downloadCSV(rows, `知音訂房記錄_${new Date().toISOString().slice(0, 10)}.csv`);
+        }
+
         function exportAnalyticsReport() {
             const stats = getAnalyticsPartnerStats().sort((a, b) => b.totalEarned - a.totalEarned);
             const rows = stats.map(s => ({

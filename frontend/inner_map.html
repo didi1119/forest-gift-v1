@@ -17,6 +17,7 @@
     -->
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { theme: { extend: { fontFamily: { serif: ["'Noto Serif TC'", 'serif'], sans: ["'Noto Sans TC'", 'sans-serif'] } } } }</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
@@ -37,7 +38,7 @@
             color: var(--forest-light);
         }
         h1, h2, h3, h4, .font-serif {
-            font-family: 'Noto Serif TC', serif;
+            font-family: 'Noto Serif TC', serif !important;
         }
         .brand-accent {
             color: var(--forest-dark);

@@ -628,6 +628,8 @@
         @media (max-width: 767px) {
             .ob-meta-grid { grid-template-columns: 1fr; }
             .ob-toolbar { flex-direction: column; align-items: flex-start; }
+            .ob-toolbar-actions { width: 100%; }
+            .ob-toolbar-actions .ob-btn { flex: 1; justify-content: center; }
             .ob-slide-panel { width: 100vw; }
             .ob-table thead { display: none; }
             .ob-table, .ob-table tbody, .ob-table tr, .ob-table td {
@@ -642,7 +644,31 @@
                 padding: 0.2rem 0;
                 border-bottom: none;
             }
+            .ob-table tbody td::before {
+                content: attr(data-label);
+                font-size: 0.7rem;
+                font-weight: 500;
+                color: #86868b;
+                margin-right: 0.5rem;
+            }
             .ob-row-actions { opacity: 1; }
+            .ob-segment { flex-wrap: wrap; }
+            .ob-segment-btn { padding: 0.4rem 0.7rem; font-size: 0.75rem; }
+            .ob-section-header { padding: 0.85rem 0.75rem; }
+            .ob-section-content { padding: 0.75rem; }
+            .ob-btn-sm { padding: 0.4rem 0.75rem; }
+            .db-tab-btn { padding: 0.4rem 0.75rem; font-size: 0.75rem; }
+            .tab-button { padding: 0.4rem 0.65rem; font-size: 0.75rem; }
+            .tab-nav-strip { scrollbar-width: none; -ms-overflow-style: none; }
+            .tab-nav-strip::-webkit-scrollbar { display: none; }
+            .kpi-strip { grid-template-columns: repeat(3, 1fr) !important; }
+            .kpi-strip > div:nth-child(4),
+            .kpi-strip > div:nth-child(5) { grid-column: span 1; }
+            .ob-toolbar-title { font-size: 1.1rem; }
+            #db-table-container { max-height: calc(100vh - 260px) !important; }
+        }
+        @media (min-width: 768px) {
+            .funnel-grid { grid-template-columns: repeat(4, 1fr) !important; }
         }
 
         /* Legacy compat — keep old class names working for JS that uses them */
@@ -668,8 +694,8 @@
         .onboarding-hero { display: none; }
     </style>
 </head>
-<body class="antialiased min-h-screen py-12">
-    <div class="max-w-7xl mx-auto px-6">
+<body class="antialiased min-h-screen py-4 sm:py-12">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6">
         <!-- 403 錯誤提示區域 -->
         <div id="script-error-banner" class="hidden mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
             <div class="flex items-start">
@@ -696,43 +722,43 @@
         </div>
         
         <!-- Apple-style header -->
-        <header style="margin-bottom:2rem;">
-            <h1 style="font-size:2rem;font-weight:700;color:#1d1d1f;letter-spacing:-0.02em;">知音大使管理後台</h1>
-            <p style="font-size:0.85rem;color:#86868b;margin-top:0.25rem;">即時監控所有知音大使的推廣成效</p>
+        <header style="margin-bottom:1.25rem;">
+            <h1 style="font-size:clamp(1.35rem,4vw,2rem);font-weight:700;color:#1d1d1f;letter-spacing:-0.02em;">知音大使管理後台</h1>
+            <p style="font-size:0.82rem;color:#86868b;margin-top:0.25rem;">即時監控所有知音大使的推廣成效</p>
         </header>
 
         <!-- Apple-style stats strip -->
-        <div style="display:flex;gap:1px;background:rgba(0,0,0,0.06);border-radius:0.85rem;overflow:hidden;margin-bottom:2rem;">
-            <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1rem 1.25rem;text-align:center;">
-                <div style="font-size:1.5rem;font-weight:700;color:#1d1d1f;font-variant-numeric:tabular-nums;" id="totalPartners">-</div>
-                <div style="font-size:0.7rem;color:#86868b;font-weight:500;margin-top:0.15rem;">夥伴數</div>
+        <div class="kpi-strip" style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:rgba(0,0,0,0.06);border-radius:0.85rem;overflow:hidden;margin-bottom:1.25rem;">
+            <div style="background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.75rem 0.5rem;text-align:center;">
+                <div style="font-size:clamp(1.1rem,3.5vw,1.5rem);font-weight:700;color:#1d1d1f;font-variant-numeric:tabular-nums;" id="totalPartners">-</div>
+                <div style="font-size:0.65rem;color:#86868b;font-weight:500;margin-top:0.1rem;">夥伴數</div>
             </div>
-            <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1rem 1.25rem;text-align:center;">
-                <div style="font-size:1.5rem;font-weight:700;color:#1d1d1f;font-variant-numeric:tabular-nums;" id="totalClicks">-</div>
-                <div style="font-size:0.7rem;color:#86868b;font-weight:500;margin-top:0.15rem;">點擊數</div>
+            <div style="background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.75rem 0.5rem;text-align:center;">
+                <div style="font-size:clamp(1.1rem,3.5vw,1.5rem);font-weight:700;color:#1d1d1f;font-variant-numeric:tabular-nums;" id="totalClicks">-</div>
+                <div style="font-size:0.65rem;color:#86868b;font-weight:500;margin-top:0.1rem;">點擊數</div>
             </div>
-            <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1rem 1.25rem;text-align:center;">
-                <div style="font-size:1.5rem;font-weight:700;color:#059669;font-variant-numeric:tabular-nums;" id="totalStayCompleted">-</div>
-                <div style="font-size:0.7rem;color:#86868b;font-weight:500;margin-top:0.15rem;">完成入住</div>
+            <div style="background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.75rem 0.5rem;text-align:center;">
+                <div style="font-size:clamp(1.1rem,3.5vw,1.5rem);font-weight:700;color:#059669;font-variant-numeric:tabular-nums;" id="totalStayCompleted">-</div>
+                <div style="font-size:0.65rem;color:#86868b;font-weight:500;margin-top:0.1rem;">完成入住</div>
             </div>
-            <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1rem 1.25rem;text-align:center;">
-                <div style="font-size:1.5rem;font-weight:700;color:#7C3AED;font-variant-numeric:tabular-nums;" id="stayCompletionRate">-</div>
-                <div style="font-size:0.7rem;color:#86868b;font-weight:500;margin-top:0.15rem;">完成率</div>
+            <div style="background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.75rem 0.5rem;text-align:center;">
+                <div style="font-size:clamp(1.1rem,3.5vw,1.5rem);font-weight:700;color:#7C3AED;font-variant-numeric:tabular-nums;" id="stayCompletionRate">-</div>
+                <div style="font-size:0.65rem;color:#86868b;font-weight:500;margin-top:0.1rem;">完成率</div>
             </div>
-            <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1rem 1.25rem;text-align:center;">
-                <div style="font-size:1.5rem;font-weight:700;color:#D97706;font-variant-numeric:tabular-nums;" id="totalPayouts">-</div>
-                <div style="font-size:0.7rem;color:#86868b;font-weight:500;margin-top:0.15rem;">待付現金</div>
+            <div style="background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.75rem 0.5rem;text-align:center;">
+                <div style="font-size:clamp(1.1rem,3.5vw,1.5rem);font-weight:700;color:#D97706;font-variant-numeric:tabular-nums;" id="totalPayouts">-</div>
+                <div style="font-size:0.65rem;color:#86868b;font-weight:500;margin-top:0.1rem;">待付現金</div>
             </div>
         </div>
 
         <!-- Apple-style navigation tabs -->
-        <div style="display:flex;gap:1px;background:rgba(0,0,0,0.04);border-radius:0.5rem;padding:2px;margin-bottom:2rem;overflow-x:auto;">
+        <div class="tab-nav-strip" style="display:flex;gap:1px;background:rgba(0,0,0,0.04);border-radius:0.5rem;padding:2px;margin-bottom:1.25rem;overflow-x:auto;-webkit-overflow-scrolling:touch;">
             <button onclick="showTab('onboarding')" id="tab-onboarding" class="tab-button active">工作台</button>
             <button onclick="showTab('overview')" id="tab-overview" class="tab-button">概覽</button>
             <button onclick="showTab('bookings')" id="tab-bookings" class="tab-button">訂單</button>
             <button onclick="showTab('payouts')" id="tab-payouts" class="tab-button">結算</button>
             <button onclick="showTab('analytics')" id="tab-analytics" class="tab-button">分析</button>
-            <button onclick="showTab('linkgen')" id="tab-linkgen" class="tab-button">連結生成</button>
+            <button onclick="showTab('linkgen')" id="tab-linkgen" class="tab-button">連結</button>
             <button onclick="showTab('database')" id="tab-database" class="tab-button">資料庫</button>
         </div>
 
@@ -871,7 +897,7 @@
             </div>
 
             <!-- Batch toolbar (hidden by default) -->
-            <div id="batchToolbar" class="hidden" style="background:rgba(46,75,54,0.04);border:1px solid rgba(46,75,54,0.12);border-radius:0.6rem;padding:0.65rem 1rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;">
+            <div id="batchToolbar" class="hidden" style="background:rgba(46,75,54,0.04);border:1px solid rgba(46,75,54,0.12);border-radius:0.6rem;padding:0.65rem 1rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
                 <span style="font-size:0.82rem;color:#1d1d1f;">已選擇 <strong id="selectedCount" style="color:#2E4B36;">0</strong> 位夥伴</span>
                 <div style="display:flex;gap:0.35rem;align-items:center;">
                     <select id="batchOperation" style="font-size:0.8rem;padding:0.3rem 0.5rem;border:1px solid rgba(0,0,0,0.1);border-radius:0.4rem;background:#fff;">
@@ -924,7 +950,7 @@
             <!-- Filter bar -->
             <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap;">
                 <select id="bookingStatusFilter" onchange="filterBookings()"
-                    style="font-size:0.8rem;padding:0.35rem 0.65rem;border:1px solid rgba(0,0,0,0.1);border-radius:0.4rem;background:#fff;color:#1d1d1f;outline:none;">
+                    style="font-size:0.8rem;padding:0.45rem 0.65rem;border:1px solid rgba(0,0,0,0.1);border-radius:0.4rem;background:#fff;color:#1d1d1f;outline:none;">
                     <option value="">全部狀態</option>
                     <option value="PENDING">待入住</option>
                     <option value="CHECKED_IN">已入住</option>
@@ -932,7 +958,7 @@
                     <option value="CANCELLED">已取消</option>
                 </select>
                 <input type="text" id="searchBooking" placeholder="搜尋房客或大使代碼" onkeyup="filterBookings()"
-                    style="flex:1;min-width:12rem;font-size:0.8rem;padding:0.35rem 0.75rem;border:1px solid rgba(0,0,0,0.1);border-radius:0.4rem;background:#fff;color:#1d1d1f;outline:none;"
+                    style="flex:1;min-width:0;font-size:0.8rem;padding:0.45rem 0.75rem;border:1px solid rgba(0,0,0,0.1);border-radius:0.4rem;background:#fff;color:#1d1d1f;outline:none;"
                     onfocus="this.style.borderColor='#2E4B36';this.style.boxShadow='0 0 0 3px rgba(46,75,54,0.1)'"
                     onblur="this.style.borderColor='rgba(0,0,0,0.1)';this.style.boxShadow='none'">
             </div>
@@ -1018,33 +1044,33 @@
                 </div>
 
                 <!-- KPI strip -->
-                <div style="display:flex;gap:1px;background:rgba(0,0,0,0.06);border-radius:0.85rem;overflow:hidden;">
-                    <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.85rem 1rem;text-align:center;">
-                        <div style="font-size:1.35rem;font-weight:700;color:#2563EB;font-variant-numeric:tabular-nums;" id="analyticsTotalPartners">-</div>
-                        <div style="font-size:0.68rem;color:#86868b;font-weight:500;margin-top:0.1rem;">大使總數</div>
+                <div class="kpi-strip" style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:rgba(0,0,0,0.06);border-radius:0.85rem;overflow:hidden;">
+                    <div style="background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.75rem 0.5rem;text-align:center;">
+                        <div style="font-size:clamp(1rem,3vw,1.35rem);font-weight:700;color:#2563EB;font-variant-numeric:tabular-nums;" id="analyticsTotalPartners">-</div>
+                        <div style="font-size:0.65rem;color:#86868b;font-weight:500;margin-top:0.1rem;">大使總數</div>
                     </div>
-                    <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.85rem 1rem;text-align:center;">
-                        <div style="font-size:1.35rem;font-weight:700;color:#059669;font-variant-numeric:tabular-nums;" id="analyticsTotalClicks">-</div>
-                        <div style="font-size:0.68rem;color:#86868b;font-weight:500;margin-top:0.1rem;">總點擊</div>
+                    <div style="background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.75rem 0.5rem;text-align:center;">
+                        <div style="font-size:clamp(1rem,3vw,1.35rem);font-weight:700;color:#059669;font-variant-numeric:tabular-nums;" id="analyticsTotalClicks">-</div>
+                        <div style="font-size:0.65rem;color:#86868b;font-weight:500;margin-top:0.1rem;">總點擊</div>
                     </div>
-                    <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.85rem 1rem;text-align:center;">
-                        <div style="font-size:1.35rem;font-weight:700;color:#7C3AED;font-variant-numeric:tabular-nums;" id="analyticsTotalBookings">-</div>
-                        <div style="font-size:0.68rem;color:#86868b;font-weight:500;margin-top:0.1rem;">總訂房</div>
+                    <div style="background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.75rem 0.5rem;text-align:center;">
+                        <div style="font-size:clamp(1rem,3vw,1.35rem);font-weight:700;color:#7C3AED;font-variant-numeric:tabular-nums;" id="analyticsTotalBookings">-</div>
+                        <div style="font-size:0.65rem;color:#86868b;font-weight:500;margin-top:0.1rem;">總訂房</div>
                     </div>
-                    <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.85rem 1rem;text-align:center;">
-                        <div style="font-size:1.35rem;font-weight:700;color:#D97706;font-variant-numeric:tabular-nums;" id="analyticsTotalCompleted">-</div>
-                        <div style="font-size:0.68rem;color:#86868b;font-weight:500;margin-top:0.1rem;">完成入住</div>
+                    <div style="background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.75rem 0.5rem;text-align:center;">
+                        <div style="font-size:clamp(1rem,3vw,1.35rem);font-weight:700;color:#D97706;font-variant-numeric:tabular-nums;" id="analyticsTotalCompleted">-</div>
+                        <div style="font-size:0.65rem;color:#86868b;font-weight:500;margin-top:0.1rem;">完成入住</div>
                     </div>
-                    <div style="flex:1;background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.85rem 1rem;text-align:center;">
-                        <div style="font-size:1.35rem;font-weight:700;color:#DC2626;font-variant-numeric:tabular-nums;" id="analyticsTotalCommission">-</div>
-                        <div style="font-size:0.68rem;color:#86868b;font-weight:500;margin-top:0.1rem;">累計佣金</div>
+                    <div style="background:rgba(255,255,255,0.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:0.75rem 0.5rem;text-align:center;">
+                        <div style="font-size:clamp(1rem,3vw,1.35rem);font-weight:700;color:#DC2626;font-variant-numeric:tabular-nums;" id="analyticsTotalCommission">-</div>
+                        <div style="font-size:0.65rem;color:#86868b;font-weight:500;margin-top:0.1rem;">累計佣金</div>
                     </div>
                 </div>
 
                 <!-- Conversion funnel — horizontal bar style -->
                 <div class="ob-main-panel" style="padding:1.25rem;">
                     <div style="font-size:0.85rem;font-weight:600;color:#1d1d1f;margin-bottom:1rem;">轉換漏斗</div>
-                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;">
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;" class="funnel-grid">
                         <div style="text-align:center;">
                             <div style="background:rgba(37,99,235,0.06);border-radius:0.6rem;padding:1rem 0.5rem;">
                                 <div style="font-size:1.5rem;font-weight:700;color:#2563EB;" id="funnelClicks">-</div>
@@ -1077,7 +1103,7 @@
                 </div>
 
                 <!-- Charts: Performance + Level -->
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(20rem,1fr));gap:1rem;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:1rem;">
                     <div class="ob-main-panel" style="padding:1.25rem;">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
                             <span style="font-size:0.85rem;font-weight:600;color:#1d1d1f;">大使績效排行</span>
@@ -1115,7 +1141,7 @@
                 </div>
 
                 <!-- Charts: Commission type + Booking status -->
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(20rem,1fr));gap:1rem;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:1rem;">
                     <div class="ob-main-panel" style="padding:1.25rem;">
                         <div style="font-size:0.85rem;font-weight:600;color:#1d1d1f;margin-bottom:0.75rem;">佣金類型分佈</div>
                         <div style="position:relative;height:260px;">
@@ -1166,7 +1192,7 @@
         <!-- 連結生成器標籤內容 — Apple-style -->
         <div id="content-linkgen" class="tab-content hidden">
             <iframe id="linkgenIframe" src="link-generator-form.html"
-                    style="width:100%;height:calc(100vh - 180px);border:none;border-radius:0.85rem;background:rgba(255,255,255,0.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.06);"
+                    style="width:100%;height:calc(100vh - 140px);border:none;border-radius:0.85rem;background:rgba(255,255,255,0.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.06);"
                     title="連結生成器">
             </iframe>
         </div>
@@ -1182,19 +1208,19 @@
             </div>
 
             <!-- 表格切換 tabs -->
-            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
-                <button onclick="showDbTable('partners')" id="dbtab-partners" class="db-tab-btn db-tab-active">大使 Partners</button>
-                <button onclick="showDbTable('bookings')" id="dbtab-bookings" class="db-tab-btn">訂房 Bookings</button>
-                <button onclick="showDbTable('payouts')" id="dbtab-payouts" class="db-tab-btn">結算 Payouts</button>
-                <button onclick="showDbTable('applications')" id="dbtab-applications" class="db-tab-btn">申請 Applications</button>
-                <button onclick="showDbTable('clicks')" id="dbtab-clicks" class="db-tab-btn">點擊 Clicks</button>
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                <button onclick="showDbTable('partners')" id="dbtab-partners" class="db-tab-btn db-tab-active">大使</button>
+                <button onclick="showDbTable('bookings')" id="dbtab-bookings" class="db-tab-btn">訂房</button>
+                <button onclick="showDbTable('payouts')" id="dbtab-payouts" class="db-tab-btn">結算</button>
+                <button onclick="showDbTable('applications')" id="dbtab-applications" class="db-tab-btn">申請</button>
+                <button onclick="showDbTable('clicks')" id="dbtab-clicks" class="db-tab-btn">點擊</button>
                 <button onclick="showDbTable('audit_logs')" id="dbtab-audit_logs" class="db-tab-btn">操作日誌</button>
             </div>
 
             <!-- 搜尋 -->
             <div style="margin-bottom:0.75rem;">
                 <input id="db-search" type="text" placeholder="搜尋…" oninput="filterDbTable()"
-                    style="width:100%;max-width:320px;padding:0.4rem 0.75rem;border:1px solid rgba(0,0,0,0.12);border-radius:0.5rem;font-size:0.8rem;outline:none;background:rgba(255,255,255,0.8);">
+                    style="width:100%;max-width:320px;padding:0.45rem 0.75rem;border:1px solid rgba(0,0,0,0.12);border-radius:0.5rem;font-size:0.8rem;outline:none;background:rgba(255,255,255,0.8);">
             </div>
 
             <!-- 表格容器 -->

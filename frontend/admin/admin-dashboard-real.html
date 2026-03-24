@@ -626,49 +626,152 @@
 
         /* Mobile responsive */
         @media (max-width: 767px) {
-            .ob-meta-grid { grid-template-columns: 1fr; }
-            .ob-toolbar { flex-direction: column; align-items: flex-start; }
-            .ob-toolbar-actions { width: 100%; }
-            .ob-toolbar-actions .ob-btn { flex: 1; justify-content: center; }
-            .ob-slide-panel { width: 100vw; }
+            /* === Phase 7: iPhone Safe Area === */
+            body {
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+
+            /* === Phase 1: Touch targets (min 38-44px) === */
+            .ob-btn { min-height: 44px; padding: 0.6rem 1rem; }
+            .ob-btn-sm { min-height: 38px; padding: 0.5rem 0.85rem; font-size: 0.78rem; border-radius: 0.4rem; }
+            .ob-slide-close { width: 40px; height: 40px; font-size: 1.2rem; }
+            .tab-button { padding: 0.55rem 0.85rem; font-size: 0.8rem; }
+            .db-tab-btn { padding: 0.5rem 0.85rem; font-size: 0.8rem; }
+            .ob-segment-btn { padding: 0.5rem 0.8rem; font-size: 0.78rem; }
+
+            /* === Phase 2b: Table → card layout === */
             .ob-table thead { display: none; }
             .ob-table, .ob-table tbody, .ob-table tr, .ob-table td {
-                display: block;
+                display: block !important;
                 width: 100%;
             }
             .ob-table tbody tr {
-                padding: 0.75rem;
-                border-bottom: 1px solid rgba(0,0,0,0.04);
+                padding: 0.85rem 1rem;
+                margin-bottom: 0.5rem;
+                border-radius: 0.75rem;
+                background: rgba(255,255,255,0.72);
+                border: 1px solid rgba(0,0,0,0.06);
+                box-shadow: 0 1px 4px rgba(0,0,0,0.03);
             }
             .ob-table tbody td {
-                padding: 0.2rem 0;
-                border-bottom: none;
+                padding: 0.25rem 0 !important;
+                border-bottom: none !important;
+                text-align: left !important;
+                display: flex !important;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.85rem;
             }
-            .ob-table tbody td::before {
+            .ob-table tbody td[data-label]::before {
                 content: attr(data-label);
-                font-size: 0.7rem;
+                font-size: 0.72rem;
                 font-weight: 500;
                 color: #86868b;
-                margin-right: 0.5rem;
+                min-width: 4.5rem;
+                flex-shrink: 0;
             }
-            .ob-row-actions { opacity: 1; }
+            /* 沒有 data-label 的 td 不顯示偽元素 */
+            .ob-table tbody td:not([data-label])::before { display: none; }
+            /* 隱藏 checkbox 欄 */
+            .ob-table tbody td.mob-hide { display: none !important; }
+            /* 操作欄分隔 */
+            .ob-table tbody td[data-label="操作"] {
+                padding-top: 0.5rem !important;
+                border-top: 1px solid rgba(0,0,0,0.06) !important;
+                margin-top: 0.35rem;
+                justify-content: flex-start;
+            }
+            .ob-row-actions { opacity: 1; justify-content: flex-start !important; }
+            /* === 卡片收合 === */
+            .ob-table tbody tr:not(.mob-expanded) td.mob-detail { display: none !important; }
+            .ob-table tbody td.mob-toggle {
+                display: flex !important;
+                justify-content: center;
+                padding: 0.3rem 0 0.1rem !important;
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .ob-table tbody td.mob-toggle::before { display: none !important; }
+            .mob-toggle-inner {
+                font-size: 0.72rem;
+                color: #86868b;
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
+                transition: color 0.15s;
+            }
+            .mob-toggle-inner:active { color: #1d1d1f; }
+            .mob-toggle-chevron {
+                transition: transform 0.25s ease;
+                font-size: 0.6rem;
+            }
+            .mob-expanded .mob-toggle-chevron { transform: rotate(180deg); }
+
+            /* === Phase 3: Slide Panel === */
+            .ob-slide-panel { width: 100vw; }
+            .ob-slide-panel::before {
+                content: '';
+                display: block;
+                width: 36px;
+                height: 4px;
+                background: rgba(0,0,0,0.15);
+                border-radius: 2px;
+                margin: 0.5rem auto 0;
+            }
+            .ob-slide-panel-header { padding: 1rem; }
+            .ob-slide-body { padding: 1rem; gap: 1rem; }
+            .ob-meta-grid { grid-template-columns: repeat(2, 1fr); }
+            .ob-meta-value { word-break: break-word; }
+
+            /* === Phase 4: Toolbar sticky === */
+            .ob-toolbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                background: rgba(245,245,247,0.92);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                padding: 0.75rem;
+                margin: 0 -0.75rem;
+            }
+            .ob-toolbar-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+            .ob-toolbar-actions .ob-btn { flex: 0 1 auto; }
+            .ob-toolbar-title { font-size: 1.1rem; }
+            .ob-stats-row { flex-wrap: wrap; }
+
+            /* === Segment & section === */
             .ob-segment { flex-wrap: wrap; }
-            .ob-segment-btn { padding: 0.4rem 0.7rem; font-size: 0.75rem; }
             .ob-section-header { padding: 0.85rem 0.75rem; }
             .ob-section-content { padding: 0.75rem; }
-            .ob-btn-sm { padding: 0.4rem 0.75rem; }
-            .db-tab-btn { padding: 0.4rem 0.75rem; font-size: 0.75rem; }
-            .tab-button { padding: 0.4rem 0.65rem; font-size: 0.75rem; }
+
+            /* === Tab navigation === */
             .tab-nav-strip { scrollbar-width: none; -ms-overflow-style: none; }
             .tab-nav-strip::-webkit-scrollbar { display: none; }
+
+            /* === KPI strip === */
             .kpi-strip { grid-template-columns: repeat(3, 1fr) !important; }
             .kpi-strip > div:nth-child(4),
             .kpi-strip > div:nth-child(5) { grid-column: span 1; }
-            .ob-toolbar-title { font-size: 1.1rem; }
-            #db-table-container { max-height: calc(100vh - 260px) !important; }
+
+            /* === Phase 5: Database tab === */
+            #db-table-container {
+                max-height: calc(100vh - 260px) !important;
+                -webkit-overflow-scrolling: touch;
+            }
+            #db-table td { font-size: 0.7rem; padding: 0.4rem 0.5rem; max-width: 150px; }
+            #db-table th { font-size: 0.65rem; padding: 0.4rem 0.5rem; }
         }
         @media (min-width: 768px) {
             .funnel-grid { grid-template-columns: repeat(4, 1fr) !important; }
+            /* 桌面版：隱藏 mobile toggle，顯示所有 detail */
+            .mob-toggle { display: none !important; }
+            .mob-detail { display: table-cell !important; }
+            .mob-hide { display: table-cell !important; }
         }
 
         /* Legacy compat — keep old class names working for JS that uses them */
@@ -2058,33 +2161,36 @@
 
             return `
                 <tr style="${isInactive ? 'opacity:0.55;' : ''}" onclick="viewPartnerDetails('${f.code}')">
-                    <td style="width:2rem;" onclick="event.stopPropagation();">
+                    <td class="mob-hide" style="width:2rem;" onclick="event.stopPropagation();">
                         <input type="checkbox" class="partner-selector" style="width:14px;height:14px;accent-color:#2E4B36;"
                                onchange="updateSelection()" data-partner-code="${partner.partner_code}">
                     </td>
-                    <td>
+                    <td data-label="大使">
                         <div style="font-weight:600;font-size:0.85rem;color:#1d1d1f;">${escapeHtml(f.name)}</div>
                         <div style="font-size:0.72rem;color:#86868b;font-family:monospace;">${escapeHtml(f.code)}</div>
                     </td>
-                    <td>
+                    <td data-label="等級">
                         <span style="font-size:0.72rem;font-weight:600;color:${levelColor};background:${levelColor}12;padding:0.2rem 0.5rem;border-radius:9999px;">${levelText}</span>
                     </td>
-                    <td style="text-align:right;font-variant-numeric:tabular-nums;">
+                    <td class="mob-toggle" onclick="event.stopPropagation();this.closest('tr').classList.toggle('mob-expanded');">
+                        <span class="mob-toggle-inner">更多資訊 <span class="mob-toggle-chevron">▼</span></span>
+                    </td>
+                    <td class="mob-detail" data-label="可用點數" style="text-align:right;font-variant-numeric:tabular-nums;">
                         <span style="font-weight:600;color:${availablePoints > 0 ? '#2563EB' : '#86868b'};">${availablePoints.toLocaleString()}</span>
                     </td>
-                    <td style="text-align:right;font-variant-numeric:tabular-nums;">
+                    <td class="mob-detail" data-label="待付現金" style="text-align:right;font-variant-numeric:tabular-nums;">
                         ${pendingCash > 0
                             ? `<span style="font-weight:600;color:#D97706;">$${pendingCash.toLocaleString()}</span>`
                             : `<span style="color:#86868b;">$0</span>`}
                     </td>
-                    <td style="text-align:center;">
+                    <td class="mob-detail" data-label="年度進度" style="text-align:center;">
                         <span style="font-size:0.8rem;color:#1d1d1f;">${f.yearlyReferrals}<span style="color:#86868b;">/${getNextLevelRequirement(f.level)}</span></span>
                     </td>
-                    <td style="text-align:center;color:#6e6e73;">${totalClicks}</td>
-                    <td style="text-align:center;">
+                    <td class="mob-detail" data-label="點擊" style="text-align:center;color:#6e6e73;">${totalClicks}</td>
+                    <td class="mob-detail" data-label="完成入住" style="text-align:center;">
                         <span style="font-weight:500;color:${f.successfulReferrals > 0 ? '#059669' : '#86868b'};">${f.successfulReferrals}</span>
                     </td>
-                    <td style="text-align:right;" onclick="event.stopPropagation();">
+                    <td class="mob-detail" data-label="操作" style="text-align:right;" onclick="event.stopPropagation();">
                         <div class="ob-row-actions" style="justify-content:flex-end;">
                             ${availablePoints > 0 && !isInactive
                                 ? `<button onclick="showPartnerActionsModal('${partner.partner_code}', 'accommodation')" class="ob-btn ob-btn-primary ob-btn-sm">使用點數</button>`
@@ -2249,14 +2355,14 @@
                 
                 return `
                     <tr class="${rowClass}">
-                        <td class="py-4 px-4">
+                        <td data-label="房客" class="py-4 px-4">
                             <div>
                                 <div class="font-semibold">${booking.guest_name}</div>
                                 <div class="text-sm text-stone-600">${booking.guest_phone || ''}</div>
                                 ${booking.guest_email ? `<div class="text-xs text-stone-500">${booking.guest_email}</div>` : ''}
                             </div>
                         </td>
-                        <td class="py-4 px-4">
+                        <td data-label="大使" class="py-4 px-4">
                             ${booking.partner_code ? `
                                 <div class="font-medium text-green-700">${booking.partner_code}</div>
                                 ${partner ? `
@@ -2267,14 +2373,22 @@
                                 <span class="text-stone-400">非推薦訂房</span>
                             `}
                         </td>
-                        <td class="py-4 px-4 text-sm">
+                        <td data-label="狀態" class="py-4 px-4 text-center">
+                            <span class="px-2 py-1 rounded text-xs ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td class="mob-toggle" onclick="event.stopPropagation();this.closest('tr').classList.toggle('mob-expanded');">
+                            <span class="mob-toggle-inner">更多資訊 <span class="mob-toggle-chevron">▼</span></span>
+                        </td>
+                        <td class="mob-detail" data-label="入住期間" class="py-4 px-4 text-sm">
                             <div>${booking.checkin_date}</div>
                             <div class="text-stone-500">~ ${booking.checkout_date}</div>
                             ${canConfirmStay ? `
                                 <div class="text-xs text-orange-600 mt-1">⏰ 可確認入住</div>
                             ` : ''}
                         </td>
-                        <td class="py-4 px-4 text-center">
+                        <td class="mob-detail" data-label="金額" class="py-4 px-4 text-center">
                             ${booking.booking_source === 'SELF_USE' && booking.notes && booking.notes.includes('住宿金折抵') ? `
                                 <div class="space-y-1">
                                     <div class="text-gray-400 line-through text-sm">NT$ ${(booking.room_price || 0).toLocaleString()}</div>
@@ -2303,7 +2417,7 @@
                                 <div class="font-semibold">NT$ ${(booking.room_price || 0).toLocaleString()}</div>
                             `}
                         </td>
-                        <td class="py-4 px-4 text-center">
+                        <td class="mob-detail" data-label="末五碼" class="py-4 px-4 text-center">
                             ${booking.bank_account_last5 ? `
                                 <div class="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
                                     *****${booking.bank_account_last5}
@@ -2312,12 +2426,7 @@
                                 <span class="text-gray-400 text-xs">未提供</span>
                             `}
                         </td>
-                        <td class="py-4 px-4 text-center">
-                            <span class="px-2 py-1 rounded text-xs ${statusClass}">
-                                ${statusText}
-                            </span>
-                        </td>
-                        <td class="py-4 px-4 text-center">
+                        <td class="mob-detail" data-label="佣金" class="py-4 px-4 text-center">
                             ${booking.booking_source === 'SELF_USE' ? `
                                 <div class="inline-block px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
                                     自用免佣金
@@ -2333,7 +2442,7 @@
                                 <span class="text-stone-400">-</span>
                             `}
                         </td>
-                        <td class="py-4 px-4 text-center">
+                        <td class="mob-detail" data-label="操作" class="py-4 px-4 text-center">
                             <div class="flex flex-col space-y-1">
                                 ${canConfirmStay ? `
                                     <button onclick="confirmStayCompletion('${bookingIdentifier}')"
@@ -2345,7 +2454,7 @@
                                     class="ob-btn ob-btn-secondary ob-btn-sm text-xs">
                                     編輯訂單
                                 </button>
-                                <button onclick="viewBookingDetails('${bookingIdentifier}')" 
+                                <button onclick="viewBookingDetails('${bookingIdentifier}')"
                                     class="text-blue-600 hover:underline text-xs">
                                     詳情
                                 </button>
@@ -2401,19 +2510,19 @@
                 
                 return `
                     <tr class="${rowClass}">
-                        <td class="py-4 px-4">
+                        <td data-label="大使" class="py-4 px-4">
                             <div class="font-semibold">${payout.partner_code}</div>
                         </td>
-                        <td class="py-4 px-4 text-center">
+                        <td data-label="類型" class="py-4 px-4 text-center">
                             ${getPayoutTypeText(payout.payout_type)}
                         </td>
-                        <td class="py-4 px-4 text-center font-semibold">
+                        <td data-label="金額" class="py-4 px-4 text-center font-semibold">
                             ${payout.amount < 0 ? '-' : ''}$${Math.abs(payout.amount || 0).toLocaleString()}
                         </td>
-                        <td class="py-4 px-4">
+                        <td data-label="相關訂房" class="py-4 px-4">
                             ${payout.related_booking_ids || '-'}
                         </td>
-                        <td class="py-4 px-4">
+                        <td data-label="來源" class="py-4 px-4">
                             <div class="space-y-1">
                                 <span class="inline-block px-2 py-1 rounded text-xs ${sourceInfo.class}">
                                     ${sourceInfo.text}
@@ -2421,11 +2530,11 @@
                                 ${sourceInfo.detail ? `<div class="text-xs text-gray-600">${sourceInfo.detail}</div>` : ''}
                             </div>
                         </td>
-                        <td class="py-4 px-4 text-sm text-stone-600">
+                        <td data-label="建立時間" class="py-4 px-4 text-sm text-stone-600">
                             ${formatDate(payout.created_at)}
                         </td>
-                        <td class="py-4 px-4 text-center">
-                            <button onclick="viewPayoutDetails('${payoutIdentifier}')" 
+                        <td data-label="操作" class="py-4 px-4 text-center">
+                            <button onclick="viewPayoutDetails('${payoutIdentifier}')"
                                 class="text-blue-600 hover:underline text-sm"
                                 title="查看結算詳情 (ID: ${payoutIdentifier})">
                                 詳情

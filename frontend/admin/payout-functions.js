@@ -69,9 +69,9 @@ function createPayoutDetailsModal(payout) {
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
 
     modal.innerHTML = `
-        <div class="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl lg:max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-6">
-                <h3 class="text-2xl font-bold">結算詳情</h3>
+                <h3 class="text-lg sm:text-2xl font-bold">結算詳情</h3>
                 <button onclick="closeModal('payoutDetailsModal')" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -288,9 +288,9 @@ function createEditPayoutModal(payout) {
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
 
     modal.innerHTML = `
-        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+        <div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-6">
-                <h3 class="text-xl font-bold">修改結算記錄</h3>
+                <h3 class="text-lg sm:text-xl font-bold">修改結算記錄</h3>
                 <button onclick="closeModal('editPayoutModal')" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -465,9 +465,9 @@ function createPayoutReportModal() {
     });
 
     modal.innerHTML = `
-        <div class="bg-white rounded-lg p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl lg:max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-6">
-                <h3 class="text-2xl font-bold">結算報表</h3>
+                <h3 class="text-lg sm:text-2xl font-bold">結算報表</h3>
                 <button onclick="closeModal('payoutReportModal')" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>

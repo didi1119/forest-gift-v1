@@ -53,7 +53,7 @@ function createQuickCommissionEditModal(partner) {
     const currentPending = parseFloat(partner.pending_commission) || 0;
     
     modal.innerHTML = `
-        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+        <div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-6">
                 <h3 class="text-xl font-bold">快速編輯佣金 - ${partner.partner_code}</h3>
                 <button onclick="closeModal('quickCommissionEditModal')" class="text-gray-500 hover:text-gray-700">
@@ -232,7 +232,7 @@ function createMixedPayoutModal(partner) {
     const pendingAmount = parseFloat(partner.pending_commission) || 0;
     
     modal.innerHTML = `
-        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+        <div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-6">
                 <h3 class="text-xl font-bold">創建結算 - ${partner.partner_code}</h3>
                 <button onclick="closeModal('mixedPayoutModal')" class="text-gray-500 hover:text-gray-700">
@@ -466,7 +466,7 @@ function createAccommodationPointsModal(partner) {
     modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
     
     modal.innerHTML = `
-        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+        <div class="bg-white rounded-lg p-4 sm:p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-6">
                 <h3 class="text-xl font-bold">住宿金點數管理 - ${partner.partner_code}</h3>
                 <button onclick="closeModal('accommodationPointsModal')" class="text-gray-500 hover:text-gray-700">
